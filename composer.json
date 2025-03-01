@@ -37,7 +37,7 @@
         "spatie/laravel-permission": "^5.0"
     },
     "require-dev": {
-        "ahmed-aliraqi/crud-generator": "^4.0",
+        "ahmed-aliraqi/crud-generator": "^4.1",
         "ahmed-aliraqi/lang-generator": "^2.0",
         "barryvdh/laravel-debugbar": "^3.2",
         "barryvdh/laravel-ide-helper": "^2.6",

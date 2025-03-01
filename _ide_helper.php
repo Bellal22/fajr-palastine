@@ -5,7 +5,7 @@
 
 /**
  * A helper file for Laravel, to provide autocomplete information to your IDE
- * Generated for Laravel 10.47.0.
+ * Generated for Laravel 10.48.28.
  *
  * This file should not be included in your code, only analyzed by your IDE!
  *
@@ -722,7 +722,7 @@ namespace Illuminate\Support\Facades {
          * @param int $code
          * @param string $message
          * @param array $headers
-         * @return \Illuminate\Foundation\never 
+         * @return never 
          * @throws \Symfony\Component\HttpKernel\Exception\HttpException
          * @throws \Symfony\Component\HttpKernel\Exception\NotFoundHttpException
          * @static 
@@ -1146,7 +1146,7 @@ namespace Illuminate\Support\Facades {
          * Resolve all of the bindings for a given tag.
          *
          * @param string $tag
-         * @return \Illuminate\Container\iterable 
+         * @return iterable 
          * @static 
          */        public static function tagged($tag)
         {            //Method inherited from \Illuminate\Container\Container         
@@ -3558,8 +3558,8 @@ namespace Illuminate\Support\Facades {
          *
          * @template TCacheValue
          * @param array|string $key
-         * @param \Illuminate\Cache\TCacheValue|\Illuminate\Cache\(\Closure():  TCacheValue)  $default
-         * @return \Illuminate\Cache\(TCacheValue is null ? mixed : TCacheValue)
+         * @param TCacheValue|(\Closure(): TCacheValue) $default
+         * @return (TCacheValue is null ? mixed : TCacheValue)
          * @static 
          */        public static function get($key, $default = null)
         {
@@ -3582,10 +3582,10 @@ namespace Illuminate\Support\Facades {
                     /**
          * Obtains multiple cache items by their unique keys.
          *
-         * @return \Illuminate\Cache\iterable 
-         * @param \Psr\SimpleCache\iterable<string> $keys A list of keys that can be obtained in a single operation.
+         * @return iterable 
+         * @param iterable<string> $keys A list of keys that can be obtained in a single operation.
          * @param mixed $default Default value to return for keys that do not exist.
-         * @return \Psr\SimpleCache\iterable<string, mixed> A list of key => value pairs. Cache keys that do not exist or are stale will have $default as value.
+         * @return iterable<string, mixed> A list of key => value pairs. Cache keys that do not exist or are stale will have $default as value.
          * @throws \Psr\SimpleCache\InvalidArgumentException
          *   MUST be thrown if $keys is neither an array nor a Traversable,
          *   or if any of the $keys are not a legal value.
@@ -3600,8 +3600,8 @@ namespace Illuminate\Support\Facades {
          *
          * @template TCacheValue
          * @param array|string $key
-         * @param \Illuminate\Cache\TCacheValue|\Illuminate\Cache\(\Closure():  TCacheValue)  $default
-         * @return \Illuminate\Cache\(TCacheValue is null ? mixed : TCacheValue)
+         * @param TCacheValue|(\Closure(): TCacheValue) $default
+         * @return (TCacheValue is null ? mixed : TCacheValue)
          * @static 
          */        public static function pull($key, $default = null)
         {
@@ -3655,7 +3655,7 @@ namespace Illuminate\Support\Facades {
          * Persists a set of key => value pairs in the cache, with an optional TTL.
          *
          * @return bool 
-         * @param \Psr\SimpleCache\iterable $values A list of key => value pairs for a multiple-set operation.
+         * @param iterable $values A list of key => value pairs for a multiple-set operation.
          * @param null|int|\DateInterval $ttl Optional. The TTL value of this item. If no value is sent and
          *                                       the driver supports TTL then the library may set a default value
          *                                       for it or let the driver take care of that.
@@ -3725,7 +3725,7 @@ namespace Illuminate\Support\Facades {
          * @param string $key
          * @param \Closure|\DateTimeInterface|\DateInterval|int|null $ttl
          * @param \Closure():  TCacheValue  $callback
-         * @return \Illuminate\Cache\TCacheValue 
+         * @return TCacheValue 
          * @static 
          */        public static function remember($key, $ttl, $callback)
         {
@@ -3738,7 +3738,7 @@ namespace Illuminate\Support\Facades {
          * @template TCacheValue
          * @param string $key
          * @param \Closure():  TCacheValue  $callback
-         * @return \Illuminate\Cache\TCacheValue 
+         * @return TCacheValue 
          * @static 
          */        public static function sear($key, $callback)
         {
@@ -3751,7 +3751,7 @@ namespace Illuminate\Support\Facades {
          * @template TCacheValue
          * @param string $key
          * @param \Closure():  TCacheValue  $callback
-         * @return \Illuminate\Cache\TCacheValue 
+         * @return TCacheValue 
          * @static 
          */        public static function rememberForever($key, $callback)
         {
@@ -3787,7 +3787,7 @@ namespace Illuminate\Support\Facades {
          * Deletes multiple cache items in a single operation.
          *
          * @return bool 
-         * @param \Psr\SimpleCache\iterable<string> $keys A list of string-based keys to be deleted.
+         * @param iterable<string> $keys A list of string-based keys to be deleted.
          * @return bool True if the items were successfully removed. False if there was an error.
          * @throws \Psr\SimpleCache\InvalidArgumentException
          *   MUST be thrown if $keys is neither an array nor a Traversable,
@@ -4451,93 +4451,6 @@ namespace Illuminate\Support\Facades {
             /**
      * 
      *
-     * @see \Illuminate\Encryption\Encrypter
-     */        class Crypt {
-                    /**
-         * Determine if the given key and cipher combination is valid.
-         *
-         * @param string $key
-         * @param string $cipher
-         * @return bool 
-         * @static 
-         */        public static function supported($key, $cipher)
-        {
-                        return \Illuminate\Encryption\Encrypter::supported($key, $cipher);
-        }
-                    /**
-         * Create a new encryption key for the given cipher.
-         *
-         * @param string $cipher
-         * @return string 
-         * @static 
-         */        public static function generateKey($cipher)
-        {
-                        return \Illuminate\Encryption\Encrypter::generateKey($cipher);
-        }
-                    /**
-         * Encrypt the given value.
-         *
-         * @param mixed $value
-         * @param bool $serialize
-         * @return string 
-         * @throws \Illuminate\Contracts\Encryption\EncryptException
-         * @static 
-         */        public static function encrypt($value, $serialize = true)
-        {
-                        /** @var \Illuminate\Encryption\Encrypter $instance */
-                        return $instance->encrypt($value, $serialize);
-        }
-                    /**
-         * Encrypt a string without serialization.
-         *
-         * @param string $value
-         * @return string 
-         * @throws \Illuminate\Contracts\Encryption\EncryptException
-         * @static 
-         */        public static function encryptString($value)
-        {
-                        /** @var \Illuminate\Encryption\Encrypter $instance */
-                        return $instance->encryptString($value);
-        }
-                    /**
-         * Decrypt the given value.
-         *
-         * @param string $payload
-         * @param bool $unserialize
-         * @return mixed 
-         * @throws \Illuminate\Contracts\Encryption\DecryptException
-         * @static 
-         */        public static function decrypt($payload, $unserialize = true)
-        {
-                        /** @var \Illuminate\Encryption\Encrypter $instance */
-                        return $instance->decrypt($payload, $unserialize);
-        }
-                    /**
-         * Decrypt the given string without unserialization.
-         *
-         * @param string $payload
-         * @return string 
-         * @throws \Illuminate\Contracts\Encryption\DecryptException
-         * @static 
-         */        public static function decryptString($payload)
-        {
-                        /** @var \Illuminate\Encryption\Encrypter $instance */
-                        return $instance->decryptString($payload);
-        }
-                    /**
-         * Get the encryption key that the encrypter is currently using.
-         *
-         * @return string 
-         * @static 
-         */        public static function getKey()
-        {
-                        /** @var \Illuminate\Encryption\Encrypter $instance */
-                        return $instance->getKey();
-        }
-            }
-            /**
-     * 
-     *
      * @see https://carbon.nesbot.com/docs/
      * @see https://github.com/briannesbitt/Carbon/blob/master/src/Carbon/Factory.php
      * @method static \Illuminate\Support\Carbon create($year = 0, $month = 1, $day = 1, $hour = 0, $minute = 0, $second = 0, $tz = null)
@@ -4905,6 +4818,29 @@ namespace Illuminate\Support\Facades {
                         return $instance->macroCall($method, $parameters);
         }
                     /**
+         * Run an insert statement against the database.
+         *
+         * @param string $query
+         * @param array $bindings
+         * @param string|null $sequence
+         * @return bool 
+         * @static 
+         */        public static function insert($query, $bindings = [], $sequence = null)
+        {
+                        /** @var \Illuminate\Database\MySqlConnection $instance */
+                        return $instance->insert($query, $bindings, $sequence);
+        }
+                    /**
+         * Get the connection's last insert ID.
+         *
+         * @return string|int|null 
+         * @static 
+         */        public static function getLastInsertId()
+        {
+                        /** @var \Illuminate\Database\MySqlConnection $instance */
+                        return $instance->getLastInsertId();
+        }
+                    /**
          * Determine if the connected database is a MariaDB database.
          *
          * @return bool 
@@ -5065,18 +5001,6 @@ namespace Illuminate\Support\Facades {
         {            //Method inherited from \Illuminate\Database\Connection         
                         /** @var \Illuminate\Database\MySqlConnection $instance */
                         return $instance->cursor($query, $bindings, $useReadPdo);
-        }
-                    /**
-         * Run an insert statement against the database.
-         *
-         * @param string $query
-         * @param array $bindings
-         * @return bool 
-         * @static 
-         */        public static function insert($query, $bindings = [])
-        {            //Method inherited from \Illuminate\Database\Connection         
-                        /** @var \Illuminate\Database\MySqlConnection $instance */
-                        return $instance->insert($query, $bindings);
         }
                     /**
          * Run an update statement against the database.
@@ -6404,12 +6328,12 @@ namespace Illuminate\Support\Facades {
          *
          * @param string $target
          * @param string $link
-         * @return void 
+         * @return bool|null 
          * @static 
          */        public static function link($target, $link)
         {
                         /** @var \Illuminate\Filesystem\Filesystem $instance */
-                        $instance->link($target, $link);
+                        return $instance->link($target, $link);
         }
                     /**
          * Create a relative symlink to the target file or directory.
@@ -6733,10 +6657,10 @@ namespace Illuminate\Support\Facades {
          *
          * @template TWhenParameter
          * @template TWhenReturnType
-         * @param \Illuminate\Filesystem\(\Closure($this):  TWhenParameter)|TWhenParameter|null  $value
-         * @param \Illuminate\Filesystem\(callable($this,  TWhenParameter): TWhenReturnType)|null  $callback
-         * @param \Illuminate\Filesystem\(callable($this,  TWhenParameter): TWhenReturnType)|null  $default
-         * @return $this|\Illuminate\Filesystem\TWhenReturnType 
+         * @param (\Closure($this): TWhenParameter)|TWhenParameter|null $value
+         * @param (callable($this, TWhenParameter): TWhenReturnType)|null $callback
+         * @param (callable($this, TWhenParameter): TWhenReturnType)|null $default
+         * @return $this|TWhenReturnType 
          * @static 
          */        public static function when($value = null, $callback = null, $default = null)
         {
@@ -6748,10 +6672,10 @@ namespace Illuminate\Support\Facades {
          *
          * @template TUnlessParameter
          * @template TUnlessReturnType
-         * @param \Illuminate\Filesystem\(\Closure($this):  TUnlessParameter)|TUnlessParameter|null  $value
-         * @param \Illuminate\Filesystem\(callable($this,  TUnlessParameter): TUnlessReturnType)|null  $callback
-         * @param \Illuminate\Filesystem\(callable($this,  TUnlessParameter): TUnlessReturnType)|null  $default
-         * @return $this|\Illuminate\Filesystem\TUnlessReturnType 
+         * @param (\Closure($this): TUnlessParameter)|TUnlessParameter|null $value
+         * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $callback
+         * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $default
+         * @return $this|TUnlessReturnType 
          * @static 
          */        public static function unless($value = null, $callback = null, $default = null)
         {
@@ -6908,7 +6832,7 @@ namespace Illuminate\Support\Facades {
                     /**
          * Determine if all of the given abilities should be granted for the current user.
          *
-         * @param \Illuminate\Auth\Access\iterable|string $ability
+         * @param iterable|string $ability
          * @param array|mixed $arguments
          * @return bool 
          * @static 
@@ -6920,7 +6844,7 @@ namespace Illuminate\Support\Facades {
                     /**
          * Determine if any of the given abilities should be denied for the current user.
          *
-         * @param \Illuminate\Auth\Access\iterable|string $ability
+         * @param iterable|string $ability
          * @param array|mixed $arguments
          * @return bool 
          * @static 
@@ -6932,7 +6856,7 @@ namespace Illuminate\Support\Facades {
                     /**
          * Determine if all of the given abilities should be granted for the current user.
          *
-         * @param \Illuminate\Auth\Access\iterable|string $abilities
+         * @param iterable|string $abilities
          * @param array|mixed $arguments
          * @return bool 
          * @static 
@@ -6944,7 +6868,7 @@ namespace Illuminate\Support\Facades {
                     /**
          * Determine if any one of the given abilities should be granted for the current user.
          *
-         * @param \Illuminate\Auth\Access\iterable|string $abilities
+         * @param iterable|string $abilities
          * @param array|mixed $arguments
          * @return bool 
          * @static 
@@ -6956,7 +6880,7 @@ namespace Illuminate\Support\Facades {
                     /**
          * Determine if all of the given abilities should be denied for the current user.
          *
-         * @param \Illuminate\Auth\Access\iterable|string $abilities
+         * @param iterable|string $abilities
          * @param array|mixed $arguments
          * @return bool 
          * @static 
@@ -8897,6 +8821,17 @@ namespace Illuminate\Support\Facades {
                         return $instance->hasSent($notifiable, $notification);
         }
                     /**
+         * Specify if notification should be serialized and restored when being "pushed" to the queue.
+         *
+         * @param bool $serializeAndRestore
+         * @return \Illuminate\Support\Testing\Fakes\NotificationFake 
+         * @static 
+         */        public static function serializeAndRestore($serializeAndRestore = true)
+        {
+                        /** @var \Illuminate\Support\Testing\Fakes\NotificationFake $instance */
+                        return $instance->serializeAndRestore($serializeAndRestore);
+        }
+                    /**
          * Get the notifications that have been sent.
          *
          * @return array 
@@ -10809,6 +10744,7 @@ namespace Illuminate\Support\Facades {
          * @param array $files The request files ($_FILES)
          * @param array $server The server parameters ($_SERVER)
          * @param string|resource|null $content The raw body data
+         * @throws BadRequestException When the URI is invalid
          * @static 
          */        public static function create($uri, $method = 'GET', $parameters = [], $cookies = [], $files = [], $server = [], $content = null)
         {            //Method inherited from \Symfony\Component\HttpFoundation\Request         
@@ -10952,7 +10888,7 @@ namespace Illuminate\Support\Facades {
          * 
          *
          * @internal 
-         * @param \Symfony\Component\HttpFoundation\callable():  SessionInterface $factory
+         * @param callable():  SessionInterface $factory
          * @static 
          */        public static function setSessionFactory($factory)
         {            //Method inherited from \Symfony\Component\HttpFoundation\Request         
@@ -12040,8 +11976,8 @@ namespace Illuminate\Support\Facades {
          *
          * @template TEnum
          * @param string $key
-         * @param \Illuminate\Http\class-string<TEnum> $enumClass
-         * @return \Illuminate\Http\TEnum|null 
+         * @param class-string<TEnum> $enumClass
+         * @return TEnum|null 
          * @static 
          */        public static function enum($key, $enumClass)
         {
@@ -12165,7 +12101,7 @@ namespace Illuminate\Support\Facades {
          * Dump the request items and end the script.
          *
          * @param mixed $keys
-         * @return \Illuminate\Http\never 
+         * @return never 
          * @static 
          */        public static function dd(...$keys)
         {
@@ -15377,10 +15313,10 @@ namespace Illuminate\Support\Facades {
          *
          * @template TWhenParameter
          * @template TWhenReturnType
-         * @param \Illuminate\Filesystem\(\Closure($this):  TWhenParameter)|TWhenParameter|null  $value
-         * @param \Illuminate\Filesystem\(callable($this,  TWhenParameter): TWhenReturnType)|null  $callback
-         * @param \Illuminate\Filesystem\(callable($this,  TWhenParameter): TWhenReturnType)|null  $default
-         * @return $this|\Illuminate\Filesystem\TWhenReturnType 
+         * @param (\Closure($this): TWhenParameter)|TWhenParameter|null $value
+         * @param (callable($this, TWhenParameter): TWhenReturnType)|null $callback
+         * @param (callable($this, TWhenParameter): TWhenReturnType)|null $default
+         * @return $this|TWhenReturnType 
          * @static 
          */        public static function when($value = null, $callback = null, $default = null)
         {
@@ -15392,10 +15328,10 @@ namespace Illuminate\Support\Facades {
          *
          * @template TUnlessParameter
          * @template TUnlessReturnType
-         * @param \Illuminate\Filesystem\(\Closure($this):  TUnlessParameter)|TUnlessParameter|null  $value
-         * @param \Illuminate\Filesystem\(callable($this,  TUnlessParameter): TUnlessReturnType)|null  $callback
-         * @param \Illuminate\Filesystem\(callable($this,  TUnlessParameter): TUnlessReturnType)|null  $default
-         * @return $this|\Illuminate\Filesystem\TUnlessReturnType 
+         * @param (\Closure($this): TUnlessParameter)|TUnlessParameter|null $value
+         * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $callback
+         * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $default
+         * @return $this|TUnlessReturnType 
          * @static 
          */        public static function unless($value = null, $callback = null, $default = null)
         {
@@ -17108,7 +17044,7 @@ namespace Illuminate\Support\Facades {
                     /**
          * Use the given callback to resolve attributes for script tags.
          *
-         * @param \Illuminate\Foundation\(callable(string,  string, ?array, ?array): array)|array  $attributes
+         * @param (callable(string, string, ?array, ?array): array)|array $attributes
          * @return \Illuminate\Foundation\Vite 
          * @static 
          */        public static function useScriptTagAttributes($attributes)
@@ -17119,7 +17055,7 @@ namespace Illuminate\Support\Facades {
                     /**
          * Use the given callback to resolve attributes for style tags.
          *
-         * @param \Illuminate\Foundation\(callable(string,  string, ?array, ?array): array)|array  $attributes
+         * @param (callable(string, string, ?array, ?array): array)|array $attributes
          * @return \Illuminate\Foundation\Vite 
          * @static 
          */        public static function useStyleTagAttributes($attributes)
@@ -17130,7 +17066,7 @@ namespace Illuminate\Support\Facades {
                     /**
          * Use the given callback to resolve attributes for preload tags.
          *
-         * @param \Illuminate\Foundation\(callable(string,  string, ?array, ?array): (array|false))|array|false  $attributes
+         * @param (callable(string, string, ?array, ?array): (array|false))|array|false $attributes
          * @return \Illuminate\Foundation\Vite 
          * @static 
          */        public static function usePreloadTagAttributes($attributes)
@@ -17264,6 +17200,18 @@ namespace Barryvdh\Debugbar\Facades {
      * @method static void warning(mixed $message)
      * @see \Barryvdh\Debugbar\LaravelDebugbar
      */        class Debugbar {
+                    /**
+         * Returns the HTTP driver
+         * 
+         * If no http driver where defined, a PhpHttpDriver is automatically created
+         *
+         * @return \DebugBar\HttpDriverInterface 
+         * @static 
+         */        public static function getHttpDriver()
+        {
+                        /** @var \Barryvdh\Debugbar\LaravelDebugbar $instance */
+                        return $instance->getHttpDriver();
+        }
                     /**
          * Enable the Debugbar and boot, if not already booted.
          *
@@ -17417,6 +17365,27 @@ namespace Barryvdh\Debugbar\Facades {
                         return $instance->injectDebugbar($response);
         }
                     /**
+         * Checks if there is stacked data in the session
+         *
+         * @return boolean 
+         * @static 
+         */        public static function hasStackedData()
+        {
+                        /** @var \Barryvdh\Debugbar\LaravelDebugbar $instance */
+                        return $instance->hasStackedData();
+        }
+                    /**
+         * Returns the data stacked in the session
+         *
+         * @param boolean $delete Whether to delete the data in the session
+         * @return array 
+         * @static 
+         */        public static function getStackedData($delete = true)
+        {
+                        /** @var \Barryvdh\Debugbar\LaravelDebugbar $instance */
+                        return $instance->getStackedData($delete);
+        }
+                    /**
          * Disable the Debugbar
          *
          * @static 
@@ -17501,7 +17470,7 @@ namespace Barryvdh\Debugbar\Facades {
                     /**
          * Returns an array of all data collectors
          *
-         * @return \DebugBar\array[DataCollectorInterface] 
+         * @return array[DataCollectorInterface] 
          * @static 
          */        public static function getCollectors()
         {            //Method inherited from \DebugBar\DebugBar         
@@ -17582,18 +17551,6 @@ namespace Barryvdh\Debugbar\Facades {
                         return $instance->setHttpDriver($driver);
         }
                     /**
-         * Returns the HTTP driver
-         * 
-         * If no http driver where defined, a PhpHttpDriver is automatically created
-         *
-         * @return \DebugBar\HttpDriverInterface 
-         * @static 
-         */        public static function getHttpDriver()
-        {            //Method inherited from \DebugBar\DebugBar         
-                        /** @var \Barryvdh\Debugbar\LaravelDebugbar $instance */
-                        return $instance->getHttpDriver();
-        }
-                    /**
          * Returns collected data
          * 
          * Will collect the data if none have been collected yet
@@ -17638,27 +17595,6 @@ namespace Barryvdh\Debugbar\Facades {
         {            //Method inherited from \DebugBar\DebugBar         
                         /** @var \Barryvdh\Debugbar\LaravelDebugbar $instance */
                         return $instance->stackData();
-        }
-                    /**
-         * Checks if there is stacked data in the session
-         *
-         * @return boolean 
-         * @static 
-         */        public static function hasStackedData()
-        {            //Method inherited from \DebugBar\DebugBar         
-                        /** @var \Barryvdh\Debugbar\LaravelDebugbar $instance */
-                        return $instance->hasStackedData();
-        }
-                    /**
-         * Returns the data stacked in the session
-         *
-         * @param boolean $delete Whether to delete the data in the session
-         * @return array 
-         * @static 
-         */        public static function getStackedData($delete = true)
-        {            //Method inherited from \DebugBar\DebugBar         
-                        /** @var \Barryvdh\Debugbar\LaravelDebugbar $instance */
-                        return $instance->getStackedData($delete);
         }
                     /**
          * Sets the key to use in the $_SESSION array
@@ -18456,83 +18392,6 @@ namespace Laraeast\LaravelLocales\Facades {
         {
                         /** @var \Laraeast\LaravelLocales\LocalesBuilder $instance */
                         return $instance->getFlag();
-        }
-            }
-    }
-
-namespace Laraeast\LaravelSettings\Facades {
-            /**
-     * 
-     *
-     */        class Settings {
-                    /**
-         * Set a new settings item.
-         *
-         * @param $key
-         * @param null $value
-         * @return \Laraeast\LaravelSettings\Models\Setting 
-         * @static 
-         */        public static function set($key, $value = null)
-        {
-                        /** @var \Laraeast\LaravelSettings\DatabaseSettingsHandler $instance */
-                        return $instance->set($key, $value);
-        }
-                    /**
-         * Set the settings locale.
-         *
-         * @param null $locale
-         * @return \Laraeast\LaravelSettings\DatabaseSettingsHandler 
-         * @static 
-         */        public static function locale($locale = null)
-        {
-                        /** @var \Laraeast\LaravelSettings\DatabaseSettingsHandler $instance */
-                        return $instance->locale($locale);
-        }
-                    /**
-         * Get the given item.
-         *
-         * @param $key
-         * @param null $default
-         * @return mixed 
-         * @static 
-         */        public static function get($key, $default = null)
-        {
-                        /** @var \Laraeast\LaravelSettings\DatabaseSettingsHandler $instance */
-                        return $instance->get($key, $default);
-        }
-                    /**
-         * Get the settings row.
-         *
-         * @param $key
-         * @param null $default
-         * @return mixed 
-         * @static 
-         */        public static function instance($key, $default = null)
-        {
-                        /** @var \Laraeast\LaravelSettings\DatabaseSettingsHandler $instance */
-                        return $instance->instance($key, $default);
-        }
-                    /**
-         * Determine whether the key is already exists.
-         *
-         * @param string $key
-         * @return bool 
-         * @static 
-         */        public static function has($key)
-        {
-                        /** @var \Laraeast\LaravelSettings\DatabaseSettingsHandler $instance */
-                        return $instance->has($key);
-        }
-                    /**
-         * Delete the given key from storage.
-         *
-         * @param string $key
-         * @return \Laraeast\LaravelSettings\DatabaseSettingsHandler 
-         * @static 
-         */        public static function delete($key)
-        {
-                        /** @var \Laraeast\LaravelSettings\DatabaseSettingsHandler $instance */
-                        return $instance->delete($key);
         }
             }
     }
@@ -19690,10 +19549,20 @@ namespace Spatie\LaravelIgnition\Facades {
          * 
          *
          * @static 
-         */        public static function withStackFrameArguments($withStackFrameArguments = true)
+         */        public static function withStackFrameArguments($withStackFrameArguments = true, $forcePHPIniSetting = false)
         {
                         /** @var \Spatie\FlareClient\Flare $instance */
-                        return $instance->withStackFrameArguments($withStackFrameArguments);
+                        return $instance->withStackFrameArguments($withStackFrameArguments, $forcePHPIniSetting);
+        }
+                    /**
+         * 
+         *
+         * @param class-string $exceptionClass
+         * @static 
+         */        public static function overrideGrouping($exceptionClass, $type = 'exception_message_and_class')
+        {
+                        /** @var \Spatie\FlareClient\Flare $instance */
+                        return $instance->overrideGrouping($exceptionClass, $type);
         }
                     /**
          * 
@@ -19754,15 +19623,15 @@ namespace Spatie\LaravelIgnition\Facades {
          * 
          *
          * @static 
-         */        public static function registerErrorHandler()
+         */        public static function registerErrorHandler($errorLevels = null)
         {
                         /** @var \Spatie\FlareClient\Flare $instance */
-                        return $instance->registerErrorHandler();
+                        return $instance->registerErrorHandler($errorLevels);
         }
                     /**
          * 
          *
-         * @param \Spatie\FlareClient\FlareMiddleware\FlareMiddleware|array<FlareMiddleware>|\Spatie\FlareClient\class-string<FlareMiddleware>|callable $middleware
+         * @param \Spatie\FlareClient\FlareMiddleware\FlareMiddleware|array<FlareMiddleware>|class-string<FlareMiddleware>|callable $middleware
          * @return \Spatie\FlareClient\Flare 
          * @static 
          */        public static function registerMiddleware($middleware)
@@ -19825,10 +19694,19 @@ namespace Spatie\LaravelIgnition\Facades {
          * 
          *
          * @static 
-         */        public static function report($throwable, $callback = null, $report = null)
+         */        public static function report($throwable, $callback = null, $report = null, $handled = null)
         {
                         /** @var \Spatie\FlareClient\Flare $instance */
-                        return $instance->report($throwable, $callback, $report);
+                        return $instance->report($throwable, $callback, $report, $handled);
+        }
+                    /**
+         * 
+         *
+         * @static 
+         */        public static function reportHandled($throwable)
+        {
+                        /** @var \Spatie\FlareClient\Flare $instance */
+                        return $instance->reportHandled($throwable);
         }
                     /**
          * 
@@ -20067,6 +19945,38 @@ namespace Illuminate\Http {
             }
     }
 
+namespace Illuminate\Validation {
+            /**
+     * 
+     *
+     */        class Rule {
+                    /**
+         * 
+         *
+         * @see \Astrotomic\Translatable\TranslatableServiceProvider::register()
+         * @param string $model
+         * @param string $field
+         * @return \Astrotomic\Translatable\Validation\Rules\TranslatableUnique 
+         * @static 
+         */        public static function translatableUnique($model, $field)
+        {
+                        return \Illuminate\Validation\Rule::translatableUnique($model, $field);
+        }
+                    /**
+         * 
+         *
+         * @see \Astrotomic\Translatable\TranslatableServiceProvider::register()
+         * @param string $model
+         * @param string $field
+         * @return \Astrotomic\Translatable\Validation\Rules\TranslatableExists 
+         * @static 
+         */        public static function translatableExists($model, $field)
+        {
+                        return \Illuminate\Validation\Rule::translatableExists($model, $field);
+        }
+            }
+    }
+
 namespace Illuminate\Routing {
             /**
      * 
@@ -20181,7 +20091,6 @@ namespace  {
             class Cache extends \Illuminate\Support\Facades\Cache {}
             class Config extends \Illuminate\Support\Facades\Config {}
             class Cookie extends \Illuminate\Support\Facades\Cookie {}
-            class Crypt extends \Illuminate\Support\Facades\Crypt {}
             class Date extends \Illuminate\Support\Facades\Date {}
             class DB extends \Illuminate\Support\Facades\DB {}
             class Eloquent extends \Illuminate\Database\Eloquent\Model {                            /**
@@ -20783,7 +20692,7 @@ namespace  {
              *
              * @template TModelValue
              * @param \Closure():  TModelValue  $scope
-             * @return \Illuminate\Database\Eloquent\TModelValue 
+             * @return TModelValue 
              * @static 
              */            public static function withSavepointIfNeeded($scope)
             {
@@ -21110,10 +21019,10 @@ namespace  {
              *
              * @template TWhenParameter
              * @template TWhenReturnType
-             * @param \Illuminate\Database\Eloquent\(\Closure($this):  TWhenParameter)|TWhenParameter|null  $value
-             * @param \Illuminate\Database\Eloquent\(callable($this,  TWhenParameter): TWhenReturnType)|null  $callback
-             * @param \Illuminate\Database\Eloquent\(callable($this,  TWhenParameter): TWhenReturnType)|null  $default
-             * @return $this|\Illuminate\Database\Eloquent\TWhenReturnType 
+             * @param (\Closure($this): TWhenParameter)|TWhenParameter|null $value
+             * @param (callable($this, TWhenParameter): TWhenReturnType)|null $callback
+             * @param (callable($this, TWhenParameter): TWhenReturnType)|null $default
+             * @return $this|TWhenReturnType 
              * @static 
              */            public static function when($value = null, $callback = null, $default = null)
             {
@@ -21125,10 +21034,10 @@ namespace  {
              *
              * @template TUnlessParameter
              * @template TUnlessReturnType
-             * @param \Illuminate\Database\Eloquent\(\Closure($this):  TUnlessParameter)|TUnlessParameter|null  $value
-             * @param \Illuminate\Database\Eloquent\(callable($this,  TUnlessParameter): TUnlessReturnType)|null  $callback
-             * @param \Illuminate\Database\Eloquent\(callable($this,  TUnlessParameter): TUnlessReturnType)|null  $default
-             * @return $this|\Illuminate\Database\Eloquent\TUnlessReturnType 
+             * @param (\Closure($this): TUnlessParameter)|TUnlessParameter|null $value
+             * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $callback
+             * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $default
+             * @return $this|TUnlessReturnType 
              * @static 
              */            public static function unless($value = null, $callback = null, $default = null)
             {
@@ -21726,7 +21635,7 @@ namespace  {
              * Add a join clause to the query.
              *
              * @param \Illuminate\Contracts\Database\Query\Expression|string $table
-             * @param \Closure|string $first
+             * @param \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first
              * @param string|null $operator
              * @param \Illuminate\Contracts\Database\Query\Expression|string|null $second
              * @param string $type
@@ -21742,7 +21651,7 @@ namespace  {
              * Add a "join where" clause to the query.
              *
              * @param \Illuminate\Contracts\Database\Query\Expression|string $table
-             * @param \Closure|string $first
+             * @param \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first
              * @param string $operator
              * @param \Illuminate\Contracts\Database\Query\Expression|string $second
              * @param string $type
@@ -21758,7 +21667,7 @@ namespace  {
              *
              * @param \Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder|string $query
              * @param string $as
-             * @param \Closure|string $first
+             * @param \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first
              * @param string|null $operator
              * @param \Illuminate\Contracts\Database\Query\Expression|string|null $second
              * @param string $type
@@ -21800,7 +21709,7 @@ namespace  {
              * Add a left join to the query.
              *
              * @param \Illuminate\Contracts\Database\Query\Expression|string $table
-             * @param \Closure|string $first
+             * @param \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first
              * @param string|null $operator
              * @param \Illuminate\Contracts\Database\Query\Expression|string|null $second
              * @return \Illuminate\Database\Query\Builder 
@@ -21814,7 +21723,7 @@ namespace  {
              * Add a "join where" clause to the query.
              *
              * @param \Illuminate\Contracts\Database\Query\Expression|string $table
-             * @param \Closure|string $first
+             * @param \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first
              * @param string $operator
              * @param \Illuminate\Contracts\Database\Query\Expression|string|null $second
              * @return \Illuminate\Database\Query\Builder 
@@ -21829,7 +21738,7 @@ namespace  {
              *
              * @param \Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder|string $query
              * @param string $as
-             * @param \Closure|string $first
+             * @param \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first
              * @param string|null $operator
              * @param \Illuminate\Contracts\Database\Query\Expression|string|null $second
              * @return \Illuminate\Database\Query\Builder 
@@ -21857,7 +21766,7 @@ namespace  {
              * Add a "right join where" clause to the query.
              *
              * @param \Illuminate\Contracts\Database\Query\Expression|string $table
-             * @param \Closure|string $first
+             * @param \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first
              * @param string $operator
              * @param \Illuminate\Contracts\Database\Query\Expression|string $second
              * @return \Illuminate\Database\Query\Builder 
@@ -21872,7 +21781,7 @@ namespace  {
              *
              * @param \Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder|string $query
              * @param string $as
-             * @param \Closure|string $first
+             * @param \Closure|\Illuminate\Contracts\Database\Query\Expression|string $first
              * @param string|null $operator
              * @param \Illuminate\Contracts\Database\Query\Expression|string|null $second
              * @return \Illuminate\Database\Query\Builder 
@@ -21886,7 +21795,7 @@ namespace  {
              * Add a "cross join" clause to the query.
              *
              * @param \Illuminate\Contracts\Database\Query\Expression|string $table
-             * @param \Closure|string|null $first
+             * @param \Closure|\Illuminate\Contracts\Database\Query\Expression|string|null $first
              * @param string|null $operator
              * @param \Illuminate\Contracts\Database\Query\Expression|string|null $second
              * @return \Illuminate\Database\Query\Builder 
@@ -21937,7 +21846,7 @@ namespace  {
                             /**
              * Add a "where" clause comparing two columns to the query.
              *
-             * @param string|array $first
+             * @param \Illuminate\Contracts\Database\Query\Expression|string|array $first
              * @param string|null $operator
              * @param string|null $second
              * @param string|null $boolean
@@ -21951,7 +21860,7 @@ namespace  {
                             /**
              * Add an "or where" clause comparing two columns to the query.
              *
-             * @param string|array $first
+             * @param \Illuminate\Contracts\Database\Query\Expression|string|array $first
              * @param string|null $operator
              * @param string|null $second
              * @return \Illuminate\Database\Query\Builder 
@@ -22128,7 +22037,7 @@ namespace  {
              * Add a where between statement to the query.
              *
              * @param \Illuminate\Contracts\Database\Query\Expression|string $column
-             * @param \Illuminate\Database\Query\iterable $values
+             * @param iterable $values
              * @param string $boolean
              * @param bool $not
              * @return \Illuminate\Database\Query\Builder 
@@ -22156,7 +22065,7 @@ namespace  {
              * Add an or where between statement to the query.
              *
              * @param \Illuminate\Contracts\Database\Query\Expression|string $column
-             * @param \Illuminate\Database\Query\iterable $values
+             * @param iterable $values
              * @return \Illuminate\Database\Query\Builder 
              * @static 
              */            public static function orWhereBetween($column, $values)
@@ -22180,7 +22089,7 @@ namespace  {
              * Add a where not between statement to the query.
              *
              * @param \Illuminate\Contracts\Database\Query\Expression|string $column
-             * @param \Illuminate\Database\Query\iterable $values
+             * @param iterable $values
              * @param string $boolean
              * @return \Illuminate\Database\Query\Builder 
              * @static 
@@ -22206,7 +22115,7 @@ namespace  {
              * Add an or where not between statement to the query.
              *
              * @param \Illuminate\Contracts\Database\Query\Expression|string $column
-             * @param \Illuminate\Database\Query\iterable $values
+             * @param iterable $values
              * @return \Illuminate\Database\Query\Builder 
              * @static 
              */            public static function orWhereNotBetween($column, $values)
@@ -22836,7 +22745,7 @@ namespace  {
              * Add a "having between " clause to the query.
              *
              * @param string $column
-             * @param \Illuminate\Database\Query\iterable $values
+             * @param iterable $values
              * @param string $boolean
              * @param bool $not
              * @return \Illuminate\Database\Query\Builder 
@@ -23566,7 +23475,7 @@ namespace  {
                             /**
              * Die and dump the current SQL and bindings.
              *
-             * @return \Illuminate\Database\Query\never 
+             * @return never 
              * @static 
              */            public static function dd()
             {
@@ -23576,7 +23485,7 @@ namespace  {
                             /**
              * Die and dump the current SQL with embedded bindings.
              *
-             * @return \Illuminate\Database\Query\never 
+             * @return never 
              * @static 
              */            public static function ddRawSql()
             {
@@ -23672,7 +23581,6 @@ namespace  {
             class Flash extends \Laracasts\Flash\Flash {}
             class BsForm extends \Laraeast\LaravelBootstrapForms\Facades\BsForm {}
             class Locales extends \Laraeast\LaravelLocales\Facades\Locales {}
-            class Settings extends \Laraeast\LaravelSettings\Facades\Settings {}
             class Form extends \Collective\Html\FormFacade {}
             class Html extends \Collective\Html\HtmlFacade {}
             class Flare extends \Spatie\LaravelIgnition\Facades\Flare {}

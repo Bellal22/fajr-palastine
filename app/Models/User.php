@@ -76,6 +76,22 @@ class User extends Authenticatable implements HasMedia, NotificationTarget
         'phone',
         'password',
         'remember_token',
+        'id_num',
+        'first_name',
+        'father_name',
+        'grandfather_name',
+        'family_name',
+        'dob',
+        'social_status',
+        'city',
+        'current_city',
+        'neighborhood',
+        'landmark',
+        'housing_type',
+        'housing_damage_status',
+        'relatives_count',
+        'has_condition',
+        'condition_description',
     ];
 
     /**

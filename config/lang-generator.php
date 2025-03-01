@@ -24,6 +24,12 @@ return [
         'supervisors' => base_path('lang/{lang}/supervisors.php'),
         'users' => base_path('lang/{lang}/users.php'),
         'verification' => base_path('lang/{lang}/verification.php'),
+        'families' => base_path('lang/{lang}/families.php'),
+        'sub_cities' => base_path('lang/{lang}/sub_cities.php'),
+        'neighborhoods' => base_path('lang/{lang}/neighborhoods.php'),
+        'cities' => base_path('lang/{lang}/cities.php'),
+        'people' => base_path('lang/{lang}/people.php'),
+        'people' => base_path('lang/{lang}/people.php'),
         /*  The lang of generated crud will set here: Don't remove this line  */
     ],
 

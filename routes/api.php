@@ -18,4 +18,28 @@ foreach (glob(__DIR__.'/api/*.php') as $routes) {
     include $routes;
 }
 
+// Families Routes.
+Route::apiResource('families', 'FamilyController');
+Route::get('/select/families', 'FamilyController@select')->name('families.select');
+
+// SubCities Routes.
+Route::apiResource('sub_cities', 'SubCityController');
+Route::get('/select/sub_cities', 'SubCityController@select')->name('sub_cities.select');
+
+// Neighborhoods Routes.
+Route::apiResource('neighborhoods', 'NeighborhoodController');
+Route::get('/select/neighborhoods', 'NeighborhoodController@select')->name('neighborhoods.select');
+
+// Cities Routes.
+Route::apiResource('cities', 'CityController');
+Route::get('/select/cities', 'CityController@select')->name('cities.select');
+
+// People Routes.
+Route::apiResource('people', 'PersonController');
+Route::get('/select/people', 'PersonController@select')->name('people.select');
+
+// People Routes.
+Route::apiResource('people', 'PersonController');
+Route::get('/select/people', 'PersonController@select')->name('people.select');
+
 /*  The routes of generated crud will set here: Don't remove this line  */
