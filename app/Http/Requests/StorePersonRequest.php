@@ -46,7 +46,7 @@ class StorePersonRequest extends FormRequest
             'phone'                   => ['required', 'string', 'regex:/^(059|056)\d{7}$/'],
             'social_status'           => [ 'required', Rule::in(PersonSocialStatus::toValues()),
                 function ($attribute, $value, $fail) {
-                    if (request('gender') === 'أنثى' && $value === 'married'|| 'polygamous') {
+                    if (request('gender') === 'أنثى' && ($value === 'married' || $value === 'polygamous')) {
                         $fail('يرجى التسجيل ببيانات الزوج حتى لو كان الزوج متزوج أكثر من زوجة.');
                     }
                 }

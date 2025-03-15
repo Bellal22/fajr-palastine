@@ -1080,7 +1080,10 @@
         }
         const genderInput = document.getElementById('gender'); // إدخال الجنس
         const socialStatusInput = document.getElementById('social_status');
-        if (genderInput.value === "أنثى" && socialStatusInput.value === "married"||"polygamous") {
+        if (genderInput.value === "أنثى" && (socialStatusInput.value === "married" || socialStatusInput.value === "polygamous")) {
+            console.log('Hahahaha')
+            console.log(genderInput.value)
+            console.log(socialStatusInput.value)
         isValid = false;
         errorMessages.push({ field: 'social_status', message: '  يرجى التسجيل ببيانات الزوج حتى لو كان الزوج متزوج أكثر من زوجة.' });
         }
