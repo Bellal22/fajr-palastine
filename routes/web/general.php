@@ -8,17 +8,11 @@ Route::redirect('/home', '/dashboard');
 
 Route::impersonate();
 
-//Route::get('/', function () {
-//    return view('intro');
-//})->name('persons.intro');
-
-
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\PersonController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Person;
-use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
@@ -125,35 +119,33 @@ Route::post('/store-people-session', function (Request $request) {
     $existingIds = Person::whereIn('id_num', $idNumbers)->pluck('id_num')->toArray();
 
     if (!empty($existingIds)) {
-        // إرجاع أرقام الهوية المكررة مع رسالة الخطأ والبيانات المدخلة
         return response()->json([
             'error' => 'رقم الهوية التالي مسجل مسبقًا: ' . implode(', ', $existingIds),
-            'duplicateIds' => $existingIds,  // أرقام الهوية المكررة
-            'peopleList' => $peopleList,     // البيانات المدخلة
-            'redirect' => route('persons.createFamily') // العودة إلى صفحة الإدخال
+            'duplicateIds' => $existingIds,
+            'peopleList' => $peopleList,
+            'redirect' => route('persons.createFamily')
         ], 422);
     }
 
-    // تخزين البيانات في الجلسة
     session()->put('peopleList', $peopleList);
 
     return response()->json([
         'success' => 'تم تخزين البيانات بنجاح.',
-        'postRedirect' => route('persons.storeFamily'
-        )]);
+        'postRedirect' => route('persons.storeFamily') // تأكد من استخدام اسم المسار الصحيح
+    ]);
 });
 
 Route::get('/loginView', function () {
     return view('login');
 })->name('loginView');
 
-//Route::post('/login', [AuthController::class, 'login']);
 Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::post('/', [PersonController::class, 'check'])->name('persons.check');
 
 Route::get('/create', [PersonController::class, 'create'])->name('persons.create');
+
 Route::post('/store', [PersonController::class, 'store'])->name('persons.store');
 
 Route::get('/createFamily', [PersonController::class, 'createFamily'])->name('persons.createFamily');
@@ -164,7 +156,7 @@ Route::post('/addFamily', [PersonController::class, 'addFamily'])->name('persons
 
 Route::post('/checkId', [PersonController::class, 'checkId'])->name('persons.checkId');
 
-Route::get('/success', [PersonController::class, 'success'])->name('persons.success');
+Route::get('/success',  [PersonController::class, 'success'])->name('persons.success');
 
 Route::resource('complaints', ComplaintController::class);
 Route::post('/complaints/submit', [ComplaintController::class, 'submit'])->name('complaints.submit');

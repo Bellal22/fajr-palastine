@@ -17,6 +17,7 @@ use App\Models\Person;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Response;
 
 class PersonController extends Controller
 {
@@ -39,121 +40,131 @@ class PersonController extends Controller
 
     public function create(Request $request)
     {
-        $id_num = $request->session()->get('id_num');
-        if (!$id_num) { // this code should be in middleware
+        if (!$request->session()->has('id_num')) {
             return redirect()->route('persons.intro');
         }
 
-        $social_statuses = collect(PersonSocialStatus::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
+        $collections = [
+            'social_statuses'         => PersonSocialStatus::toValues(),
+            'cities'                  => PersonCity::toValues(),
+            'current_cities'          => PersonCurrentCity::toValues(),
+            'neighborhoods'           => PersonNeighborhood::toValues(),
+            'housing_types'           => PersonHousingType::toValues(),
+            'housing_damage_statuses' => PersonDamageHousingStatus::toValues(),
+        ];
 
-        $cities = collect(PersonCity::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
+        // تحويل جميع القيم إلى مصفوفات قابلة للعرض
+        $data = collect($collections)
+            ->map(fn($values) => collect($values)->mapWithKeys(fn($value) => [$value => __($value)]))
+            ->all();
 
-        $current_cities = collect(PersonCurrentCity::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
-
-        $neighborhoods = collect(PersonNeighborhood::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
-
-        $housing_types = collect(PersonHousingType::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
-
-        $housing_damage_statuses = collect(PersonDamageHousingStatus::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
-
-        return view(
-            'person',
-            compact(
-                'id_num',
-                'social_statuses',
-                'cities',
-                'current_cities',
-                'neighborhoods',
-                'housing_types',
-                'housing_damage_statuses',
-            )
-        );
+        return view('person', array_merge(['id_num' => $request->session()->get('id_num')], $data));
     }
+
 
     public function store(StorePersonRequest $request)
     {
-        $id_num = $request->session()->get('id_num');
-        if (!$id_num) {
-            return redirect()->route('persons.intro');
+        try {
+            // جلب رقم الهوية من الجلسة
+            $id_num = $request->session()->get('id_num');
+            if (!$id_num) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'رقم الهوية غير موجود في الجلسة.'
+                ], 400);
+            }
+
+            // جلب البيانات والتحقق منها
+            $data = $request->validated();
+            $data['passkey']  = Str::random(8);
+            $data['id_num']   = $id_num;
+            $data['phone']    = Str::of($data['phone'])->replace('-', '')->toInteger();
+
+            // حفظ البيانات في الجلسة
+            $request->session()->put('person', [
+                'first_name'       => $data['first_name'],
+                'father_name'      => $data['father_name'],
+                'grandfather_name' => $data['grandfather_name'],
+                'family_name'      => $data['family_name'],
+                'gender'           => $data['gender'],
+                'social_status'    => $data['social_status'],
+            ]);
+
+            // إرجاع استجابة JSON ناجحة مع إعادة التوجيه
+            return response()->json([
+                'success' => true,
+                'redirect' => route('persons.createFamily')
+            ]);
+        } catch (\Exception $e) {
+            // التعامل مع الأخطاء وإرجاع استجابة JSON مناسبة
+            return response()->json([
+                'success' => false,
+                'error' => 'حدث خطأ في السيرفر: ' . $e->getMessage()
+            ], 500);
         }
-
-        $data = $request->validated();
-
-
-        $data['passkey']  = Str::random(8);
-        $data['id_num']   = $id_num;
-        $data['phone']    =  Str::of($data['phone'])
-            ->replace('-', '')
-            ->toInteger();
-
-
-        // $person = Person::create($data);
-        $request->session()->put('person', $data);
-
-        return redirect()->route('persons.createFamily');
     }
+
 
     public function createFamily(Request $request)
     {
-        $id_num = $request->session()->get('id_num');
-        if (!$id_num) {
+        $session = $request->session();
+
+        if (!$session->has('id_num')) {
             return redirect()->route('persons.intro');
         }
 
-        $peopleList = session('peopleList', []); // جلب البيانات من الجلسة
+        // استخراج القيم المطلوبة من الجلسة
+        $keys = ['id_num', 'first_name', 'father_name', 'grandfather_name', 'family_name'];
+        $personData = array_intersect_key($session->all(), array_flip($keys));
+
+        $peopleList = $session->get('peopleList', []);
 
         $relationships = collect(PersonRelationship::toValues())
             ->mapWithKeys(fn($value) => [$value => __($value)]);
 
-        return view('family',
-            compact(
-                'id_num',
-                'relationships',
-                'peopleList'
-            ));
+        return view('family', array_merge($personData, compact('relationships', 'peopleList')));
     }
 
     public function storeFamily(StoreFamilyRequest $request)
     {
-        $id_num = $request->session()->get('id_num');
+        $session = $request->session();
+        $id_num = $session->get('id_num');
+
         if (!$id_num) {
             return redirect()->route('persons.intro');
         }
 
         $peopleList = session('peopleList', []);
-        if (empty($peopleList)) {
-            return back()->withErrors(['persons' => 'لا توجد بيانات مخزنة لحفظها.']);
+        $gender = session('gender');
+        $socialStatus = session('social_status');
+
+        // التحقق من الشروط الخاصة بالجنس والحالة الاجتماعية
+        if ($peopleList && !(in_array($gender, ['أنثى', 'ذكر']) && in_array($socialStatus, ['single', 'divorced', 'widowed']))) {
+            return response()->json([
+                'error' => 'لا يمكن التسجيل لأن الحالة الاجتماعية لا تسمح.',
+                'redirect' => route('persons.createFamily')
+            ], 422);
         }
 
-        $data['persons'] = $peopleList;
-        $person = $request->session()->get('person');
-        $person['relatives_count'] = count($data['persons']) + 1;
+        $person = $session->get('person');
+        $person['relatives_count'] = count($peopleList) + 1;
 
-        // التعامل مع حالة التعدد
-        if ($person['social_status'] === 'polygamous') {
-            $wives_count = collect($data['persons'])->where('relationship', 'wife')->count();
-            if ($wives_count < 2) {
-                return back()->withErrors(['persons' => 'يجب أن يكون لديك زوجتان على الأقل في حالة التعدد.']);
-            }
+        // التحقق من شرط التعدد
+        if ($person['social_status'] === 'polygamous' && collect($peopleList)->where('relationship', 'wife')->count() < 2) {
+            return back()->withErrors(['persons' => 'يجب أن يكون لديك زوجتان على الأقل في حالة التعدد.']);
         }
 
-        // حفظ الأشخاص في قاعدة البيانات
-        $persons = collect($data['persons'])
-        ->map(fn($person) => array_merge($person, ['relative_id' => $id_num]))
-            ->push($person);
+        // تجهيز البيانات للإدخال في قاعدة البيانات
+        $persons = collect($peopleList)
+            ->map(fn($p) => array_merge($p, ['relative_id' => $id_num]))
+            ->push($person)
+            ->toArray();
 
-        $persons->each(function ($person) {
-            Person::create($person);
-        });
+        // إدخال جميع البيانات دفعة واحدة لتقليل عدد الاستعلامات
+        Person::insert($persons);
 
-        // تفريغ الجلسة بعد الحفظ
-        session()->forget('peopleList');
+        // تفريغ الجلسة
+        $session->forget('peopleList');
 
         // إعادة التوجيه إلى صفحة النجاح
         return response()->json([
@@ -162,21 +173,22 @@ class PersonController extends Controller
         ]);
     }
 
+
     public function addFamily(Request $request)
     {
         Log::info('Received Data:', $request->all()); // تحقق من البيانات المستلمة
 
         // التحقق من صحة البيانات
         $validatedData = $request->validate([
-            'id_num'                 => 'required|numeric|digits:9',
-            'first_name'             => 'required|string|regex:/^[\p{Arabic} ]+$/u',
-            'father_name'            => 'required|string|regex:/^[\p{Arabic} ]+$/u',
-            'grandfather_name'       => 'required|string|regex:/^[\p{Arabic} ]+$/u',
-            'family_name'            => 'required|string|regex:/^[\p{Arabic} ]+$/u',
+            'id_num'                  => 'required|numeric|digits:9',
+            'first_name'              => 'required|string|regex:/^[\p{Arabic} ]+$/u',
+            'father_name'             => 'required|string|regex:/^[\p{Arabic} ]+$/u',
+            'grandfather_name'        => 'required|string|regex:/^[\p{Arabic} ]+$/u',
+            'family_name'             => 'required|string|regex:/^[\p{Arabic} ]+$/u',
             'dob'                     => 'required|date',
             'relationship'            => 'required|string',
             'has_condition'           => 'required|in:0,1',
-            'condition_description'  => 'nullable|string|max:500'
+            'condition_description'   => 'nullable|string|max:500'
         ]);
 
         // إضافة relative_id باستخدام رقم الهوية المخزن في الجلسة
@@ -219,6 +231,7 @@ class PersonController extends Controller
 
         return redirect()->route('profile');
     }
+
     public function updateFamily(UpdateFamilyRequest $request)
     {
         $id_num = $request->session()->get('id_num');

@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <title>نموذج تسجيل المواطنين - جمعية الفجر الشبابي الفلسطيني</title>
 
     <!-- استيراد خط من Google Fonts -->
@@ -251,7 +253,6 @@
         <!-- النموذج -->
         <form action="{{ route('persons.store') }}" method="POST" id="form">
             @csrf
-
             <div class="row">
                 <div class="form-group">
                     <label for="first_name">الاسم الأول</label>
@@ -645,6 +646,7 @@
         errorMessage.textContent = ''; // مسح نص رسالة الخطأ
     }
 
+
     document.getElementById('form').addEventListener('submit', function (e) {
         e.preventDefault();
 
@@ -1001,37 +1003,37 @@
         console.log(validateArabicInput('first_name'));
         if (!validateArabicInput('first_name')) {
             isValid = false;
-            errorMessages.push({ field: 'first_name', message: 'الرجاء إدخال الاسم الأول بشكل صحيح.' });
+            errorMessages.push({ field: 'first_name', message: 'الرجاء إدخال الاسم الأول.' });
         }
         console.log(validateArabicInput('father_name'));
         if (!validateArabicInput('father_name')) {
             isValid = false;
-            errorMessages.push({ field: 'father_name', message: 'الرجاء إدخال اسم الأب بشكل صحيح.' });
+            errorMessages.push({ field: 'father_name', message: 'الرجاء إدخال اسم الأب.' });
         }
         console.log(validateArabicInput('grandfather_name'));
         if (!validateArabicInput('grandfather_name')) {
             isValid = false;
-            errorMessages.push({ field: 'grandfather_name', message: 'الرجاء إدخال اسم الجد بشكل صحيح.' });
+            errorMessages.push({ field: 'grandfather_name', message: 'الرجاء إدخال اسم الجد.' });
         }
         console.log(validateArabicInput('family_name'));
         if (!validateArabicInput('family_name')) {
             isValid = false;
-            errorMessages.push({ field: 'family_name', message: 'الرجاء إدخال اسم العائلة بشكل صحيح.' });
+            errorMessages.push({ field: 'family_name', message: 'الرجاء إدخال اسم العائلة.' });
         }
         console.log(validateGender());
         if (!validateGender()) {
             isValid = false;
-            errorMessages.push({ field: 'gender', message: 'الرجاء إدخال الجنس بشكل صحيح.' });
+            errorMessages.push({ field: 'gender', message: 'الرجاء إدخال الجنس.' });
         }
         console.log(validatedob());
         if (!validatedob()) {
             isValid = false;
-            errorMessages.push({ field: 'dob', message: 'الرجاء إدخال تاريخ الميلاد بشكل صحيح.' });
+            errorMessages.push({ field: 'dob', message: 'الرجاء إدخال تاريخ الميلاد.' });
         }
         console.log(validatePhoneInput());
         if (!validatePhoneInput()) {
             isValid = false;
-            errorMessages.push({ field: 'phone', message: 'الرجاء إدخال رقم الهاتف بشكل صحيح.' });
+            errorMessages.push({ field: 'phone', message: 'الرجاء إدخال رقم الهاتف.' });
         }
         console.log(validateSocialStatus());
         if (!validateSocialStatus()) {
@@ -1051,22 +1053,22 @@
         console.log(validateCity());
         if (!validateCity()) {
             isValid = false;
-            errorMessages.push({ field: 'city', message: 'الرجاء إدخال المدينة بشكل صحيح.' });
+            errorMessages.push({ field: 'city', message: 'الرجاء إدخال المدينة.' });
         }
         console.log(validateCurrentCity());
         if (!validateCurrentCity()) {
             isValid = false;
-            errorMessages.push({ field: 'current_city', message: 'الرجاء إدخال المدينة الحالية بشكل صحيح.' });
+            errorMessages.push({ field: 'current_city', message: 'الرجاء إدخال المدينة الحالية.' });
         }
         console.log(validateNeighborhood());
         if (!validateNeighborhood()) {
             isValid = false;
-            errorMessages.push({ field: 'neighborhood', message: 'الرجاء إدخال الحي بشكل صحيح.' });
+            errorMessages.push({ field: 'neighborhood', message: 'الرجاء إدخال الحي.' });
         }
         console.log(validateArabicInput('landmark'));
         if (!validateArabicInput('landmark')) {
             isValid = false;
-            errorMessages.push({ field: 'landmark', message: 'الرجاء إدخال المعلم بشكل صحيح.' });
+            errorMessages.push({ field: 'landmark', message: 'الرجاء إدخال المعلم.' });
         }
         console.log(validateHousingType());
         if (!validateHousingType()) {
@@ -1081,11 +1083,8 @@
         const genderInput = document.getElementById('gender'); // إدخال الجنس
         const socialStatusInput = document.getElementById('social_status');
         if (genderInput.value === "أنثى" && (socialStatusInput.value === "married" || socialStatusInput.value === "polygamous")) {
-            console.log('Hahahaha')
-            console.log(genderInput.value)
-            console.log(socialStatusInput.value)
-        isValid = false;
-        errorMessages.push({ field: 'social_status', message: '  يرجى التسجيل ببيانات الزوج حتى لو كان الزوج متزوج أكثر من زوجة.' });
+            isValid = false;
+            errorMessages.push({ field: 'social_status', message: 'يرجى التسجيل ببيانات الزوج حتى لو كان الزوج متزوج أكثر من زوجة.' });
         }
 
         // تحقق من الأخطاء في الرسائل
@@ -1115,33 +1114,51 @@
         });
     }
 
-    submitButton.addEventListener('click', function(e) {
-        e.preventDefault();  // منع الانتقال مباشرة
+    // تحديد الزر الذي سيتم الاستماع له
+    document.getElementById('submit-button').addEventListener('click', function(e) {
+        e.preventDefault();
 
-        // تحقق من صحة المدخلات (على سبيل المثال: المدخلات التي تم تعديلها)
-        const isValid = validateForm();
+        // var data = {
+        //     first_name:        document.getElementById('first_name').value,
+        //     father_name:       document.getElementById('father_name').value,
+        //     grandfather_name:  document.getElementById('grandfather_name').value,
+        //     family_name:       document.getElementById('family_name').value,
+        //     gender:            document.getElementById('gender').value,
+        //     social_status:     document.getElementById('social_status').value
+        // };
 
-        if (isValid) {
-            form.submit();  // إرسال النموذج إذا كان صحيحًا
-        } else {
-            // تسجيل الأخطاء في الكونسول لمساعدتك في التشخيص
-            console.log("Errors found:", errorMessages);
-
-            // استخدام SweetAlert لعرض رسالة الأخطاء
-            Swal.fire({
-                icon: 'error',
-                title: 'يوجد أخطاء في المدخلات',
-                html: '<ul>' + errorMessages.map(error => `<li>${error.message}</li>`).join('') + '</ul>',
-                background: '#fff',
-                confirmButtonColor: '#d33',
-                iconColor: '#d33',
-                confirmButtonText: 'إغلاق',
-                customClass: {
-                    confirmButton: 'swal-button-custom'  // تنسيق الزر
-                }
+        fetch('/store', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                first_name: document.getElementById('first_name').value,
+                father_name: document.getElementById('father_name').value,
+                grandfather_name: document.getElementById('grandfather_name').value,
+                family_name: document.getElementById('family_name').value,
+                gender: document.getElementById('gender').value,
+                social_status: document.getElementById('social_status').value
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => { throw new Error(text) });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('تم الإرسال بنجاح:', data);
+            if (data.success) {
+                window.location.href = data.redirect;
+            } else {
+                console.error('خطأ:', data.error);
+            }
+        })
+        .catch(error => console.error('❌ خطأ في الطلب:', error));
             });
-        }
-    });
+
 </script>
 </body>
 </html>
