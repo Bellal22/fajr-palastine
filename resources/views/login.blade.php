@@ -396,8 +396,9 @@
                         icon: 'error',
                         title: 'خطأ في النظام',
                         text: 'حدث خطأ أثناء معالجة الطلب. حاول مرة أخرى لاحقًا.',
-                        confirmButtonColor: '#d33',
-                        confirmButtonText: 'إغلاق'
+                        confirmButtonColor: '#FF6F00',
+                        confirmButtonText: 'إغلاق',
+
                     });
                 });
             });
