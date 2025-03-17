@@ -23,7 +23,7 @@ class ComplaintController extends Controller
         //
         // التحقق من وجود الشخص في الجلسة
         if (!session('person')) {
-            return redirect()->route('loginView')->with('error', 'يجب تسجيل الدخول أولاً.');
+            return redirect()->route('persons.intro')->with('error', 'يجب التحقق من رقم الهوية أولاً.');
         }
 
         return response()->view('complaint');

@@ -173,7 +173,6 @@ class PersonController extends Controller
         ]);
     }
 
-
     public function addFamily(Request $request)
     {
         Log::info('Received Data:', $request->all()); // تحقق من البيانات المستلمة

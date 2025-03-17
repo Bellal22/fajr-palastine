@@ -4,6 +4,7 @@
     </IfModule>
 
     RewriteEngine On
+    RewriteRule ^(storage|vendor)\/(.*)$ public/$2 [L]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

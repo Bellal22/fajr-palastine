@@ -34,10 +34,12 @@ if (! function_exists('app_logo')) {
     function app_logo()
     {
         if (($model = Settings::instance('logo')) && $file = $model->getFirstMediaUrl('logo')) {
-            return $file;
+            // تأكد من إضافة مسار 'storage/' قبل المسار الذي تم إرجاعه
+            return asset('storage/' . $file);
         }
 
-        return 'https://ui-avatars.com/api/?name='.rawurldecode(config('app.name')).'&bold=true';
+        // في حال لم توجد صورة الشعار
+        return 'https://ui-avatars.com/api/?name=' . rawurldecode(config('app.name')) . '&bold=true';
     }
 }
 

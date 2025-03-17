@@ -1118,14 +1118,14 @@
     document.getElementById('submit-button').addEventListener('click', function(e) {
         e.preventDefault();
 
-        // var data = {
-        //     first_name:        document.getElementById('first_name').value,
-        //     father_name:       document.getElementById('father_name').value,
-        //     grandfather_name:  document.getElementById('grandfather_name').value,
-        //     family_name:       document.getElementById('family_name').value,
-        //     gender:            document.getElementById('gender').value,
-        //     social_status:     document.getElementById('social_status').value
-        // };
+        var data = {
+            first_name:        document.getElementById('first_name').value,
+            father_name:       document.getElementById('father_name').value,
+            grandfather_name:  document.getElementById('grandfather_name').value,
+            family_name:       document.getElementById('family_name').value,
+            gender:            document.getElementById('gender').value,
+            social_status:     document.getElementById('social_status').value
+        };
 
         fetch('/store', {
             method: 'POST',
@@ -1142,22 +1142,11 @@
                 social_status: document.getElementById('social_status').value
             })
         })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => { throw new Error(text) });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('تم الإرسال بنجاح:', data);
-            if (data.success) {
-                window.location.href = data.redirect;
-            } else {
-                console.error('خطأ:', data.error);
-            }
-        })
+        .then(response => response.json())
+        .then(data => console.log(data))
         .catch(error => console.error('❌ خطأ في الطلب:', error));
-            });
+
+    });
 
 </script>
 </body>
