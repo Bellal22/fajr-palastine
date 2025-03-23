@@ -138,6 +138,7 @@ Route::post('/store-people-session', function (Request $request) {
 Route::get('/loginView', function () {
     return view('login');
 })->name('loginView');
+Route::post('/user/login', [AuthController::class, 'login'])->name('user.login');
 
 Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');

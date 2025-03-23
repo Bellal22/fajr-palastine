@@ -15,7 +15,9 @@ use App\Http\Requests\UpdateFamilyRequest;
 use App\Http\Requests\UpdatePersonRequest;
 use App\Models\Person;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Response;
 
@@ -76,32 +78,17 @@ class PersonController extends Controller
 
             // جلب البيانات والتحقق منها
             $data = $request->validated();
-            $data['passkey']  = Str::random(8);
             $data['id_num']   = $id_num;
             $data['phone']    = Str::of($data['phone'])->replace('-', '')->toInteger();
 
             // حفظ البيانات في الجلسة
-            $request->session()->put('person', [
-                'first_name'       => $data['first_name'],
-                'father_name'      => $data['father_name'],
-                'grandfather_name' => $data['grandfather_name'],
-                'family_name'      => $data['family_name'],
-                'gender'           => $data['gender'],
-                'social_status'    => $data['social_status'],
-            ]);
+            $request->session()->put('person', array_merge($request->all(), ['id_num' => $id_num,'passkey' => Str::random(8)]));
 
-            // إرجاع استجابة JSON ناجحة مع إعادة التوجيه
-            return response()->json([
-                'success' => true,
-                'redirect' => route('persons.createFamily')
-            ]);
         } catch (\Exception $e) {
-            // التعامل مع الأخطاء وإرجاع استجابة JSON مناسبة
-            return response()->json([
-                'success' => false,
-                'error' => 'حدث خطأ في السيرفر: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error','حدث حطأ');
         }
+        return redirect()->route('persons.createFamily');
+
     }
 
 
@@ -135,16 +122,17 @@ class PersonController extends Controller
         }
 
         $peopleList = session('peopleList', []);
-        $gender = session('gender');
-        $socialStatus = session('social_status');
+        $gender = session('person')['gender'];
+        $socialStatus = session('person')['social_status'];
 
         // التحقق من الشروط الخاصة بالجنس والحالة الاجتماعية
-        if ($peopleList && !(in_array($gender, ['أنثى', 'ذكر']) && in_array($socialStatus, ['single', 'divorced', 'widowed']))) {
-            return response()->json([
-                'error' => 'لا يمكن التسجيل لأن الحالة الاجتماعية لا تسمح.',
-                'redirect' => route('persons.createFamily')
-            ], 422);
-        }
+//        if ($peopleList && !(in_array($gender, ['أنثى', 'ذكر']) && in_array($socialStatus, ['single', 'divorced', 'widowed']))) {
+//
+//            return response()->json([
+//                'error' => 'لا يمكن التسجيل لأن الحالة الاجتماعية لا تسمح.',
+//                'redirect' => route('persons.createFamily')
+//            ], 422);
+//        }
 
         $person = $session->get('person');
         $person['relatives_count'] = count($peopleList) + 1;
@@ -156,12 +144,23 @@ class PersonController extends Controller
 
         // تجهيز البيانات للإدخال في قاعدة البيانات
         $persons = collect($peopleList)
-            ->map(fn($p) => array_merge($p, ['relative_id' => $id_num]))
-            ->push($person)
+            ->map(fn($p) => array_merge(Arr::except($p, ['gender']), [
+                'relative_id' => $id_num,
+                'id_num' => $p['id_num'] ?? Session::get('id_num'), // Set id_num if missing
+                'has_condition' => array_key_exists('has_condition', $p) && $p['has_condition'] === '' ? 0 : ($p['has_condition'] ?? 0)
+            ]))
+            ->push(array_merge(Arr::except($person, ['gender']), [
+                'id_num' => $person['id_num'] ?? Session::get('id_num'), // Set id_num if missing
+                'has_condition' => array_key_exists('has_condition', $person) && $person['has_condition'] === '' ? 0 : ($person['has_condition'] ?? 0)
+            ]))
             ->toArray();
 
+
         // إدخال جميع البيانات دفعة واحدة لتقليل عدد الاستعلامات
-        Person::insert($persons);
+        foreach ($persons as $person)
+        {
+            Person::create($person);
+        }
 
         // تفريغ الجلسة
         $session->forget('peopleList');

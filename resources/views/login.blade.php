@@ -250,7 +250,7 @@
 
         <h1>تسجيل الدخول</h1>
 
-        <form id="loginForm" action="{{ url('/login') }}" method="POST">
+        <form id="loginForm" action="{{ route('user.login') }}" method="POST">
             @csrf
             <div class="form-group">
                 <label for="id_num">رقم الهوية:</label>

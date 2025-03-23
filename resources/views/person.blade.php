@@ -322,7 +322,7 @@
                     <label for="gender">الجنس</label>
                     <select id="gender" name="gender" required oninput="validateGender()" onfocus="resetBorderAndError('gender')" onblur="validateGender()">
                         <option value="">اختر الجنس</option>
-                        @foreach(['غير محدد' => 'غير محدد','ذكر' => 'ذكر', 'أنثى' => 'أنثى'] as $key => $gender)
+                        @foreach(['ذكر' => 'ذكر', 'أنثى' => 'أنثى'] as $key => $gender)
                             <option {{ old('gender') == $key ? 'selected' : '' }} value="{{ $key }}">{{ $gender }}</option>
                         @endforeach
                     </select>
@@ -654,8 +654,10 @@
 
         const phoneRegex = /^[0-9]{10,15}$/; // مثال للتحقق من رقم الجوال
 
+        const sanitizedPhone = phoneInput.value.replace(/[^0-9]/g, ''); // إزالة أي حرف غير رقمي
+
         // إعادة تحقق من الرقم بعد تنسيقه
-        if (!phoneRegex.test(phoneInput.value)) {
+        if (!phoneRegex.test(sanitizedPhone)) {
                 Swal.fire({
                 icon: 'error',
                 title: 'خطأ في الإدخال',
@@ -1115,38 +1117,38 @@
     }
 
     // تحديد الزر الذي سيتم الاستماع له
-    document.getElementById('submit-button').addEventListener('click', function(e) {
-        e.preventDefault();
-
-        var data = {
-            first_name:        document.getElementById('first_name').value,
-            father_name:       document.getElementById('father_name').value,
-            grandfather_name:  document.getElementById('grandfather_name').value,
-            family_name:       document.getElementById('family_name').value,
-            gender:            document.getElementById('gender').value,
-            social_status:     document.getElementById('social_status').value
-        };
-
-        fetch('/store', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                first_name: document.getElementById('first_name').value,
-                father_name: document.getElementById('father_name').value,
-                grandfather_name: document.getElementById('grandfather_name').value,
-                family_name: document.getElementById('family_name').value,
-                gender: document.getElementById('gender').value,
-                social_status: document.getElementById('social_status').value
-            })
-        })
-        .then(response => response.json())
-        .then(data => console.log(data))
-        .catch(error => console.error('❌ خطأ في الطلب:', error));
-
-    });
+    // document.getElementById('submit-button').addEventListener('click', function(e) {
+    //     e.preventDefault();
+    //
+    //     var data = {
+    //         first_name:        document.getElementById('first_name').value,
+    //         father_name:       document.getElementById('father_name').value,
+    //         grandfather_name:  document.getElementById('grandfather_name').value,
+    //         family_name:       document.getElementById('family_name').value,
+    //         gender:            document.getElementById('gender').value,
+    //         social_status:     document.getElementById('social_status').value
+    //     };
+    //
+    //     fetch('/store', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    //         },
+    //         body: JSON.stringify({
+    //             first_name: document.getElementById('first_name').value,
+    //             father_name: document.getElementById('father_name').value,
+    //             grandfather_name: document.getElementById('grandfather_name').value,
+    //             family_name: document.getElementById('family_name').value,
+    //             gender: document.getElementById('gender').value,
+    //             social_status: document.getElementById('social_status').value
+    //         })
+    //     })
+    //     .then(response => response.json())
+    //     .then(data => console.log(data))
+    //     .catch(error => console.error('❌ خطأ في الطلب:', error));
+    //
+    // });
 
 </script>
 </body>
