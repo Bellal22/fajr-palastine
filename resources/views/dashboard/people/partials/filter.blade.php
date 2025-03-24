@@ -4,11 +4,45 @@
 
     <div class="row">
         <div class="col-md-6">
-            {{ BsForm::text('name')->value(request('name')) }}
+            {{ BsForm::text('id_num')->value(request('id_num')) }}
         </div>
         <div class="col-md-6">
-            {{ BsForm::text('social_status')->value(request('social_status')) }}
+            {{ BsForm::select('social_status', [
+                'single' => 'أعزب / عزباء',
+                'married' => 'متزوج / متزوجة',
+                'polygamous'=>'متعدد الزوجات',
+                'divorced' => 'مطلق / مطلقة',
+                'widowed' => 'أرمل / أرملة',
+            ])->value(request('social_status'))->placeholder('اختر الحالة الاجتماعية') }}
         </div>
+
+        <div class="col-md-6">
+            {{ BsForm::select('gender', [
+                'ذكر' => 'ذكر',
+                'أنثى' => 'أنثى',
+            ])->value(request('gender'))
+            ->placeholder('اختر الجنس') }}
+        </div>
+
+        <div class="col-md-6">
+            {{ BsForm::number('relatives_count')->value(request('relatives_count')) }}
+        </div>
+
+        <div class="col-md-6">
+            {{ BsForm::date('dob')
+                ->value(request('dob'))
+                ->max(now()->toDateString()) // منع اختيار تاريخ مستقبلي
+                ->placeholder('اختر تاريخ الميلاد') }}
+        </div>
+
+        <div class="col-md-6">
+            {{ BsForm::select('current_city', [
+                'khanYounis' => 'خانيونس',
+                'rafah' => 'رفح',
+            ])->value(request('current_city'))
+            ->placeholder('اختر المحافظة الحالية') }}
+        </div>
+
         <div class="col-md-6">
             {{ BsForm::number('perPage')
                 ->value(request('perPage', 15))

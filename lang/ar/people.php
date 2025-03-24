@@ -38,6 +38,7 @@ return [
         'grandfather_name' => 'اسم الجد',
         'family_name' => 'اسم العائلة',
         'dob' => 'تاريخ الميلاد',
+        'gender' => 'الجنس',
         'social_status' => 'الحالة الاجتماعية',
         'city' => 'المدينة',
         'current_city' => 'المدينة الحالية',

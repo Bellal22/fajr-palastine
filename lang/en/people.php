@@ -38,6 +38,7 @@ return [
         'grandfather_name' => 'grandfather name',
         'family_name' => 'family name',
         'dob' => 'Date Of Birthday',
+        'gender'=>'Gender',
         'social_status' => 'social status',
         'city' => 'city',
         'current_city' => 'current city',

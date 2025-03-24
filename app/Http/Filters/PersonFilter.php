@@ -10,7 +10,7 @@ class PersonFilter extends BaseFilters
      * @var array
      */
     protected $filters = [
-        'name',
+        'id_num',
         'selected_id',
         'gender',
         'relatives_count',
@@ -25,7 +25,7 @@ class PersonFilter extends BaseFilters
      * @param string|int|null $value
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function name($value)
+    protected function id_num($value)
     {
         if (!is_null($value) && $value !== '') {
             return $this->builder->where('id_num', $value); // تطابق تام فقط
