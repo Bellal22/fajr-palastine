@@ -22,6 +22,7 @@ return [
         'options' => 'Options',
         'save' => 'Save',
         'filter' => 'Filter',
+        'empty_filters' => 'ُEmpty Filters',
     ],
     'messages' => [
         'created' => 'The person has been created successfully.',

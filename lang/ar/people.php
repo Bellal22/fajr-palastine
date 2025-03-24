@@ -22,6 +22,7 @@ return [
         'options' => 'خيارات',
         'save' => 'حفظ',
         'filter' => 'بحث',
+        'empty_filters'=>'تفريغ الحقول',
     ],
     'messages' => [
         'created' => 'تم اضافة الفرد بنجاح.',
