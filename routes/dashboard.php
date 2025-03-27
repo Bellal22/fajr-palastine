@@ -54,4 +54,11 @@ Route::delete('people/{trashed_person}/forceDelete', 'PersonController@forceDele
 Route::get('people/family/{person}', 'PersonController@listPersonFamily')->name('people.family.list');
 Route::resource('people', 'PersonController');
 
+// People Routes.
+Route::get('trashed/complaint', 'ComplaintController@trashed')->name('complaint.trashed');
+Route::get('trashed/complaint/{trashed_complaint}', 'ComplaintController@showTrashed')->name('complaint.trashed.show');
+Route::post('complaint/{trashed_complaint}/restore', 'ComplaintController@restore')->name('complaint.restore');
+Route::delete('complaint/{trashed_complaint}/forceDelete', 'ComplaintController@forceDelete')->name('complaint.forceDelete');
+Route::resource('complaint', 'ComplaintController');
+
 /*  The routes of generated crud will set here: Don't remove this line  */
