@@ -15,7 +15,7 @@ class ComplaintFilter extends BaseFilters
     ];
 
     /**
-     * Filter the query by a given name.
+     * Filter the query by a given id_num.
      *
      * @param string|int $value
      * @return \Illuminate\Database\Eloquent\Builder
