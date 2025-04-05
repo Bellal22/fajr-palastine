@@ -3,7 +3,7 @@
     @slot('url', route('dashboard.complaints.index'))
     @slot('name', trans('complaints.plural'))
     @slot('active', request()->routeIs('*complaints*'))
-    @slot('icon', 'fas fa-th')
+    @slot('icon', 'fas fa-exclamation-circle')
     @slot('tree', [
         [
             'name' => trans('complaints.actions.list'),
