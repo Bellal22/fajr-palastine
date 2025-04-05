@@ -29,11 +29,20 @@
         </div>
 
         <div class="col-md-6">
-            {{ BsForm::date('dob')
-                ->value(request('dob'))
-                ->max(now()->toDateString()) // منع اختيار تاريخ مستقبلي
-                ->placeholder('اختر تاريخ الميلاد') }}
+            <label for="dob" class="form-label">تاريخ الميلاد</label>
+            <input type="date" name="dob" id="dob"
+                   class="form-control"
+                   max="{{ now()->toDateString() }}"
+                   placeholder="اختر تاريخ الميلاد"
+                   value="{{ request('dob', $person->dob ?? '') }}">
         </div>
+
+
+        {{--        <div class="col-md-6">--}}
+{{--            {{ BsForm::date('dob')--}}
+{{--                ->max(now()->toDateString()) // منع اختيار تاريخ مستقبلي--}}
+{{--                ->placeholder('اختر تاريخ الميلاد') }}--}}
+{{--        </div>--}}
 
         <div class="col-md-6">
             {{ BsForm::select('current_city', [
@@ -57,19 +66,19 @@
         @lang('people.actions.filter')
     </button>
 
-    <button type="button" class="btn btn-secondary btn-sm" id="resetFilters">
-        <i class="fas fa fa-fw fa-times"></i>
-       @lang('people.actions.empty_filters')
-    </button>
+{{--    <button type="button" class="btn btn-secondary btn-sm" id="resetFilters">--}}
+{{--        <i class="fas fa fa-fw fa-times"></i>--}}
+{{--       @lang('people.actions.empty_filters')--}}
+{{--    </button>--}}
 @endSlot
 
 @endcomponent
 @push('scripts')
     <script>
-        document.getElementById('resetFilters').addEventListener('click', function () {
-            let form = this.closest('form'); // البحث عن الفورم الذي يحتوي على الزر
-            form.reset(); // مسح كل المدخلات
-        });
+        // document.getElementById('resetFilters').addEventListener('click', function () {
+        //     let form = this.closest('form'); // البحث عن الفورم الذي يحتوي على الزر
+        //     form.reset(); // مسح كل المدخلات
+        // });
     </script>
 @endpush
 {{ BsForm::close() }}

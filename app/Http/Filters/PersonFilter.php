@@ -69,7 +69,7 @@ class PersonFilter extends BaseFilters
      * @param int|null $value
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function relatives_count($value)
+    protected function relativesCount($value)
     {
         if (!is_null($value) && $value !== '') {
             return $this->builder->where('relatives_count', $value);
@@ -87,7 +87,7 @@ class PersonFilter extends BaseFilters
     protected function dob($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->whereDate('dob', $value);
+            return $this->builder->where('dob','like' ,$value.'%');
         }
 
         return $this->builder;
@@ -99,7 +99,7 @@ class PersonFilter extends BaseFilters
      * @param string|null $value
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function social_status($value)
+    protected function socialStatus($value)
     {
         if (!is_null($value) && $value !== '') {
             return $this->builder->where('social_status', $value);
@@ -114,7 +114,7 @@ class PersonFilter extends BaseFilters
      * @param string|null $value
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function current_city($value)
+    protected function currentCity($value)
     {
         if (!is_null($value) && $value !== '') {
             return $this->builder->where('current_city', $value);
