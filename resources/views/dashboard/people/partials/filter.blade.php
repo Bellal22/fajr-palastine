@@ -37,13 +37,6 @@
                    value="{{ request('dob', $person->dob ?? '') }}">
         </div>
 
-
-        {{--        <div class="col-md-6">--}}
-{{--            {{ BsForm::date('dob')--}}
-{{--                ->max(now()->toDateString()) // منع اختيار تاريخ مستقبلي--}}
-{{--                ->placeholder('اختر تاريخ الميلاد') }}--}}
-{{--        </div>--}}
-
         <div class="col-md-6">
             {{ BsForm::select('current_city', [
                 'khanYounis' => 'خانيونس',
@@ -66,19 +59,33 @@
         @lang('people.actions.filter')
     </button>
 
-{{--    <button type="button" class="btn btn-secondary btn-sm" id="resetFilters">--}}
-{{--        <i class="fas fa fa-fw fa-times"></i>--}}
-{{--       @lang('people.actions.empty_filters')--}}
-{{--    </button>--}}
+   <button type="button" class="btn btn-secondary btn-sm" id="resetFilters">
+        <i class="fas fa fa-fw fa-times"></i>
+        @lang('people.actions.empty_filters')
+    </button>
+
 @endSlot
 
 @endcomponent
 @push('scripts')
     <script>
-        // document.getElementById('resetFilters').addEventListener('click', function () {
-        //     let form = this.closest('form'); // البحث عن الفورم الذي يحتوي على الزر
-        //     form.reset(); // مسح كل المدخلات
-        // });
+        document.getElementById('resetFilters').addEventListener('click', function () {
+            let form = this.closest('form');
+
+            form.querySelectorAll('input, select').forEach(function (element) {
+                // نتجاوز عنصر عدد النتائج
+                if (element.name === 'perPage') return;
+
+                // تفريغ القيم بناءً على النوع
+                if (element.type === 'checkbox' || element.type === 'radio') {
+                    element.checked = false;
+                } else {
+                    element.value = '';
+                }
+            });
+
+            form.submit(); // إعادة تحميل الصفحة بالقيم الجديدة
+        });
     </script>
 @endpush
 {{ BsForm::close() }}

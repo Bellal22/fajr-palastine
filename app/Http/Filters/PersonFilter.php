@@ -25,7 +25,7 @@ class PersonFilter extends BaseFilters
      * @param string|int|null $value
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function id_num($value)
+    protected function idNum($value)
     {
         if (!is_null($value) && $value !== '') {
             return $this->builder->where('id_num', $value); // تطابق تام فقط

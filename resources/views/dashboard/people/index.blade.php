@@ -55,7 +55,7 @@
                 <td>{{ $person->family_name }}</td>
                 <td>{{ $person->dob }}</td>
                 <td>{{ $person->social_status }}</td>
-                <td>{{ $person->city }}</td>
+                <td>{{ $person->current_city }}</td>
                 <td>{{ $person->has_condition }}</td>
 
                 <td style="width: 160px">

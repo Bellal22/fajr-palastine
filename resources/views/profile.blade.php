@@ -597,7 +597,7 @@
         <!-- بوب أب تعديل كلمة المرور -->
         <div class="popup hidden" id="password-popup">
             <div class="popup-content">
-                <span class="close" id="close-popup">&times;</span>
+                <span class="close" onclick="closepasswordpopup()">&times;</span>
                 <h1>تعديل كلمة المرور</h1>
                 <meta name="csrf-token" content="{{ csrf_token() }}">
                 <!-- كلمة المرور القديمة -->
@@ -1199,7 +1199,7 @@
         <!-- تعديل بيانات أفراد الأسرة -->
         <div id="editFamilyMemberModal" class="popup hidden">
             <div class="popup-content">
-                <span class="close" onclick="closeModal1()">&times;</span>
+                <span class="close" onclick="closeFamilyPopup()">&times;</span>
                 <h1>تعديل بيانات فرد من العائلة</h1>
 
                     <input type="hidden" id="familyMemberId" name="id">
@@ -1488,9 +1488,9 @@
         });
 
         // إغلاق بوب أب تغيير كلمة المرور
-        document.getElementById('close-popup').addEventListener('click', function() {
-            document.getElementById('password-popup').classList.add('hidden');
-        });
+        function closepasswordpopup() {
+            document.getElementById("password-popup").classList.add("hidden");
+        }
 
         // تفعيل وإلغاء تفعيل رؤية كلمات المرور
         document.querySelectorAll('.toggle-password').forEach(icon => {
@@ -1676,6 +1676,10 @@
             document.getElementById("editPopup").classList.add("hidden");
         }
 
+        function closeFamilyPopup() {
+            document.getElementById("editFamilyMemberModal").classList.add("hidden");
+        }
+
         function toggleConditionDescription() {
             var checkBox = document.getElementById("has_condition");
             var descriptionRow = document.getElementById("condition_description_group");
@@ -1832,7 +1836,7 @@
                         confirmButtonColor: '#FF6F00',
                         confirmButtonText: 'حسناً'
                     }).then(() => {
-                        closeModal(); // ✅ إغلاق الفورم
+                        closeFamilyPopup(); // ✅ إغلاق الفورم
                         location.reload(); // ✅ إعادة تحميل الصفحة
                     });
                 } else {
@@ -1911,10 +1915,10 @@
                         title: 'تم التحديث بنجاح!',
                         text: 'تم تحديث كلمة المرور الخاصة بك.',
                         icon: 'success',
-                        confirmButtonColor: '#28a745',
+                        confirmButtonColor: '#FF6F00',
                         confirmButtonText: 'حسناً'
                     }).then(() => {
-                        closePopup(); // ✅ إغلاق النافذة المنبثقة
+                        closepasswordpopup(); // ✅ إغلاق النافذة المنبثقة
                         location.reload(); // ✅ تحديث الصفحة لرؤية التغييرات
                     });
                 } else {

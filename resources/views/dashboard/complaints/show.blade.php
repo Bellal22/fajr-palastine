@@ -1,4 +1,4 @@
-<x-layout :title="$complaint->name" :breadcrumbs="['dashboard.complaints.show', $complaint]">
+<x-layout :title="$complaint->complaint_title" :breadcrumbs="['dashboard.complaints.show', $complaint]">
     <div class="row">
         <div class="col-md-6">
             @component('dashboard::components.box')
@@ -9,7 +9,7 @@
                     <tbody>
                     <tr>
                         <th width="200">@lang('complaints.attributes.name')</th>
-                        <td>{{ $complaint->name }}</td>
+                        <td>{{ $complaint->complaint_title }}</td>
                     </tr>
                     </tbody>
                 </table>

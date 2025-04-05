@@ -377,7 +377,7 @@
                             icon: 'success',
                             title: 'تم تحديث كلمة المرور',
                             text: 'تم تحديث كلمة مرورك إلى: ' + data.new_password,
-                            confirmButtonColor: '#3085d6',
+                            confirmButtonColor: '#FF6F00',
                             confirmButtonText: 'موافق'
                         });
                     } else {
