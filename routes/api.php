@@ -42,4 +42,8 @@ Route::get('/select/people', 'PersonController@select')->name('people.select');
 Route::apiResource('people', 'PersonController');
 Route::get('/select/people', 'PersonController@select')->name('people.select');
 
+// Complaints Routes.
+Route::apiResource('complaints', 'ComplaintController');
+Route::get('/select/complaints', 'ComplaintController@select')->name('complaints.select');
+
 /*  The routes of generated crud will set here: Don't remove this line  */

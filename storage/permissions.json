@@ -8,5 +8,6 @@
     "manage.neighborhoods",
     "manage.cities",
     "manage.people",
-    "manage.people"
+    "manage.people",
+    "manage.complaints"
 ]
