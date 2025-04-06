@@ -190,9 +190,9 @@ class PersonController extends Controller
     public function export(Request $request)
     {
         // جمع الفلاتر من الـ Request
-        $filters = $request->only(['id_num', 'gender', 'social_status', 'dob', 'current_city', 'relatives_count']);
+        $filters = request()->only(['id_num', 'gender', 'social_status', 'dob', 'current_city', 'relatives_count']);
 
-        // استدعاء الـ Export مع الفلاتر
+        // استدعاء الـ Export مع الفلاتر وتحميل الملف
         return (new PeopleExport($filters))->download('people_export.xlsx');
     }
 }

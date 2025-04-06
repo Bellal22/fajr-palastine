@@ -52,6 +52,7 @@ Route::get('trashed/people/{trashed_person}', 'PersonController@showTrashed')->n
 Route::post('people/{trashed_person}/restore', 'PersonController@restore')->name('people.restore');
 Route::delete('people/{trashed_person}/forceDelete', 'PersonController@forceDelete')->name('people.forceDelete');
 Route::get('people/family/{person}', 'PersonController@listPersonFamily')->name('people.family.list');
+Route::get('people/export', 'PersonController@export')->name('people.export'); // راوت الإكسبورت الجديد
 Route::resource('people', 'PersonController');
 
 // Complaints Routes.

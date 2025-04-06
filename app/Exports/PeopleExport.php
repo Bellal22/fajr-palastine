@@ -7,10 +7,13 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Concerns\Exportable;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class PeopleExport implements FromCollection, WithHeadings, WithMapping, WithStyles
 {
+    use Exportable;
     protected $filters;
     protected $index = 1;
 
@@ -161,7 +164,18 @@ class PeopleExport implements FromCollection, WithHeadings, WithMapping, WithSty
 
         // تلوين الصف الأول والعمود الأول باللون البرتقالي
         $sheet->getStyle('A1:Z1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('FFA500'); // تلوين الصف الأول
-        $sheet->getStyle('A')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('FFA500'); // تلوين العمود الأول
+        // تحديد العمود الأول الذي نريد تلوينه
+        $column = 'A';
+
+        // العثور على آخر صف يحتوي على بيانات في العمود
+        $highestRow = $sheet->getHighestRow();
+
+        // تلوين جميع الخلايا في العمود A من أول خلية إلى آخر خلية تحتوي على بيانات
+         $sheet->getStyle("{$column}1:{$column}{$highestRow}")
+        ->getFill()
+        ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+        ->getStartColor()
+        ->setRGB('FFA500'); // اللون البرتقالي
 
         return [
             1 => ['font' => ['bold' => true]], // الصف الأول يكون عريض
