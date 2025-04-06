@@ -23,6 +23,7 @@ return [
         'save' => 'حفظ',
         'filter' => 'بحث',
         'empty_filters'=>'تفريغ الحقول',
+        'export'=>'تصدير '
     ],
     'messages' => [
         'created' => 'تم اضافة الفرد بنجاح.',

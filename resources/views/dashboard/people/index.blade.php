@@ -6,6 +6,10 @@
             @lang('people.actions.list') ({{ $people->total() }})
         @endslot
 
+        {{-- <a href="{{ route('people.export', request()->all()) }}" class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel"></i> تصدير حسب الفلاتر
+        </a> --}}
+
         <thead>
         <tr>
           <th colspan="100">
@@ -17,6 +21,9 @@
                 <div class="ml-2 d-flex justify-content-between flex-grow-1">
                     @include('dashboard.people.partials.actions.create')
                     @include('dashboard.people.partials.actions.trashed')
+                    <button type="button" id="exportSelected" class="btn btn-success btn-sm">
+                        <i class="fas fa-file-excel"></i> تصدير المحدد
+                    </button>
                 </div>
             </div>
           </th>
@@ -77,4 +84,13 @@
             @endslot
         @endif
     @endcomponent
+    <script>
+        document.getElementById('exportSelected').addEventListener('click', function () {
+            const query = new URLSearchParams(window.location.search);
+
+            // إرسال الطلب مباشرة مع الفلاتر الموجودة في الـ URL
+            window.location.href = `/people/export?${query.toString()}`;
+        });
+
+    </script>
 </x-layout>
