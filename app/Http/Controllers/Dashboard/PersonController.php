@@ -4,12 +4,12 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Exports\PeopleExport;
 use App\Models\Person;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\PersonRequest;
 use Excel;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Request;
 
 class PersonController extends Controller
 {
@@ -189,10 +189,7 @@ class PersonController extends Controller
 
     public function export(Request $request)
     {
-        // جمع الفلاتر من الـ Request
-        $filters = request()->only(['id_num', 'gender', 'social_status', 'dob', 'current_city', 'relatives_count']);
-
         // استدعاء الـ Export مع الفلاتر وتحميل الملف
-        return (new PeopleExport($filters))->download('people_export.xlsx');
+        return (new PeopleExport($request->items))->download('people_export.xlsx');
     }
 }

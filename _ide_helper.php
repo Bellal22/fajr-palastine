@@ -18717,10 +18717,10 @@ namespace Collective\Html {
          * @param array $options
          * @return \Illuminate\Support\HtmlString 
          * @static 
-         */        public static function search($id_num, $value = null, $options = [])
+         */        public static function search($name, $value = null, $options = [])
         {
                         /** @var \Collective\Html\FormBuilder $instance */
-                        return $instance->search($id_num, $value, $options);
+                        return $instance->search($name, $value, $options);
         }
                     /**
          * Create an e-mail input field.

@@ -18,6 +18,7 @@
         "ext-intl": "*",
         "ahmed-aliraqi/laravel-media-uploader": "^7.0",
         "astrotomic/laravel-translatable": "^11.8",
+        "bellal22/comments": "^1.0",
         "calebporzio/parental": "^1.1",
         "diglactic/laravel-breadcrumbs": "^8.1",
         "doctrine/dbal": "^3.0",

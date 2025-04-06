@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b1a0fb1e2955b67f736fa2f82b6af4cf",
+    "content-hash": "ce8b09c82f5779b26e1ea6d40c0e40ec",
     "packages": [
         {
             "name": "ahmed-aliraqi/laravel-media-uploader",
@@ -153,6 +153,50 @@
                 }
             ],
             "time": "2024-08-28T09:20:26+00:00"
+        },
+        {
+            "name": "bellal22/comments",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Bellal22/lara-comments.git",
+                "reference": "220d1533d90f2f788992f907749cbe2657a63497"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Bellal22/lara-comments/zipball/220d1533d90f2f788992f907749cbe2657a63497",
+                "reference": "220d1533d90f2f788992f907749cbe2657a63497",
+                "shasum": ""
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Bellal22\\Comments\\CommentsServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Bellal22\\Comments\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bellal",
+                    "email": "bellalhassen89@gmail.com"
+                }
+            ],
+            "description": "lightweight laravel package to add Comments and reply Features to your application",
+            "support": {
+                "issues": "https://github.com/Bellal22/lara-comments/issues",
+                "source": "https://github.com/Bellal22/lara-comments/tree/v1.0.1"
+            },
+            "time": "2025-02-07T18:01:23+00:00"
         },
         {
             "name": "beste/clock",
