@@ -18,12 +18,13 @@
                         type="{{ \App\Models\Person::class }}"
                         :resource="trans('people.plural')"></x-check-all-delete>
 
+
                 <div class="ml-2 d-flex justify-content-between flex-grow-1">
                     @include('dashboard.people.partials.actions.create')
                     @include('dashboard.people.partials.actions.trashed')
-                    <button type="button" id="exportSelected" class="btn btn-success btn-sm">
-                        <i class="fas fa-file-excel"></i> تصدير المحدد
-                    </button>
+                    <x-check-all-export
+                        type="{{ \App\Models\Person::class }}"
+                        :resource="trans('people.plural')"></x-check-all-export>
                 </div>
             </div>
           </th>
@@ -84,13 +85,4 @@
             @endslot
         @endif
     @endcomponent
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById('exportSelected').addEventListener('click', function () {
-                const query = new URLSearchParams(window.location.search);
-                window.location.href = `/dashboard/people/export?${query.toString()}`;
-            });
-        });
-    </script>
-
 </x-layout>
