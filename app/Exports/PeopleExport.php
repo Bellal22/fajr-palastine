@@ -145,12 +145,19 @@ class PeopleExport implements FromCollection, WithHeadings, WithMapping, WithSty
             $sheet->getColumnDimension($columnID)->setAutoSize(true);
         }
 
+        // تغيير ارتفاع الصف الأول
+        $sheet->getRowDimension(1)->setRowHeight(30); // زيادة الارتفاع للوضوح
+
         // تحديد صف العناوين ليكون بالخط العريض وبحجم أكبر
         $sheet->getStyle('A1:Z1')->getFont()->setBold(true);
         $sheet->getStyle('A1:Z1')->getFont()->setSize(12); // تغيير حجم الخط للعناوين
 
+        // توسيط رؤوس الأعمدة وسط تمامًا
+        $sheet->getStyle('A1:Z1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:Z1')->getAlignment()->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+
         // تنسيق عمود الرقم ليكون أكبر (على سبيل المثال العمود الأول A)
-        $sheet->getStyle('A')->getFont()->setSize(14); // تغيير حجم الخط لعمود الرقم
+        $sheet->getStyle('A')->getFont()->setSize(11); // تغيير حجم الخط لعمود الرقم
         $sheet->getStyle('A')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER); // توسيط عمود الرقم
 
         // تنسيق باقي الأعمدة لتكون لليمين
@@ -164,21 +171,22 @@ class PeopleExport implements FromCollection, WithHeadings, WithMapping, WithSty
 
         // تلوين الصف الأول والعمود الأول باللون البرتقالي
         $sheet->getStyle('A1:Z1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('FFA500'); // تلوين الصف الأول
-        // تحديد العمود الأول الذي نريد تلوينه
+        // تحديد العمود الأول
         $column = 'A';
 
-        // العثور على آخر صف يحتوي على بيانات في العمود
+        // الحصول على آخر صف يحتوي على بيانات
         $highestRow = $sheet->getHighestRow();
 
-        // تلوين جميع الخلايا في العمود A من أول خلية إلى آخر خلية تحتوي على بيانات
-         $sheet->getStyle("{$column}1:{$column}{$highestRow}")
-        ->getFill()
-        ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-        ->getStartColor()
-        ->setRGB('FFA500'); // اللون البرتقالي
+        // تلوين العمود الأول (A) من الصف 1 إلى آخر صف ببيانات
+        $sheet->getStyle("{$column}1:{$column}{$highestRow}")
+            ->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()
+            ->setRGB('FFA500'); // اللون البرتقالي
 
+        // الصف الأول يكون عريض (العناوين)
         return [
-            1 => ['font' => ['bold' => true]], // الصف الأول يكون عريض
+            1 => ['font' => ['bold' => true]],
         ];
     }
 }

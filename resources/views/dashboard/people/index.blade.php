@@ -85,12 +85,12 @@
         @endif
     @endcomponent
     <script>
-        document.getElementById('exportSelected').addEventListener('click', function () {
-            const query = new URLSearchParams(window.location.search);
-
-            // إرسال الطلب مباشرة مع الفلاتر الموجودة في الـ URL
-            window.location.href = `/people/export?${query.toString()}`;
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('exportSelected').addEventListener('click', function () {
+                const query = new URLSearchParams(window.location.search);
+                window.location.href = `/dashboard/people/export?${query.toString()}`;
+            });
         });
-
     </script>
+
 </x-layout>
