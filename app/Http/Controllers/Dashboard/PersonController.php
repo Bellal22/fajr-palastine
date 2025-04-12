@@ -32,6 +32,7 @@ class PersonController extends Controller
     {
         $people = Person::filter()
             ->whereNull('relationship')
+            ->withCount('familyMembers')
             ->latest()->paginate();
 
         return view('dashboard.people.index', compact('people'));
@@ -189,7 +190,8 @@ class PersonController extends Controller
 
     public function export(Request $request)
     {
+
         // استدعاء الـ Export مع الفلاتر وتحميل الملف
-        return (new PeopleExport($request->items))->download('people_export.xlsx');
+        return (new PeopleExport($request->items,$request->filtered))->download('people_export.xlsx');
     }
 }

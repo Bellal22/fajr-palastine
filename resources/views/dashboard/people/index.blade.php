@@ -22,6 +22,11 @@
                 <div class="ml-2 d-flex justify-content-between flex-grow-1">
                     @include('dashboard.people.partials.actions.create')
                     @include('dashboard.people.partials.actions.trashed')
+
+                    <a href="{{ route('dashboard.people.export.selected',['filtered' => 1]) }}" class="btn btn-outline-success btn-sm">
+                        <i class="fa-fw fas fa-file-excel"></i>
+                        @lang('تصدير الكل (تطبق نتائج البحث)')
+                    </a>
                     <x-check-all-export
                         type="{{ \App\Models\Person::class }}"
                         :resource="trans('people.plural')"></x-check-all-export>
@@ -42,6 +47,8 @@
             <th>@lang('people.attributes.social_status')</th>
             <th>@lang('people.attributes.city')</th>
             <th>@lang('people.attributes.has_condition')</th>
+            <th>@lang('people.attributes.family_count')</th>
+            <th>@lang('people.attributes.family_count')(المسجل)</th>
             <th style="width: 160px">...</th>
         </tr>
         </thead>
@@ -61,10 +68,12 @@
                 <td>{{ $person->father_name }}</td>
                 <td>{{ $person->grandfather_name }}</td>
                 <td>{{ $person->family_name }}</td>
-                <td>{{ $person->dob }}</td>
+                <td>{{ $person->dob->toDateString() }}</td>
                 <td>{{ $person->social_status }}</td>
                 <td>{{ $person->current_city }}</td>
                 <td>{{ $person->has_condition }}</td>
+                <td>{{ $person->relatives_count }}</td>
+                <td>{{ $person->family_members_count }}</td>
 
                 <td style="width: 160px">
                     {{-- @include('dashboard.people.partials.actions.family') --}}
@@ -81,7 +90,7 @@
 
         @if($people->hasPages())
             @slot('footer')
-                {{ $people->links() }}
+                {{ $people->appends(request()->query())->links() }}
             @endslot
         @endif
     @endcomponent

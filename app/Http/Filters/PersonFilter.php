@@ -2,6 +2,8 @@
 
 namespace App\Http\Filters;
 
+use DB;
+
 class PersonFilter extends BaseFilters
 {
     /**
@@ -17,6 +19,11 @@ class PersonFilter extends BaseFilters
         'dob',
         'social_status',
         'current_city',
+        'dob_from',
+        'dob_to',
+        'family_members_min',
+        'family_members_max',
+        'has_condition',
     ];
 
     /**
@@ -92,6 +99,22 @@ class PersonFilter extends BaseFilters
 
         return $this->builder;
     }
+    protected function dobFrom($value)
+    {
+        if (!is_null($value) && $value !== '') {
+            return $this->builder->whereDate('dob', '>=', $value);
+        }
+
+        return $this->builder;
+    }
+    protected function dobTo($value)
+    {
+        if (!is_null($value) && $value !== '') {
+            return $this->builder->whereDate('dob', '<=', $value);
+        }
+
+        return $this->builder;
+    }
 
     /**
      * Filter by social status.
@@ -122,4 +145,32 @@ class PersonFilter extends BaseFilters
 
         return $this->builder;
     }
+
+    protected function familyMembersMin($value)
+    {
+        if (!is_null($value) && $value !== '') {
+            return $this->builder->where('relatives_count', '>=' ,$value);
+
+        }
+
+        return $this->builder;
+    }
+
+    protected function familyMembersMax($value)
+    {
+        if (!is_null($value) && $value !== '') {
+            return $this->builder->where('relatives_count', '<=' ,$value);
+        }
+
+        return $this->builder;
+    }
+    protected function hasCondition($value)
+    {
+        if (!is_null($value) && $value !== '') {
+            return $this->builder->where('has_condition',$value);
+        }
+
+        return $this->builder;
+    }
+
 }

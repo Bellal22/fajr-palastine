@@ -25,24 +25,55 @@
         </div>
 
         <div class="col-md-6">
-            {{ BsForm::number('relatives_count')->value(request('relatives_count')) }}
-        </div>
-
-        <div class="col-md-6">
-            <label for="dob" class="form-label">تاريخ الميلاد</label>
-            <input type="date" name="dob" id="dob"
-                   class="form-control"
-                   max="{{ now()->toDateString() }}"
-                   placeholder="اختر تاريخ الميلاد"
-                   value="{{ request('dob', $person->dob ?? '') }}">
-        </div>
-
-        <div class="col-md-6">
             {{ BsForm::select('current_city', [
                 'khanYounis' => 'خانيونس',
                 'rafah' => 'رفح',
             ])->value(request('current_city'))
             ->placeholder('اختر المحافظة الحالية') }}
+        </div>
+
+
+        <div class="col-md-3">
+            <label for="dob_from" class="form-label">تاريخ الميلاد - من</label>
+            <input type="date" name="dob_from" id="dob_from"
+                   class="form-control "
+                   max="{{ now()->toDateString() }}"
+                   placeholder="اختر تاريخ الميلاد من"
+                   value="{{ request('dob_from', $person->dob_from ?? '') }}">
+        </div>
+        <div class="col-md-3">
+            <label for="dob_to" class="form-label ">تاريخ الميلاد - إلى</label>
+            <input type="date" name="dob_to" id="dob_to"
+                   class="form-control"
+                   max="{{ now()->toDateString() }}"
+                   placeholder="اختر تاريخ الميلاد إلى"
+                   value="{{ request('dob_to', $person->dob_to ?? '') }}">
+        </div>
+        <div class="col-md-3">
+            <label for="family_members_min" class="form-label">عدد الاقارب</label>
+            <input type="number" name="family_members_min" id="family_members_min"
+                   class="form-control"
+                   placeholder="عدد الاقارب الحد الأدنى"
+                   value="{{ request('family_members_min') }}">
+        </div>
+
+        <div class="col-md-3">
+            <label for="family_members_max" class="form-label">عدد الاقارب</label>
+            <input type="number" name="family_members_max" id="family_members_max"
+                   class="form-control"
+                   placeholder="عدد الاقارب الحد الأقصى"
+                   value="{{ request('family_members_max') }}">
+        </div>
+
+
+
+
+        <div class="col-md-6">
+                {{ BsForm::select('has_condition', [
+                    '0' => 'صحيح',
+                    '1' => 'يعاني',
+                ])->value(request('has_condition'))
+                ->placeholder('اختر الحالة') }}
         </div>
 
         <div class="col-md-6">

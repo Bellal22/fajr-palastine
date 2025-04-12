@@ -50,6 +50,7 @@ return [
         'relatives_count' => 'عدد الأقارب',
         'has_condition' => 'يعاني من حالة صحية',
         'condition_description' => 'وصف الحالة الصحية',
+        'family_count' => 'عدد الاقارب',
     ],
     'dialogs' => [
         'delete' => [
