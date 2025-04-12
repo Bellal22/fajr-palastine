@@ -853,7 +853,11 @@
             }
 
             window.submitForm = function submitForm() {
-                if (peopleList.length === 0) {
+                let person = @json($person);
+
+                if (peopleList.length === 0 &&
+                    ! (['single', 'divorced', 'widowed'].includes(person.social_status))
+                ) {
                     showAlert('لا توجد بيانات لإرسالها!', 'warning');
                     return;
                 }

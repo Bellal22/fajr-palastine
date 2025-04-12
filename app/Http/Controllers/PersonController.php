@@ -109,7 +109,9 @@ class PersonController extends Controller
         $relationships = collect(PersonRelationship::toValues())
             ->mapWithKeys(fn($value) => [$value => __($value)]);
 
-        return view('family', array_merge($personData, compact('relationships', 'peopleList')));
+        $person = $request->session()->get('person');
+
+        return view('family', array_merge($personData, compact('relationships', 'peopleList','person')));
     }
 
     public function storeFamily(StoreFamilyRequest $request)
