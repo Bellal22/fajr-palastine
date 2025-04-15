@@ -23,6 +23,7 @@ class DummyDataSeeder extends Seeder
         $this->call(PersonSeeder::class);
         $this->call(PersonSeeder::class);
         $this->call(ComplaintSeeder::class);
+        $this->call(SupplierSeeder::class);
         /*  The seeders of generated crud will set here: Don't remove this line  */
     }
 }

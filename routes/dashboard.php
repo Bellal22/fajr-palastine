@@ -62,4 +62,11 @@ Route::post('complaints/{trashed_complaint}/restore', 'ComplaintController@resto
 Route::delete('complaints/{trashed_complaint}/forceDelete', 'ComplaintController@forceDelete')->name('complaints.forceDelete');
 Route::resource('complaints', 'ComplaintController');
 
+// Suppliers Routes.
+Route::get('trashed/suppliers', 'SupplierController@trashed')->name('suppliers.trashed');
+Route::get('trashed/suppliers/{trashed_supplier}', 'SupplierController@showTrashed')->name('suppliers.trashed.show');
+Route::post('suppliers/{trashed_supplier}/restore', 'SupplierController@restore')->name('suppliers.restore');
+Route::delete('suppliers/{trashed_supplier}/forceDelete', 'SupplierController@forceDelete')->name('suppliers.forceDelete');
+Route::resource('suppliers', 'SupplierController');
+
 /*  The routes of generated crud will set here: Don't remove this line  */

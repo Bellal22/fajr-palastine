@@ -8,5 +8,6 @@
     "trashed_neighborhood": "App\\Models\\Neighborhood",
     "trashed_city": "App\\Models\\City",
     "trashed_person": "App\\Models\\Person",
-    "trashed_complaint": "App\\Models\\Complaint"
+    "trashed_complaint": "App\\Models\\Complaint",
+    "trashed_supplier": "App\\Models\\Supplier"
 }

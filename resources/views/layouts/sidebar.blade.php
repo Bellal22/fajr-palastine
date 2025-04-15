@@ -13,6 +13,7 @@
 @include('dashboard.people.partials.actions.sidebar')
 {{-- @include('dashboard.people.partials.actions.sidebar') --}}
 @include('dashboard.complaints.partials.actions.sidebar')
+@include('dashboard.suppliers.partials.actions.sidebar')
 {{-- The sidebar of generated crud will set here: Don't remove this line --}}
 @include('dashboard.feedback.partials.actions.sidebar')
 @include('dashboard.settings.sidebar')
