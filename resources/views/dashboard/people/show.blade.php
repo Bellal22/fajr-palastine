@@ -28,6 +28,10 @@
                         <td>{{ $person->family_name }}</td>
                     </tr>
                     <tr>
+                        <th width="200">@lang('people.attributes.gender')</th>
+                        <td>{{ $person->gender }}</td>
+                    </tr>
+                    <tr>
                         <th width="200">@lang('people.attributes.dob')</th>
                         <td>{{ $person->dob }}</td>
                     </tr>

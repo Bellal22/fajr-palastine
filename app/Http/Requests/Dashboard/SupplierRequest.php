@@ -26,6 +26,7 @@ class SupplierRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:1024'],
+            'document' => ['required', 'file', 'mimes:pdf,doc,docx'],
         ];
     }
 

@@ -5,9 +5,9 @@
 
 @isset($supplier)
     {{ BsForm::image('image')->files($supplier->getMediaResource()) }}
-    {{ BsForm::image('document')->files($supplier->getMediaResource('document')) }}
+    {{ BsForm::file('document')->files($supplier->getMediaResource('document')) }}
 @else
     {{ BsForm::image('image') }}
-    {{ BsForm::image('document') }}
+    {{ BsForm::file('document') }}
 @endisset
 

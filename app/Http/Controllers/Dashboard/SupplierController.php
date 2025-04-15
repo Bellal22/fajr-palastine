@@ -53,8 +53,11 @@ class SupplierController extends Controller
         $supplier = Supplier::create($request->all());
 
         $supplier->addAllMediaFromTokens([$request->image]);
-        $supplier->addMedia($request->file('document'))
-            ->toMediaCollection('document');
+        if ($request->hasFile('document')) {
+            $supplier->addMedia($request->file('document'))
+                ->toMediaCollection('document');
+        }
+
 
         flash()->success(trans('suppliers.messages.created'));
 

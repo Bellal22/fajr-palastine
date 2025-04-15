@@ -68,7 +68,7 @@
                 <td>{{ $person->father_name }}</td>
                 <td>{{ $person->grandfather_name }}</td>
                 <td>{{ $person->family_name }}</td>
-                <td>{{ $person->dob->toDateString() }}</td>
+                <td>{{ $person->dob ? $person->dob->toDateString() : 'N/A' }}</td>
                 <td>{{ $person->social_status }}</td>
                 <td>{{ $person->current_city }}</td>
                 <td>{{ $person->has_condition }}</td>

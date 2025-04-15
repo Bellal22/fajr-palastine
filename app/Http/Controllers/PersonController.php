@@ -85,7 +85,7 @@ class PersonController extends Controller
             $request->session()->put('person', array_merge($request->all(), ['id_num' => $id_num,'passkey' => Str::random(8)]));
 
         } catch (\Exception $e) {
-            return redirect()->back()->with('error','حدث حطأ');
+            return redirect()->back()->with('error','حدث خطأ');
         }
         return redirect()->route('persons.createFamily');
 
@@ -127,15 +127,6 @@ class PersonController extends Controller
         $gender = session('person')['gender'];
         $socialStatus = session('person')['social_status'];
 
-        // التحقق من الشروط الخاصة بالجنس والحالة الاجتماعية
-//        if ($peopleList && !(in_array($gender, ['أنثى', 'ذكر']) && in_array($socialStatus, ['single', 'divorced', 'widowed']))) {
-//
-//            return response()->json([
-//                'error' => 'لا يمكن التسجيل لأن الحالة الاجتماعية لا تسمح.',
-//                'redirect' => route('persons.createFamily')
-//            ], 422);
-//        }
-
         $person = $session->get('person');
         $person['relatives_count'] = count($peopleList) + 1;
 
@@ -144,23 +135,23 @@ class PersonController extends Controller
             return back()->withErrors(['persons' => 'يجب أن يكون لديك زوجتان على الأقل في حالة التعدد.']);
         }
 
-        // تجهيز البيانات للإدخال في قاعدة البيانات
+        // تجهيز البيانات للإدخال في قاعدة البيانات مع الحفاظ على gender
         $persons = collect($peopleList)
-            ->map(fn($p) => array_merge(Arr::except($p, ['gender']), [
-                'relative_id' => $id_num,
-                'id_num' => $p['id_num'] ?? Session::get('id_num'), // Set id_num if missing
-                'has_condition' => array_key_exists('has_condition', $p) && $p['has_condition'] === '' ? 0 : ($p['has_condition'] ?? 0)
-            ]))
-            ->push(array_merge(Arr::except($person, ['gender']), [
-                'id_num' => $person['id_num'] ?? Session::get('id_num'), // Set id_num if missing
+            ->map(function ($p) use ($id_num) {
+                return array_merge($p, [
+                    'relative_id' => $id_num,
+                    'id_num' => $p['id_num'] ?? Session::get('id_num'),
+                    'has_condition' => array_key_exists('has_condition', $p) && $p['has_condition'] === '' ? 0 : ($p['has_condition'] ?? 0)
+                ]);
+            })
+            ->push(array_merge($person, [
+                'id_num' => $person['id_num'] ?? Session::get('id_num'),
                 'has_condition' => array_key_exists('has_condition', $person) && $person['has_condition'] === '' ? 0 : ($person['has_condition'] ?? 0)
             ]))
             ->toArray();
 
-
         // إدخال جميع البيانات دفعة واحدة لتقليل عدد الاستعلامات
-        foreach ($persons as $person)
-        {
+        foreach ($persons as $person) {
             Person::create($person);
         }
 
