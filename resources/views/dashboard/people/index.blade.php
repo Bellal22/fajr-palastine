@@ -47,8 +47,8 @@
             <th>@lang('people.attributes.social_status')</th>
             <th>@lang('people.attributes.city')</th>
             <th>@lang('people.attributes.has_condition')</th>
-            <th>@lang('people.attributes.family_count')</th>
-            <th>@lang('people.attributes.family_count')(المسجل)</th>
+            <th>@lang('people.attributes.relatives_count')</th>
+            <th>@lang('people.attributes.relatives_count')(المسجل)</th>
             <th style="width: 160px">...</th>
         </tr>
         </thead>
