@@ -19,6 +19,7 @@ class PersonFilter extends BaseFilters
         'dob',
         'social_status',
         'current_city',
+        'neighborhood',
         'dob_from',
         'dob_to',
         'family_members_min',
@@ -141,6 +142,15 @@ class PersonFilter extends BaseFilters
     {
         if (!is_null($value) && $value !== '') {
             return $this->builder->where('current_city', $value);
+        }
+
+        return $this->builder;
+    }
+
+    protected function neighborhood($value)
+    {
+        if (!is_null($value) && $value !== '') {
+            return $this->builder->where('neighborhood', $value);
         }
 
         return $this->builder;

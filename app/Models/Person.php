@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Http\Filters\CityFilter;
 use App\Http\Filters\Filterable;
 use App\Http\Filters\PersonFilter;
 use App\Support\Traits\Selectable;

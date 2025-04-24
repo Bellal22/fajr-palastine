@@ -29,7 +29,8 @@
                     </a>
                     <x-check-all-export
                         type="{{ \App\Models\Person::class }}"
-                        :resource="trans('people.plural')"></x-check-all-export>
+                        :resource="trans('people.plural')">
+                    </x-check-all-export>
                 </div>
             </div>
           </th>

@@ -24,9 +24,10 @@ class SupplierRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string', 'max:1024'],
-            'document' => ['required', 'file', 'mimes:pdf,doc,docx'],
+            'name'         => ['required', 'string', 'max:255'],
+            'description'  => ['required', 'string', 'max:1024'],
+            'image'        => ['nullable', 'image'],
+            'document'     => ['nullable', 'file', 'mimes:pdf,doc,docx'],
         ];
     }
 

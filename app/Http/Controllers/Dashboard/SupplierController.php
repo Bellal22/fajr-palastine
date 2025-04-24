@@ -52,10 +52,12 @@ class SupplierController extends Controller
     {
         $supplier = Supplier::create($request->all());
 
-        $supplier->addAllMediaFromTokens([$request->image]);
+        if ($request->hasFile('image')) {
+            $supplier->addMediaFromRequest('image')->toMediaCollection('default');
+        }
+
         if ($request->hasFile('document')) {
-            $supplier->addMedia($request->file('document'))
-                ->toMediaCollection('document');
+            $supplier->addMediaFromRequest('document')->toMediaCollection('document');
         }
 
 

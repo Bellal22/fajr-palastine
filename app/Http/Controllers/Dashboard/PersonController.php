@@ -190,7 +190,6 @@ class PersonController extends Controller
 
     public function export(Request $request)
     {
-
         // استدعاء الـ Export مع الفلاتر وتحميل الملف
         return (new PeopleExport($request->items,$request->filtered))->download('people_export.xlsx');
     }
