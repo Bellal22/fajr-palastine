@@ -3,83 +3,95 @@
 namespace App\Exports;
 
 use App\Models\Person;
-use Maatwebsite\Excel\Concerns\FromView;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\Exportable;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class PeopleExport implements FromView, WithStyles
+
+class PeopleExport implements FromQuery, WithMapping, WithHeadings, WithChunkReading, ShouldQueue
 {
     use Exportable;
+    private $persons;
+    private $filtered;
 
-    private array $persons;
-
-    public function __construct($persons)
+    public function __construct($persons = [],$filtered = 0)
     {
         $this->persons = $persons;
+        $this->filtered = $filtered;
     }
 
-    public function view(): View
+    public function query()
     {
-        return view('dashboard.people.partials.export', [
-            'persons' => Person::whereIn('id', $this->persons)->get()
-        ]);
-    }
+        $query = Person::query();
 
-    public function styles(Worksheet $sheet)
-    {
-        // تفعيل الاتجاه من اليمين إلى اليسار
-        $sheet->setRightToLeft(true);
-
-        // تحديد الأعمدة لتكون عرضها تلقائي بناءً على المحتوى
-        foreach (range('A', 'U') as $columnID) {
-            $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        if (!empty($this->personIds)) {
+            $query->whereIn('id', $this->personIds);
         }
 
-        // تغيير ارتفاع الصف الأول
-        $sheet->getRowDimension(1)->setRowHeight(30); // زيادة الارتفاع للوضوح
+        return $query;
+    }
 
-        // تنسيق الخط للصف الأول
-        $sheet->getStyle('A1:U1')->getFont()->setBold(true)->setSize(12);
-
-        // توسيط النص في الصف الأول (العناوين)
-        $sheet->getStyle('A1:U1')->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-            ->setVertical(Alignment::VERTICAL_CENTER);
-
-        // تنسيق عمود الرقم (A)
-        $sheet->getStyle('A')->getFont()->setSize(11);
-        $sheet->getStyle('A')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-        // تنسيق باقي الأعمدة لتكون لليمين
-        $sheet->getStyle('B:U')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-
-        // إضافة الحدود لجميع الخلايا
-        $sheet->getStyle('A1:U' . $sheet->getHighestRow())
-            ->getBorders()
-            ->getAllBorders()
-            ->setBorderStyle(Border::BORDER_THIN);
-
-        // تلوين الصف الأول
-        $sheet->getStyle('A1:U1')->getFill()
-            ->setFillType(Fill::FILL_SOLID)
-            ->getStartColor()->setRGB('FFA500'); // اللون البرتقالي للصف الأول
-
-        // تلوين العمود الأول بالكامل
-        $column = 'A';
-        $highestRow = $sheet->getHighestRow();
-        $sheet->getStyle("{$column}1:{$column}{$highestRow}")
-            ->getFill()
-            ->setFillType(Fill::FILL_SOLID)
-            ->getStartColor()
-            ->setRGB('FFA500'); // تلوين العمود الأول باللون البرتقالي
-
+    public function map($person): array
+    {
         return [
-            1 => ['font' => ['bold' => true]],
+            '', // Placeholder for index, Excel adds it if needed
+            $person->id_num,
+            $person->first_name,
+            $person->father_name,
+            $person->grandfather_name,
+            $person->family_name,
+            $person->gender,
+            $person->phone,
+            $person->dob,
+            $person->social_status,
+            $person->city,
+            $person->current_city,
+            $person->neighborhood,
+            $person->landmark,
+            $person->housing_type,
+            $person->housing_damage_status,
+            $person->employment_status,
+            $person->person_status,
+            $person->relatives_count,
+            $person->has_condition,
+            $person->condition_description,
         ];
     }
+
+    public function headings(): array
+    {
+        return [
+            '#',
+            'ID Number',
+            'First Name',
+            'Father Name',
+            'Grandfather Name',
+            'Family Name',
+            'Gender',
+            'Phone',
+            'Date of Birth',
+            'Social Status',
+            'City',
+            'Current City',
+            'Neighborhood',
+            'Landmark',
+            'Housing Type',
+            'Housing Damage Status',
+            'Employment Status',
+            'Person Status',
+            'Relatives Count',
+            'Has Condition',
+            'Condition Description',
+        ];
+    }
+
+    public function chunkSize(): int
+    {
+        return 100;
+    }
+
 }
