@@ -16,20 +16,20 @@ class PeopleExport implements FromQuery, WithMapping, WithHeadings, WithChunkRea
 {
     use Exportable;
     private $persons;
-    private $filtered;
+//    private $filtered;
 
-    public function __construct($persons = [],$filtered = 0)
+    public function __construct($persons = [])
     {
         $this->persons = $persons;
-        $this->filtered = $filtered;
+//        $this->filtered = $filtered;
     }
 
     public function query()
     {
         $query = Person::query();
 
-        if (!empty($this->personIds)) {
-            $query->whereIn('id', $this->personIds);
+        if (!empty($this->persons)) {
+            $query->whereIn('id', $this->persons);
         }
 
         return $query;
