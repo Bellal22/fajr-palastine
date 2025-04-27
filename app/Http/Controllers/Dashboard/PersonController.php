@@ -191,6 +191,6 @@ class PersonController extends Controller
     public function export(Request $request)
     {
         // استدعاء الـ Export مع الفلاتر وتحميل الملف
-        return Excel::download(new PeopleExport($request->items), 'people_export.xlsx');
+        return Excel::download(new PeopleExport($request->items,$request->filtered), 'people_export.xlsx');
     }
 }
