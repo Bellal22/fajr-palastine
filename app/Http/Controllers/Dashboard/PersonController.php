@@ -7,9 +7,9 @@ use App\Models\Person;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\PersonRequest;
-use Excel;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PersonController extends Controller
 {

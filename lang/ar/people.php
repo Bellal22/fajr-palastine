@@ -39,6 +39,7 @@ return [
         'phone'=>'رقم الجوال',
         'grandfather_name' => 'اسم الجد',
         'family_name' => 'اسم العائلة',
+        'passkey'=>'كلمة المرور',
         'dob' => 'تاريخ الميلاد',
         'gender' => 'الجنس',
         'social_status' => 'الحالة الاجتماعية',

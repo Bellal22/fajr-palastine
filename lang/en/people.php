@@ -37,6 +37,7 @@ return [
         'father_name' => 'Father name',
         'grandfather_name' => 'Grandfather name',
         'family_name' => 'Family name',
+        'passkey'=>'Password',
         'dob' => 'Date Of Birthday',
         'phone' => 'Phone',
         'gender'=>'Gender',

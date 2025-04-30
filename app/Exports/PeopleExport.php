@@ -3,7 +3,6 @@
 namespace App\Exports;
 
 use App\Models\Person;
-use DB;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\Exportable;
@@ -11,7 +10,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Illuminate\Contracts\Queue\ShouldQueue;
-
+use Illuminate\Support\Facades\DB;
 
 class PeopleExport implements FromQuery, WithHeadings,WithChunkReading
 {
@@ -46,14 +45,8 @@ class PeopleExport implements FromQuery, WithHeadings,WithChunkReading
                 'city',
                 'current_city',
                 'neighborhood',
-                'landmark',
-                'housing_type',
-                'housing_damage_status',
                 'employment_status',
-                'person_status',
-                'relatives_count',
                 'has_condition',
-                'condition_description',
             ])->orderBy('id');
 
 
@@ -105,14 +98,8 @@ class PeopleExport implements FromQuery, WithHeadings,WithChunkReading
             'City',
             'Current City',
             'Neighborhood',
-            'Landmark',
-            'Housing Type',
-            'Housing Damage Status',
             'Employment Status',
-            'Person Status',
-            'Relatives Count',
             'Has Condition',
-            'Condition Description',
         ];
     }
 
