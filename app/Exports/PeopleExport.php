@@ -4,88 +4,58 @@ namespace App\Exports;
 
 use App\Models\Person;
 use Maatwebsite\Excel\Concerns\FromQuery;
-use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\Exportable;
-use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\DB;
+use App\Http\Filters\PersonFilter;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 
-class PeopleExport implements FromQuery, WithHeadings,WithChunkReading
+class PeopleExport implements FromQuery, WithHeadings, WithChunkReading
 {
     use Exportable;
-    private $persons;
-    private $filtered;
 
-    public function __construct($persons = [], $filtered = false)
+    protected array $filters;
+    protected $request;
+
+    public function __construct(Request $request, array $filters = [])
     {
-        $this->persons = $persons;
-        $this->filtered = $filtered;
+        $this->request = $request;
+        $this->filters = $filters;
     }
 
-    public function query()
+    public function query(): Builder
     {
-        if (!empty($this->persons)) {
-            $query = Person::query();
-            $query->whereIn('id', $this->persons);
-            return $query;
-        }
-        return DB::table('persons')
-            ->select([
-                'id_num',
-                'first_name',
-                'father_name',
-                'grandfather_name',
-                'family_name',
-                'gender',
-                'phone',
-                'dob',
-                'social_status',
-                'city',
-                'current_city',
-                'neighborhood',
-                'employment_status',
-                'has_condition',
-            ])->orderBy('id');
+        $query = Person::query()->select([
+            'id_num',
+            'first_name',
+            'father_name',
+            'grandfather_name',
+            'family_name',
+            'gender',
+            'phone',
+            'dob',
+            'social_status',
+            'city',
+            'current_city',
+            'neighborhood',
+            'employment_status',
+            'has_condition',
+        ])->whereNull('relationship')
+            ->latest();
 
+        \Log::info('Export Filters Received:', $this->filters);
+        // إنشاء مثيل PersonFilter يدويًا وتمرير $query إليه
+        $filter = new PersonFilter($query);
 
+        // تطبيق الفلاتر. بما أن BaseFilters يسترد القيم من $this->request،
+        // لا تحتاج إلى تمرير أي وسيط هنا.
+        return $filter->apply($this->filters);
     }
-
-//    public function map($row): array
-//    {
-//        static $index = 0;
-//        $index++;
-//
-//        return [
-//            $index,
-//            $row->id_num,
-//            $row->first_name,
-//            $row->father_name,
-//            $row->grandfather_name,
-//            $row->family_name,
-//            $row->gender,
-//            $row->phone,
-//            $row->dob,
-//            $row->social_status,
-//            $row->city,
-//            $row->current_city,
-//            $row->neighborhood,
-//            $row->landmark,
-//            $row->housing_type,
-//            $row->housing_damage_status,
-//            $row->employment_status,
-//            $row->person_status,
-//            $row->relatives_count,
-//            $row->has_condition,
-//            $row->condition_description,
-//        ];
-//    }
 
     public function headings(): array
     {
         return [
-            '#',
             'ID Number',
             'First Name',
             'Father Name',
@@ -107,5 +77,4 @@ class PeopleExport implements FromQuery, WithHeadings,WithChunkReading
     {
         return 1000;
     }
-
 }
