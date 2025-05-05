@@ -49,7 +49,8 @@ return [
         'landmark' => 'Landmark',
         'housing_type' => 'Housing type',
         'housing_damage_status' => 'Housing damage status',
-        'relatives_count' => 'Relatives count',
+        'relatives_count' => 'Family member counts',
+        'relationship'=> 'Relationship',
         'has_condition' => 'Has condition',
         'condition_description' => 'Condition description',
         'person_status' => 'Status'

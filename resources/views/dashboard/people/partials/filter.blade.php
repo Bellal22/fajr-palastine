@@ -85,18 +85,18 @@
                    value="{{ request('dob_to', $person->dob_to ?? '') }}">
         </div>
         <div class="col-md-3">
-            <label for="family_members_min" class="form-label">عدد الاقارب</label>
+            <label for="family_members_min" class="form-label">عدد أفراد الأسرة من</label>
             <input type="number" name="family_members_min" id="family_members_min"
                    class="form-control"
-                   placeholder="عدد الاقارب الحد الأدنى"
+                   placeholder="عدد أفراد الأسرة الحد الأدنى"
                    value="{{ request('family_members_min') }}">
         </div>
 
         <div class="col-md-3">
-            <label for="family_members_max" class="form-label">عدد الاقارب</label>
+            <label for="family_members_max" class="form-label">عدد أفراد الأسرة إلى</label>
             <input type="number" name="family_members_max" id="family_members_max"
                    class="form-control"
-                   placeholder="عدد الاقارب الحد الأقصى"
+                   placeholder="عدد أفراد الأسرة الحد الأقصى"
                    value="{{ request('family_members_max') }}">
         </div>
 

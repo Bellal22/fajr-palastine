@@ -50,7 +50,8 @@ return [
         'landmark' => 'معلم بارز',
         'housing_type' => 'نوع السكن',
         'housing_damage_status' => 'حالة ضرر السكن',
-        'relatives_count' => 'عدد الأفراد',
+        'relatives_count' => 'عدد أفراد الأسرة',
+        'relationship'=>'صلة القرابة',
         'has_condition' => 'يعاني من حالة صحية',
         'condition_description' => 'وصف الحالة الصحية',
         'person_status'=>'الحالة'

@@ -23,7 +23,7 @@
                     @include('dashboard.people.partials.actions.create')
                     @include('dashboard.people.partials.actions.trashed')
 
-                    <a href="{{ route('dashboard.people.export.selected',['filtered' => 1]) }}" class="btn btn-outline-success btn-sm">
+                    <a href="{{ route('dashboard.people.export.selected', request()->all()) }}" class="btn btn-outline-success btn-sm">
                         <i class="fa-fw fas fa-file-excel"></i>
                         @lang('تصدير الكل (تطبق نتائج البحث)')
                     </a>
@@ -70,9 +70,9 @@
                 <td>{{ $person->grandfather_name }}</td>
                 <td>{{ $person->family_name }}</td>
                 <td>{{ $person->dob ? $person->dob->toDateString() : 'N/A' }}</td>
-                <td>{{ $person->social_status }}</td>
-                <td>{{ $person->current_city }}</td>
-                <td>{{ $person->has_condition }}</td>
+                <td>{{ __($person->social_status) }}</td>
+                <td>{{ __($person->current_city) }}</td>
+                <td>{{ $person->has_condition == 1 ? 'نعم' : ($person->has_condition == 0 ? 'لا' : $person->has_condition) }}</td>
                 <td>{{ $person->relatives_count }}</td>
                 <td>{{ $person->family_members_count }}</td>
 

@@ -7,9 +7,12 @@ use Illuminate\Support\Facades\DB;
 
 class PersonFilter extends BaseFilters
 {
-    public function __construct(Builder $builder)
+    protected $tableAlias = ''; // خاصية جديدة لتخزين اسم الجدول أو الاسم المستعار
+
+    public function __construct(Builder $builder, string $tableAlias = '')
     {
         parent::__construct($builder);
+        $this->tableAlias = $tableAlias ? $tableAlias . '.' : ''; // نضيف نقطة لو فيه اسم مستعار
     }
 
     /**
@@ -33,10 +36,15 @@ class PersonFilter extends BaseFilters
         'has_condition',
     ];
 
+    protected function getColumnName(string $column): string
+    {
+        return $this->tableAlias . $column;
+    }
+
     protected function idNum($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->where('id_num', $value); // تطابق تام فقط
+            return $this->builder->where($this->getColumnName('id_num'), $value);
         }
         return $this->builder;
     }
@@ -52,7 +60,7 @@ class PersonFilter extends BaseFilters
     protected function gender($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->where('gender', $value);
+            return $this->builder->where($this->getColumnName('gender'), $value);
         }
         return $this->builder;
     }
@@ -60,7 +68,7 @@ class PersonFilter extends BaseFilters
     protected function relativesCount($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->where('relatives_count', $value);
+            return $this->builder->where($this->getColumnName('relatives_count'), $value);
         }
         return $this->builder;
     }
@@ -68,21 +76,21 @@ class PersonFilter extends BaseFilters
     protected function dob($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->where('dob', 'like', $value . '%');
+            return $this->builder->where($this->getColumnName('dob'), 'like', $value . '%');
         }
         return $this->builder;
     }
     protected function dobFrom($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->whereDate('dob', '>=', $value);
+            return $this->builder->whereDate($this->getColumnName('dob'), '>=', $value);
         }
         return $this->builder;
     }
     protected function dobTo($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->whereDate('dob', '<=', $value);
+            return $this->builder->whereDate($this->getColumnName('dob'), '<=', $value);
         }
         return $this->builder;
     }
@@ -90,7 +98,7 @@ class PersonFilter extends BaseFilters
     protected function socialStatus($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->where('social_status', $value);
+            return $this->builder->where($this->getColumnName('social_status'), $value);
         }
         return $this->builder;
     }
@@ -98,7 +106,7 @@ class PersonFilter extends BaseFilters
     protected function currentCity($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->where('current_city', $value);
+            return $this->builder->where($this->getColumnName('current_city'), $value);
         }
         return $this->builder;
     }
@@ -106,7 +114,7 @@ class PersonFilter extends BaseFilters
     protected function neighborhood($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->where('neighborhood', $value);
+            return $this->builder->where($this->getColumnName('neighborhood'), $value);
         }
         return $this->builder;
     }
@@ -114,7 +122,7 @@ class PersonFilter extends BaseFilters
     protected function familyMembersMin($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->where('relatives_count', '>=', $value);
+            return $this->builder->where($this->getColumnName('relatives_count'), '>=', $value);
         }
         return $this->builder;
     }
@@ -122,14 +130,14 @@ class PersonFilter extends BaseFilters
     protected function familyMembersMax($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->where('relatives_count', '<=', $value);
+            return $this->builder->where($this->getColumnName('relatives_count'), '<=', $value);
         }
         return $this->builder;
     }
     protected function hasCondition($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->where('has_condition', $value);
+            return $this->builder->where($this->getColumnName('has_condition'), $value);
         }
         return $this->builder;
     }

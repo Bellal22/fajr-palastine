@@ -190,7 +190,8 @@ class PersonController extends Controller
 
     public function export(Request $request)
     {
-        $filters = $request->all(); // احصل على جميع قيم الطلب كفلاتر
+        // dd('Export Request Filters:', $request->all());
+        $filters = $request->all(); // احصل على جميع قيم الفلاتر من الـ URL
         return Excel::download(new PeopleExport($request, $filters), 'filtered_people.xlsx');
     }
 }
