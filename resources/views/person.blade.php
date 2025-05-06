@@ -172,6 +172,36 @@
             text-align: right;
         }
 
+        .area-responsible-container {
+            display: flex;
+            flex-direction: column; /* ترتيب العناصر عموديًا */
+        }
+
+        .area-responsible-container label.form-label {
+            order: 1;
+            margin-bottom: 0.5rem; /* مساحة بين الـ label والـ select */
+        }
+
+        .area-responsible-container select.form-control {
+            order: 2;
+        }
+
+        .area-responsible-container .error-message {
+            order: 3; /* خلي رسالة الخطأ تالت عنصر (تحت الـ select) */
+            margin-top: 0.5rem; /* مساحة بين الـ select ورسالة الخطأ */
+        }
+
+        /* عند إخفاء الحقل، حافظ على ظهور رسالة الخطأ في مكانها (لكنها هتكون مخفية) */
+        #areaResponsibleField[style*="display:none"] .error-message {
+            display: block !important;
+            visibility: hidden;
+        }
+
+        #areaResponsibleField[style*="display:none"] label.form-label,
+        #areaResponsibleField[style*="display:none"] select.form-control {
+            display: none !important;
+        }
+
         /* تحسين الاستجابة للأجهزة الصغيرة */
         @media (max-width: 768px) {
             .container {
@@ -329,7 +359,6 @@
                     <div class="error-message" id="gender_error" style="color: red;"></div>
                 </div>
 
-
                 <div class="form-group">
                     <label for="dob">تاريخ الميلاد</label>
                     <input
@@ -410,7 +439,10 @@
             <div class="row">
                 <div class="form-group">
                     <label for="city">المحافظة الأصلية</label>
-                    <select id="city" name="city" required oninput="validateCity()" onfocus="resetBorderAndError('city')" onblur="validateCity()">
+                    <select id="city" name="city" required
+                    oninput="validateCity()"
+                    onfocus="resetBorderAndError('city')"
+                    onblur="validateCity()">
                         <option value="">اختر المحافظةالأصلية</option>
                         @foreach($cities as $key => $city)
                             <option {{ old('city') == $key ? 'selected' : '' }} value="{{ $key }}">{{ $city }}</option>
@@ -421,7 +453,10 @@
 
                 <div class="form-group">
                     <label for="housing_damage_status">حالة السكن السابق</label>
-                    <select id="housing_damage_status" name="housing_damage_status" required oninput="validateHousingDamageStatus()" onfocus="resetBorderAndError('housing_damage_status')" onblur="validateHousingDamageStatus()">
+                    <select id="housing_damage_status" name="housing_damage_status" required
+                    oninput="validateHousingDamageStatus()"
+                    onfocus="resetBorderAndError('housing_damage_status')"
+                    onblur="validateHousingDamageStatus()">
                         <option value="">اختر حالة السكن السابق</option>
                         @foreach($housing_damage_statuses as $key => $status)
                             <option value="{{ $key }}" {{ old('housing_damage_status') == $key ? 'selected' : '' }}>{{ $status }}</option>
@@ -432,9 +467,12 @@
             </div>
 
             <div class="row">
-                <div class="form-group">
+                <div class="col-md-6 form-group">
                     <label for="current_city">المحافظة الحالية</label>
-                    <select id="current_city" name="current_city" required oninput="validateCurrentCity()" onfocus="resetBorderAndError('current_city')" onblur="validateCurrentCity()">
+                    <select id="current_city" name="current_city" required
+                    oninput="validateCurrentCity()"
+                    onfocus="resetBorderAndError('current_city')"
+                    onblur="validateCurrentCity()" class="form-control">
                         <option value="">اختر المحافظة الحالية</option>
                         @foreach($current_cities as $key => $city)
                             <option value="{{ $key }}" {{ old('current_city') == $key ? 'selected' : '' }}>{{ $city }}</option>
@@ -443,9 +481,12 @@
                     <div class="error-message" id="current_city_error" style="color: red;"></div>
                 </div>
 
-                <div class="form-group">
+                <div class="col-md-6 form-group">
                     <label for="housing_type">نوع السكن الحالي</label>
-                    <select id="housing_type" name="housing_type" required oninput="validateHousingType()" onfocus="resetBorderAndError('housing_type')" onblur="validateHousingType()">
+                    <select id="housing_type" name="housing_type" required
+                    oninput="validateHousingType()"
+                    onfocus="resetBorderAndError('housing_type')"
+                    onblur="validateHousingType()" class="form-control">
                         <option value="">اختر نوع السكن الحالي</option>
                         @foreach($housing_types as $key => $type)
                             <option value="{{ $key }}" {{ old('housing_type') == $key ? 'selected' : '' }}>{{ $type }}</option>
@@ -453,17 +494,39 @@
                     </select>
                     <div class="error-message" id="housing_type_error" style="color: red;"></div>
                 </div>
+            </div>
 
-                <div class="form-group">
+            <div class="row">
+                <div class="col-md-4 form-group">
                     <label for="neighborhood">الحي السكني الحالي</label>
-                    <select id="neighborhood" name="neighborhood" required oninput="validateNeighborhood()" onfocus="resetBorderAndError('neighborhood')" onblur="validateNeighborhood()">
+                    <select id="neighborhood" name="neighborhood" required
+                    oninput="validateNeighborhood()"
+                    onfocus="resetBorderAndError('neighborhood')"
+                    onblur="validateNeighborhood()" class="form-control">
                         <option value="">اختر الحي السكني الحالي </option>
-                        <!-- سيتم تحديث هذه الخيارات باستخدام JavaScript -->
-                    </select>
+                        </select>
                     <div class="error-message" id="neighborhood_error" style="color: red;"></div>
                 </div>
 
-                <div class="form-group">
+                <div class="col-md-4 form-group area-responsible-container" id="areaResponsibleField" style="display:none;">
+                    <label for="area_responsible_id" class="form-label custom-label-style">مسؤول المنطقة في المواصي</label>
+                    <select class="form-control"
+                            id="area_responsible_id"
+                            name="area_responsible_id"
+                            oninput="validateAreaResponsible()"
+                            onfocus="resetBorderAndError('area_responsible_id')"
+                            onblur="validateAreaResponsible()">
+                        <option value="">اختر المسؤول</option>
+                        @foreach (\App\Models\AreaResponsible::all() as $responsible)
+                            <option value="{{ $responsible->id }}" {{ old('area_responsible_id') == $responsible->id ? 'selected' : '' }}>
+                                {{ $responsible->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="error-message" id="area_responsible_id_error" style="color: red; display: none;"></div>
+                </div>
+
+                <div class="col-md-4 form-group">
                     <label for="landmark">أقرب معلم</label>
                     <input
                         type="text"
@@ -473,7 +536,8 @@
                         value="{{ old('landmark') }}"
                         oninput="validateArabicInput('landmark')"
                         onfocus="resetBorderAndError('landmark')"
-                        onblur="validateArabicInput('landmark')">
+                        onblur="validateArabicInput('landmark')"
+                        class="form-control">
                     <div class="error-message" id="landmark_error" style="display:none; color: red;"></div>
                 </div>
             </div>
@@ -920,6 +984,43 @@
         }
     }
 
+    document.getElementById('neighborhood').addEventListener('change', function() {
+        var areaResponsibleField = document.getElementById('areaResponsibleField');
+        if (this.value === 'alMawasi') {
+            areaResponsibleField.style.display = 'flex';
+        } else {
+            areaResponsibleField.style.display = 'none';
+            document.getElementById('area_responsible_id').value = '';
+            document.getElementById('area_responsible_id_error').style.display = 'none'; // تأكد من إخفاء رسالة الخطأ
+        }
+    });
+
+    function validateAreaResponsible() {
+        const areaResponsibleInput = document.getElementById('area_responsible_id');
+        const errorMessage = document.getElementById('area_responsible_id_error');
+        const value = areaResponsibleInput.value.trim();
+        const isVisible = (document.getElementById('areaResponsibleField').style.display === 'block' || document.getElementById('areaResponsibleField').style.display === 'flex');
+
+        if (isVisible) {
+            if (value === '') {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'يرجى اختيار مسؤول المنطقة.';
+                areaResponsibleInput.style.borderColor = 'red';
+                return false;
+            } else {
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+                areaResponsibleInput.style.borderColor = '';
+                return true;
+            }
+        } else {
+            errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
+            areaResponsibleInput.style.borderColor = '';
+            return true;
+        }
+    }
+
     function validateHousingType() {
         const housingTypeInput = document.getElementById('housing_type');
         const errorMessage = document.getElementById('housing_type_error');
@@ -1067,6 +1168,11 @@
             isValid = false;
             errorMessages.push({ field: 'neighborhood', message: 'الرجاء إدخال الحي.' });
         }
+        console.log(validateAreaResponsible());
+        if (!validateAreaResponsible()) {
+            isValid = false;
+            errorMessages.push({ field: 'area_responsible_id', message: 'الرجاء إدخال الحي.' });
+        }
         console.log(validateArabicInput('landmark'));
         if (!validateArabicInput('landmark')) {
             isValid = false;
@@ -1116,38 +1222,15 @@
         });
     }
 
-    // تحديد الزر الذي سيتم الاستماع له
-    // document.getElementById('submit-button').addEventListener('click', function(e) {
-    //     e.preventDefault();
-    //
-    //     var data = {
-    //         first_name:        document.getElementById('first_name').value,
-    //         father_name:       document.getElementById('father_name').value,
-    //         grandfather_name:  document.getElementById('grandfather_name').value,
-    //         family_name:       document.getElementById('family_name').value,
-    //         gender:            document.getElementById('gender').value,
-    //         social_status:     document.getElementById('social_status').value
-    //     };
-    //
-    //     fetch('/store', {
-    //         method: 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-    //         },
-    //         body: JSON.stringify({
-    //             first_name: document.getElementById('first_name').value,
-    //             father_name: document.getElementById('father_name').value,
-    //             grandfather_name: document.getElementById('grandfather_name').value,
-    //             family_name: document.getElementById('family_name').value,
-    //             gender: document.getElementById('gender').value,
-    //             social_status: document.getElementById('social_status').value
-    //         })
-    //     })
-    //     .then(response => response.json())
-    //     .then(data => console.log(data))
-    //     .catch(error => console.error('❌ خطأ في الطلب:', error));
-    //
+    // document.getElementById('neighborhood').addEventListener('change', function() {
+    //     var areaResponsibleField = document.getElementById('areaResponsibleField');
+    //     if (this.value === 'alMawasi') {
+    //         areaResponsibleField.style.display = 'flex';
+    //         validateAreaResponsible(); // قم بالتحقق عند الظهور
+    //     } else {
+    //         areaResponsibleField.style.display = 'none';
+    //         document.getElementById('area_responsible_id').value = '';
+    //     }
     // });
 
 </script>

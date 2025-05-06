@@ -47,7 +47,7 @@ class AuthController extends Controller
         $id_num = session('person')['id_num'];
 
         // جلب بيانات الشخص مع أفراد الأسرة باستخدام رقم الهوية المخزن في السيشن
-        $person = Person::with('familyMembers')->where('id_num', $id_num)->first();
+        $person = Person::with(['familyMembers', 'areaResponsible'])->where('id_num', $id_num)->first();
 
         // التأكد من وجود الشخص في قاعدة البيانات
         if (!$person) {

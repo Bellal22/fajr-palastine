@@ -51,6 +51,15 @@ class UpdatePersonRequest extends FormRequest
             'city'                    => ['required', Rule::in(PersonCity::toValues())],
             'current_city'            => ['required', Rule::in(PersonCurrentCity::toValues())],
             'neighborhood'            => ['required', Rule::in(PersonNeighborhood::toValues())],
+            'area_responsible_id' => [
+                'nullable',
+                Rule::exists('area_responsibles', 'id')->when(
+                    $this->input('neighborhood') === PersonNeighborhood::alMawasi(),
+                    function (Rule $rule) {
+                        return $rule->required();
+                    }
+                ),
+            ],
             'landmark'                => ['required','string', 'regex:/^[\p{Arabic} ]+$/u', 'max:255'],
             'housing_type'            => ['required', Rule::in(PersonHousingType::toValues())],
             'housing_damage_status'   => ['required', Rule::in(PersonDamageHousingStatus::toValues())],
@@ -110,6 +119,10 @@ class UpdatePersonRequest extends FormRequest
             'current_city.required'    => 'الرجاء اختيار المدينة الحالية بشكل صحيح.',
 
             'neighborhood.required'    => 'الرجاء إدخال الحي بشكل صحيح.',
+
+            'area_responsible_id.required' => 'يرجى اختيار مسؤول المنطقة بما أن الحي السكني هو المواصي.',
+            'area_responsible_id.exists' => 'مسؤول المنطقة المحدد غير موجود.',
+
 
             'landmark.required'        => 'الرجاء إدخال المعلم بشكل صحيح.',
             'landmark.regex'           => 'المعلم يجب أن يحتوي فقط على حروف عربية.',

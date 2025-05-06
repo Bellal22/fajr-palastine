@@ -753,10 +753,19 @@
                     <label for="housing_type">نوع السكن الحالي:</label>
                     <input type="text" id="housing_type" value="{{ $person->housing_type ? __($person->housing_type) : 'غير محدد' }}" disabled>
                 </div>
+            </div>
+
+            <div class="profile-row">
                 <div class="profile-item">
                     <label for="neighborhood">الحي السكني الحالي:</label>
                     <input type="text" id="neighborhood" value="{{ $person->neighborhood ? __($person->neighborhood) : 'غير محدد' }}" disabled>
                 </div>
+                @if($person->areaResponsible)
+                    <div class="profile-item">
+                        <label for="area_responsible_id">مسؤول المنطقة في المواصي:</label>
+                        <input type="text" id="area_responsible_id" value="{{ $person->areaResponsible ? $person->areaResponsible->name : 'غير محدد' }}" disabled>
+                    </div>
+                @endif
                 <div class="profile-item">
                     <label for="landmark">أقرب معلم:</label>
                     <input type="text" id="landmark" value="{{ $person->landmark ?? 'غير محدد' }}" disabled>
@@ -908,12 +917,16 @@
                             required>
                         <div class="error-message" id="edit_relatives_count_error" style="display:none; color: red;"></div>
                     </div>
+
                     <div class="form-group">
                         <label for="employment_status">حالة العمل</label>
-                        <select id="edit_employment_status" name="employment_status" required oninput="validateEmploymentStatus()" onfocus="resetBorderAndError('edit_employment_status')" onblur="validateEmploymentStatus()">
-                            <option value="لا يعمل" {{ old('employment_status') == 'لا يعمل' ? 'selected' : '' }}>لا يعمل</option>
-                            <option value="موظف" {{ old('employment_status') == 'موظف' ? 'selected' : '' }}>موظف</option>
-                            <option value="عامل" {{ old('employment_status') == 'عامل' ? 'selected' : '' }}>عامل</option>
+                        <select id="edit_employment_status" name="employment_status" required
+                            oninput="validateEmploymentStatus()"
+                            onfocus="resetBorderAndError('edit_employment_status')"
+                            onblur="validateEmploymentStatus()">
+                                <option value="لا يعمل" {{ old('employment_status') == 'لا يعمل' ? 'selected' : '' }}>لا يعمل</option>
+                                <option value="موظف" {{ old('employment_status') == 'موظف' ? 'selected' : '' }}>موظف</option>
+                                <option value="عامل" {{ old('employment_status') == 'عامل' ? 'selected' : '' }}>عامل</option>
                         </select>
                         <div class="error-message" id="edit_employment_status_error" style="display: none; color: red;"></div>
                     </div>
@@ -921,9 +934,10 @@
 
                 <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
                     <label for="has_condition">هل لديك حالة صحية؟</label>
-                    <select id="edit_has_condition" name="has_condition" onchange="toggleConditionDescription()">
-                        <option value="0" {{ old('has_condition') == '0' ? 'selected' : '' }}>لا</option>
-                        <option value="1" {{ old('has_condition') == '1' ? 'selected' : '' }}>نعم</option>
+                    <select id="edit_has_condition" name="has_condition"
+                        onchange="toggleConditionDescription()">
+                            <option value="0" {{ old('has_condition') == '0' ? 'selected' : '' }}>لا</option>
+                            <option value="1" {{ old('has_condition') == '1' ? 'selected' : '' }}>نعم</option>
                     </select>
                 </div>
 
@@ -944,21 +958,27 @@
                 <div class="row">
                     <div class="form-group">
                         <label for="city">المحافظة الأصلية</label>
-                        <select id="edit_city" name="city" required oninput="validateCity()" onfocus="resetBorderAndError('city')" onblur="validateCity()">
-                            <option value="">اختر المحافظةالأصلية</option>
-                            @foreach($cities as $key => $city)
-                                <option value="{{ $key }}" {{ $person->city == $key ? 'selected' : '' }}>{{ $city }}</option>
-                            @endforeach
+                        <select id="edit_city" name="city" required
+                            oninput="validateCity()"
+                            onfocus="resetBorderAndError('city')"
+                            onblur="validateCity()">
+                                <option value="">اختر المحافظةالأصلية</option>
+                                @foreach($cities as $key => $city)
+                                    <option value="{{ $key }}" {{ $person->city == $key ? 'selected' : '' }}>{{ $city }}</option>
+                                @endforeach
                         </select>
                         <div class="error-message" id="edit_city_error" style="color: red;"></div>
                     </div>
                     <div class="form-group">
                         <label for="housing_damage_status">حالة السكن السابق</label>
-                        <select id="edit_housing_damage_status" name="housing_damage_status" required oninput="validateHousingDamageStatus()" onfocus="resetBorderAndError('edit_housing_damage_status')" onblur="validateHousingDamageStatus()">
-                            <option value="">اختر حالة السكن السابق</option>
-                            @foreach($housing_damage_statuses as $key => $status)
-                                <option value="{{ $key }}" {{ $person->housing_damage_status == $key ? 'selected' : '' }}>{{ $status }}</option>
-                            @endforeach
+                        <select id="edit_housing_damage_status" name="housing_damage_status" required
+                            oninput="validateHousingDamageStatus()"
+                            onfocus="resetBorderAndError('edit_housing_damage_status')"
+                            onblur="validateHousingDamageStatus()">
+                                <option value="">اختر حالة السكن السابق</option>
+                                @foreach($housing_damage_statuses as $key => $status)
+                                    <option value="{{ $key }}" {{ $person->housing_damage_status == $key ? 'selected' : '' }}>{{ $status }}</option>
+                                @endforeach
                         </select>
                         <div class="error-message" id="edit_housing_damage_status_error" style="color: red;"></div>
                     </div>
@@ -968,9 +988,9 @@
                     <div class="form-group">
                         <label for="current_city">المحافظة الحالية</label>
                         <select id="edit_current_city" name="current_city" required
-                            oninput="validateCurrentCity()"
-                            onfocus="resetBorderAndError('edit_current_city')"
-                            onblur="validateCurrentCity()">
+                                oninput="validateCurrentCity()"
+                                onfocus="resetBorderAndError('edit_current_city')"
+                                onblur="validateCurrentCity()">
                             <option value="">اختر المحافظة الحالية</option>
                             @foreach($current_cities as $key => $city)
                                 <option value="{{ $key }}" {{ $person->current_city == $key ? 'selected' : '' }}>
@@ -980,9 +1000,13 @@
                         </select>
                         <div class="error-message" id="edit_current_city_error" style="color: red;"></div>
                     </div>
+
                     <div class="form-group">
                         <label for="housing_type">نوع السكن الحالي</label>
-                        <select id="edit_housing_type" name="housing_type" required oninput="validateHousingType()" onfocus="resetBorderAndError('edit_housing_type')" onblur="validateHousingType()">
+                        <select id="edit_housing_type" name="housing_type" required
+                        oninput="validateHousingType()"
+                        onfocus="resetBorderAndError('edit_housing_type')"
+                        onblur="validateHousingType()">
                             <option value="">اختر نوع السكن الحالي</option>
                             @foreach($housing_types as $key => $type)
                                 <option value="{{ $key }}" {{ $person->housing_type == $key ? 'selected' : '' }}>{{ $type }}</option>
@@ -990,16 +1014,38 @@
                         </select>
                         <div class="error-message" id="edit_housing_type_error" style="color: red;"></div>
                     </div>
+                </div>
+
+                <div class="row">
                     <div class="form-group">
                         <label for="neighborhood">الحي السكني الحالي</label>
                         <select id="edit_neighborhood" name="neighborhood" required
-                            oninput="validateNeighborhood()"
-                            onfocus="resetBorderAndError('edit_neighborhood')"
-                            onblur="validateNeighborhood()">
+                                oninput="validateNeighborhood()"
+                                onfocus="resetBorderAndError('edit_neighborhood')"
+                                onblur="validateNeighborhood()">
                             <option value="">اختر الحي السكني الحالي</option>
                         </select>
                         <div class="error-message" id="edit_neighborhood_error" style="color: red;"></div>
                     </div>
+
+                    <div class="form-group @if(!$person->area_responsible_id && (old('edit_area_id') != 'alMawasi' && (isset($person->edit_area_id) && $person->edit_area_id != 'alMawasi'))) d-none @endif" id="areaResponsibleGroup">
+                        <label for="edit_area_responsible_id">مسؤول المنطقة في المواصي </label>
+                        <select class="form-control"
+                                id="edit_area_responsible_id"
+                                name="area_responsible_id"
+                                oninput="validateAreaResponsible()"
+                                onfocus="resetBorderAndError('edit_area_responsible_id')"
+                                onblur="validateAreaResponsible()">
+                            <option value="">اختر المسؤول</option>
+                            @foreach (\App\Models\AreaResponsible::all() as $responsible)
+                                <option value="{{ $responsible->id }}" {{ $person->area_responsible_id == $responsible->id ? 'selected' : '' }}>
+                                    {{ $responsible->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="error-message" id="edit_area_responsible_id_error" style="color: red; display: none;"></div>
+                    </div>
+
                     <div class="form-group">
                         <label for="landmark">أقرب معلم</label>
                         <input
@@ -1016,7 +1062,6 @@
                 </div>
 
                 <meta name="csrf-token" content="{{ csrf_token() }}">
-
 
                 <!-- زر حفظ التعديلات -->
                 <button class="save-btn" onclick="saveChangesParent()">حفظ التغييرات</button>
@@ -1943,7 +1988,6 @@
             });
         }
 
-        // Function to display error messages
         function showError(message) {
             let errorDiv = document.getElementById('password-error');
             errorDiv.innerText = message;
@@ -2041,11 +2085,11 @@
                 return true;
             }
         }
+
         function validatedobf() {
             const inputField = document.getElementById("dobf");
             const errorMessage = document.getElementById("dobf_error");
             const value = inputField.value.trim();
-            //
 
             if (!value) {
                 // إذا كان الحقل فارغًا
@@ -2078,7 +2122,6 @@
             const phoneInput = document.getElementById('edit_phone');
             const errorMessage = document.getElementById('edit_phone_error');
             let value = phoneInput.value.trim();
-
 
             // إزالة العلامات "-" من الرقم
             const cleanValue = value.replace(/-/g, '');
@@ -2429,6 +2472,62 @@
             }
         }
 
+        document.addEventListener('DOMContentLoaded', function() {
+            const areaSelect = document.getElementById('edit_area_id');
+            const areaResponsibleGroup = document.getElementById('areaResponsibleGroup');
+            const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
+
+            function handleAreaChange() {
+                console.log('قيمة حقل المنطقة المختارة:', areaSelect.value);
+                if (areaSelect.value == 'alMawasi') {
+                    areaResponsibleGroup.classList.remove('d-none');
+                } else {
+                    console.log('قبل تعيين القيمة:', areaResponsibleSelect.value);
+                    areaResponsibleSelect.value = '';
+                    console.log('بعد تعيين القيمة:', areaResponsibleSelect.value);
+                    areaResponsibleGroup.classList.add('d-none');
+                }
+            }
+
+            if (areaSelect && areaResponsibleGroup && areaResponsibleSelect) {
+                // الاستماع لتغيير قيمة حقل الحي السكني
+                areaSelect.addEventListener('change', handleAreaChange);
+
+                // التحقق من القيمة الأولية عند تحميل الصفحة لإظهار/إخفاء حقل مسؤول المنطقة
+                if (areaSelect.value == 'alMawasi') {
+                    areaResponsibleGroup.classList.remove('d-none');
+                }
+
+                // لا داعي لإضافة مستمع حدث تغيير لحقل مسؤول المنطقة هنا
+                // لأن التحقق يتم بالفعل بواسطة handleAreaChange عند تغيير الحي السكني
+            }
+        });
+
+        function validateAreaResponsible() {
+            const areaResponsibleInput = document.getElementById('edit_area_responsible_id');
+            const errorMessage = document.getElementById('edit_area_responsible_id_error');
+            const value = areaResponsibleInput.value.trim();
+
+            if (value === '') {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'يرجى اختيار مسؤول المنطقة.';
+                areaResponsibleInput.style.borderColor = 'red';
+                return false;
+            } else {
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+                areaResponsibleInput.style.borderColor = '';
+                return true;
+            }
+        }
+
+        window.onload = function() {
+            var neighborhoodSelect = document.getElementById('edit_neighborhood');
+            if (neighborhoodSelect) {
+                neighborhoodSelect.dispatchEvent(new Event('change'));
+            }
+        };
+
         function validateHousingType() {
             const housingTypeInput = document.getElementById('edit_housing_type');
             const errorMessage = document.getElementById('edit_housing_type_error');
@@ -2569,6 +2668,11 @@
             if (!validateNeighborhood()) {
                 isValid = false;
                 errorMessages.push({ field: 'edit_neighborhood', message: 'الرجاء إدخال الحي بشكل صحيح.' });
+            }
+
+            if (!validateAreaResponsible()) {
+                isValid = false;
+                errorMessages.push({ field: 'edit_area_responsible_id', message: 'الرجاء إدخال مسؤول المنطقة في المواصي بشكل صحيح.' });
             }
 
             if (!validateArabicInput('edit_landmark')) {
