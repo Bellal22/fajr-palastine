@@ -9,6 +9,7 @@ use App\Enums\Person\PersonHousingType;
 use App\Enums\Person\PersonNeighborhood;
 use App\Enums\Person\PersonRelationship;
 use App\Enums\Person\PersonSocialStatus;
+use App\Models\AreaResponsible;
 use App\Models\Complaint;
 use App\Models\Person;
 use Illuminate\Http\Request;
@@ -73,6 +74,8 @@ class AuthController extends Controller
         $neighborhoods = collect(PersonNeighborhood::toValues())
             ->mapWithKeys(fn($value) => [$value => __($value)]);
 
+        $areaResponsibles = AreaResponsible::all();
+
         $housing_types = collect(PersonHousingType::toValues())
             ->mapWithKeys(fn($value) => [$value => __($value)]);
 
@@ -88,6 +91,7 @@ class AuthController extends Controller
             'cities',
             'current_cities',
             'neighborhoods',
+            'areaResponsibles',
             'housing_types',
             'housing_damage_statuses'
         ));

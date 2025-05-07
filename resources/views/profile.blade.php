@@ -988,9 +988,10 @@
                     <div class="form-group">
                         <label for="current_city">المحافظة الحالية</label>
                         <select id="edit_current_city" name="current_city" required
-                                oninput="validateCurrentCity()"
-                                onfocus="resetBorderAndError('edit_current_city')"
-                                onblur="validateCurrentCity()">
+                            oninput="validateCurrentCity()"
+                            onfocus="resetBorderAndError('edit_current_city')"
+                            onblur="validateCurrentCity()"
+                            onchange="updateNeighborhoods(this.value, '{{ $person->neighborhood }}')">
                             <option value="">اختر المحافظة الحالية</option>
                             @foreach($current_cities as $key => $city)
                                 <option value="{{ $key }}" {{ $person->current_city == $key ? 'selected' : '' }}>
@@ -1018,18 +1019,21 @@
 
                 <div class="row">
                     <div class="form-group">
-                        <label for="neighborhood">الحي السكني الحالي</label>
+                        <label for="edit_neighborhood">الحي السكني الحالي</label>
                         <select id="edit_neighborhood" name="neighborhood" required
                                 oninput="validateNeighborhood()"
                                 onfocus="resetBorderAndError('edit_neighborhood')"
                                 onblur="validateNeighborhood()">
                             <option value="">اختر الحي السكني الحالي</option>
+                            @foreach($neighborhoods as $key => $neighborhood)
+                                <option value="{{ $key }}" {{ $person->neighborhood == $key ? 'selected' : '' }}>{{ $neighborhood }}</option>
+                            @endforeach
                         </select>
-                        <div class="error-message" id="edit_neighborhood_error" style="color: red;"></div>
+                        <div class="error-message" id="edit_neighborhood_error" style="display:none; color: red;"></div>
                     </div>
 
-                    <div class="form-group @if(!$person->area_responsible_id && (old('edit_area_id') != 'alMawasi' && (isset($person->edit_area_id) && $person->edit_area_id != 'alMawasi'))) d-none @endif" id="areaResponsibleGroup">
-                        <label for="edit_area_responsible_id">مسؤول المنطقة في المواصي </label>
+                    <div class="form-group @if($person->neighborhood != 'alMawasi') d-none @endif" id="areaResponsibleGroup">
+                        <label for="edit_area_responsible_id">مسؤول المنطقة في المواصي</label>
                         <select class="form-control"
                                 id="edit_area_responsible_id"
                                 name="area_responsible_id"
@@ -1758,6 +1762,7 @@
                 current_city: document.getElementById('edit_current_city').value.trim(),
                 housing_type: document.getElementById('edit_housing_type').value.trim(),
                 neighborhood: document.getElementById('edit_neighborhood').value.trim(),
+                area_responsible_id: document.getElementById('edit_area_responsible_id').value.trim(),
                 landmark: document.getElementById('edit_landmark').value.trim()
             };
 
@@ -2340,29 +2345,35 @@
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            // جلب قيمة المحافظة والحي المحفوظة مسبقًا
+            console.log("DOMContentLoaded event fired"); // تحقق من تنفيذ الحدث
+
             const currentCitySelect = document.getElementById("edit_current_city");
             const neighborhoodSelect = document.getElementById("edit_neighborhood");
-            const storedNeighborhood = "{{ $person->neighborhood }}"; // جلب القيمة القديمة
-            const storedCity = "{{ $person->current_city }}"; // جلب المحافظة القديمة
+            const storedNeighborhood = "{{ $person->neighborhood }}";
+            const storedCity = "{{ $person->current_city }}";
 
-            // تحديث الأحياء بناءً على المحافظة المحفوظة
+            console.log("Stored City:", storedCity); // تحقق من القيمة
+            console.log("Stored Neighborhood:", storedNeighborhood); // تحقق من القيمة
+
             updateNeighborhoods(storedCity, storedNeighborhood);
 
-            // تحديث الأحياء عند تغيير المحافظة
             currentCitySelect.addEventListener("change", function () {
+                console.log("City changed to:", this.value); // تحقق من القيمة الجديدة
                 updateNeighborhoods(this.value, null);
             });
         });
 
-        function updateNeighborhoods(selectedCity, selectedNeighborhood) {
+        function updateNeighborhoods(selectedCity, selectedNeighborhood, originalCity) {
+            console.log("--- تحديث الأحياء ---");
+            console.log("المحافظة الحالية المحددة:", selectedCity);
+            console.log("الحي المحدد سابقًا:", selectedNeighborhood);
+            console.log("المحافظة الأصلية:", originalCity);
+
             const neighborhoodSelect = document.getElementById("edit_neighborhood");
             neighborhoodSelect.innerHTML = '<option value="">اختر الحي السكني الحالي</option>';
 
-            let neighborhoods = [];
-
-            if (selectedCity === "rafah") {
-                neighborhoods = [
+            const cityNeighborhoods = {
+                "rafah": [
                     { value: "masbah", label: "مصبح" },
                     { value: "khirbetAlAdas", label: "خربة العدس" },
                     { value: "alJaninehNeighborhood", label: "حي الجنينة" },
@@ -2373,9 +2384,8 @@
                     { value: "alShabouraNeighborhood", label: "حي الشابورة" },
                     { value: "rafahProject", label: "مشروع رفح" },
                     { value: "zararRoundabout", label: "دوار زعرب" }
-                ];
-            } else if (selectedCity === "khanYounis") {
-                neighborhoods = [
+                ],
+                "khanYounis": [
                     { value: "qizanAlNajjar", label: "قيزان النجار" },
                     { value: "qizanAbuRashwan", label: "قيزان أبو رشوان" },
                     { value: "juraAlLoot", label: "جورة اللوت" },
@@ -2397,20 +2407,44 @@
                     { value: "mirage", label: "ميراج" },
                     { value: "european", label: "الأوروبي" },
                     { value: "alFakhari", label: "الفخاري" }
-                ];
-            }
+                ]
+            };
 
-            // إضافة الأحياء إلى القائمة
+            const neighborhoods = cityNeighborhoods[selectedCity] || [];
+
             neighborhoods.forEach(neighborhood => {
                 const option = document.createElement("option");
                 option.value = neighborhood.value;
                 option.textContent = neighborhood.label;
-                if (selectedNeighborhood && neighborhood.value === selectedNeighborhood) {
-                    option.selected = true;
-                }
                 neighborhoodSelect.appendChild(option);
-         });
+            });
+
+            // التحديث المباشر لقيمة الحقل
+            if (selectedCity === originalCity && selectedNeighborhood) {
+                neighborhoodSelect.value = selectedNeighborhood;
+            } else {
+                neighborhoodSelect.value = "";
+            }
+
+            console.log("قيمة حقل الحي بعد التحديث:", neighborhoodSelect.value);
+            console.log("--- نهاية تحديث الأحياء ---");
         }
+
+        window.onload = function() {
+            const currentCitySelect = document.getElementById('edit_current_city');
+            const selectedCity = currentCitySelect.value;
+            const selectedNeighborhood = '{{ $person->neighborhood }}';
+            const originalCity = '{{ $person->current_city }}';
+
+            updateNeighborhoods(selectedCity, selectedNeighborhood, originalCity);
+
+            currentCitySelect.onchange = function() {
+                const cityValue = this.value;
+                const neighborhoodValue = '{{ $person->neighborhood }}';
+                const originalCityValue = '{{ $person->current_city }}';
+                updateNeighborhoods(cityValue, neighborhoodValue, originalCityValue);
+            };
+        };
 
         function validateCurrentCity() {
             const currentCityInput = document.getElementById('edit_current_city');
@@ -2472,61 +2506,66 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const areaSelect = document.getElementById('edit_area_id');
+        document.addEventListener('DOMContentLoaded', function () {
+            const neighborhoodSelect = document.getElementById('edit_neighborhood');
             const areaResponsibleGroup = document.getElementById('areaResponsibleGroup');
             const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
+            const errorMessage = document.getElementById('edit_area_responsible_id_error');
 
-            function handleAreaChange() {
-                console.log('قيمة حقل المنطقة المختارة:', areaSelect.value);
-                if (areaSelect.value == 'alMawasi') {
+            function updateAreaResponsibleVisibility() {
+                const selectedNeighborhood = neighborhoodSelect.value;
+
+                if (selectedNeighborhood === 'alMawasi') {
+                    // ✅ المواصي: نظهر الحقل فقط
                     areaResponsibleGroup.classList.remove('d-none');
                 } else {
-                    console.log('قبل تعيين القيمة:', areaResponsibleSelect.value);
-                    areaResponsibleSelect.value = '';
-                    console.log('بعد تعيين القيمة:', areaResponsibleSelect.value);
+                    // ❌ غير المواصي: نخفي الحقل و نفرّغ القيمة
                     areaResponsibleGroup.classList.add('d-none');
+                    areaResponsibleSelect.value = '';
+                    errorMessage.style.display = 'none';
+                    errorMessage.textContent = '';
+                    areaResponsibleSelect.style.borderColor = '';
                 }
             }
 
-            if (areaSelect && areaResponsibleGroup && areaResponsibleSelect) {
-                // الاستماع لتغيير قيمة حقل الحي السكني
-                areaSelect.addEventListener('change', handleAreaChange);
+            // تشغيل عند التغيير
+            neighborhoodSelect.addEventListener('change', updateAreaResponsibleVisibility);
 
-                // التحقق من القيمة الأولية عند تحميل الصفحة لإظهار/إخفاء حقل مسؤول المنطقة
-                if (areaSelect.value == 'alMawasi') {
-                    areaResponsibleGroup.classList.remove('d-none');
+            // تشغيل عند تحميل الصفحة أيضًا
+            updateAreaResponsibleVisibility();
+
+            // التحقق عند فقدان التركيز
+            areaResponsibleSelect.addEventListener('blur', function () {
+                if (!areaResponsibleGroup.classList.contains('d-none') && areaResponsibleSelect.value.trim() === '') {
+                    errorMessage.textContent = 'يرجى اختيار مسؤول المنطقة.';
+                    errorMessage.style.display = 'block';
+                    areaResponsibleSelect.style.borderColor = 'red';
                 }
+            });
 
-                // لا داعي لإضافة مستمع حدث تغيير لحقل مسؤول المنطقة هنا
-                // لأن التحقق يتم بالفعل بواسطة handleAreaChange عند تغيير الحي السكني
-            }
+            // إخفاء الخطأ عند التركيز
+            areaResponsibleSelect.addEventListener('focus', function () {
+                errorMessage.textContent = '';
+                errorMessage.style.display = 'none';
+                areaResponsibleSelect.style.borderColor = '';
+            });
         });
 
         function validateAreaResponsible() {
-            const areaResponsibleInput = document.getElementById('edit_area_responsible_id');
-            const errorMessage = document.getElementById('edit_area_responsible_id_error');
-            const value = areaResponsibleInput.value.trim();
-
-            if (value === '') {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'يرجى اختيار مسؤول المنطقة.';
-                areaResponsibleInput.style.borderColor = 'red';
+            const input = document.getElementById('edit_area_responsible_id');
+            const error = document.getElementById('edit_area_responsible_id_error');
+            if (input.value.trim() === '') {
+                error.textContent = 'يرجى اختيار مسؤول المنطقة.';
+                error.style.display = 'block';
+                input.style.borderColor = 'red';
                 return false;
             } else {
-                errorMessage.style.display = 'none';
-                errorMessage.textContent = '';
-                areaResponsibleInput.style.borderColor = '';
+                error.textContent = '';
+                error.style.display = 'none';
+                input.style.borderColor = '';
                 return true;
             }
         }
-
-        window.onload = function() {
-            var neighborhoodSelect = document.getElementById('edit_neighborhood');
-            if (neighborhoodSelect) {
-                neighborhoodSelect.dispatchEvent(new Event('change'));
-            }
-        };
 
         function validateHousingType() {
             const housingTypeInput = document.getElementById('edit_housing_type');
@@ -2554,36 +2593,6 @@
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
                 housingTypeInput.style.borderColor = ''; // إزالة لون الإطار
-                return true;
-            }
-        }
-
-        function validateHousingDamageStatus() {
-            const housingDamageStatusInput = document.getElementById('edit_housing_damage_status');
-            const errorMessage = document.getElementById('edit_housing_damage_status_error');
-            const value = housingDamageStatusInput.value.trim();
-
-
-            // جلب القيم المسموحة من الخادم
-            const validHousingDamageStatuses = @json(\App\Enums\Person\PersonDamageHousingStatus::toValues());
-
-            // إذا كان الحقل فارغًا
-            if (value === '') {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'هذا الحقل مطلوب.';
-                housingDamageStatusInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة غير صالحة
-            else if (!validHousingDamageStatuses.includes(value)) {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'القيمة المدخلة غير صالحة.';
-                housingDamageStatusInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة صالحة
-            else {
-                errorMessage.style.display = 'none';
-                errorMessage.textContent = '';
-                housingDamageStatusInput.style.borderColor = ''; // إزالة لون الإطار
                 return true;
             }
         }
