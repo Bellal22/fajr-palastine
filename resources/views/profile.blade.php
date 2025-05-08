@@ -468,15 +468,18 @@
             overflow-y: auto;
         }
 
-        #overlay {
+        .hidden {
             display: none;
+        }
+
+        .overlay-class {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
+            background-color: rgba(0, 0, 0, 0.5); /* خلفية معتمة */
+            z-index: 1000; /* تأكد من أنه فوق العناصر الأخرى */
         }
 
         button {
@@ -508,6 +511,36 @@
 
         #add-person-btn:hover {
             background-color: #E65100;
+        }
+
+        .area-responsible-container {
+            display: flex;
+            flex-direction: column; /* ترتيب العناصر عموديًا */
+        }
+
+        .area-responsible-container label.form-label {
+            order: 1;
+            margin-bottom: 0.5rem; /* مساحة بين الـ label والـ select */
+        }
+
+        .area-responsible-container select.form-control {
+            order: 2;
+        }
+
+        .area-responsible-container .error-message {
+            order: 3; /* خلي رسالة الخطأ تالت عنصر (تحت الـ select) */
+            margin-top: 0.5rem; /* مساحة بين الـ select ورسالة الخطأ */
+        }
+
+        /* عند إخفاء الحقل، حافظ على ظهور رسالة الخطأ في مكانها (لكنها هتكون مخفية) */
+        #areaResponsibleField[style*="display:none"] .error-message {
+            display: block !important;
+            visibility: hidden;
+        }
+
+        #areaResponsibleField[style*="display:none"] label.form-label,
+        #areaResponsibleField[style*="display:none"] select.form-control {
+            display: none !important;
         }
 
         /* Media Queries */
@@ -637,7 +670,7 @@
                         <label for="confirm-password">تأكيد كلمة المرور الجديدة</label>
                         <input type="password" id="confirm-password" name="confirm_passkey" required
                             style="width: 100%; padding: 10px; padding-left: 40px; font-size: 16px; box-sizing: border-box;">
-                        <i class="fa fa-eye toggle-password" data-target="new-password"
+                        <i class="fa fa-eye toggle-password" data-target="confirm-password"
                             style="position: absolute; left: 10px; top: 50%; bottom: 50%; transform: translateY(-50%); cursor: pointer; color: #555; font-size: 16px;">
                         </i>
                     </div>
@@ -960,7 +993,7 @@
                         <label for="city">المحافظة الأصلية</label>
                         <select id="edit_city" name="city" required
                             oninput="validateCity()"
-                            onfocus="resetBorderAndError('city')"
+                            onfocus="resetBorderAndError('edit_city')"
                             onblur="validateCity()">
                                 <option value="">اختر المحافظةالأصلية</option>
                                 @foreach($cities as $key => $city)
@@ -1018,7 +1051,7 @@
                 </div>
 
                 <div class="row">
-                    <div class="form-group">
+                    <div class="form-group" id="neighborhoodField">
                         <label for="edit_neighborhood">الحي السكني الحالي</label>
                         <select id="edit_neighborhood" name="neighborhood" required
                                 oninput="validateNeighborhood()"
@@ -1032,7 +1065,7 @@
                         <div class="error-message" id="edit_neighborhood_error" style="display:none; color: red;"></div>
                     </div>
 
-                    <div class="form-group @if($person->neighborhood != 'alMawasi') d-none @endif" id="areaResponsibleGroup">
+                    <div class="form-group area-responsible-container" id="areaResponsibleField" style="display:none;">
                         <label for="edit_area_responsible_id">مسؤول المنطقة في المواصي</label>
                         <select class="form-control"
                                 id="edit_area_responsible_id"
@@ -1080,9 +1113,10 @@
             </a>
         </h1>
 
-        <div id="form-popup" class="popup hidden">
+        <div id="form-popup" class="hidden">
             <div>
                 <span class="close" id="closse-popup">&times;</span>
+                <div id="overlay" class="overlay-class hidden"></div>
                 <h1>إضافة بيانات فرد</h1>
 
                     <input type="hidden" id="familyMemberId" name="id">
@@ -1364,20 +1398,140 @@
 
     <script>
 
-        $(document).ready(function () {
+        $(document).ready(function() {
+            console.log("$(document).ready() تم التنفيذ (الكتلة الرئيسية - مُعدلة 2)");
 
-            // فتح الفورم
-            $('#open-form').click(function () {
-                $('#form-popup').fadeIn();
+            // دالة للتحقق من وجود عنصر في DOM
+            function elementExists(selector) {
+                const exists = $(selector).length > 0;
+                console.log(`التحقق من وجود ${selector}: ${exists}`);
+                return exists;
+            }
+
+            // تهيئة قائمة الإعدادات
+            function setupSettingsToggle() {
+                const settingsToggle = $('#settings-toggle');
+                const settingsDropdown = $('#settings-dropdown');
+
+                if (elementExists('#settings-toggle') && elementExists('#settings-dropdown')) {
+                    settingsToggle.on('click', function(event) {
+                        event.stopPropagation();
+                        console.log("تم النقر على settings-toggle");
+                        settingsDropdown.toggle();
+                    });
+
+                    $(document).on('click', function(event) {
+                        if (!settingsToggle.is(event.target) && !settingsDropdown.is(event.target) && settingsDropdown.is(':visible')) {
+                            settingsDropdown.hide();
+                        }
+                    });
+                } else {
+                    console.error("لم يتم العثور على العنصر '#settings-toggle' أو '#settings-dropdown'!");
+                }
+            }
+
+            // تهيئة زر تغيير كلمة المرور
+            function setupChangePasswordButton() {
+                const changePasswordBtn = $('#change-password-btn');
+                const passwordPopup = $('#password-popup');
+                const passwordForm = $('#password-form');
+
+                if (elementExists('#change-password-btn') && elementExists('#password-popup')) {
+                    changePasswordBtn.on('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        console.log("تم النقر على change-password-btn");
+                        passwordPopup.removeClass('hidden');
+                        $('#settings-dropdown').hide();
+                        if (passwordForm) {
+                            passwordForm.show();
+                        }
+                    });
+                } else {
+                    console.error("لم يتم العثور على العنصر '#change-password-btn' أو '#password-popup'!");
+                }
+            }
+
+            // تهيئة إظهار/إخفاء كلمة المرور (هذا الجزء تم استبداله)
+            let togglePasswordSetupDone = false;
+            function setupTogglePassword() {
+                if (togglePasswordSetupDone) {
+                    console.log("setupTogglePassword() تم استدعاؤها بالفعل، سيتم التخطي.");
+                    return;
+                }
+                togglePasswordSetupDone = true;
+
+                const togglePasswordButtons = $('.toggle-password');
+                console.log("تم العثور على عناصر .toggle-password:", togglePasswordButtons.length);
+
+                if (togglePasswordButtons.length > 0) {
+                    togglePasswordButtons.each(function() {
+                        const button = $(this);
+                        const target = button.data('target');
+                        const input = $('#' + target);
+
+                        console.log(`تهيئة زر تبديل لكلمة المرور لـ ${target}`);
+
+                        button.on('click', function() {
+                            console.log(`تم النقر على زر تبديل، data-target: ${target}`);
+                            if (input.length) {
+                                const type = input.attr('type') === 'password' ? 'text' : 'password';
+                                console.log(`النوع الحالي: ${input.attr('type')}, النوع الجديد: ${type}`);
+                                input.attr('type', type);
+                                button.toggleClass('fa-eye fa-eye-slash');
+                            } else {
+                                console.error(`لم يتم العثور على حقل الإدخال المرتبط بـ ${target}`);
+                            }
+                        });
+                    });
+                } else {
+                    console.error("لم يتم العثور على أي عناصر بالصنف '.toggle-password'!");
+                }
+            }
+
+            // تهيئة وظائف أخرى
+            function setupOtherFunctions() {
+                window.validatePassword = function() {
+                    console.log("دالة validatePassword() تم استدعاؤها");
+                };
+
+                window.checkPasswordMatch = function() {
+                    console.log("دالة checkPasswordMatch() تم استدعاؤها");
+                };
+            }
+
+            // تهيئة جميع الوظائف
+            setupSettingsToggle();
+            setupChangePasswordButton();
+            // setupTogglePassword(); // تم استبدالها
+            setupOtherFunctions();
+
+            // وظائف إضافية (بوب أب)
+            window.closepasswordpopup = function() {
+                $('#password-popup').addClass('hidden');
+            };
+
+            window.closePopup = function() {
+                $('#editPopup').addClass('hidden');
+            };
+
+            window.openPopup = function() {
+                $('#editPopup').removeClass('hidden');
+                resetValidationStyles();
+            };
+
+            $('#open-form').click(function(event) {
+                event.preventDefault();
+                $('#form-popup').show(); // استخدم show() بدلاً من removeClass('hidden') مؤقتًا
             });
 
-            // إغلاق الفورم
-            $('#closse-popup').click(function () {
-                $('#form-popup').fadeOut();
+            // إغلاق بوب أب إضافة فرد جديد
+            $('#closse-popup').click(function() {
+                $('#form-popup').hide(); // استخدم hide() بدلاً من addClass('hidden') مؤقتًا
             });
 
             // إضافة فرد جديد إلى قاعدة البيانات
-            $('#add-person-btn').click(function () {
+            $('#add-person-btn').click(function() {
                 const id_num = $('#id_numf').val();
                 const first_name = $('#first_namef').val();
                 const father_name = $('#father_namef').val();
@@ -1388,14 +1542,11 @@
                 const has_condition = $('#has_conditionf').val();
                 const condition_description = has_condition == '1' ? $('#condition_descriptionf').val() : null;
 
-                   console.log(dob, has_condition); // تحقق من القيم المرسلة
-
                 // التحقق من الحقول المطلوبة
                 if (!id_num || !first_name || !father_name || !grandfather_name || !family_name || !dob || !relationship) {
                     showAlert('يرجى ملء جميع الحقول المطلوبة!', 'error');
                     return;
                 }
-                console.log(id_num, first_name, father_name, grandfather_name, family_name, dob, relationship, has_condition);
 
                 // إرسال البيانات مباشرة إلى السيرفر
                 $.ajax({
@@ -1416,17 +1567,17 @@
                         has_condition: has_condition,
                         condition_description: condition_description
                     },
-                    success: function (response) {
+                    success: function(response) {
                         showAlert('تمت إضافة الفرد بنجاح', 'success');
 
                         // تفريغ الحقول بعد الإضافة
-                        $('#form-popup input, #form-popup select, #form-popup textarea').val('');
-                        $('#form-popup').fadeOut();
+                        $('#form-popup').find('input, select, textarea').val('');
+                        $('#form-popup').hide();
 
                         // تحديث الصفحة لرؤية البيانات الجديدة (يمكن استبداله بتحديث جزء معين من الصفحة)
                         location.reload();
                     },
-                    error: function (xhr) {
+                    error: function(xhr) {
                         showAlert('حدث خطأ أثناء الإرسال!', 'error');
                         console.error(xhr.responseText);
                     }
@@ -1440,6 +1591,46 @@
                     title: message,
                     showConfirmButton: true,
                     confirmButtonText: 'إغلاق'
+                });
+            }
+
+            // دالة تأكيد الحذف
+            window.confirmDelete = function(id) {
+                Swal.fire({
+                    title: 'هل أنت متأكد؟',
+                    text: "لا يمكنك التراجع عن هذا الإجراء!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'نعم، حذف!',
+                    cancelButtonText: 'إلغاء'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // إرسال طلب AJAX لحذف العنصر
+                        $.ajax({
+                            url: '/person/' + id,
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') // أخذ توكن CSRF من الـ meta tag
+                            },
+                            success: function(response) {
+                                Swal.fire(
+                                    'تم الحذف!',
+                                    'تم حذف الفرد بنجاح.',
+                                    'success'
+                                );
+                                location.reload();
+                            },
+                            error: function(xhr, status, error) {
+                                Swal.fire(
+                                    'خطأ!',
+                                    'يرجة تعديل الحالة الاجتماعية لتتمكن من القيام بعملية الحذف',
+                                    'error'
+                                );
+                            }
+                        });
+                    }
                 });
             }
         });
@@ -1507,38 +1698,6 @@
                 return false; // منع إرسال النموذج
             }
             return true; // السماح بإرسال النموذج
-        }
-
-        document.getElementById('settings-toggle').addEventListener('click', function() {
-            var menu = document.getElementById('settings-dropdown');
-            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-        });
-
-        // إخفاء القائمة عند النقر خارجها
-        document.addEventListener('click', function(event) {
-            var menu = document.getElementById('settings-dropdown');
-            var button = document.getElementById('settings-toggle');
-            if (!button.contains(event.target) && !menu.contains(event.target)) {
-                menu.style.display = 'none';
-            }
-        });
-
-        // ✅ عند الضغط على "تعديل كلمة المرور" يتم إخفاء القائمة
-        document.getElementById('change-password-btn').addEventListener('click', function() {
-            document.getElementById('settings-dropdown').style.display = 'none'; // إخفاء القائمة
-
-            // ✅ كود فتح فورم تغيير كلمة المرور (تأكد إن الفورم عندك ID خاص به)
-            document.getElementById('password-form').style.display = 'block';
-        });
-
-        // فتح بوب أب تغيير كلمة المرور
-        document.getElementById('change-password-btn').addEventListener('click', function() {
-            document.getElementById('password-popup').classList.remove('hidden');
-        });
-
-        // إغلاق بوب أب تغيير كلمة المرور
-        function closepasswordpopup() {
-            document.getElementById("password-popup").classList.add("hidden");
         }
 
         // تفعيل وإلغاء تفعيل رؤية كلمات المرور
@@ -1719,10 +1878,6 @@
 
             // تحديث قائمة الأحياء بناءً على المحافظة وتحديد الحي المخزن
             updateNeighborhoods(current_city, neighborhood);
-        }
-
-        function closePopup() {
-            document.getElementById("editPopup").classList.add("hidden");
         }
 
         function closeFamilyPopup() {
@@ -2345,23 +2500,34 @@
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            console.log("DOMContentLoaded event fired"); // تحقق من تنفيذ الحدث
+            console.log("DOMContentLoaded event fired");
 
             const currentCitySelect = document.getElementById("edit_current_city");
             const neighborhoodSelect = document.getElementById("edit_neighborhood");
             const storedNeighborhood = "{{ $person->neighborhood }}";
             const storedCity = "{{ $person->current_city }}";
+            const originalCity = "{{ $person->current_city }}"; // احفظ المحافظة الأصلية
+            console.log("Original City (بعد التعريف):", originalCity);
 
-            console.log("Stored City:", storedCity); // تحقق من القيمة
-            console.log("Stored Neighborhood:", storedNeighborhood); // تحقق من القيمة
+            console.log("Stored City:", storedCity);
+            console.log("Stored Neighborhood:", storedNeighborhood);
 
-            updateNeighborhoods(storedCity, storedNeighborhood);
+            updateNeighborhoods(storedCity, storedNeighborhood, originalCity); // مرر المحافظة الأصلية
 
             currentCitySelect.addEventListener("change", function () {
-                console.log("City changed to:", this.value); // تحقق من القيمة الجديدة
-                updateNeighborhoods(this.value, null);
+                console.log("City changed to:", this.value);
+                updateNeighborhoods(this.value, null, originalCity); // مرر المحافظة الأصلية
             });
         });
+
+        function populateNeighborhoodSelect(neighborhoods, neighborhoodSelect) {
+            neighborhoods.forEach(neighborhood => {
+                const option = document.createElement("option");
+                option.value = neighborhood.value;
+                option.textContent = neighborhood.label;
+                neighborhoodSelect.appendChild(option);
+            });
+        }
 
         function updateNeighborhoods(selectedCity, selectedNeighborhood, originalCity) {
             console.log("--- تحديث الأحياء ---");
@@ -2412,16 +2578,17 @@
 
             const neighborhoods = cityNeighborhoods[selectedCity] || [];
 
-            neighborhoods.forEach(neighborhood => {
-                const option = document.createElement("option");
-                option.value = neighborhood.value;
-                option.textContent = neighborhood.label;
-                neighborhoodSelect.appendChild(option);
-            });
+            populateNeighborhoodSelect(neighborhoods, neighborhoodSelect);
 
-            // التحديث المباشر لقيمة الحقل
             if (selectedCity === originalCity && selectedNeighborhood) {
-                neighborhoodSelect.value = selectedNeighborhood;
+                setTimeout(function () {
+                    for (let i = 0; i < neighborhoodSelect.options.length; i++) {
+                        if (neighborhoodSelect.options[i].value === selectedNeighborhood) {
+                            neighborhoodSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }, 50);
             } else {
                 neighborhoodSelect.value = "";
             }
@@ -2430,7 +2597,7 @@
             console.log("--- نهاية تحديث الأحياء ---");
         }
 
-        window.onload = function() {
+        window.onload = function () {
             const currentCitySelect = document.getElementById('edit_current_city');
             const selectedCity = currentCitySelect.value;
             const selectedNeighborhood = '{{ $person->neighborhood }}';
@@ -2438,7 +2605,7 @@
 
             updateNeighborhoods(selectedCity, selectedNeighborhood, originalCity);
 
-            currentCitySelect.onchange = function() {
+            currentCitySelect.onchange = function () {
                 const cityValue = this.value;
                 const neighborhoodValue = '{{ $person->neighborhood }}';
                 const originalCityValue = '{{ $person->current_city }}';
@@ -2450,7 +2617,6 @@
             const currentCityInput = document.getElementById('edit_current_city');
             const errorMessage = document.getElementById('edit_current_city_error');
             const value = currentCityInput.value.trim();
-
 
             // جلب القيم المسموحة من الخادم
             const validValues = @json(\App\Enums\Person\PersonCurrentCity::toValues());
@@ -2508,62 +2674,49 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             const neighborhoodSelect = document.getElementById('edit_neighborhood');
-            const areaResponsibleGroup = document.getElementById('areaResponsibleGroup');
+            const areaResponsibleField = document.getElementById('areaResponsibleField');
             const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
             const errorMessage = document.getElementById('edit_area_responsible_id_error');
 
-            function updateAreaResponsibleVisibility() {
-                const selectedNeighborhood = neighborhoodSelect.value;
+             function toggleAreaResponsibleField() {
+                const selectedNeighborhood = document.getElementById('edit_neighborhood').value;
+                const areaResponsibleField = document.getElementById('areaResponsibleField');
+                const responsibleInput = document.getElementById('edit_area_responsible_id');
+                const errorMsg = document.getElementById('edit_area_responsible_id_error');
 
                 if (selectedNeighborhood === 'alMawasi') {
-                    // ✅ المواصي: نظهر الحقل فقط
-                    areaResponsibleGroup.classList.remove('d-none');
+                    areaResponsibleField.style.display = 'flex';
                 } else {
-                    // ❌ غير المواصي: نخفي الحقل و نفرّغ القيمة
-                    areaResponsibleGroup.classList.add('d-none');
-                    areaResponsibleSelect.value = '';
-                    errorMessage.style.display = 'none';
-                    errorMessage.textContent = '';
-                    areaResponsibleSelect.style.borderColor = '';
+                    areaResponsibleField.style.display = 'none';
+                    responsibleInput.value = '';
+                    if (errorMsg) errorMsg.style.display = 'none';
                 }
             }
 
-            // تشغيل عند التغيير
-            neighborhoodSelect.addEventListener('change', updateAreaResponsibleVisibility);
-
-            // تشغيل عند تحميل الصفحة أيضًا
-            updateAreaResponsibleVisibility();
-
-            // التحقق عند فقدان التركيز
-            areaResponsibleSelect.addEventListener('blur', function () {
-                if (!areaResponsibleGroup.classList.contains('d-none') && areaResponsibleSelect.value.trim() === '') {
-                    errorMessage.textContent = 'يرجى اختيار مسؤول المنطقة.';
-                    errorMessage.style.display = 'block';
-                    areaResponsibleSelect.style.borderColor = 'red';
+            document.addEventListener('DOMContentLoaded', function () {
+                const neighborhoodSelect = document.getElementById('edit_neighborhood');
+                if (neighborhoodSelect) {
+                    toggleAreaResponsibleField(); // عند التحميل
+                    neighborhoodSelect.addEventListener('change', toggleAreaResponsibleField); // عند التغيير
                 }
             });
 
-            // إخفاء الخطأ عند التركيز
-            areaResponsibleSelect.addEventListener('focus', function () {
-                errorMessage.textContent = '';
-                errorMessage.style.display = 'none';
-                areaResponsibleSelect.style.borderColor = '';
-            });
+            neighborhoodSelect.addEventListener('change', toggleAreaResponsibleField);
+            toggleAreaResponsibleField(); // تشغيل عند تحميل الصفحة
         });
 
         function validateAreaResponsible() {
-            const input = document.getElementById('edit_area_responsible_id');
-            const error = document.getElementById('edit_area_responsible_id_error');
-            if (input.value.trim() === '') {
-                error.textContent = 'يرجى اختيار مسؤول المنطقة.';
-                error.style.display = 'block';
-                input.style.borderColor = 'red';
-                return false;
+            const select = document.getElementById('edit_area_responsible_id');
+            const errorDiv = document.getElementById('edit_area_responsible_id_error');
+
+            if (select.value.trim() === '') {
+                errorDiv.textContent = 'يرجى اختيار مسؤول المنطقة.';
+                errorDiv.style.display = 'block';
+                select.style.borderColor = 'red';
             } else {
-                error.textContent = '';
-                error.style.display = 'none';
-                input.style.borderColor = '';
-                return true;
+                errorDiv.textContent = '';
+                errorDiv.style.display = 'none';
+                select.style.borderColor = '';
             }
         }
 
