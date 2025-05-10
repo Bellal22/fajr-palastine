@@ -1398,6 +1398,15 @@
 
     <script>
 
+        document.addEventListener('DOMContentLoaded', function () {
+            var citySelect = document.getElementById('edit_current_city');
+            if (citySelect && citySelect.value) {
+                // Trigger the function manually
+
+                updateNeighborhoods(citySelect.value, '{{ $person->neighborhood }}',null);
+            }
+        });
+
         $(document).ready(function() {
             console.log("$(document).ready() تم التنفيذ (الكتلة الرئيسية - مُعدلة 2)");
 
@@ -1517,7 +1526,7 @@
 
             window.openPopup = function() {
                 $('#editPopup').removeClass('hidden');
-                resetValidationStyles();
+                // resetValidationStyles();
             };
 
             $('#open-form').click(function(event) {
@@ -1784,17 +1793,20 @@
         });
 
         // التحقق من صحة كلمة المرور القديمة عند إرسال الفورم
-        document.getElementById('password-form').addEventListener('submit', function(event) {
-            const oldPassword = document.getElementById('old-password').value;
-            const newPassword = document.getElementById('new-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
+        let password_form = document.getElementById('password-form')
+        if(password_form) {
+            password_form.addEventListener('submit', function (event) {
+                const oldPassword = document.getElementById('old-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
 
-            if (newPassword !== confirmPassword) {
-                event.preventDefault();
-                document.getElementById('password-error').textContent = 'كلمة المرور الجديدة غير متطابقة';
-                document.getElementById('password-error').classList.remove('hidden');
-            }
-        });
+                if (newPassword !== confirmPassword) {
+                    event.preventDefault();
+                    document.getElementById('password-error').textContent = 'كلمة المرور الجديدة غير متطابقة';
+                    document.getElementById('password-error').classList.remove('hidden');
+                }
+            });
+        }
         // تطبيق خوارزمية Luhn للتحقق من صحة الرقم
         function luhnCheck(num) {
             const digits = num.toString().split('').map(Number);
@@ -2529,12 +2541,7 @@
             });
         }
 
-        function updateNeighborhoods(selectedCity, selectedNeighborhood, originalCity) {
-            console.log("--- تحديث الأحياء ---");
-            console.log("المحافظة الحالية المحددة:", selectedCity);
-            console.log("الحي المحدد سابقًا:", selectedNeighborhood);
-            console.log("المحافظة الأصلية:", originalCity);
-
+        function updateNeighborhoods(selectedCity, selectedNeighborhood = null, originalCity) {
             const neighborhoodSelect = document.getElementById("edit_neighborhood");
             neighborhoodSelect.innerHTML = '<option value="">اختر الحي السكني الحالي</option>';
 
@@ -2578,24 +2585,22 @@
 
             const neighborhoods = cityNeighborhoods[selectedCity] || [];
 
-            populateNeighborhoodSelect(neighborhoods, neighborhoodSelect);
+            neighborhoods.forEach(function (neighborhood) {
+                const option = document.createElement("option");
+                option.value = neighborhood.value;
+                option.textContent = neighborhood.label;
+                neighborhoodSelect.appendChild(option);
+            });
 
-            if (selectedCity === originalCity && selectedNeighborhood) {
-                setTimeout(function () {
-                    for (let i = 0; i < neighborhoodSelect.options.length; i++) {
-                        if (neighborhoodSelect.options[i].value === selectedNeighborhood) {
-                            neighborhoodSelect.selectedIndex = i;
-                            break;
-                        }
-                    }
-                }, 50);
-            } else {
-                neighborhoodSelect.value = "";
+            // Preselect the neighborhood if passed and exists
+            if (selectedNeighborhood) {
+                const optionExists = [...neighborhoodSelect.options].some(opt => opt.value === selectedNeighborhood);
+                if (optionExists) {
+                    neighborhoodSelect.value = selectedNeighborhood;
+                }
             }
-
-            console.log("قيمة حقل الحي بعد التحديث:", neighborhoodSelect.value);
-            console.log("--- نهاية تحديث الأحياء ---");
         }
+
 
         window.onload = function () {
             const currentCitySelect = document.getElementById('edit_current_city');
