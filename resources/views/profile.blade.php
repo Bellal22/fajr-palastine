@@ -1051,7 +1051,7 @@
                 </div>
 
                 <div class="row">
-                    <div class="form-group" id="neighborhoodField">
+                    <div class="form-group">
                         <label for="edit_neighborhood">الحي السكني الحالي</label>
                         <select id="edit_neighborhood" name="neighborhood" required
                                 oninput="validateNeighborhood()"
@@ -1065,7 +1065,7 @@
                         <div class="error-message" id="edit_neighborhood_error" style="display:none; color: red;"></div>
                     </div>
 
-                    <div class="form-group area-responsible-container" id="areaResponsibleField" style="display:none;">
+                    <div class="form-group area-responsible-container" id="edit_areaResponsibleField" style="display:none;">
                         <label for="edit_area_responsible_id">مسؤول المنطقة في المواصي</label>
                         <select class="form-control"
                                 id="edit_area_responsible_id"
@@ -2678,36 +2678,34 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            const neighborhoodSelect = document.getElementById('edit_neighborhood');
+            const editNeighborhoodSelect = document.getElementById('edit_neighborhood');
             const areaResponsibleField = document.getElementById('areaResponsibleField');
-            const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
-            const errorMessage = document.getElementById('edit_area_responsible_id_error');
+            const editAreaResponsibleSelect = document.getElementById('edit_area_responsible_id');
+            const editAreaResponsibleError = document.getElementById('edit_area_responsible_id_error');
 
-             function toggleAreaResponsibleField() {
-                const selectedNeighborhood = document.getElementById('edit_neighborhood').value;
-                const areaResponsibleField = document.getElementById('areaResponsibleField');
-                const responsibleInput = document.getElementById('edit_area_responsible_id');
-                const errorMsg = document.getElementById('edit_area_responsible_id_error');
-
-                if (selectedNeighborhood === 'alMawasi') {
-                    areaResponsibleField.style.display = 'flex';
-                } else {
-                    areaResponsibleField.style.display = 'none';
-                    responsibleInput.value = '';
-                    if (errorMsg) errorMsg.style.display = 'none';
+            // دالة لتحديث حالة حقل مسؤول المنطقة
+            function updateAreaResponsibleVisibility() {
+                if (editNeighborhoodSelect && areaResponsibleField) {
+                    // إضافة/إزالة فئات CSS بدلاً من تعديل الأنماط المضمنة
+                    if (editNeighborhoodSelect.value === 'alMawasi') {
+                        areaResponsibleField.classList.remove('hidden');
+                    } else {
+                        areaResponsibleField.classList.add('hidden');
+                        if (editAreaResponsibleSelect) {
+                            editAreaResponsibleSelect.value = '';
+                        }
+                        if (editAreaResponsibleError) {
+                            editAreaResponsibleError.style.display = 'none'; // أو .classList.add('hidden') إذا كان ذلك متاحًا في الـ CSS
+                        }
+                    }
                 }
             }
 
-            document.addEventListener('DOMContentLoaded', function () {
-                const neighborhoodSelect = document.getElementById('edit_neighborhood');
-                if (neighborhoodSelect) {
-                    toggleAreaResponsibleField(); // عند التحميل
-                    neighborhoodSelect.addEventListener('change', toggleAreaResponsibleField); // عند التغيير
-                }
-            });
-
-            neighborhoodSelect.addEventListener('change', toggleAreaResponsibleField);
-            toggleAreaResponsibleField(); // تشغيل عند تحميل الصفحة
+            // تشغيل الدالة عند تحميل الصفحة
+            if (editNeighborhoodSelect) {
+                updateAreaResponsibleVisibility();
+                editNeighborhoodSelect.addEventListener('change', updateAreaResponsibleVisibility);
+            }
         });
 
         function validateAreaResponsible() {
