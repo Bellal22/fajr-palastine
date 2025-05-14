@@ -32,6 +32,10 @@
                         <td>{{ $person->passkey }}</td>
                     </tr>
                     <tr>
+                        <th width="200">@lang('people.attributes.phone')</th>
+                        <td>{{ $person->phone }}</td>
+                    </tr>
+                    <tr>
                         <th width="200">@lang('people.attributes.gender')</th>
                         <td>{{ $person->gender }}</td>
                     </tr>
