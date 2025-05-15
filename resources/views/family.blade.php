@@ -375,12 +375,24 @@
                     <th>اسم العائلة</th>
                     <th>تاريخ الميلاد</th>
                     <th>صلة القرابة</th>
-                    <th>حالة الصحية سليم؟</th>
+                    <th>هل يعاني من أمراض</th>
                     <th>وصف الحالة</th>
                     <th>إجراءات</th>
                 </tr>
             </thead>
             <tbody>
+                <tr id="default-row" style="display: none;">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
             </tbody>
         </table>
         <button type="button" onclick="submitForm()" class="custom-btn">
@@ -496,7 +508,7 @@
         </div>
         <div class="form-group" id="condition-description-group" style="display: none;">
             <label for="condition_description">وصف الحالة</label>
-            <textarea id="edit_edit_condition_description" name="edit_edit_condition_description" type="text" placeholder="وصف الحالة"></textarea>
+            <textarea id="edit_condition_description" name="edit_condition_description" type="text" placeholder="وصف الحالة"></textarea>
         </div>
         <button id="save-edits">حفظ التعديلات</button>
         <button type="button" id="close-edit-popup-btn">إغلاق</button>
@@ -505,6 +517,7 @@
 
 
     <script>
+
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         $(document).ready(function () {
             let maxPeople = 0; // Number of allowed people
@@ -651,60 +664,90 @@
                 'others':'اخرون',
 
             };
-            // تحميل البيانات المحفوظة في sessionStorage إذا كانت موجودة
-            if (sessionStorage.getItem('peopleList')) {
-                peopleList = JSON.parse(sessionStorage.getItem('peopleList'));
-                renderTable();  // إعادة عرض الجدول بالبيانات المحفوظة
-                sessionStorage.removeItem('peopleList');  // مسح البيانات بعد استخدامها
-            }
 
-            // Render the table from the peopleList array
-            // دالة لعرض البيانات في الجدول
-            function renderTable() {
+            $(document).ready(function() {
                 const tableBody = $('#family-table tbody');
-                tableBody.empty();
 
-                peopleList.forEach((person, index) => {
-                    const formattedDob = person.dob ? new Date(person.dob).toLocaleDateString('ar-EN') : 'غير محدد';
-                    const translatedRelationship = relationshipTranslations[person.relationship] || person.relationship;
+                // دالة لعرض البيانات في الجدول
+                function renderTable() {
+                    tableBody.empty(); // مسح الجدول بالكامل
 
-                    const row = `
-                        <tr>
-                            <td>${person.id_num}</td>
-                            <td>${person.first_name}</td>
-                            <td>${person.father_name}</td>
-                            <td>${person.grandfather_name}</td>
-                            <td>${person.family_name}</td>
-                            <td>${formattedDob}</td>
-                            <td>${translatedRelationship}</td>
-                            <td>${person.has_condition == 1 ? 'نعم' : 'لا'}</td>
-                            <td>${person.condition_description ?? 'لا يوجد'}</td>
-                            <td class="action-buttons">
-                                <!-- أيقونة التعديل -->
-                                <a class="edit-btn" onclick="editPerson(${index})">
-                                    <i class="fas fa-edit"></i> <!-- أيقونة التعديل -->
-                                </a>
-                                <!-- أيقونة الحذف -->
-                                <a class="delete-btn" onclick="deletePerson(${index})">
-                                    <i class="fas fa-trash"></i> <!-- أيقونة الحذف -->
-                                </a>
-                            </td>
-                        </tr>`;
-                        $(document).on('click', '.edit-btn', function() {
-                            let index = $(this).data('index');  // الحصول على `index` من `data-index`
-                            console.log("🖊️ تم النقر على زر التعديل للشخص رقم:", index);
-                            editPerson(index);
+                    // استرداد بيانات الشخص الأول من الجلسة
+                    const firstPersonData = {!! json_encode(session('first_person_data')) !!};
+                    if (firstPersonData) {
+                        const formattedDob = firstPersonData.dob ? new Date(firstPersonData.dob).toLocaleDateString('ar-EN') : 'غير محدد';
+                        const translatedRelationship = relationshipTranslations[firstPersonData.relationship] || firstPersonData.relationship;
+                        const conditionDescription = firstPersonData.condition_description ? firstPersonData.condition_description : 'لا يوجد'; // التحقق هنا
+
+                        const firstPersonRow = `
+                            <tr id="first-person-row">
+                                <td>${firstPersonData.id_num}</td>
+                                <td>${firstPersonData.first_name}</td>
+                                <td>${firstPersonData.father_name}</td>
+                                <td>${firstPersonData.grandfather_name}</td>
+                                <td>${firstPersonData.family_name}</td>
+                                <td>${formattedDob}</td>
+                                <td>${translatedRelationship}</td>
+                                <td>${firstPersonData.has_condition == 1 ? 'نعم' : 'لا'}</td>
+                                <td>${firstPersonData.condition_description}</td>
+                                <td></td>
+                            </tr>`;
+                        tableBody.append(firstPersonRow);
+                    }
+
+                    // عرض بقية الأشخاص من peopleList (إذا كانت موجودة)
+                    if (peopleList && peopleList.length > 0) {
+                        peopleList.forEach((person, index) => {
+                            const formattedDob = person.dob ? new Date(person.dob).toLocaleDateString('ar-EN') : 'غير محدد';
+                            const translatedRelationship = relationshipTranslations[person.relationship] || person.relationship;
+
+                            const row = `
+                                <tr>
+                                    <td>${person.id_num}</td>
+                                    <td>${person.first_name}</td>
+                                    <td>${person.father_name}</td>
+                                    <td>${person.grandfather_name}</td>
+                                    <td>${person.family_name}</td>
+                                    <td>${formattedDob}</td>
+                                    <td>${translatedRelationship}</td>
+                                    <td>${person.has_condition == 1 ? 'نعم' : 'لا'}</td>
+                                    <td>${person.condition_description ?? 'لا يوجد'}</td>
+                                    <td class="action-buttons">
+                                        <a class="edit-btn" onclick="editPerson(${index})"><i class="fas fa-edit"></i></a>
+                                        <a class="delete-btn" onclick="deletePerson(${index})"><i class="fas fa-trash"></i></a>
+                                    </td>
+                                </tr>`;
+                            tableBody.append(row);
+
+                            $(document).on('click', '.edit-btn', function() {
+                                let index = $(this).data('index');
+                                console.log("🖊️ تم النقر على زر التعديل للشخص رقم:", index);
+                                editPerson(index);
+                            });
+
+                            $(document).on('click', '.delete-btn', function() {
+                                let index = $(this).data('index');
+                                console.log("🖊️ تم النقر على زر التعديل للشخص رقم:", index);
+                                deletePerson(index);
+                            });
                         });
+                    } else if (!firstPersonData) {
+                        // عرض رسالة الجدول الفارغ إذا لم تكن هناك بيانات من الجلسة أو sessionStorage
+                        tableBody.html('<tr><td colspan="10">لا يوجد أفراد مضافين.</td></tr>');
+                    }
+                }
 
-                        $(document).on('click', '.delete-btn', function() {
-                            let index = $(this).data('index');  // الحصول على `index` من `data-index`
-                            console.log("🖊️ تم النقر على زر التعديل للشخص رقم:", index);
-                            deletePerson(index);
-                        });
-                    tableBody.append(row);
-                });
-            }
+                // تهيئة peopleList (مهم جدًا)
+                let peopleList = [];
 
+                // تحميل البيانات المحفوظة في sessionStorage إذا كانت موجودة
+                if (sessionStorage.getItem('peopleList')) {
+                    peopleList = JSON.parse(sessionStorage.getItem('peopleList'));
+                    sessionStorage.removeItem('peopleList'); // مسح البيانات بعد استخدامها
+                }
+
+                renderTable(); // عرض الجدول بالبيانات (من الجلسة أو sessionStorage)
+            });
             // دالة للتعديل
             function editPerson(index) {
                 console.log("📌 استدعاء editPerson مع index =", index);
@@ -731,7 +774,7 @@
                 $('#edit_dob').val(person.dob || '');
                 $('#edit_relationship').val(person.relationship || '');
                 $('#edit_has_condition').val(person.has_condition ? 'نعم' : 'لا');
-                $('#edit_condition_description').val(person.condition_description || '');
+                $('#edit_condition_description').val(person.condition_description || 'لا يوجد');
 
                 if (person.has_condition) {
                     $('#edit_condition-description-group').show();
