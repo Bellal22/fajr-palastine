@@ -68,6 +68,14 @@
             ])->value(request('neighborhood'))->placeholder('اختر الحي/المنطقة') }}
         </div>
 
+        <div class="col-md-6 form-group">
+            <label for="area_responsible_id">مسؤول المنطقة</label>
+            {{ BsForm::select('area_responsibles',
+                \App\Models\AreaResponsible::pluck('name', 'id')->toArray(),
+                request('area_responsible_id')
+            )->placeholder('اختر مسؤول المنطقة') }}
+        </div>
+
         <div class="col-md-3">
             <label for="dob_from" class="form-label">تاريخ الميلاد - من</label>
             <input type="date" name="dob_from" id="dob_from"

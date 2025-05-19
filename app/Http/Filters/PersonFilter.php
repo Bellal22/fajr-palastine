@@ -34,6 +34,7 @@ class PersonFilter extends BaseFilters
         'family_members_min',
         'family_members_max',
         'has_condition',
+        'area_responsibles',
     ];
 
     protected function getColumnName(string $column): string
@@ -115,6 +116,14 @@ class PersonFilter extends BaseFilters
     {
         if (!is_null($value) && $value !== '') {
             return $this->builder->where($this->getColumnName('neighborhood'), $value);
+        }
+        return $this->builder;
+    }
+
+    protected function areaResponsibles($value)
+    {
+        if (!is_null($value) && $value !== '') {
+            return $this->builder->where($this->getColumnName('area_responsible_id'), $value);
         }
         return $this->builder;
     }
