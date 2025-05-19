@@ -1068,8 +1068,8 @@
                     <div class="form-group area-responsible-container" id="edit_areaResponsibleField" style="display:none;">
                         <label for="edit_area_responsible_id">مسؤول المنطقة في المواصي</label>
                         <select class="form-control"
-                                id="edit_area_responsible_id"
                                 name="area_responsible_id"
+                                id="edit_area_responsible_id"
                                 oninput="validateAreaResponsible()"
                                 onfocus="resetBorderAndError('edit_area_responsible_id')"
                                 onblur="validateAreaResponsible()">
@@ -1404,6 +1404,21 @@
                 // Trigger the function manually
 
                 updateNeighborhoods(citySelect.value, '{{ $person->neighborhood }}',null);
+
+                const neighborhoodSelect = document.getElementById('edit_neighborhood');
+                const areaResponsibleContainer = document.getElementById('edit_areaResponsibleField');
+                const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
+
+
+                // Check if the selected option's text is "مواصي"
+                const selectedOption = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text.trim();
+
+                if (selectedOption === 'المواصي') {
+                    areaResponsibleContainer.style.display = 'block';
+                } else {
+                    areaResponsibleContainer.style.display = 'none';
+                    areaResponsibleSelect.value = ''; // Reset the value when not مواصي
+                }
             }
         });
 
@@ -2652,6 +2667,20 @@
             const errorMessage = document.getElementById('edit_neighborhood_error');
             const value = neighborhoodInput.value.trim();
 
+            const neighborhoodSelect = document.getElementById('edit_neighborhood');
+            const areaResponsibleContainer = document.getElementById('edit_areaResponsibleField');
+            const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
+
+
+            // Check if the selected option's text is "مواصي"
+            const selectedOption = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text.trim();
+
+            if (selectedOption === 'المواصي') {
+                areaResponsibleContainer.style.display = 'block';
+            } else {
+                areaResponsibleContainer.style.display = 'none';
+                areaResponsibleSelect.value = ''; // Reset the value when not مواصي
+            }
 
             // جلب القيم المسموحة من الخادم
             const validValues = @json(\App\Enums\Person\PersonNeighborhood::toValues());
