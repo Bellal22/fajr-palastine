@@ -889,6 +889,21 @@
                     showAlert('لا توجد بيانات لإرسالها!', 'warning');
                     return;
                 }
+
+                const wivesCount = peopleList.filter(p => p.relationship === 'wife').length;
+
+                if (person.social_status === 'married') { // "متزوج"
+                    if (wivesCount !== 1) {
+                        showAlert('الشخص المتزوج يجب أن يكون لديه زوجة واحدة فقط في قائمة الأفراد.', 'error');
+                        return;
+                    }
+                } else if (person.social_status === 'polygamous') { // "متعدد" (لأكثر من زوجة)
+                    if (wivesCount < 2 || wivesCount > 4) {
+                        showAlert('الشخص المتعدد يجب أن يكون لديه من 2 إلى 4 زوجات في قائمة الأفراد.', 'error');
+                        return;
+                    }
+                }
+
                 $.ajax({
                     url: '/store-people-session',
                     method: 'POST',
