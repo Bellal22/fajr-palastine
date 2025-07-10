@@ -54,4 +54,8 @@ Route::get('/select/suppliers', 'SupplierController@select')->name('suppliers.se
 Route::apiResource('area_responsibles', 'AreaResponsibleController');
 Route::get('/select/area_responsibles', 'AreaResponsibleController@select')->name('area_responsibles.select');
 
+// Blocks Routes.
+Route::apiResource('blocks', 'BlockController');
+Route::get('/select/blocks', 'BlockController@select')->name('blocks.select');
+
 /*  The routes of generated crud will set here: Don't remove this line  */

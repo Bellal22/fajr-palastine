@@ -1,0 +1,62 @@
+<?php
+
+return [
+    'singular' => 'Block',
+    'plural' => 'Blocks',
+    'empty' => 'There are no blocks yet.',
+    'count' => 'Blocks Count.',
+    'search' => 'Search',
+    'select' => 'Select Block',
+    'permission' => 'Manage blocks',
+    'trashed' => 'Trashed blocks',
+    'perPage' => 'Results Per Page',
+    'filter' => 'Search for block',
+    'actions' => [
+        'list' => 'List All',
+        'create' => 'Create a new block',
+        'show' => 'Show block',
+        'edit' => 'Edit block',
+        'delete' => 'Delete block',
+        'restore' => 'Restore',
+        'forceDelete' => 'Delete Forever',
+        'options' => 'Options',
+        'save' => 'Save',
+        'filter' => 'Filter',
+    ],
+    'messages' => [
+        'created' => 'The block has been created successfully.',
+        'updated' => 'The block has been updated successfully.',
+        'deleted' => 'The block has been deleted successfully.',
+        'restored' => 'The block has been restored successfully.',
+    ],
+    'attributes' => [
+        'name' => 'Block name',
+        'area_responsible' => 'Area Responsible',
+        'title' => 'Title',
+        'phone' => 'Phone Number',
+        'limit_num' => 'Limit Number',
+        'lan' => 'Longitude',
+        'lat' => 'Latitude',
+        'note' => 'Notes',
+    ],
+    'dialogs' => [
+        'delete' => [
+            'title' => 'Warning !',
+            'info' => 'Are you sure you want to delete the block ?',
+            'confirm' => 'Delete',
+            'cancel' => 'Cancel',
+        ],
+        'restore' => [
+            'title' => 'Warning !',
+            'info' => 'Are you sure you want to restore the block ?',
+            'confirm' => 'Restore',
+            'cancel' => 'Cancel',
+        ],
+        'forceDelete' => [
+            'title' => 'Warning !',
+            'info' => 'Are you sure you want to delete the block forever ?',
+            'confirm' => 'Delete Forever',
+            'cancel' => 'Cancel',
+        ],
+    ],
+];

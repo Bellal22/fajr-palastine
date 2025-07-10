@@ -31,6 +31,9 @@ return [
     ],
     'attributes' => [
         'name' => 'Area responsible name',
+        'aid_id' => 'Main Responsible ID',
+        'phone' => 'Phone Number',
+        'address' => 'Address',
     ],
     'dialogs' => [
         'delete' => [

@@ -3,7 +3,7 @@
     @slot('url', route('dashboard.area_responsibles.index'))
     @slot('name', trans('area_responsibles.plural'))
     @slot('active', request()->routeIs('*area_responsibles*'))
-    @slot('icon', 'fas fa-th')
+    @slot('icon', 'fas fa-map-marked-alt')
     @slot('tree', [
         [
             'name' => trans('area_responsibles.actions.list'),

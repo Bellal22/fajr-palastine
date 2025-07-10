@@ -25,7 +25,10 @@
             <th style="width: 30px;" class="text-center">
               <x-check-all></x-check-all>
             </th>
+            <th>@lang('area_responsibles.attributes.aid_id')</th>
             <th>@lang('area_responsibles.attributes.name')</th>
+            <th>@lang('area_responsibles.attributes.phone')</th>
+            <th>@lang('area_responsibles.attributes.address')</th>
             <th style="width: 160px">...</th>
         </tr>
         </thead>
@@ -38,9 +41,13 @@
                 <td>
                     <a href="{{ route('dashboard.area_responsibles.show', $area_responsible) }}"
                        class="text-decoration-none text-ellipsis">
-                        {{ $area_responsible->name }}
+                        {{ $area_responsible->aid_id }}
                     </a>
                 </td>
+
+                <td>{{ $area_responsible->name }}</td>
+                <td>{{ $area_responsible->phone }}</td>
+                <td>{{ $area_responsible->address }}</td>
 
                 <td style="width: 160px">
                     @include('dashboard.area_responsibles.partials.actions.show')
