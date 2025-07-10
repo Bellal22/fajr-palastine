@@ -40,7 +40,7 @@ class BlockController extends Controller
      */
     public function create()
     {
-        $areaResponsibles = AreaResponsible::pluck('name', 'id')->toArray();
+        $areaResponsibles = AreaResponsible::pluck('name', 'aid_id')->toArray();
 
         return view('dashboard.blocks.create', compact('areaResponsibles'));
     }
@@ -79,7 +79,10 @@ class BlockController extends Controller
      */
     public function edit(Block $block)
     {
-        return view('dashboard.blocks.edit', compact('block'));
+        // جلب مسؤولي المناطق: aid_id كـ key والاسم (name) كـ value
+        $areaResponsibles = AreaResponsible::pluck('name', 'aid_id')->toArray();
+
+        return view('dashboard.blocks.edit', compact('block', 'areaResponsibles'));
     }
 
     /**

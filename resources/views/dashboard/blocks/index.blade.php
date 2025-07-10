@@ -43,12 +43,13 @@
                     <a href="{{ route('dashboard.blocks.show', $block) }}"
                        class="text-decoration-none text-ellipsis">
                         {{ $block->name }}
-                        {{ $block->title }}
-                        {{ $block->phone }}
-                        {{ $block->limit_num }}
-                        {{ $block->areaResponsible->name }}
                     </a>
                 </td>
+
+                <td>{{ $block->title }}</td>
+                <td>{{ $block->phone }}</td>
+                <td>{{ $block->limit_num }}</td>
+                <td>{{ $block->areaResponsible->name }}</td>
 
                 <td style="width: 160px">
                     @include('dashboard.blocks.partials.actions.show')
