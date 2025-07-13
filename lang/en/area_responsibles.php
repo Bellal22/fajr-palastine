@@ -28,6 +28,8 @@ return [
         'updated' => 'The area responsible has been updated successfully.',
         'deleted' => 'The area responsible has been deleted successfully.',
         'restored' => 'The area responsible has been restored successfully.',
+        'no_blocks_for_this_area'=> 'There are no sub-responsible persons for this area.',
+        'area_responsible_not_defined'=> 'The sub-responsible persons for this area are undefined.',
     ],
     'attributes' => [
         'name' => 'Area responsible name',

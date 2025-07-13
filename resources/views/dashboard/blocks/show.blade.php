@@ -24,10 +24,6 @@
                             <td>{{ $block->phone }}</td>
                         </tr>
                         <tr>
-                            <th width="200">@lang('blocks.attributes.limit_num')</th>
-                            <td>{{ $block->limit_num }}</td>
-                        </tr>
-                        <tr>
                             <th width="200">@lang('blocks.attributes.lat')</th>
                             <td>{{ $block->lat }}</td>
                         </tr>

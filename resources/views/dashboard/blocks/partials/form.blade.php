@@ -40,15 +40,6 @@
 
 <div class="row">
     <div class="col-md-12">
-        {{-- حقل عدد الحدود (Limit Number) --}}
-        {{ BsForm::number('limit_num')
-            ->label(trans('blocks.attributes.limit_num'))
-            ->required() }}
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-12">
         {{-- حقل خط الطول (Latitude) --}}
         {{ BsForm::text('lat')
             ->label(trans('blocks.attributes.lat'))
