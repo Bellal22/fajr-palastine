@@ -15,11 +15,9 @@ use App\Http\Requests\UpdateFamilyRequest;
 use App\Http\Requests\UpdatePersonRequest;
 use App\Models\Person;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
-use Response;
 
 class PersonController extends Controller
 {
@@ -80,9 +78,26 @@ class PersonController extends Controller
             $data = $request->validated();
             $data['id_num']   = $id_num;
             $data['phone']    = Str::of($data['phone'])->replace('-', '')->toInteger();
+            $data['relationship'] = 'رب الأسرة نفسه'; // تعيين صلة القرابة
 
             // حفظ البيانات في الجلسة
             $request->session()->put('person', array_merge($request->all(), ['id_num' => $id_num,'passkey' => Str::random(8)]));
+
+            // حفظ البيانات في الجلسة (طريقة واحدة وموحدة)
+            $firstPersonData = [
+                'id_num'                => $data['id_num'],
+                'first_name'            => $data['first_name'],
+                'father_name'           => $data['father_name'],
+                'grandfather_name'      => $data['grandfather_name'],
+                'family_name'           => $data['family_name'],
+                'dob'                   => $data['dob'],
+                'relationship'          => $data['relationship'],
+                'has_condition'         => $data['has_condition'],
+                'condition_description' => $data['condition_description'],
+            ];
+
+            $request->session()->put('first_person_data', $firstPersonData);
+            // dd(session('first_person_data'));
 
         } catch (\Exception $e) {
             return redirect()->back()->with('error','حدث خطأ');

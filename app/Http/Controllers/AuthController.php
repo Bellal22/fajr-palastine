@@ -9,6 +9,7 @@ use App\Enums\Person\PersonHousingType;
 use App\Enums\Person\PersonNeighborhood;
 use App\Enums\Person\PersonRelationship;
 use App\Enums\Person\PersonSocialStatus;
+use App\Models\AreaResponsible;
 use App\Models\Complaint;
 use App\Models\Person;
 use Illuminate\Http\Request;
@@ -47,7 +48,7 @@ class AuthController extends Controller
         $id_num = session('person')['id_num'];
 
         // جلب بيانات الشخص مع أفراد الأسرة باستخدام رقم الهوية المخزن في السيشن
-        $person = Person::with('familyMembers')->where('id_num', $id_num)->first();
+        $person = Person::with(['familyMembers', 'areaResponsible'])->where('id_num', $id_num)->first();
 
         // التأكد من وجود الشخص في قاعدة البيانات
         if (!$person) {
@@ -73,6 +74,8 @@ class AuthController extends Controller
         $neighborhoods = collect(PersonNeighborhood::toValues())
             ->mapWithKeys(fn($value) => [$value => __($value)]);
 
+        $areaResponsibles = AreaResponsible::all();
+
         $housing_types = collect(PersonHousingType::toValues())
             ->mapWithKeys(fn($value) => [$value => __($value)]);
 
@@ -88,6 +91,7 @@ class AuthController extends Controller
             'cities',
             'current_cities',
             'neighborhoods',
+            'areaResponsibles',
             'housing_types',
             'housing_damage_statuses'
         ));

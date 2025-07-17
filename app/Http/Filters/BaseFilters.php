@@ -2,6 +2,7 @@
 
 namespace App\Http\Filters;
 
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 
@@ -29,11 +30,12 @@ abstract class BaseFilters
     /**
      * Create a new BaseFilters instance.
      *
-     * @param \Illuminate\Http\Request $request
+     * @param \Illuminate\Database\Eloquent\Builder $builder
      */
-    public function __construct(Request $request)
+    public function __construct(Builder $builder)
     {
-        $this->request = $request;
+        $this->builder = $builder;
+        $this->request = request(); // احصل على كائن الطلب هنا
     }
 
     /**
@@ -42,19 +44,16 @@ abstract class BaseFilters
      * @param \Illuminate\Database\Eloquent\Builder $builder
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function apply($builder)
+    public function apply()
     {
-        $this->builder = $builder;
         foreach ($this->getFilters() as $filter) {
             $value = $this->request->query($filter);
-            if ($this->request->has($filter)) {
-                $methodName = Str::camel($filter);
-            } else {
-                $methodName = 'default' . Str::studly($filter);
-            }
 
-            if (method_exists($this, $methodName)) {
-                $this->$methodName($value);
+            if (!is_null($value)) {
+                $methodName = Str::camel($filter);
+                if (method_exists($this, $methodName)) {
+                    $this->$methodName($value);
+                }
             }
         }
 
@@ -69,6 +68,6 @@ abstract class BaseFilters
     public function getFilters()
     {
         return property_exists($this, 'filters')
-        && is_array($this->filters) ? $this->filters : [];
+            && is_array($this->filters) ? $this->filters : [];
     }
 }

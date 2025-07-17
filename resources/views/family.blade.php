@@ -375,12 +375,24 @@
                     <th>اسم العائلة</th>
                     <th>تاريخ الميلاد</th>
                     <th>صلة القرابة</th>
-                    <th>حالة الصحية سليم؟</th>
+                    <th>هل يعاني من أمراض</th>
                     <th>وصف الحالة</th>
                     <th>إجراءات</th>
                 </tr>
             </thead>
             <tbody>
+                <tr id="default-row" style="display: none;">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
             </tbody>
         </table>
         <button type="button" onclick="submitForm()" class="custom-btn">
@@ -496,7 +508,7 @@
         </div>
         <div class="form-group" id="condition-description-group" style="display: none;">
             <label for="condition_description">وصف الحالة</label>
-            <textarea id="edit_edit_condition_description" name="edit_edit_condition_description" type="text" placeholder="وصف الحالة"></textarea>
+            <textarea id="edit_condition_description" name="edit_condition_description" type="text" placeholder="وصف الحالة"></textarea>
         </div>
         <button id="save-edits">حفظ التعديلات</button>
         <button type="button" id="close-edit-popup-btn">إغلاق</button>
@@ -506,164 +518,46 @@
 
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        $(document).ready(function () {
-            let maxPeople = 0; // Number of allowed people
-            let addedPeople = 0; // Number of added people
-            let peopleList = []; // Array to store people data
-            // Enable the add button by default
-            $('#open-form-btn').prop('disabled', false);
+        const relationshipTranslations = {
+            'father':'أب',
+            'mother':'أم',
+            'brother':'أخ',
+            'sister':'أخت',
+            'husband':'زوج',
+            'wife':'زوجة',
+            'son':'ابن',
+            'daughter':'ابنة',
+            'others':'اخرون',
+        };
+        let maxPeople = 0;
+        let addedPeople = 0;
+        let peopleList = [];
 
-            // Update empty table message
-            updateEmptyMessage();
+        function renderTable() {
+            const tableBody = $('#family-table tbody');
+            tableBody.empty();
+            const firstPersonData = {!! json_encode(session('first_person_data')) !!};
+            if (firstPersonData) {
+                const formattedDob = firstPersonData.dob ? new Date(firstPersonData.dob).toLocaleDateString('ar-EN') : 'غير محدد';
+                const translatedRelationship = relationshipTranslations[firstPersonData.relationship] || firstPersonData.relationship;
+                const conditionDescription = firstPersonData.condition_description ? firstPersonData.condition_description : 'لا يوجد';
 
-            // Update maxPeople when the input changes
-            $('#num_of_people').on('input', function () {
-                maxPeople = parseInt($(this).val()) || 0;
-                $('#open-form-btn').prop('disabled', false);
-            });
-
-            // Open the form popup
-            $('#open-form-btn').click(function () {
-                if (maxPeople === 0) {
-                    showAlert('يرجى تعبئة عدد الأفراد أولاً!', 'warning');
-                    return;
-                }
-
-                if (addedPeople >= maxPeople) {
-                    showAlert('لقد تجاوزت عدد أفراد أسرتك!', 'error');
-                    return;
-                }
-
-                $('#form-popup').fadeIn();
-                $('#overlay').fadeIn();
-            });
-
-            // Close the popup
-            $('#close-popup-btn, #overlay').click(function () {
-                $('#form-popup').fadeOut();
-                $('#overlay').fadeOut();
-            });
-
-            // Close the popup
-            $('#close-edit-popup-btn, #overlay').click(function () {
-                $('#edit-popup').fadeOut();
-                $('#overlay').fadeOut();
-            });
-
-            // Add a new person to the list
-            $('#add-person-btn').click(function () {
-                const id_num = $('#id_num').val();
-                const first_name = $('#first_name').val();
-                const father_name = $('#father_name').val();
-                const grandfather_name = $('#grandfather_name').val();
-                const family_name = $('#family_name').val();
-                const dob = $('#dob').val();
-                const relationship = $('#relationship').val();
-                const has_condition = $('#has_condition').val();
-                const condition_description = $('#condition_description').val();
-
-                if (!id_num || !first_name ||!father_name ||!grandfather_name ||!family_name || !dob || !relationship || !has_condition || (has_condition === 'نعم' && !condition_description)) {
-                    showAlert('يرجى ملء جميع الحقول المطلوبة!', 'error');
-                    return;
-                }
-
-                // Add the person to the array
-                peopleList.push({
-                    id_num,
-                    first_name,
-                    father_name,
-                    grandfather_name,
-                    family_name,
-                    dob,
-                    relationship,
-                    has_condition: has_condition === 'نعم',
-                    condition_description: has_condition === 'نعم' ? condition_description : null
-                });
-
-                addedPeople++;
-                renderTable(); // Re-render the table
-                updateEmptyMessage();
-
-                if (addedPeople === maxPeople) {
-                    $('#open-form-btn').prop('disabled', true);
-                }
-
-                // Reset fields and close the form
-                $('#form-popup input, #form-popup select, #form-popup textarea').val('');
-                $('#form-popup').fadeOut();
-                $('#overlay').fadeOut();
-                showAlert('تمت الإضافة بنجاح', 'success');
-            });
-
-            // Show/hide the condition description field
-            $('#has_condition').change(function () {
-                if ($(this).val() === 'نعم') {
-                    $('#condition-description-group').show();
-                } else {
-                    $('#condition-description-group').hide();
-                }
-            });
-
-            function checkIdNumberAndRedirect(id_num) {
-                if (!id_num) {
-                    console.error("رقم الهوية غير موجود في الجلسة.");
-                    return;
-                }
-
-                // إرسال طلب للتحقق من رقم الهوية
-                fetch(`/check-id/${id_num}`, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.exists) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: `رقم الهوية ${data.id_num} مسجل مسبقاً`,
-                            text: 'الرجاء استخدام رقم هوية مختلف.',
-                            background: '#fff',
-                            confirmButtonColor: '#d33',
-                            iconColor: '#d33',
-                            confirmButtonText: 'إغلاق',
-                            customClass: {
-                                confirmButton: 'swal-button-custom'
-                            }
-                        });
-                    } else {
-                        window.location.href = '/create';
-                    }
-                })
-                .catch(error => console.error('Error:', error));
+                const firstPersonRow = `
+                    <tr id="first-person-row">
+                        <td>${firstPersonData.id_num}</td>
+                        <td>${firstPersonData.first_name}</td>
+                        <td>${firstPersonData.father_name}</td>
+                        <td>${firstPersonData.grandfather_name}</td>
+                        <td>${firstPersonData.family_name}</td>
+                        <td>${formattedDob}</td>
+                        <td>${translatedRelationship}</td>
+                        <td>${firstPersonData.has_condition == 1 ? 'نعم' : 'لا'}</td>
+                        <td>${firstPersonData.condition_description}</td>
+                        <td></td>
+                    </tr>`;
+                tableBody.append(firstPersonRow);
             }
-
-            const relationshipTranslations = {
-                'father':'أب',
-                'mother':'أم',
-                'brother':'أخ',
-                'sister':'أخت',
-                'husband':'زوج',
-                'wife':'زوجة',
-                'son':'ابن',
-                'daughter':'ابنة',
-                'others':'اخرون',
-
-            };
-            // تحميل البيانات المحفوظة في sessionStorage إذا كانت موجودة
-            if (sessionStorage.getItem('peopleList')) {
-                peopleList = JSON.parse(sessionStorage.getItem('peopleList'));
-                renderTable();  // إعادة عرض الجدول بالبيانات المحفوظة
-                sessionStorage.removeItem('peopleList');  // مسح البيانات بعد استخدامها
-            }
-
-            // Render the table from the peopleList array
-            // دالة لعرض البيانات في الجدول
-            function renderTable() {
-                const tableBody = $('#family-table tbody');
-                tableBody.empty();
-
+            if (peopleList && peopleList.length > 0) {
                 peopleList.forEach((person, index) => {
                     const formattedDob = person.dob ? new Date(person.dob).toLocaleDateString('ar-EN') : 'غير محدد';
                     const translatedRelationship = relationshipTranslations[person.relationship] || person.relationship;
@@ -680,75 +574,288 @@
                             <td>${person.has_condition == 1 ? 'نعم' : 'لا'}</td>
                             <td>${person.condition_description ?? 'لا يوجد'}</td>
                             <td class="action-buttons">
-                                <!-- أيقونة التعديل -->
-                                <a class="edit-btn" onclick="editPerson(${index})">
-                                    <i class="fas fa-edit"></i> <!-- أيقونة التعديل -->
-                                </a>
-                                <!-- أيقونة الحذف -->
-                                <a class="delete-btn" onclick="deletePerson(${index})">
-                                    <i class="fas fa-trash"></i> <!-- أيقونة الحذف -->
-                                </a>
+                                <a class="edit-btn" data-index="${index}"><i class="fas fa-edit"></i></a>
+                                <a class="delete-btn" data-index="${index}"><i class="fas fa-trash"></i></a>
                             </td>
                         </tr>`;
-                        $(document).on('click', '.edit-btn', function() {
-                            let index = $(this).data('index');  // الحصول على `index` من `data-index`
-                            console.log("🖊️ تم النقر على زر التعديل للشخص رقم:", index);
-                            editPerson(index);
-                        });
-
-                        $(document).on('click', '.delete-btn', function() {
-                            let index = $(this).data('index');  // الحصول على `index` من `data-index`
-                            console.log("🖊️ تم النقر على زر التعديل للشخص رقم:", index);
-                            deletePerson(index);
-                        });
                     tableBody.append(row);
                 });
+            } else if (!firstPersonData) {
+                tableBody.html('<tr><td colspan="10">لا يوجد أفراد مضافين.</td></tr>');
+            }
+            updateEmptyMessage();
+        }
+
+        $(document).ready(function() {
+            renderTable(); // استدعاء renderTable عند تحميل الصفحة
+            $('#open-form-btn').prop('disabled', !$('#num_of_people').val());
+
+            $('#num_of_people').on('input', function() {
+                maxPeople = parseInt($(this).val()) || 0;
+                $('#open-form-btn').prop('disabled', maxPeople === 0);
+            });
+
+            // بقية الكود الخاص بـ $(document).ready() يبقى كما هو
+        });
+
+        function editPerson(index) {
+            console.log("📌 استدعاء editPerson مع index =", index);
+            if (!Array.isArray(peopleList) || peopleList.length === 0) {
+                console.error("❌ خطأ: قائمة الأشخاص غير متوفرة!");
+                return;
+            }
+            if (index === undefined || index < 0 || index >= peopleList.length) {
+                console.error("❌ خطأ: `index` غير صالح أو خارج النطاق!");
+                return;
+            }
+            const person = peopleList[index];
+            console.log("🟢 بيانات الشخص:", person);
+            $('#edit_first_name').val(person.first_name || '');
+            $('#edit_father_name').val(person.father_name || '');
+            $('#edit_grandfather_name').val(person.grandfather_name || '');
+            $('#edit_family_name').val(person.family_name || '');
+            $('#edit_id_num').val(person.id_num || '');
+            $('#edit_dob').val(person.dob || '');
+            $('#edit_relationship').val(person.relationship || '');
+            $('#edit_has_condition').val(person.has_condition ? 'نعم' : 'لا');
+            $('#edit_condition_description').val(person.condition_description || 'لا يوجد');
+            if (person.has_condition) {
+                $('#edit_condition-description-group').show();
+            } else {
+                $('#edit_condition-description-group').hide();
+            }
+            $('#save-edits').data('index', index);
+            $('#edit-popup').fadeIn();
+        }
+
+        function deletePerson(index) {
+            Swal.fire({
+                title: 'هل أنت متأكد؟',
+                text: "لا يمكن التراجع عن هذا التعديل!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'نعم, حذف!',
+                cancelButtonText: 'لا, إلغاء'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    peopleList.splice(index, 1);
+                    addedPeople--;
+                    renderTable();
+                    Swal.fire(
+                        'تم الحذف!',
+                        'تم حذف العنصر بنجاح.',
+                        'success'
+                    );
+                }
+            });
+        }
+
+        function updateEmptyMessage() {
+            const tableBody = $('#family-table tbody');
+            if (peopleList.length === 0 && !{!! json_encode(session('first_person_data')) !!}) {
+                tableBody.html('<tr class="empty-row"><td colspan="10" style="text-align:center;">لا يوجد بيانات لعرضها</td></tr>');
+            } else {
+                tableBody.find('.empty-row').remove();
+            }
+        }
+
+        function showAlert(message, type) {
+            let bgColor = '';
+            let textColor = '';
+            let confirmButtonColor = '';
+
+            if (type === 'success') {
+                bgColor = 'white';
+                textColor = '#4CAF50';
+                confirmButtonColor = '#4CAF50';
+            } else if (type === 'error') {
+                bgColor = 'white';
+                textColor = '#ff0000';
+                confirmButtonColor = '#ff0000';
+            } else if (type === 'warning') {
+                bgColor = 'white';
+                textColor = '#FF8C00';
+                confirmButtonColor = '#FF8C00';
             }
 
-            // دالة للتعديل
-            function editPerson(index) {
-                console.log("📌 استدعاء editPerson مع index =", index);
+            Swal.fire({
+                icon: type,
+                title: message,
+                showConfirmButton: true,
+                background: bgColor,
+                color: textColor,
+                confirmButtonText: 'إغلاق',
+                confirmButtonColor
+            });
+        }
 
-                if (!Array.isArray(peopleList) || peopleList.length === 0) {
-                    console.error("❌ خطأ: قائمة الأشخاص غير متوفرة!");
-                    return;
+        function luhnCheck(num) {
+            const digits = num.toString().split('').map(Number);
+            let checksum = 0;
+            const numDigits = digits.length;
+            const parity = numDigits % 2;
+
+            for (let i = 0; i < numDigits; i++) {
+                let digit = digits[i];
+                if (i % 2 === parity) {
+                    digit *= 2;
+                    if (digit > 9) {
+                        digit -= 9;
+                    }
                 }
-
-                if (index === undefined || index < 0 || index >= peopleList.length) {
-                    console.error("❌ خطأ: `index` غير صالح أو خارج النطاق!");
-                    return;
-                }
-
-                const person = peopleList[index];
-                console.log("🟢 بيانات الشخص:", person);
-
-                // ملء النموذج بالقيم
-                $('#edit_first_name').val(person.first_name || '');
-                $('#edit_father_name').val(person.father_name || '');
-                $('#edit_grandfather_name').val(person.grandfather_name || '');
-                $('#edit_family_name').val(person.family_name || '');
-                $('#edit_id_num').val(person.id_num || '');
-                $('#edit_dob').val(person.dob || '');
-                $('#edit_relationship').val(person.relationship || '');
-                $('#edit_has_condition').val(person.has_condition ? 'نعم' : 'لا');
-                $('#edit_condition_description').val(person.condition_description || '');
-
-                if (person.has_condition) {
-                    $('#edit_condition-description-group').show();
-                } else {
-                    $('#edit_condition-description-group').hide();
-                }
-
-                $('#save-edits').data('index', index);
-                $('#edit-popup').fadeIn();
+                checksum += digit;
             }
+
+            return checksum % 10 === 0;
+        }
+
+        function validateIdOnInput(idField) {
+            const inputField = document.getElementById(idField);
+            const idNum = inputField.value;
+            const errorMessage = document.getElementById(idField + '_error');
+            const successMessage = document.getElementById(idField + '_success');
+            if (idNum.length > 9) {
+                inputField.value = idNum.slice(0, 9);
+            }
+            if (idNum.length === 9 && !luhnCheck(idNum)) {
+                inputField.style.borderColor = '#ff0000';
+                inputField.style.outlineColor = '#ff0000';
+                errorMessage.style.display = 'inline';
+                successMessage.style.display = 'none';
+            } else if (idNum.length === 9 && luhnCheck(idNum)) {
+                inputField.style.borderColor = '#35b735';
+                inputField.style.outlineColor = '#35b735';
+                errorMessage.style.display = 'none';
+                successMessage.style.display = 'inline';
+            } else {
+                inputField.style.borderColor = '';
+                inputField.style.outlineColor = '';
+                errorMessage.style.display = 'none';
+                successMessage.style.display = 'none';
+            }
+        }
+
+        function validateIdNumber(idField) {
+            const inputField = document.getElementById(idField);
+            const idNum = inputField.value;
+            if (idNum.length === 9 && !luhnCheck(idNum)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'رقم الهوية غير صالح',
+                    text: 'الرجاء التأكد من إدخال رقم هوية صحيح.',
+                    background: '#fff',
+                    confirmButtonColor: '#d33',
+                    iconColor: '#d33',
+                    confirmButtonText: 'إغلاق',
+                    customClass: {
+                        confirmButton: 'swal-button-custom'
+                    }
+                });
+                return false;
+            }
+            return true;
+        }
+
+        $(document).ready(function () {
+            $('#open-form-btn').prop('disabled', !$('#num_of_people').val());
+            updateEmptyMessage();
+
+            $('#num_of_people').on('input', function () {
+                maxPeople = parseInt($(this).val()) || 0;
+                $('#open-form-btn').prop('disabled', maxPeople === 0);
+            });
+
+            $('#open-form-btn').click(function () {
+                if (maxPeople === 0) {
+                    showAlert('يرجى تعبئة عدد الأفراد أولاً!', 'warning');
+                    return;
+                }
+                if (addedPeople >= maxPeople) {
+                    showAlert('لقد تجاوزت عدد أفراد أسرتك!', 'error');
+                    return;
+                }
+                $('#form-popup').fadeIn();
+                $('#overlay').fadeIn();
+            });
+
+            $('#close-popup-btn, #overlay').click(function () {
+                $('#form-popup').fadeOut();
+                $('#overlay').fadeOut();
+            });
+
+            $('#close-edit-popup-btn, #overlay').click(function () {
+                $('#edit-popup').fadeOut();
+                $('#overlay').fadeOut();
+            });
+
+            $('#add-person-btn').click(function () {
+                const id_num = $('#id_num').val();
+                const first_name = $('#first_name').val();
+                const father_name = $('#father_name').val();
+                const grandfather_name = $('#grandfather_name').val();
+                const family_name = $('#family_name').val();
+                const dob = $('#dob').val();
+                const relationship = $('#relationship').val();
+                const has_condition = $('#has_condition').val();
+                const condition_description = $('#condition_description').val();
+
+                if (!id_num || !first_name ||!father_name ||!grandfather_name ||!family_name || !dob || !relationship || !has_condition || (has_condition === 'نعم' && !condition_description)) {
+                    showAlert('يرجى ملء جميع الحقول المطلوبة!', 'error');
+                    return;
+                }
+                if (!validateIdNumber('id_num')) {
+                    return;
+                }
+                peopleList.push({
+                    id_num,
+                    first_name,
+                    father_name,
+                    grandfather_name,
+                    family_name,
+                    dob,
+                    relationship,
+                    has_condition: has_condition === 'نعم' ? 1 : 0,
+                    condition_description: has_condition === 'نعم' ? condition_description : null
+                });
+
+                addedPeople++;
+                renderTable();
+
+                if (addedPeople === maxPeople) {
+                    $('#open-form-btn').prop('disabled', true);
+                }
+                $('#form-popup input[type="text"], #form-popup input[type="number"], #form-popup input[type="date"], #form-popup select, #form-popup textarea').val('');
+                $('#form-popup').fadeOut();
+                $('#overlay').fadeOut();
+                showAlert('تمت الإضافة بنجاح', 'success');
+            });
+
+            $('#has_condition').change(function () {
+                $('#condition-description-group').toggle($(this).val() === 'نعم');
+            });
+
+            $('#edit_has_condition').change(function () {
+                $('#edit_condition-description-group').toggle($(this).val() === 'نعم');
+            });
+
+            $(document).on('click', '.edit-btn', function() {
+                let index = $(this).data('index');
+                console.log("🖊️ تم النقر على زر التعديل للشخص رقم:", index);
+                editPerson(index);
+            });
+
+            $(document).on('click', '.delete-btn', function() {
+                let index = $(this).data('index');
+                console.log("🗑️ تم النقر على زر الحذف للشخص رقم:", index);
+                deletePerson(index);
+            });
 
             $('#save-edits').off('click').on('click', function() {
-                let index = $(this).data('index');  // استرجاع index المخزن
+                let index = $(this).data('index');
                 console.log("📌 حفظ التعديلات للشخص رقم:", index);
-
                 if (index !== undefined && peopleList[index]) {
-                    // تحديث بيانات الشخص
                     peopleList[index] = {
                         first_name: $('#edit_first_name').val(),
                         father_name: $('#edit_father_name').val(),
@@ -760,129 +867,61 @@
                         has_condition: $('#edit_has_condition').val() === 'نعم' ? 1 : 0,
                         condition_description: $('#edit_condition_description').val()
                     };
-
-                    // إغلاق النموذج
                     $('#edit-popup').fadeOut();
-
-                    // رسالة نجاح
                     Swal.fire({
                         icon: 'success',
                         title: 'تم تعديل البيانات بنجاح',
                         showConfirmButton: false,
                         timer: 1500
                     });
-
-                    // إعادة عرض الجدول بعد التحديث
                     renderTable();
                 } else {
                     console.error("❌ خطأ: لا يمكن تعديل الشخص لأن الفهرس غير صحيح!");
                 }
             });
 
-            // دالة للحذف
-            function deletePerson(index) {
-                // عرض نافذة تأكيد باستخدام SweetAlert
-                Swal.fire({
-                    title: 'هل أنت متأكد؟',
-                    text: "لا يمكن التراجع عن هذا التعديل!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'نعم, حذف!',
-                    cancelButtonText: 'لا, إلغاء'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // إذا تم التأكيد على الحذف
-                        peopleList.splice(index, 1);
-                        addedPeople--;
-                        renderTable(); // تحديث الجدول بعد الحذف
-
-                        // عرض رسالة نجاح باستخدام SweetAlert
-                        Swal.fire(
-                            'تم الحذف!',
-                            'تم حذف العنصر بنجاح.',
-                            'success'
-                        );
-                    }
-                });
-            }
-
-            window.deletePerson = deletePerson;
-            window.editPerson = editPerson;
-
-            // Update empty table message
-            function updateEmptyMessage() {
-                const tableBody = $('#family-table tbody');
-                if (peopleList.length === 0) {
-                    tableBody.html('<tr class="empty-row"><td colspan="10" style="text-align:center;">لا يوجد بيانات لعرضها</td></tr>');
-                } else {
-                    tableBody.find('.empty-row').remove();
-                }
-            }
-
-            // Show alerts
-            function showAlert(message, type) {
-                let bgColor = '';
-                let textColor = '';
-                let confirmButtonColor = '';
-
-                if (type === 'success') {
-                    bgColor = 'white';
-                    textColor = '#4CAF50'; // Green
-                    confirmButtonColor = '#4CAF50';
-                } else if (type === 'error') {
-                    bgColor = 'white';
-                    textColor = '#ff0000'; // Red
-                    confirmButtonColor = '#ff0000';
-                } else if (type === 'warning') {
-                    bgColor = 'white';
-                    textColor = '#FF8C00'; // Orange
-                    confirmButtonColor = '#FF8C00';
-                }
-
-                Swal.fire({
-                    icon: type,
-                    title: message,
-                    showConfirmButton: true,
-                    background: bgColor,
-                    color: textColor,
-                    confirmButtonText: 'إغلاق',
-                    confirmButtonColor
-                });
-            }
-
             window.submitForm = function submitForm() {
                 let person = @json($person);
 
                 if (peopleList.length === 0 &&
-                    ! (['single', 'divorced', 'widowed'].includes(person.social_status))
+                    !(['single', 'divorced', 'widowed'].includes(person.social_status))
                 ) {
                     showAlert('لا توجد بيانات لإرسالها!', 'warning');
                     return;
                 }
 
-                // إرسال طلب AJAX للتحقق من أرقام الهوية المكررة
+                const wivesCount = peopleList.filter(p => p.relationship === 'wife').length;
+
+                if (person.social_status === 'married') { // "متزوج"
+                    if (wivesCount !== 1) {
+                        showAlert('الشخص المتزوج يجب أن يكون لديه زوجة واحدة فقط في قائمة الأفراد.', 'error');
+                        return;
+                    }
+                } else if (person.social_status === 'polygamous') { // "متعدد" (لأكثر من زوجة)
+                    if (wivesCount < 2 || wivesCount > 4) {
+                        showAlert('الشخص المتعدد يجب أن يكون لديه من 2 إلى 4 زوجات في قائمة الأفراد.', 'error');
+                        return;
+                    }
+                }
+
                 $.ajax({
-                    url: '/store-people-session',  // الطريق الذي يحتوي على التحقق من أرقام الهوية
+                    url: '/store-people-session',
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')  // إضافة التوكن هنا
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     contentType: 'application/json',
                     data: JSON.stringify({ peopleList: peopleList }),
                     success: function (response) {
-                        // إذا تم التخزين بنجاح، الانتقال إلى صفحة النجاح
                         if (response.success) {
                             $.ajax({
-                                url: response.postRedirect, // هذا هو '/storeFamily'
+                                url: response.postRedirect,
                                 type: 'POST',
                                 data: { _token: csrfToken },
                                 success: function(res) {
                                     console.log("تم تنفيذ storeFamily بنجاح، إعادة التوجيه إلى:", res.redirect);
-
                                     if (res.redirect) {
-                                        window.location.href = res.redirect; // توجيه المستخدم لصفحة النجاح
+                                        window.location.href = res.redirect;
                                     } else {
                                         console.error("إعادة التوجيه غير معرفة في الاستجابة");
                                     }
@@ -895,8 +934,6 @@
                     },
                     error: function (xhr) {
                         const response = xhr.responseJSON;
-
-                        // إذا كان هناك خطأ (أرقام هوية مكررة)
                         if (response.error) {
                             Swal.fire({
                                 icon: 'error',

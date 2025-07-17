@@ -23,7 +23,7 @@
                     @include('dashboard.people.partials.actions.create')
                     @include('dashboard.people.partials.actions.trashed')
 
-                    <a href="{{ route('dashboard.people.export.selected',['filtered' => 1]) }}" class="btn btn-outline-success btn-sm">
+                    <a href="{{ route('dashboard.people.export.selected', request()->all()) }}" class="btn btn-outline-success btn-sm">
                         <i class="fa-fw fas fa-file-excel"></i>
                         @lang('تصدير الكل (تطبق نتائج البحث)')
                     </a>
@@ -47,7 +47,7 @@
             <th>@lang('people.attributes.dob')</th>
             <th>@lang('people.attributes.social_status')</th>
             <th>@lang('people.attributes.city')</th>
-            <th>@lang('people.attributes.has_condition')</th>
+            <th>@lang('people.attributes.phone')</th>
             <th>@lang('people.attributes.relatives_count')</th>
             <th>@lang('people.attributes.relatives_count')(المسجل)</th>
             <th style="width: 160px">...</th>
@@ -70,9 +70,9 @@
                 <td>{{ $person->grandfather_name }}</td>
                 <td>{{ $person->family_name }}</td>
                 <td>{{ $person->dob ? $person->dob->toDateString() : 'N/A' }}</td>
-                <td>{{ $person->social_status }}</td>
-                <td>{{ $person->current_city }}</td>
-                <td>{{ $person->has_condition }}</td>
+                <td>{{ __($person->social_status) }}</td>
+                <td>{{ __($person->current_city) }}</td>
+                <td>{{ $person->phone }}</td>
                 <td>{{ $person->relatives_count }}</td>
                 <td>{{ $person->family_members_count }}</td>
 

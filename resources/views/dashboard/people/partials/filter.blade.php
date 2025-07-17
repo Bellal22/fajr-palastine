@@ -68,6 +68,14 @@
             ])->value(request('neighborhood'))->placeholder('اختر الحي/المنطقة') }}
         </div>
 
+        <div class="col-md-6 form-group">
+            <label for="area_responsible_id">مسؤول المنطقة</label>
+            {{ BsForm::select('area_responsibles',
+                \App\Models\AreaResponsible::pluck('name', 'id')->toArray(),
+                request('area_responsible_id')
+            )->placeholder('اختر مسؤول المنطقة') }}
+        </div>
+
         <div class="col-md-3">
             <label for="dob_from" class="form-label">تاريخ الميلاد - من</label>
             <input type="date" name="dob_from" id="dob_from"
@@ -85,18 +93,18 @@
                    value="{{ request('dob_to', $person->dob_to ?? '') }}">
         </div>
         <div class="col-md-3">
-            <label for="family_members_min" class="form-label">عدد الاقارب</label>
+            <label for="family_members_min" class="form-label">عدد أفراد الأسرة من</label>
             <input type="number" name="family_members_min" id="family_members_min"
                    class="form-control"
-                   placeholder="عدد الاقارب الحد الأدنى"
+                   placeholder="عدد أفراد الأسرة الحد الأدنى"
                    value="{{ request('family_members_min') }}">
         </div>
 
         <div class="col-md-3">
-            <label for="family_members_max" class="form-label">عدد الاقارب</label>
+            <label for="family_members_max" class="form-label">عدد أفراد الأسرة إلى</label>
             <input type="number" name="family_members_max" id="family_members_max"
                    class="form-control"
-                   placeholder="عدد الاقارب الحد الأقصى"
+                   placeholder="عدد أفراد الأسرة الحد الأقصى"
                    value="{{ request('family_members_max') }}">
         </div>
 

@@ -69,4 +69,18 @@ Route::post('suppliers/{trashed_supplier}/restore', 'SupplierController@restore'
 Route::delete('suppliers/{trashed_supplier}/forceDelete', 'SupplierController@forceDelete')->name('suppliers.forceDelete');
 Route::resource('suppliers', 'SupplierController');
 
+// AreaResponsibles Routes.
+Route::get('trashed/area_responsibles', 'AreaResponsibleController@trashed')->name('area_responsibles.trashed');
+Route::get('trashed/area_responsibles/{trashed_area_responsible}', 'AreaResponsibleController@showTrashed')->name('area_responsibles.trashed.show');
+Route::post('area_responsibles/{trashed_area_responsible}/restore', 'AreaResponsibleController@restore')->name('area_responsibles.restore');
+Route::delete('area_responsibles/{trashed_area_responsible}/forceDelete', 'AreaResponsibleController@forceDelete')->name('area_responsibles.forceDelete');
+Route::resource('area_responsibles', 'AreaResponsibleController');
+
+// Blocks Routes.
+Route::get('trashed/blocks', 'BlockController@trashed')->name('blocks.trashed');
+Route::get('trashed/blocks/{trashed_block}', 'BlockController@showTrashed')->name('blocks.trashed.show');
+Route::post('blocks/{trashed_block}/restore', 'BlockController@restore')->name('blocks.restore');
+Route::delete('blocks/{trashed_block}/forceDelete', 'BlockController@forceDelete')->name('blocks.forceDelete');
+Route::resource('blocks', 'BlockController');
+
 /*  The routes of generated crud will set here: Don't remove this line  */

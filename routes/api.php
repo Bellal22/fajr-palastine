@@ -50,4 +50,12 @@ Route::get('/select/complaints', 'ComplaintController@select')->name('complaints
 Route::apiResource('suppliers', 'SupplierController');
 Route::get('/select/suppliers', 'SupplierController@select')->name('suppliers.select');
 
+// AreaResponsibles Routes.
+Route::apiResource('area_responsibles', 'AreaResponsibleController');
+Route::get('/select/area_responsibles', 'AreaResponsibleController@select')->name('area_responsibles.select');
+
+// Blocks Routes.
+Route::apiResource('blocks', 'BlockController');
+Route::get('/select/blocks', 'BlockController@select')->name('blocks.select');
+
 /*  The routes of generated crud will set here: Don't remove this line  */

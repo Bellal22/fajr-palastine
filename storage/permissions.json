@@ -10,5 +10,7 @@
     "manage.people",
     "manage.people",
     "manage.complaints",
-    "manage.suppliers"
+    "manage.suppliers",
+    "manage.area_responsibles",
+    "manage.blocks"
 ]

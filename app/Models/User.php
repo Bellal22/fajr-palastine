@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Parental\HasChildren;
-use App\Http\Filters\Filterable;
 use App\Http\Filters\UserFilter;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\MediaLibrary\HasMedia;
@@ -20,6 +19,7 @@ use App\Models\Contracts\NotificationTarget;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use AhmedAliraqi\LaravelMediaUploader\Entities\Concerns\HasUploader;
+use App\Http\Filters\Filterable;
 
 class User extends Authenticatable implements HasMedia, NotificationTarget
 {
