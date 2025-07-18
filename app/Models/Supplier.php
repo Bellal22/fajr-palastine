@@ -45,11 +45,6 @@ class Supplier extends Model implements HasMedia
         'description',
     ];
 
-    public function areaResponsible()
-    {
-        return $this->belongsTo(Supervisor::class,'area_responsible_id');
-    }
-
     /**
      * Define the media collections.
      *

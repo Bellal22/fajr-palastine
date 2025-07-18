@@ -56,4 +56,14 @@ class BlockRequest extends FormRequest
     {
         return trans('blocks.attributes');
     }
+
+    public function prepareForValidation()
+    {
+        if (auth()->user()?->isSupervisor()) {
+            $this->merge([
+                'area_responsible_id' => auth()->id(),
+            ]);
+        }
+    }
+
 }

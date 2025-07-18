@@ -57,8 +57,9 @@ class Block extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function areaResponsible(): BelongsTo
+
+    public function areaResponsible()
     {
-        return $this->belongsTo(AreaResponsible::class, 'area_responsible_id', 'aid_id');
+        return $this->belongsTo(Supervisor::class,'area_responsible_id');
     }
 }

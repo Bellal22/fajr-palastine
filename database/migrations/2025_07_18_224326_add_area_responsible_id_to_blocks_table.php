@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('suppliers', function (Blueprint $table) {
+        Schema::table('blocks', function (Blueprint $table) {
             $table->foreignId('area_responsible_id')
                 ->nullable()
                 ->constrained('users','id')
@@ -24,7 +24,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('suppliers', function (Blueprint $table) {
+        Schema::table('blocks', function (Blueprint $table) {
             $table->dropForeign(['area_responsible_id']);
             $table->dropColumn('area_responsible_id');
         });
