@@ -41,6 +41,6 @@ class Person extends Model
 
     public function areaResponsible()
     {
-        return $this->belongsTo(AreaResponsible::class, 'area_responsible_id');
+        return $this->belongsTo(User::class, 'area_responsible_id','id');
     }
 }

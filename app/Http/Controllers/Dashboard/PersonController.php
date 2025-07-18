@@ -33,6 +33,10 @@ class PersonController extends Controller
         $people = Person::filter()
             ->whereNull('relationship')
             ->withCount('familyMembers')
+            ->when(auth()->user()?->isSupervisor(),function ($query){
+                $query->where('area_responsible_id',auth()->user()->id)
+                ->orWhereNull('area_responsible_id');
+            })
             ->latest()->paginate();
 
         return view('dashboard.people.index', compact('people'));

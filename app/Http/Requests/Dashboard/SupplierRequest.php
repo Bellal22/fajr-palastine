@@ -31,6 +31,15 @@ class SupplierRequest extends FormRequest
         ];
     }
 
+    public function prepareForValidation()
+    {
+        if (auth()->user()?->isSupervisor()) {
+            $this->merge([
+                'area_responsible_id' => auth()->id(),
+            ]);
+        }
+    }
+
     /**
      * Get custom attributes for validator errors.
      *

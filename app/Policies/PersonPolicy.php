@@ -20,7 +20,8 @@ class PersonPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->isAdmin() || $user->hasPermissionTo('manage.people');
+        return $user->isAdmin() || $user->hasPermissionTo('manage.people')
+            || $user->isSupervisor();
     }
 
     /**
@@ -32,7 +33,8 @@ class PersonPolicy
      */
     public function view(User $user, Person $person)
     {
-        return $user->isAdmin() || $user->hasPermissionTo('manage.people');
+        return $user->isAdmin() || $user->hasPermissionTo('manage.people')
+            || ($user->isSupervisor() && $person->area_responsible_id == $user->id);
     }
 
     /**
@@ -55,7 +57,8 @@ class PersonPolicy
      */
     public function update(User $user, Person $person)
     {
-        return ($user->isAdmin() || $user->hasPermissionTo('manage.people'))
+        return ($user->isAdmin() || $user->hasPermissionTo('manage.people')
+            || ($user->isSupervisor() && $person->area_responsible_id == $user->id))
             && ! $this->trashed($person);
     }
 
@@ -68,7 +71,8 @@ class PersonPolicy
      */
     public function delete(User $user, Person $person)
     {
-        return ($user->isAdmin() || $user->hasPermissionTo('manage.people'))
+        return ($user->isAdmin() || $user->hasPermissionTo('manage.people')
+            || ($user->isSupervisor() && $person->area_responsible_id == $user->id))
             && ! $this->trashed($person);
     }
 

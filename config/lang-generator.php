@@ -1,4 +1,4 @@
-صص<?php
+<?php
 
 return [
     'defaultLang' => 'ar',
