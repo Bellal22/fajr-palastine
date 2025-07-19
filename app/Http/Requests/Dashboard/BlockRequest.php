@@ -28,8 +28,8 @@ class BlockRequest extends FormRequest
         $rules = [
             'name' => ['required', 'string', 'max:255'],
             'area_responsible_id' => ['nullable', 'exists:area_responsibles,aid_id'], // nullable لأن العمود في DB nullable
-            'phone' => ['required', 'integer'], // int(11) في DB
-            'limit_num' => ['required', 'integer'], // int(11) في DB
+            'phone' => ['required', 'string', 'regex:/^(059|056)\d{7}$/'], // int(11) في DB
+            // 'limit_num' => ['required', 'integer'], // int(11) في DB
             'lan' => ['required', 'string', 'max:200'],
             'lat' => ['required', 'string', 'max:200'],
             'note' => ['required', 'string'], // text في DB
