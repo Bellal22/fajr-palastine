@@ -12,7 +12,7 @@ class Admin extends User
 {
     use HasFactory;
     use HasParent;
-    use SoftDeletes;
+    // use SoftDeletes;
 
     /**
      * The model filter name.

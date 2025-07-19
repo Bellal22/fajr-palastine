@@ -20,4 +20,3 @@
         ],
     ])
 @endcomponent
-w

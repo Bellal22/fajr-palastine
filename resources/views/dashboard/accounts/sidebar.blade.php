@@ -19,13 +19,13 @@
                 'can' => ['ability' => 'viewAny', 'model' => \App\Models\Supervisor::class],
                 'active' => request()->routeIs('*supervisors*'),
             ]
-{{--            ,--}}
-{{--            [--}}
-{{--                'name' => trans('customers.plural'),--}}
-{{--                'url' => route('dashboard.customers.index'),--}}
-{{--                'can' => ['ability' => 'viewAny', 'model' => \App\Models\Customer::class],--}}
-{{--                'active' => request()->routeIs('*customers*'),--}}
-{{--            ],--}}
+        //  ,
+        // [
+        //     'name' => trans('customers.plural'),
+        //     'url' => route('dashboard.customers.index'),
+        //     'can' => ['ability' => 'viewAny', 'model' => \App\Models\Customer::class],
+        //     'active' => request()->routeIs('*customers*'),
+        // ],
         ])
     @endcomponent
 @endif
