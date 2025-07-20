@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Dashboard;
 
+use App\Models\AreaResponsible;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,7 +28,8 @@ class BlockRequest extends FormRequest
         // تعريف قواعد التحقق من الصحة الأساسية
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'area_responsible_id' => ['nullable', 'exists:area_responsibles,aid_id'], // nullable لأن العمود في DB nullable
+            'aid_id' => ['nullable', 'exists:area_responsibles,aid_id'], // nullable لأن العمود في DB nullable
+            'area_responsible_id' => ['nullable', 'exists:users,id'],
             'phone' => ['required', 'string', 'regex:/^(059|056)\d{7}$/'], // int(11) في DB
             // 'limit_num' => ['required', 'integer'], // int(11) في DB
             'lan' => ['required', 'string', 'max:200'],
@@ -57,13 +59,45 @@ class BlockRequest extends FormRequest
         return trans('blocks.attributes');
     }
 
+    /**
+     * Prepare the data for validation.
+     *
+     * @return void
+     */
     public function prepareForValidation()
     {
-        if (auth()->user()?->isSupervisor()) {
-            $this->merge([
-                'area_responsible_id' => auth()->id(),
-            ]);
+        $data = $this->all();
+
+        // المنطق الجديد: إذا تم توفير aid_id في الطلب، استخدمه لإيجاد area_responsible_id
+        if (isset($data['aid_id'])) {
+            // البحث عن مسؤول المنطقة بناءً على aid_id
+            // تأكد أن AreaResponsible::where('aid_id', ...) يشير إلى العمود الصحيح في جدول area_responsibles
+            // وأن AreaResponsible->id هو المفتاح الأساسي (id) الذي تريد تخزينه في blocks.area_responsible_id
+            $areaResponsible = AreaResponsible::where('aid_id', $data['aid_id'])->first();
+
+            if ($areaResponsible) {
+                // إذا تم العثور على مسؤول المنطقة، قم بدمج الـ ID الخاص به في area_responsible_id
+                $this->merge([
+                    'area_responsible_id' => $areaResponsible->id,
+                ]);
+            } else {
+                // إذا تم توفير aid_id ولكن لم يتم العثور على مسؤول المنطقة المقابل له،
+                // قم بتعيين area_responsible_id إلى NULL لتجنب فشل المفتاح الأجنبي مع جدول users.
+                // يمكنك أيضاً إضافة خطأ تحقق مخصص هنا إذا كان aid_id يجب أن يكون صالحاً دائماً.
+                $this->merge([
+                    'area_responsible_id' => null,
+                ]);
+                // مثال لإضافة خطأ تحقق مخصص:
+                // $this->validator->errors()->add('aid_id', 'معرف مسؤول المنطقة المقدم غير صالح.');
+            }
+        } else {
+            // إذا لم يتم توفير aid_id في الطلب، واستخدم منطق المشرف إذا كان موجوداً
+            // (هذا المنطق سيعمل فقط إذا لم يتم تعيين area_responsible_id من aid_id)
+            if (auth()->user()?->isSupervisor()) {
+                $this->merge([
+                    'area_responsible_id' => auth()->id(),
+                ]);
+            }
         }
     }
-
 }

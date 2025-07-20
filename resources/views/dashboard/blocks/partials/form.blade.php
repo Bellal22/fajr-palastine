@@ -13,7 +13,7 @@
 <div class="row">
     <div class="col-md-12">
         {{-- حقل مسؤول المنطقة (Area Responsible) كقائمة منسدلة --}}
-        {{ BsForm::select('area_responsible_id')
+        {{ BsForm::select('aid_id')
             ->options($areaResponsibles ?? [])
             ->label(trans('blocks.attributes.area_responsible'))
             ->placeholder(trans('blocks.placeholders.select_area_responsible')) }}
