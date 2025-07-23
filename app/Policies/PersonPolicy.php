@@ -55,13 +55,31 @@ class PersonPolicy
      * @param \App\Models\Person $person
      * @return mixed
      */
+    // public function update(User $user, Person $person)
+    // {
+    //     return ($user->isAdmin() || $user->hasPermissionTo('manage.people')
+    //         || ($user->isSupervisor() && $person->area_responsible_id == $user->id))
+    //         && ! $this->trashed($person);
+    // }
+
     public function update(User $user, Person $person)
     {
-        return ($user->isAdmin() || $user->hasPermissionTo('manage.people')
-            || ($user->isSupervisor() && $person->area_responsible_id == $user->id))
-            && ! $this->trashed($person);
+        return $user->isAdmin()
+            || $user->hasPermissionTo('manage.people')
+            || (
+                $user->isSupervisor() &&
+                (
+                    // الحالة الأولى: هو المسؤول عن المنطقة
+                    $person->area_responsible_id == $user->id
+                    ||
+                    // الحالة الثانية: لا يوجد مشرف مسؤول ولا علاقة محددة
+                    (
+                        $person->area_responsible_id === null &&
+                        $person->relationship === null
+                    )
+                )
+            ) && !$this->trashed($person);
     }
-
     /**
      * Determine whether the user can delete the person.
      *
