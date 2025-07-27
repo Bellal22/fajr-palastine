@@ -169,4 +169,15 @@ class PersonPolicy
             array_keys((new \ReflectionClass(Person::class))->getTraits())
         );
     }
+
+    public function assignToCurrentSupervisor(User $user, Person $person)
+    {
+        return $user->isSupervisor() && is_null($person->area_responsible_id);
+    }
+
+    public function assignBlock(User $user, Person $person)
+    {
+        return true;
+        return $user->isSupervisor() && $user->id == $person->area_responsible_id;
+    }
 }

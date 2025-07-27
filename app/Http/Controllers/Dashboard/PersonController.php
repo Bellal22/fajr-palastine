@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Exports\PeopleExport;
+use App\Models\Block;
 use App\Models\Person;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -39,7 +40,12 @@ class PersonController extends Controller
             })
             ->latest()->paginate();
 
-        return view('dashboard.people.index', compact('people'));
+        $blocks = Block::when(auth()->user()?->isSupervisor(),function ($query){
+            $query->where('area_responsible_id',auth()->user()?->id);
+        })->orderBy('name')->pluck('name','id');
+
+
+        return view('dashboard.people.index', compact('people','blocks'));
     }
 
     public function listPersonFamily(Person $person)
@@ -58,7 +64,11 @@ class PersonController extends Controller
      */
     public function create()
     {
-        return view('dashboard.people.create');
+        $blocks = Block::when(auth()->user()?->isSupervisor(),function ($query){
+            $query->where('area_responsible_id',auth()->user()->id);
+        })->orderBy('name')->get();
+
+        return view('dashboard.people.create', compact('blocks'));
     }
 
     /**
@@ -95,7 +105,10 @@ class PersonController extends Controller
      */
     public function edit(Person $person)
     {
-        return view('dashboard.people.edit', compact('person'));
+        $blocks = Block::when(auth()->user()?->isSupervisor(),function ($query){
+            $query->where('area_responsible_id',auth()->user()?->id);
+        })->orderBy('name')->get();
+        return view('dashboard.people.edit', compact('person','blocks'));
     }
 
     /**
@@ -198,4 +211,28 @@ class PersonController extends Controller
         $filters = $request->all(); // احصل على جميع قيم الفلاتر من الـ URL
         return Excel::download(new PeopleExport($request, $filters), 'filtered_people.xlsx');
     }
+
+    public function assignToSupervisor(Person $person)
+    {
+        $person->update([
+            'area_responsible_id' => auth()->user()?->id
+        ]);
+
+        flash()->success('تم إضافة الفرد لك بنحاج');
+
+        return redirect()->route('dashboard.people.index');
+
+    }
+    public function assignBlock(Person $person, Request $request)
+    {
+        $person->update([
+            'block_id' => $request->block_id
+        ]);
+
+        flash()->success('تم إضافة المسؤول');
+
+        return redirect()->route('dashboard.people.index');
+
+    }
+
 }

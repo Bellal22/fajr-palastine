@@ -60,6 +60,8 @@
 
                 <td style="width: 160px">
                     {{-- @include('dashboard.people.partials.actions.family') --}}
+                    @include('dashboard.people.partials.actions.assignToCurrentSupervisor')
+                    @include('dashboard.people.partials.actions.assignBlock')
                     @include('dashboard.people.partials.actions.show')
                     @include('dashboard.people.partials.actions.edit')
                     @include('dashboard.people.partials.actions.delete')
