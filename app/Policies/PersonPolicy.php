@@ -177,7 +177,6 @@ class PersonPolicy
 
     public function assignBlock(User $user, Person $person)
     {
-        return true;
         return $user->isSupervisor() && $user->id == $person->area_responsible_id;
     }
 }

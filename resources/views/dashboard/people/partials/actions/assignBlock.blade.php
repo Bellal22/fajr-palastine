@@ -10,7 +10,7 @@
     <div class="modal fade" id="person-{{ $person->id }}-assign-model" tabindex="-1" role="dialog"
          aria-labelledby="modal-title-{{ $person->id }}" aria-hidden="true">
         <div class="modal-dialog" role="document">
-            {{ BsForm::put(route('dashboard.people.assignToSupervisor', $person)) }}
+            {{ BsForm::put(route('dashboard.people.assignBlock', $person)) }}
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modal-title-{{ $person->id }}">تعيين الفرد</h5>
