@@ -100,28 +100,12 @@
             ])->value(request('neighborhood'))->placeholder('اختر الحي/المنطقة') }}
         </div>
 
-       <div class="col-md-6 form-group">
+        <div class="col-md-6 form-group">
             <label for="area_responsible_id">مسؤول المنطقة</label>
-            <?php
-                // جلب مسؤولين المناطق مع تطبيق الفلتر الخاص بالمشرف
-                $areaResponsiblesOptions = \App\Models\AreaResponsible::query()
-                    ->when(auth()->user()?->isSupervisor(), function ($query) {
-                        // إذا كان المستخدم مشرفاً، اعرض فقط مسؤول المنطقة المرتبط بـ ID المشرف الحالي
-                        // هذا يفترض أن عمود 'id' في جدول area_responsibles هو الذي يشير إلى 'users.id'
-                        $query->where('id', auth()->user()->id);
-                    })
-                    ->orderBy('name') // ترتيب الخيارات أبجديًا
-                    ->pluck('name', 'aid_id') // جلب الاسم كقيمة مرئية و aid_id كقيمة فعلية للخيار
-                    ->toArray();
-
-                // إضافة خيار NULL بشكل صريح في بداية القائمة
-                $areaResponsiblesOptions = [null => 'اختر مسؤول المنطقة (لا يوجد)'] + $areaResponsiblesOptions;
-            ?>
-            {{ BsForm::select(
-                'area_responsible_id', // اسم الحقل الذي سيتطابق مع العمود في قاعدة البيانات
-                $areaResponsiblesOptions, // استخدام الخيارات المفلترة والديناميكية
+            {{ BsForm::select('area_responsibles',
+                \App\Models\AreaResponsible::pluck('name', 'id')->toArray(),
                 request('area_responsible_id')
-            ) }}
+            )->placeholder('اختر مسؤول المنطقة') }}
         </div>
 
         <div class="col-md-3">
@@ -157,9 +141,6 @@
                    placeholder="عدد أفراد الأسرة الحد الأقصى"
                    value="{{ request('family_members_max') }}">
         </div>
-
-
-
 
         <div class="col-md-6">
                 {{ BsForm::select('has_condition', [

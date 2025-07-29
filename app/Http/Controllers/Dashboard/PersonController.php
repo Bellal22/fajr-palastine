@@ -33,12 +33,16 @@ class PersonController extends Controller
     {
         $people = Person::filter()
             ->whereNull('relationship')
+            // ->whereNull('block_id')
             ->withCount('familyMembers')
-            ->when(auth()->user()?->isSupervisor(),function ($query){
-                $query->where('area_responsible_id',auth()->user()->id)
-                ->orWhereNull('area_responsible_id')
-                ->whereNull('relationship')
-                ->whereNull('block_id');
+            ->when(auth()->user()?->isSupervisor(), function ($query) {
+                // إذا كان المستخدم مشرفاً، اعرض رؤساء الأسر الذين يستوفون الشروط التالية:
+                $query->where(function ($q) { // تجميع شروط area_responsible_id معاً
+                    $q->where('area_responsible_id', auth()->user()->id) // مسؤول المنطقة هو ID المشرف
+                        ->orWhereNull('area_responsible_id'); // أو ليس لديه مسؤول منطقة معين
+                })
+                    ->whereNull('block_id'); // هذا الشرط (block_id IS NULL) سيطبق الآن على الكتلة المجمعة أعلاه
+                // تمت إزالة whereNull('relationship') من هنا لأنه مكرر وموجود في بداية الاستعلام
             })
             ->latest()->paginate();
 
