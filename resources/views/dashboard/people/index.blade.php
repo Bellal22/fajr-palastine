@@ -6,6 +6,10 @@
             @lang('people.actions.list') ({{ $people->total() }})
         @endslot
 
+        {{-- <a href="{{ route('people.export', request()->all()) }}" class="btn btn-success btn-sm">
+            <i class="fas fa-file-excel"></i> تصدير حسب الفلاتر
+        </a> --}}
+
         <thead>
         <tr>
           <th colspan="100">
@@ -14,9 +18,19 @@
                         type="{{ \App\Models\Person::class }}"
                         :resource="trans('people.plural')"></x-check-all-delete>
 
+
                 <div class="ml-2 d-flex justify-content-between flex-grow-1">
                     @include('dashboard.people.partials.actions.create')
                     @include('dashboard.people.partials.actions.trashed')
+
+                    <a href="{{ route('dashboard.people.export.selected', request()->all()) }}" class="btn btn-outline-success btn-sm">
+                        <i class="fa-fw fas fa-file-excel"></i>
+                        @lang('تصدير الكل (تطبق نتائج البحث)')
+                    </a>
+                    <x-check-all-export
+                        type="{{ \App\Models\Person::class }}"
+                        :resource="trans('people.plural')">
+                    </x-check-all-export>
                 </div>
             </div>
           </th>
@@ -34,6 +48,8 @@
             <th>@lang('people.attributes.social_status')</th>
             <th>@lang('people.attributes.city')</th>
             <th>@lang('people.attributes.has_condition')</th>
+            <th>@lang('people.attributes.relatives_count')</th>
+            <th>@lang('people.attributes.relatives_count')(المسجل)</th>
             <th style="width: 160px">...</th>
         </tr>
         </thead>
@@ -53,10 +69,12 @@
                 <td>{{ $person->father_name }}</td>
                 <td>{{ $person->grandfather_name }}</td>
                 <td>{{ $person->family_name }}</td>
-                <td>{{ $person->dob }}</td>
-                <td>{{ $person->social_status }}</td>
-                <td>{{ $person->city }}</td>
-                <td>{{ $person->has_condition }}</td>
+                <td>{{ $person->dob ? $person->dob->toDateString() : 'N/A' }}</td>
+                <td>{{ __($person->social_status) }}</td>
+                <td>{{ __($person->current_city) }}</td>
+                <td>{{ $person->has_condition == 1 ? 'نعم' : ($person->has_condition == 0 ? 'لا' : $person->has_condition) }}</td>
+                <td>{{ $person->relatives_count }}</td>
+                <td>{{ $person->family_members_count }}</td>
 
                 <td style="width: 160px">
                     {{-- @include('dashboard.people.partials.actions.family') --}}
@@ -75,7 +93,7 @@
 
         @if($people->hasPages())
             @slot('footer')
-                {{ $people->links() }}
+                {{ $people->appends(request()->query())->links() }}
             @endslot
         @endif
     @endcomponent

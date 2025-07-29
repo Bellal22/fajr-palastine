@@ -56,6 +56,31 @@ return [
         'person_status' => 'Status'
 
     ],
+    'placeholders' => [
+        'name' => 'Person name',
+        'id_num' => 'ID Number',
+        'first_name' => 'First name',
+        'father_name' => 'Father name',
+        'grandfather_name' => 'Grandfather name',
+        'family_name' => 'Family name',
+        'passkey' => 'Password',
+        'dob' => 'Date Of Birthday',
+        'phone' => 'Phone',
+        'gender' => 'Gender',
+        'employment_status' => 'Employment status',
+        'social_status' => 'Social status',
+        'city' => 'City',
+        'current_city' => 'Current city',
+        'neighborhood' => 'Neighborhood',
+        'landmark' => 'Landmark',
+        'housing_type' => 'Housing type',
+        'housing_damage_status' => 'Housing damage status',
+        'relatives_count' => 'Family member counts',
+        'relationship' => 'Relationship',
+        'has_condition' => 'Has condition',
+        'condition_description' => 'Condition description',
+        'person_status' => 'Status'
+    ],
     'dialogs' => [
         'delete' => [
             'title' => 'Warning !',

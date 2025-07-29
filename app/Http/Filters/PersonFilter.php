@@ -35,6 +35,10 @@ class PersonFilter extends BaseFilters
         'family_members_max',
         'has_condition',
         'area_responsibles',
+        'first_name',
+        'father_name',
+        'grandfather_name',
+        'family_name'
     ];
 
     protected function getColumnName(string $column): string
@@ -62,6 +66,38 @@ class PersonFilter extends BaseFilters
     {
         if (!is_null($value) && $value !== '') {
             return $this->builder->where($this->getColumnName('gender'), $value);
+        }
+        return $this->builder;
+    }
+
+    protected function firstName(?string $value): Builder
+    {
+        if (! is_null($value) && $value !== '') {
+            return $this->builder->where($this->getColumnName('first_name'), 'like', $value . '%');
+        }
+        return $this->builder;
+    }
+
+    protected function fatherName(?string $value): Builder
+    {
+        if (! is_null($value) && $value !== '') {
+            return $this->builder->where($this->getColumnName('father_name'), 'like', $value . '%');
+        }
+        return $this->builder;
+    }
+
+    protected function grandfatherName(?string $value): Builder
+    {
+        if (! is_null($value) && $value !== '') {
+            return $this->builder->where($this->getColumnName('grandfather_name'), 'like', $value . '%');
+        }
+        return $this->builder;
+    }
+
+    protected function familyName(?string $value): Builder
+    {
+        if (! is_null($value) && $value !== '') {
+            return $this->builder->where($this->getColumnName('family_name'), 'like', $value . '%');
         }
         return $this->builder;
     }

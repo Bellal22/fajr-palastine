@@ -28,7 +28,16 @@ class BlockController extends Controller
      */
     public function index()
     {
-        $blocks = Block::filter()->latest()->paginate();
+        $blocks = Block::filter()
+            // تطبيق الشرط الخاص بالمشرف فقط إذا كان المستخدم الحالي مشرفاً
+            ->when(auth()->user()?->isSupervisor(), function ($query) {
+                // إذا كان المستخدم مشرفاً، اعرض البلوكات التي:
+                // مسؤول المنطقة الخاص بها هو ID المشرف الحالي
+                $query->where('area_responsible_id', auth()->user()->id);
+            })
+            // ترتيب النتائج حسب الأحدث وإنشاء ترقيم للصفحات
+            ->latest()
+            ->paginate();
 
         return view('dashboard.blocks.index', compact('blocks'));
     }
@@ -40,7 +49,15 @@ class BlockController extends Controller
      */
     public function create()
     {
-        $areaResponsibles = AreaResponsible::pluck('name', 'aid_id')->toArray();
+        $areaResponsibles = AreaResponsible::query()
+            ->when(auth()->user()?->isSupervisor(), function ($query) {
+                // إذا كان المستخدم مشرفاً، اعرض فقط مسؤول المنطقة المرتبط بـ ID المشرف الحالي
+                // هذا يفترض أن عمود 'id' في جدول area_responsibles هو الذي يشير إلى 'users.id'
+                $query->where('id', auth()->user()->id); // تم التعديل هنا: استخدام 'id' بدلاً من 'area_responsible_id'
+            })
+            ->orderBy('name') // ترتيب الخيارات أبجديًا
+            ->pluck('name', 'aid_id') // جلب الاسم كقيمة مرئية و aid_id كقيمة فعلية للخيار
+            ->toArray();
 
         return view('dashboard.blocks.create', compact('areaResponsibles'));
     }

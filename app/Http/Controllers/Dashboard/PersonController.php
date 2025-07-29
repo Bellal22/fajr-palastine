@@ -36,7 +36,9 @@ class PersonController extends Controller
             ->withCount('familyMembers')
             ->when(auth()->user()?->isSupervisor(),function ($query){
                 $query->where('area_responsible_id',auth()->user()->id)
-                ->orWhereNull('area_responsible_id')->whereNull('relationship');
+                ->orWhereNull('area_responsible_id')
+                ->whereNull('relationship')
+                ->whereNull('block_id');
             })
             ->latest()->paginate();
 

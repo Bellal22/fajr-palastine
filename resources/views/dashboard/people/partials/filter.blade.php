@@ -16,6 +16,38 @@
             ])->value(request('social_status'))->placeholder('اختر الحالة الاجتماعية') }}
         </div>
 
+        <div class="col-md-3">
+            <label for="first_name" class="form-label">@lang('people.attributes.first_name')</label>
+            <input type="text" name="first_name" id="first_name"
+                class="form-control"
+                placeholder="@lang('people.placeholders.first_name')"
+                value="{{ request('first_name') }}">
+        </div>
+
+        <div class="col-md-3">
+            <label for="father_name" class="form-label">@lang('people.attributes.father_name')</label>
+            <input type="text" name="father_name" id="father_name"
+                class="form-control"
+                placeholder="@lang('people.placeholders.father_name')"
+                value="{{ request('father_name') }}">
+        </div>
+
+        <div class="col-md-3">
+            <label for="grandfather_name" class="form-label">@lang('people.attributes.grandfather_name')</label>
+            <input type="text" name="grandfather_name" id="grandfather_name"
+                class="form-control"
+                placeholder="@lang('people.placeholders.grandfather_name')"
+                value="{{ request('grandfather_name') }}">
+        </div>
+
+        <div class="col-md-3">
+            <label for="family_name" class="form-label">@lang('people.attributes.family_name')</label>
+            <input type="text" name="family_name" id="family_name"
+                class="form-control"
+                placeholder="@lang('people.placeholders.family_name')"
+                value="{{ request('family_name') }}">
+        </div>
+
         <div class="col-md-6">
             {{ BsForm::select('gender', [
                 'ذكر' => 'ذكر',
@@ -68,12 +100,28 @@
             ])->value(request('neighborhood'))->placeholder('اختر الحي/المنطقة') }}
         </div>
 
-        <div class="col-md-6 form-group">
+       <div class="col-md-6 form-group">
             <label for="area_responsible_id">مسؤول المنطقة</label>
-            {{ BsForm::select('area_responsibles',
-                \App\Models\AreaResponsible::pluck('name', 'id')->toArray(),
+            <?php
+                // جلب مسؤولين المناطق مع تطبيق الفلتر الخاص بالمشرف
+                $areaResponsiblesOptions = \App\Models\AreaResponsible::query()
+                    ->when(auth()->user()?->isSupervisor(), function ($query) {
+                        // إذا كان المستخدم مشرفاً، اعرض فقط مسؤول المنطقة المرتبط بـ ID المشرف الحالي
+                        // هذا يفترض أن عمود 'id' في جدول area_responsibles هو الذي يشير إلى 'users.id'
+                        $query->where('id', auth()->user()->id);
+                    })
+                    ->orderBy('name') // ترتيب الخيارات أبجديًا
+                    ->pluck('name', 'aid_id') // جلب الاسم كقيمة مرئية و aid_id كقيمة فعلية للخيار
+                    ->toArray();
+
+                // إضافة خيار NULL بشكل صريح في بداية القائمة
+                $areaResponsiblesOptions = [null => 'اختر مسؤول المنطقة (لا يوجد)'] + $areaResponsiblesOptions;
+            ?>
+            {{ BsForm::select(
+                'area_responsible_id', // اسم الحقل الذي سيتطابق مع العمود في قاعدة البيانات
+                $areaResponsiblesOptions, // استخدام الخيارات المفلترة والديناميكية
                 request('area_responsible_id')
-            )->placeholder('اختر مسؤول المنطقة') }}
+            ) }}
         </div>
 
         <div class="col-md-3">
@@ -84,6 +132,7 @@
                    placeholder="اختر تاريخ الميلاد من"
                    value="{{ request('dob_from', $person->dob_from ?? '') }}">
         </div>
+
         <div class="col-md-3">
             <label for="dob_to" class="form-label ">تاريخ الميلاد - إلى</label>
             <input type="date" name="dob_to" id="dob_to"
@@ -92,6 +141,7 @@
                    placeholder="اختر تاريخ الميلاد إلى"
                    value="{{ request('dob_to', $person->dob_to ?? '') }}">
         </div>
+
         <div class="col-md-3">
             <label for="family_members_min" class="form-label">عدد أفراد الأسرة من</label>
             <input type="number" name="family_members_min" id="family_members_min"

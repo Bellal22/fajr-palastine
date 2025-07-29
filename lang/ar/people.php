@@ -56,6 +56,31 @@ return [
         'condition_description' => 'وصف الحالة الصحية',
         'person_status'=>'الحالة'
     ],
+    'placeholders'=>[
+        'name' => 'اسم الفرد',
+        'id_num' => 'رقم الهوية',
+        'first_name' => 'الاسم الأول',
+        'father_name' => 'اسم الأب',
+        'phone' => 'رقم الجوال',
+        'grandfather_name' => 'اسم الجد',
+        'family_name' => 'اسم العائلة',
+        'passkey' => 'كلمة المرور',
+        'dob' => 'تاريخ الميلاد',
+        'gender' => 'الجنس',
+        'social_status' => 'الحالة الاجتماعية',
+        'employment_status' => 'حالة العمل ',
+        'city' => 'المدينة',
+        'current_city' => 'المدينة الحالية',
+        'neighborhood' => 'الحي',
+        'landmark' => 'معلم بارز',
+        'housing_type' => 'نوع السكن',
+        'housing_damage_status' => 'حالة ضرر السكن',
+        'relatives_count' => 'عدد أفراد الأسرة',
+        'relationship' => 'صلة القرابة',
+        'has_condition' => 'يعاني من حالة صحية',
+        'condition_description' => 'وصف الحالة الصحية',
+        'person_status' => 'الحالة'
+    ],
     'dialogs' => [
         'delete' => [
             'title' => 'تحذير !',

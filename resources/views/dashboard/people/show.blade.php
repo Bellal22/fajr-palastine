@@ -28,24 +28,40 @@
                         <td>{{ $person->family_name }}</td>
                     </tr>
                     <tr>
+                        <th width="200">@lang('people.attributes.passkey')</th>
+                        <td>{{ $person->passkey }}</td>
+                    </tr>
+                    <tr>
+                        <th width="200">@lang('people.attributes.phone')</th>
+                        <td>{{ $person->phone }}</td>
+                    </tr>
+                    <tr>
+                        <th width="200">@lang('people.attributes.gender')</th>
+                        <td>{{ $person->gender }}</td>
+                    </tr>
+                    <tr>
                         <th width="200">@lang('people.attributes.dob')</th>
                         <td>{{ $person->dob }}</td>
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.social_status')</th>
-                        <td>{{ $person->social_status }}</td>
+                        <td>{{ __($person->social_status) }}</td>
+                    </tr>
+                    <tr>
+                        <th width="200">@lang('people.attributes.relatives_count')</th>
+                        <td>{{ $person->relatives_count }}</td>
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.city')</th>
-                        <td>{{ $person->city }}</td>
+                        <td>{{ __($person->city) }}</td>
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.current_city')</th>
-                        <td>{{ $person->current_city }}</td>
+                        <td>{{ __($person->current_city) }}</td>
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.neighborhood')</th>
-                        <td>{{ $person->neighborhood }}</td>
+                        <td>{{ __($person->neighborhood) }}</td>
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.landmark')</th>
@@ -53,19 +69,19 @@
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.housing_type')</th>
-                        <td>{{ $person->housing_type }}</td>
+                        <td>{{ __($person->housing_type) }}</td>
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.housing_damage_status')</th>
-                        <td>{{ $person->housing_damage_status }}</td>
+                        <td>{{ __($person->housing_damage_status) }}</td>
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.has_condition')</th>
-                        <td>{{ $person->has_condition }}</td>
+                        <td>{{ $person->has_condition == 1 ? 'نعم' : ($person->has_condition == 0 ? 'لا' : $person->has_condition) }}</td>
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.condition_description')</th>
-                        <td>{{ $person->condition_description }}</td>
+                        <td>{{ $person->condition_description ?? 'لا يوجد' }}</td>
                     </tr>
 
                     </tbody>
@@ -116,9 +132,9 @@
                 <th>@lang('people.attributes.grandfather_name')</th>
                 <th>@lang('people.attributes.family_name')</th>
                 <th>@lang('people.attributes.dob')</th>
-                <th>@lang('people.attributes.social_status')</th>
-                <th>@lang('people.attributes.city')</th>
+                <th>@lang('people.attributes.relationship')</th>
                 <th>@lang('people.attributes.has_condition')</th>
+                <th>@lang('people.attributes.condition_description')</th>
                 <th style="width: 160px">...</th>
             </tr>
             </thead>
@@ -139,9 +155,9 @@
                     <td>{{ $person->grandfather_name }}</td>
                     <td>{{ $person->family_name }}</td>
                     <td>{{ $person->dob }}</td>
-                    <td>{{ $person->social_status }}</td>
-                    <td>{{ $person->city }}</td>
-                    <td>{{ $person->has_condition }}</td>
+                    <td>{{ __($person->relationship) }}</td>
+                    <td>{{ $person->has_condition == 1 ? 'نعم' : ($person->has_condition == 0 ? 'لا' : $person->has_condition) }}</td>
+                    <td>{{ $person->condition_description ?? 'لا يوجد' }}</td>
 
                     <td style="width: 160px">
                         @include('dashboard.people.partials.actions.show')
