@@ -55,6 +55,7 @@ Route::get('people/family/{person}', 'PersonController@listPersonFamily')->name(
 Route::get('people/export', 'PersonController@export')->name('people.export.selected'); // راوت الإكسبورت الجديد
 Route::put('people/supervisor/assign/{person}', 'PersonController@assignToSupervisor')->name('people.assignToSupervisor');
 Route::put('people/block/assign/{person}', 'PersonController@assignBlock')->name('people.assignBlock');
+Route::get('people/view', 'PersonController@view')->name('people.view');
 Route::resource('people', 'PersonController');
 
 // Complaints Routes.

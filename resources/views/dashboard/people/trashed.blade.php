@@ -9,12 +9,16 @@
         <thead>
         <tr>
           <th colspan="100">
-            <x-check-all-force-delete
-                    type="{{ \App\Models\Person::class }}"
-                    :resource="trans('people.plural')"></x-check-all-force-delete>
-            <x-check-all-restore
-                    type="{{ \App\Models\Person::class }}"
-                    :resource="trans('people.plural')"></x-check-all-restore>
+            @if (auth()->user()?->isAdmin())
+                <x-check-all-force-delete
+                        type="{{ \App\Models\Person::class }}"
+                        :resource="trans('people.plural')">
+                </x-check-all-force-delete>
+                <x-check-all-restore
+                        type="{{ \App\Models\Person::class }}"
+                        :resource="trans('people.plural')">
+                </x-check-all-restore>
+            @endif
           </th>
         </tr>
         <tr>

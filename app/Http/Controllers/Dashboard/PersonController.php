@@ -33,16 +33,13 @@ class PersonController extends Controller
     {
         $people = Person::filter()
             ->whereNull('relationship')
-            // ->whereNull('block_id')
             ->withCount('familyMembers')
             ->when(auth()->user()?->isSupervisor(), function ($query) {
-                // إذا كان المستخدم مشرفاً، اعرض رؤساء الأسر الذين يستوفون الشروط التالية:
-                $query->where(function ($q) { // تجميع شروط area_responsible_id معاً
-                    $q->where('area_responsible_id', auth()->user()->id) // مسؤول المنطقة هو ID المشرف
-                        ->orWhereNull('area_responsible_id'); // أو ليس لديه مسؤول منطقة معين
+                $query->where(function ($q) {
+                    $q->where('area_responsible_id', auth()->user()->id)
+                        ->orWhereNull('area_responsible_id');
                 })
-                    ->whereNull('block_id'); // هذا الشرط (block_id IS NULL) سيطبق الآن على الكتلة المجمعة أعلاه
-                // تمت إزالة whereNull('relationship') من هنا لأنه مكرر وموجود في بداية الاستعلام
+                    ->whereNull('block_id');
             })
             ->latest()->paginate();
 
@@ -50,8 +47,31 @@ class PersonController extends Controller
             $query->where('area_responsible_id',auth()->user()?->id);
         })->orderBy('name')->pluck('name','id');
 
-
         return view('dashboard.people.index', compact('people','blocks'));
+    }
+
+    /**
+     *  Display a listing of the resource.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function view()
+    {
+        $people = Person::filter()
+            ->whereNull('relationship')
+            ->whereNotNull('area_responsible_id')
+            ->whereNotNull('block_id')
+            ->withCount('familyMembers')
+            ->when(auth()->user()?->isSupervisor(), function ($query) {
+                $query->where('area_responsible_id', auth()->user()->id);
+            })
+            ->latest()->paginate();
+
+        $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
+            $query->where('area_responsible_id', auth()->user()?->id);
+        })->orderBy('name')->pluck('name', 'id');
+
+        return view('dashboard.people.view', compact('people', 'blocks'));
     }
 
     public function listPersonFamily(Person $person)

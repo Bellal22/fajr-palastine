@@ -23,6 +23,7 @@ return [
         'save' => 'Save',
         'filter' => 'Filter',
         'empty_filters' => 'ُEmpty Filters',
+        'view'=> 'View Family Heads'
     ],
     'messages' => [
         'created' => 'The person has been created successfully.',

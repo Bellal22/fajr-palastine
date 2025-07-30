@@ -10,9 +10,12 @@
         <tr>
           <th colspan="100">
             <div class="d-flex">
-                <x-check-all-delete
-                        type="{{ \App\Models\Person::class }}"
-                        :resource="trans('people.plural')"></x-check-all-delete>
+                @if (auth()->user()?->isAdmin())
+                    <x-check-all-delete
+                            type="{{ \App\Models\Person::class }}"
+                            :resource="trans('people.plural')">
+                    </x-check-all-delete>
+                @endif
 
                 <div class="ml-2 d-flex justify-content-between flex-grow-1">
                     @include('dashboard.people.partials.actions.create')

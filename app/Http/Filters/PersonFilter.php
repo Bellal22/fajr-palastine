@@ -35,6 +35,7 @@ class PersonFilter extends BaseFilters
         'family_members_max',
         'has_condition',
         'area_responsibles',
+        'block',
         'first_name',
         'father_name',
         'grandfather_name',
@@ -160,6 +161,14 @@ class PersonFilter extends BaseFilters
     {
         if (!is_null($value) && $value !== '') {
             return $this->builder->where($this->getColumnName('area_responsible_id'), $value);
+        }
+        return $this->builder;
+    }
+
+    protected function block($value): Builder
+    {
+        if (! is_null($value) && $value !== '') {
+            return $this->builder->where($this->getColumnName('block_id'), $value);
         }
         return $this->builder;
     }
