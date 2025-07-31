@@ -14,7 +14,7 @@
 <div class="row">
     <div class="col-md-12">
         {{-- حقل مسؤول المنطقة (Area Responsible) كقائمة منسدلة --}}
-        {{ BsForm::select('aid_id')
+        {{ BsForm::select('area_responsible_id')
             ->options($areaResponsibles ?? [])
             ->value(isset($block) ? $block->area_responsible_id : request('area_responsible_id'))
             ->label(trans('blocks.attributes.area_responsible'))

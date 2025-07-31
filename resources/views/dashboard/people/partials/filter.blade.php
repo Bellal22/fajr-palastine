@@ -22,7 +22,7 @@
 
                     $areaResponsiblesOptions = $areaResponsiblesQuery
                         ->orderBy('name')
-                        ->pluck('name', 'aid_id')
+                        ->pluck('name', 'id')
                         ->toArray();
                     $areaResponsiblesOptions = [null => 'اختر مسؤول المنطقة (لا يوجد)'] + $areaResponsiblesOptions;
                 ?>

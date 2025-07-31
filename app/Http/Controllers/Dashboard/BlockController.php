@@ -51,12 +51,9 @@ class BlockController extends Controller
     {
         $areaResponsibles = AreaResponsible::query()
             ->when(auth()->user()?->isSupervisor(), function ($query) {
-                // إذا كان المستخدم مشرفاً، اعرض فقط مسؤول المنطقة المرتبط بـ ID المشرف الحالي
-                // هذا يفترض أن عمود 'id' في جدول area_responsibles هو الذي يشير إلى 'users.id'
-                $query->where('id', auth()->user()->id); // تم التعديل هنا: استخدام 'id' بدلاً من 'area_responsible_id'
             })
-            ->orderBy('name') // ترتيب الخيارات أبجديًا
-            ->pluck('name', 'aid_id') // جلب الاسم كقيمة مرئية و aid_id كقيمة فعلية للخيار
+            ->orderBy('name')
+            ->pluck('name', 'id')
             ->toArray();
 
         return view('dashboard.blocks.create', compact('areaResponsibles'));

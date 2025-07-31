@@ -28,7 +28,6 @@ class AreaResponsible extends Model
      */
     protected $fillable = [
         'name',
-        'aid_id',
         'phone',
         'address',
     ];

@@ -12,10 +12,6 @@
                         <td>{{ $area_responsible->name }}</td>
                     </tr>
                     <tr>
-                        <th width="200">@lang('area_responsibles.attributes.aid_id')</th>
-                        <td>{{ $area_responsible->aid_id }}</td>
-                    </tr>
-                    <tr>
                         <th width="200">@lang('area_responsibles.attributes.phone')</th>
                         <td>{{ $area_responsible->phone }}</td>
                     </tr>

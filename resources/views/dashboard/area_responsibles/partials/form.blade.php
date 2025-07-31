@@ -3,13 +3,6 @@
 @include('dashboard.errors')
 
 <div class="row">
-    <div class="col-md-12">
-        {{-- حقل معرف المسؤول (AID ID) --}}
-        {{ BsForm::number('aid_id')
-            ->label(trans('area_responsibles.attributes.aid_id'))
-            ->required()
-            ->autofocus() }}
-    </div>
 </div>
 
 <div class="row">
