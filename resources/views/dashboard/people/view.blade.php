@@ -21,9 +21,6 @@
           </th>
         </tr>
         <tr>
-            <th style="width: 30px;" class="text-center">
-              <x-check-all></x-check-all>
-            </th>
             <th>@lang('people.attributes.id_num')</th>
             <th>@lang('people.attributes.name')</th>
             <th>@lang('people.attributes.phone')</th>
@@ -40,9 +37,6 @@
         <tbody>
         @forelse($people as $person)
             <tr>
-                <td class="text-center">
-                  <x-check-all-item :model="$person"></x-check-all-item>
-                </td>
                 <td>
                     <a href="{{ route('dashboard.people.show', $person) }}"
                        class="text-decoration-none text-ellipsis">
@@ -60,12 +54,7 @@
                 <td>{{ $person->family_members_count }}</td>
 
                 <td style="width: 160px">
-                    {{-- @include('dashboard.people.partials.actions.family') --}}
-                    @include('dashboard.people.partials.actions.assignToCurrentSupervisor')
                     @include('dashboard.people.partials.actions.assignBlock')
-                    @include('dashboard.people.partials.actions.show')
-                    @include('dashboard.people.partials.actions.edit')
-                    @include('dashboard.people.partials.actions.delete')
                 </td>
             </tr>
         @empty

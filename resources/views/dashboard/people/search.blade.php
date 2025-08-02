@@ -21,9 +21,6 @@
           </th>
         </tr>
         <tr>
-            <th style="width: 30px;" class="text-center">
-              <x-check-all></x-check-all>
-            </th>
             <th>@lang('people.attributes.id_num')</th>
             <th>@lang('people.attributes.name')</th>
             <th>@lang('people.attributes.phone')</th>
@@ -34,15 +31,11 @@
             <th>@lang('people.attributes.has_condition')</th>
             <th>@lang('people.attributes.relatives_count')</th>
             <th>@lang('people.attributes.relatives_count')(المسجل)</th>
-            <th style="width: 160px">...</th>
         </tr>
         </thead>
         <tbody>
         @forelse($people as $person)
             <tr>
-                <td class="text-center">
-                  <x-check-all-item :model="$person"></x-check-all-item>
-                </td>
                 <td>
                     <a href="{{ route('dashboard.people.show', $person) }}"
                        class="text-decoration-none text-ellipsis">
@@ -53,20 +46,11 @@
                 <td>{{ $person->phone}}</td>
                 <td>{{ __($person->social_status) }}</td>
                 <td>{{ __($person->current_city) }}</td>
-                <td>{{ $person->area_responsible }}</td>
-                <td>{{ $person->block }}</td>
+                <td>{{ $person->area_responsible ?? 'لم يتم تحديده' }}</td>
+                <td>{{ $person->block ?? 'لم يتم تحديده'  }}</td>
                 <td>{{ $person->has_condition == 1 ? 'نعم' : ($person->has_condition == 0 ? 'لا' : $person->has_condition) }}</td>
                 <td>{{ $person->relatives_count }}</td>
                 <td>{{ $person->family_members_count }}</td>
-
-                <td style="width: 160px">
-                    {{-- @include('dashboard.people.partials.actions.family') --}}
-                    @include('dashboard.people.partials.actions.assignToCurrentSupervisor')
-                    @include('dashboard.people.partials.actions.assignBlock')
-                    @include('dashboard.people.partials.actions.show')
-                    @include('dashboard.people.partials.actions.edit')
-                    @include('dashboard.people.partials.actions.delete')
-                </td>
             </tr>
         @empty
             <tr>
