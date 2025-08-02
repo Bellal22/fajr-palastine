@@ -65,11 +65,11 @@
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.area_responsible')</th>
-                        <td>{{ $person->areaResponsible->name ?? '-' }}</td>
+                        <td>{{ $person->areaResponsible->name ?? 'لم يتم تحديده' }}</td>
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.block')</th>
-                        <td>{{ $person->block->name ?? '-' }}</td>
+                        <td>{{ $person->block->name ?? 'لم يتم تحديده' }}</td>
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.landmark')</th>
@@ -89,18 +89,20 @@
                     </tr>
                     <tr>
                         <th width="200">@lang('people.attributes.condition_description')</th>
-                        <td>{{ $person->condition_description ?? 'لا يوجد' }}</td>
+                        <td>{{ !empty($person->condition_description) ? $person->condition_description : 'لا يوجد' }}</td>
                     </tr>
 
                     </tbody>
                 </table>
 
-                @slot('footer')
-                    @include('dashboard.people.partials.actions.edit')
-                    @include('dashboard.people.partials.actions.delete')
-                    @include('dashboard.people.partials.actions.restore')
-                    @include('dashboard.people.partials.actions.forceDelete')
-                @endslot
+                @if (auth()->user()?->isAdmin())
+                    @slot('footer')
+                        @include('dashboard.people.partials.actions.edit')
+                        @include('dashboard.people.partials.actions.delete')
+                        @include('dashboard.people.partials.actions.restore')
+                        @include('dashboard.people.partials.actions.forceDelete')
+                    @endslot
+                @endif
             @endcomponent
         </div>
     </div>
@@ -126,17 +128,21 @@
                             </x-check-all-delete>
                         @endif
 
-                        <div class="ml-2 d-flex justify-content-between flex-grow-1">
-                            @include('dashboard.people.partials.actions.create')
-                            @include('dashboard.people.partials.actions.trashed')
-                        </div>
+                        @if (auth()->user()?->isAdmin())
+                            <div class="ml-2 d-flex justify-content-between flex-grow-1">
+                                @include('dashboard.people.partials.actions.create')
+                                @include('dashboard.people.partials.actions.trashed')
+                            </div>
+                        @endif
                     </div>
                 </th>
             </tr>
             <tr>
-                <th style="width: 30px;" class="text-center">
-                    <x-check-all></x-check-all>
-                </th>
+                @if (auth()->user()?->isAdmin())
+                    <th style="width: 30px;" class="text-center">
+                        <x-check-all></x-check-all>
+                    </th>
+                @endif
                 <th>@lang('people.attributes.id_num')</th>
                 <th>@lang('people.attributes.first_name')</th>
                 <th>@lang('people.attributes.father_name')</th>
@@ -146,15 +152,19 @@
                 <th>@lang('people.attributes.relationship')</th>
                 <th>@lang('people.attributes.has_condition')</th>
                 <th>@lang('people.attributes.condition_description')</th>
-                <th style="width: 160px">...</th>
+                @if (auth()->user()?->isAdmin())
+                    <th style="width: 160px">...</th>
+                @endif
             </tr>
             </thead>
             <tbody>
             @forelse($person->familyMembers as $person)
                 <tr>
-                    <td class="text-center">
-                        <x-check-all-item :model="$person"></x-check-all-item>
-                    </td>
+                    @if (auth()->user()?->isAdmin())
+                        <td class="text-center">
+                            <x-check-all-item :model="$person"></x-check-all-item>
+                        </td>
+                    @endif
                     <td>
                         <a href="{{ route('dashboard.people.show', $person) }}"
                            class="text-decoration-none text-ellipsis">
@@ -168,13 +178,15 @@
                     <td>{{ $person->dob }}</td>
                     <td>{{ __($person->relationship) }}</td>
                     <td>{{ $person->has_condition == 1 ? 'نعم' : ($person->has_condition == 0 ? 'لا' : $person->has_condition) }}</td>
-                    <td>{{ $person->condition_description ?? 'لا يوجد' }}</td>
+                    <td>{{ !empty($person->condition_description) ? $person->condition_description : 'لا يوجد' }}</td>
 
-                    <td style="width: 160px">
-                        @include('dashboard.people.partials.actions.show')
-                        @include('dashboard.people.partials.actions.edit')
-                        @include('dashboard.people.partials.actions.delete')
-                    </td>
+                    @if (auth()->user()?->isAdmin())
+                        <td style="width: 160px">
+                            @include('dashboard.people.partials.actions.show')
+                            @include('dashboard.people.partials.actions.edit')
+                            @include('dashboard.people.partials.actions.delete')
+                        </td>
+                    @endif
                 </tr>
             @empty
                 <tr>
@@ -211,29 +223,36 @@
                                     type="{{ \App\Models\Complaint::class }}"
                                     :resource="trans('complaints.plural')"></x-check-all-delete>
 
-                                <div class="ml-2 d-flex justify-content-between flex-grow-1">
-{{--                                    @include('dashboard.complaints.partials.actions.create')--}}
-                                    @include('dashboard.complaints.partials.actions.trashed')
-                                </div>
+                                @if (auth()->user()?->isAdmin())
+                                    <div class="ml-2 d-flex justify-content-between flex-grow-1">
+                                        @include('dashboard.complaints.partials.actions.trashed')
+                                    </div>
+                                @endif
                             </div>
                         </th>
                     </tr>
                     <tr>
-                        <th style="width: 30px;" class="text-center">
-                            <x-check-all></x-check-all>
-                        </th>
+                        @if (auth()->user()?->isAdmin())
+                            <th style="width: 30px;" class="text-center">
+                                <x-check-all></x-check-all>
+                            </th>
+                        @endif
                         <th>@lang('complaints.attributes.id_num')</th>
                         <th>@lang('complaints.attributes.complaint_title')</th>
                         <th>@lang('complaints.attributes.complaint_text')</th>
-                        <th style="width: 160px">...</th>
+                        @if (auth()->user()?->isAdmin())
+                            <th style="width: 160px">...</th>
+                        @endif
                     </tr>
                     </thead>
                     <tbody>
                     @forelse($complaints as $complaint)
                         <tr>
-                            <td class="text-center">
-                                <x-check-all-item :model="$complaint"></x-check-all-item>
-                            </td>
+                            @if (auth()->user()?->isAdmin())
+                                <td class="text-center">
+                                    <x-check-all-item :model="$complaint"></x-check-all-item>
+                                </td>
+                            @endif
                             <td>
                                 <a href="{{ route('dashboard.complaints.show', $complaint) }}"
                                    class="text-decoration-none text-ellipsis">
@@ -243,11 +262,13 @@
                             <td>{{ $complaint->complaint_title	}}</td>
                             <td>{{ $complaint->complaint_text }}</td>
 
-                            <td style="width: 160px">
-                                @include('dashboard.complaints.partials.actions.show')
-                                @include('dashboard.complaints.partials.actions.edit')
-                                @include('dashboard.complaints.partials.actions.delete')
-                            </td>
+                            @if (auth()->user()?->isAdmin())
+                                <td style="width: 160px">
+                                    @include('dashboard.complaints.partials.actions.show')
+                                    @include('dashboard.complaints.partials.actions.edit')
+                                    @include('dashboard.complaints.partials.actions.delete')
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
