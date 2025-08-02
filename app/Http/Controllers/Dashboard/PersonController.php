@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Exports\PeopleExport;
+use App\Http\Filters\PersonFilter;
 use App\Models\Block;
 use App\Models\Person;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\PersonRequest;
+use App\Models\AreaResponsible;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Maatwebsite\Excel\Facades\Excel;
 
 class PersonController extends Controller
@@ -48,6 +51,30 @@ class PersonController extends Controller
         })->orderBy('name')->pluck('name','id');
 
         return view('dashboard.people.index', compact('people','blocks'));
+    }
+
+    /**
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function search(Request $request)
+    {
+        $people = Person::filter()
+            ->whereNull('relationship')
+            ->withCount('familyMembers');
+
+        $people = $people->latest()->paginate(
+            $request->input('perPage', 15)
+        );
+
+        $blocks = Block::orderBy('name')->pluck('name', 'id');
+
+        $areaResponsibles = AreaResponsible::query()
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        return view('dashboard.people.search', compact('people','blocks','areaResponsibles'));
     }
 
     /**

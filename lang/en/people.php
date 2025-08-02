@@ -23,7 +23,8 @@ return [
         'save' => 'Save',
         'filter' => 'Filter',
         'empty_filters' => 'ُEmpty Filters',
-        'view'=> 'View Family Heads'
+        'view'=> 'View Family Heads',
+        'search' => 'Search for a person'
     ],
     'messages' => [
         'created' => 'The person has been created successfully.',
@@ -47,6 +48,8 @@ return [
         'city' => 'City',
         'current_city' => 'Current city',
         'neighborhood' => 'Neighborhood',
+        'area_responsible' => 'Area Responsible',
+        'block' => 'Block',
         'landmark' => 'Landmark',
         'housing_type' => 'Housing type',
         'housing_damage_status' => 'Housing damage status',

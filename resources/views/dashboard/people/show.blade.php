@@ -64,6 +64,14 @@
                         <td>{{ __($person->neighborhood) }}</td>
                     </tr>
                     <tr>
+                        <th width="200">@lang('people.attributes.area_responsible')</th>
+                        <td>{{ $person->areaResponsible->name ?? '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th width="200">@lang('people.attributes.block')</th>
+                        <td>{{ $person->block->name ?? '-' }}</td>
+                    </tr>
+                    <tr>
                         <th width="200">@lang('people.attributes.landmark')</th>
                         <td>{{ $person->landmark }}</td>
                     </tr>

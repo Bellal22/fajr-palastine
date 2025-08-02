@@ -56,6 +56,7 @@ Route::get('people/export', 'PersonController@export')->name('people.export.sele
 Route::put('people/supervisor/assign/{person}', 'PersonController@assignToSupervisor')->name('people.assignToSupervisor');
 Route::put('people/block/assign/{person}', 'PersonController@assignBlock')->name('people.assignBlock');
 Route::get('people/view', 'PersonController@view')->name('people.view');
+Route::get('people/search', 'PersonController@search')->name('people.search');
 Route::resource('people', 'PersonController');
 
 // Complaints Routes.

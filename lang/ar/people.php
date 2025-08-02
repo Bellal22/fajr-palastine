@@ -24,7 +24,8 @@ return [
         'filter' => 'بحث',
         'empty_filters'=>'تفريغ الحقول',
         'export'=>'تصدير ',
-        'view'=>'عرض البيانات المعالجة'
+        'view'=>'عرض البيانات المعالجة',
+        'search'=>'بحث عن فرد'
     ],
     'messages' => [
         'created' => 'تم اضافة الفرد بنجاح.',
@@ -48,6 +49,8 @@ return [
         'city' => 'المدينة',
         'current_city' => 'المدينة الحالية',
         'neighborhood' => 'الحي',
+        'area_responsible'=>'مسؤول المنطقة',
+        'block'=>'المندوب',
         'landmark' => 'معلم بارز',
         'housing_type' => 'نوع السكن',
         'housing_damage_status' => 'حالة ضرر السكن',

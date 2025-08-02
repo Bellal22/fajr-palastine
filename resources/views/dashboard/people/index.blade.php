@@ -25,6 +25,7 @@
                     @include('dashboard.people.partials.actions.create')
                     @include('dashboard.people.partials.actions.trashed')
                     @include('dashboard.people.partials.actions.view')
+                    @include('dashboard.people.partials.actions.search')
                     @if (auth()->user()?->isAdmin())
                         <a href="{{ route('dashboard.people.export.selected', request()->all()) }}" class="btn btn-outline-success btn-sm">
                             <i class="fa-fw fas fa-file-excel"></i>
@@ -44,10 +45,8 @@
               <x-check-all></x-check-all>
             </th>
             <th>@lang('people.attributes.id_num')</th>
-            <th>@lang('people.attributes.first_name')</th>
-            <th>@lang('people.attributes.father_name')</th>
-            <th>@lang('people.attributes.grandfather_name')</th>
-            <th>@lang('people.attributes.family_name')</th>
+            <th>@lang('people.attributes.name')</th>
+            <th>@lang('people.attributes.phone')</th>
             <th>@lang('people.attributes.dob')</th>
             <th>@lang('people.attributes.social_status')</th>
             <th>@lang('people.attributes.city')</th>
@@ -69,10 +68,8 @@
                         {{ $person->id_num }}
                     </a>
                 </td>
-                <td>{{ $person->first_name }}</td>
-                <td>{{ $person->father_name }}</td>
-                <td>{{ $person->grandfather_name }}</td>
-                <td>{{ $person->family_name }}</td>
+                <td>{{ $person->first_name }} {{ $person->father_name }} {{ $person->grandfather_name }} {{ $person->family_name }}</td>
+                <td>{{ $person->phone }}</td>
                 <td>{{ $person->dob ? $person->dob->toDateString() : 'N/A' }}</td>
                 <td>{{ __($person->social_status) }}</td>
                 <td>{{ __($person->current_city) }}</td>
