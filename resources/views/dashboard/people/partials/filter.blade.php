@@ -13,54 +13,46 @@
         @endphp
 
         @if ($currentRouteName == 'dashboard.people.index')
-            <div class="col-md-6 form-group">
-                <label for="area_responsible_id">مسؤول المنطقة</label>
-                <?php
-                    $areaResponsiblesQuery = \App\Models\AreaResponsible::query();
+            @if(auth()->user()?->isAdmin())
+                <div class="col-md-6 form-group">
+                    <label for="area_responsible_id">مسؤول المنطقة</label>
+                    <?php
+                        $areaResponsiblesOptions = \App\Models\AreaResponsible::query()
+                            ->orderBy('name')
+                            ->pluck('name', 'id')
+                            ->toArray();
+                        $areaResponsiblesOptions = ['' => 'اختر مسؤول المنطقة'] + $areaResponsiblesOptions;
+                    ?>
+                    {{ BsForm::select('area_responsible_id', $areaResponsiblesOptions, request('area_responsible_id'), [
+                        'id' => 'area_responsible_select',
+                        'data-url' => route('dashboard.blocks.byAreaResponsible')
+                    ]) }}
+                </div>
+            @endif
 
-                    if (auth()->user()?->isSupervisor()) {
-                        $areaResponsiblesQuery->where('id', auth()->user()->id);
-                    }
-
-                    $areaResponsiblesOptions = $areaResponsiblesQuery
-                        ->orderBy('name')
-                        ->pluck('name', 'id')
-                        ->toArray();
-                    $areaResponsiblesOptions = [null => 'اختر مسؤول المنطقة (لا يوجد)'] + $areaResponsiblesOptions;
-                ?>
-                {{ BsForm::select(
-                    'area_responsible_id',
-                    $areaResponsiblesOptions,
-                    request('area_responsible_id')
-                ) }}
-            </div>
-        @endif
-
-        @php
-            $currentRouteName = Route::currentRouteName();
-        @endphp
-
-        @if ($currentRouteName == 'dashboard.people.view')
             <div class="col-md-6 form-group">
                 <label for="block_id">المندوب</label>
                 <?php
                     $blocksQuery = \App\Models\Block::query();
                     if (auth()->user()?->isSupervisor()) {
                         $blocksQuery->where('area_responsible_id', auth()->user()->id);
+                    } elseif (auth()->user()?->isAdmin() && request('area_responsible_id')) {
+                        $blocksQuery->where('area_responsible_id', request('area_responsible_id'));
                     }
                     $blocksOptions = $blocksQuery
                         ->orderBy('name')
                         ->pluck('name', 'id')
                         ->toArray();
-                    $blocksOptions = [null => 'اختر المندوب (لا يوجد)'] + $blocksOptions;
+                    $blocksOptions = ['' => 'اختر المندوب'] + $blocksOptions;
                 ?>
-                {{ BsForm::select(
-                    'block_id',
+                {{ BsForm::select('block_id',
                     $blocksOptions,
-                    request('block_id')
+                    request('block_id'),
+                    ['id' => 'block_select']
                 ) }}
             </div>
         @endif
+
 
         @if (! auth()->user()?->isSupervisor())
             <div class="col-md-6">
@@ -241,23 +233,40 @@
             // إعادة تحميل الصفحة
             window.location.reload();
         });
-        // document.getElementById('resetFilters').addEventListener('click', function () {
-        //     let form = this.closest('form');
 
-        //     form.querySelectorAll('input, select').forEach(function (element) {
-        //         // نتجاوز عنصر عدد النتائج
-        //         if (element.name === 'perPage') return;
+        document.addEventListener('DOMContentLoaded', function() {
+            const areaSelect = document.getElementById('area_responsible_select');
+            const blockSelect = document.getElementById('block_select');
 
-        //         // تفريغ القيم بناءً على النوع
-        //         if (element.type === 'checkbox' || element.type === 'radio') {
-        //             element.checked = false;
-        //         } else {
-        //             element.value = '';
-        //         }
-        //     });
+            if (areaSelect) {
+                areaSelect.addEventListener('change', function() {
+                    const url = this.dataset.url;
+                    const areaId = this.value;
 
-        //     form.submit(); // إعادة تحميل الصفحة بالقيم الجديدة
-        // });
+                    fetch(`${url}?area_responsible_id=${areaId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // مسح الخيارات القديمة
+                            blockSelect.innerHTML = '';
+
+                            // إضافة الخيار الافتراضي
+                            const defaultOption = new Option('اختر المندوب', '');
+                            blockSelect.add(defaultOption);
+
+                            // إضافة الخيارات الجديدة
+                            Object.entries(data).forEach(([id, name]) => {
+                                const option = new Option(name, id);
+                                blockSelect.add(option);
+                            });
+                        });
+                });
+
+                // تشغيل الحدث عند التحميل إذا كانت قيمة مسؤول المنطقة مختارة
+                if (areaSelect.value) {
+                    areaSelect.dispatchEvent(new Event('change'));
+                }
+            }
+        });
     </script>
 @endpush
 {{ BsForm::close() }}

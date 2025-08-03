@@ -8,6 +8,7 @@ use App\Http\Requests\Dashboard\BlockRequest;
 use App\Models\AreaResponsible;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Request;
 
 class BlockController extends Controller
 {
@@ -191,5 +192,17 @@ class BlockController extends Controller
         flash()->success(trans('blocks.messages.deleted'));
 
         return redirect()->route('dashboard.blocks.trashed');
+    }
+
+    public function getByAreaResponsible(Request $request)
+    {
+        $blocks = Block::query()
+            ->when($request->area_responsible_id, function ($q) use ($request) {
+                $q->where('area_responsible_id', $request->area_responsible_id);
+            })
+            ->orderBy('name')
+            ->pluck('name', 'id');
+
+        return response()->json($blocks);
     }
 }

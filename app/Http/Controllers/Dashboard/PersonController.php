@@ -34,23 +34,33 @@ class PersonController extends Controller
      */
     public function index()
     {
-        $people = Person::filter()
+        $query = Person::filter()
             ->whereNull('relationship')
             ->withCount('familyMembers')
             ->when(auth()->user()?->isSupervisor(), function ($query) {
+                // مشرف يرى فقط الأشخاص في منطقته أو بدون مسؤول منطقة
                 $query->where(function ($q) {
                     $q->where('area_responsible_id', auth()->user()->id)
                         ->orWhereNull('area_responsible_id');
-                })
-                    ->whereNull('block_id');
-            })
-            ->latest()->paginate();
+                });
+            });
 
-        $blocks = Block::when(auth()->user()?->isSupervisor(),function ($query){
-            $query->where('area_responsible_id',auth()->user()?->id);
-        })->orderBy('name')->pluck('name','id');
+        // تطبيق الفلاتر إذا كانت موجودة
+        if ($areaResponsibleId = request('area_responsible_id')) {
+            $query->where('area_responsible_id', $areaResponsibleId);
+        }
 
-        return view('dashboard.people.index', compact('people','blocks'));
+        $people = $query->latest()->paginate();
+
+        // استرجاع المندوبين فقط إذا كان المستخدم Admin
+        $blocks = [];
+        if (auth()->user()?->isAdmin()) {
+            $blocks = Block::when(request('area_responsible_id'), function ($q) {
+                $q->where('area_responsible_id', request('area_responsible_id'));
+            })->orderBy('name')->pluck('name', 'id');
+        }
+
+        return view('dashboard.people.index', compact('people', 'blocks'));
     }
 
     /**
@@ -87,17 +97,24 @@ class PersonController extends Controller
      */
     public function view()
     {
-        $people = Person::filter()
-            ->whereNull('relationship')
+        $query = Person::filter()
             ->whereNotNull('area_responsible_id')
             ->whereNotNull('block_id')
             ->withCount('familyMembers')
-            // ** الكود الجديد: تحميل العلاقتين (eager loading) **
             ->with(['block', 'areaResponsible'])
             ->when(auth()->user()?->isSupervisor(), function ($query) {
                 $query->where('area_responsible_id', auth()->user()->id);
-            })
-            ->latest()->paginate();
+            });
+
+        // إضافة شرط للبحث عن block_id
+        if ($blockId = request('block_id')) {
+            $query->where('block_id', $blockId);
+        }
+
+        // Uncomment the following line to see the SQL and bindings
+        // dd($query->toSql(), $query->getBindings());
+
+        $people = $query->latest()->paginate();
 
         $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
             $query->where('area_responsible_id', auth()->user()?->id);
@@ -105,6 +122,8 @@ class PersonController extends Controller
 
         return view('dashboard.people.view', compact('people', 'blocks'));
     }
+
+
 
     public function listPersonFamily(Person $person)
     {
