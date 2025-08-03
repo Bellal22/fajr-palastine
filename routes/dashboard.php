@@ -87,7 +87,7 @@ Route::get('trashed/blocks/{trashed_block}', 'BlockController@showTrashed')->nam
 Route::post('blocks/{trashed_block}/restore', 'BlockController@restore')->name('blocks.restore');
 Route::delete('blocks/{trashed_block}/forceDelete', 'BlockController@forceDelete')->name('blocks.forceDelete');
 Route::get('blocks/by-area', [BlockController::class, 'getByAreaResponsible'])
-    ->name('dashboard.blocks.byAreaResponsible');
+    ->name('blocks.byAreaResponsible');
 Route::resource('blocks', 'BlockController');
 
 /*  The routes of generated crud will set here: Don't remove this line  */

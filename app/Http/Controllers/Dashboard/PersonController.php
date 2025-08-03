@@ -38,27 +38,24 @@ class PersonController extends Controller
             ->whereNull('relationship')
             ->withCount('familyMembers')
             ->when(auth()->user()?->isSupervisor(), function ($query) {
-                // مشرف يرى فقط الأشخاص في منطقته أو بدون مسؤول منطقة
                 $query->where(function ($q) {
                     $q->where('area_responsible_id', auth()->user()->id)
                         ->orWhereNull('area_responsible_id');
                 });
             });
-
-        // تطبيق الفلاتر إذا كانت موجودة
         if ($areaResponsibleId = request('area_responsible_id')) {
             $query->where('area_responsible_id', $areaResponsibleId);
         }
-
+        if (request()->has('block_id') && !empty(request('block_id'))) {
+            $query->where('block_id', request('block_id'));
+        }
         $people = $query->latest()->paginate();
 
-        // استرجاع المندوبين فقط إذا كان المستخدم Admin
-        $blocks = [];
-        if (auth()->user()?->isAdmin()) {
-            $blocks = Block::when(request('area_responsible_id'), function ($q) {
-                $q->where('area_responsible_id', request('area_responsible_id'));
-            })->orderBy('name')->pluck('name', 'id');
-        }
+        $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
+            $query->where('area_responsible_id', auth()->user()->id);
+        })->when(auth()->user()?->isAdmin() && request('area_responsible_id'), function ($q) {
+            $q->where('area_responsible_id', request('area_responsible_id'));
+        })->orderBy('name')->pluck('name', 'id');
 
         return view('dashboard.people.index', compact('people', 'blocks'));
     }
@@ -106,24 +103,18 @@ class PersonController extends Controller
                 $query->where('area_responsible_id', auth()->user()->id);
             });
 
-        // إضافة شرط للبحث عن block_id
         if ($blockId = request('block_id')) {
             $query->where('block_id', $blockId);
         }
 
-        // Uncomment the following line to see the SQL and bindings
-        // dd($query->toSql(), $query->getBindings());
-
         $people = $query->latest()->paginate();
 
         $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
-            $query->where('area_responsible_id', auth()->user()?->id);
+            $query->where('area_responsible_id', auth()->user()->id);
         })->orderBy('name')->pluck('name', 'id');
 
         return view('dashboard.people.view', compact('people', 'blocks'));
     }
-
-
 
     public function listPersonFamily(Person $person)
     {
