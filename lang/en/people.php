@@ -31,6 +31,9 @@ return [
         'updated' => 'The person has been updated successfully.',
         'deleted' => 'The person has been deleted successfully.',
         'restored' => 'The person has been restored successfully.',
+        'search_placeholder' => 'Search for individuals',
+        'empty_search' => 'Please enter a search term to see results',
+
     ],
     'attributes' => [
         'name' => 'Person name',

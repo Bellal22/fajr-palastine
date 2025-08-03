@@ -12,11 +12,5 @@
             'active' => request()->routeIs('*people.index')
             || request()->routeIs('*people.show'),
         ],
-        [
-            'name' => trans('people.actions.create'),
-            'url' => route('dashboard.people.create'),
-            'can' => ['ability' => 'create', 'model' => \App\Models\Person::class],
-            'active' => request()->routeIs('*people.create'),
-        ],
     ])
 @endcomponent

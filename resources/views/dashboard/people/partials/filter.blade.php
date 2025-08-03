@@ -7,9 +7,11 @@
         <div class="col-md-6">
             {{ BsForm::text('id_num')->value(request('id_num'))->label(trans('people.attributes.id_num')) }}
         </div>
+
         @php
             $currentRouteName = Route::currentRouteName();
         @endphp
+
         @if ($currentRouteName == 'dashboard.people.index')
             <div class="col-md-6 form-group">
                 <label for="area_responsible_id">مسؤول المنطقة</label>
@@ -213,7 +215,7 @@
     </button>
 
     <button type="button" class="btn btn-secondary btn-sm" id="resetFilters">
-        <i class="fas fa fa-fw fa-times"></i>
+        <i class="fas fa-fw fa-times"></i>
         @lang('people.actions.empty_filters')
     </button>
 
@@ -222,23 +224,40 @@
 @endcomponent
 @push('scripts')
     <script>
-        document.getElementById('resetFilters').addEventListener('click', function () {
-            let form = this.closest('form');
 
-            form.querySelectorAll('input, select').forEach(function (element) {
-                // نتجاوز عنصر عدد النتائج
-                if (element.name === 'perPage') return;
+        document.getElementById('resetFilters').addEventListener('click', function() {
+            // إعادة تعيين حقول النموذج
+            const form = document.querySelector('form');
+            if(form) {
+                form.reset();
+            }
 
-                // تفريغ القيم بناءً على النوع
-                if (element.type === 'checkbox' || element.type === 'radio') {
-                    element.checked = false;
-                } else {
-                    element.value = '';
-                }
-            });
+            // الحصول على الرابط الحالي بدون كويري باراميترز
+            const cleanUrl = window.location.origin + window.location.pathname;
 
-            form.submit(); // إعادة تحميل الصفحة بالقيم الجديدة
+            // تحديث الرابط في شريط العناوين
+            history.pushState({}, document.title, cleanUrl);
+
+            // إعادة تحميل الصفحة
+            window.location.reload();
         });
+        // document.getElementById('resetFilters').addEventListener('click', function () {
+        //     let form = this.closest('form');
+
+        //     form.querySelectorAll('input, select').forEach(function (element) {
+        //         // نتجاوز عنصر عدد النتائج
+        //         if (element.name === 'perPage') return;
+
+        //         // تفريغ القيم بناءً على النوع
+        //         if (element.type === 'checkbox' || element.type === 'radio') {
+        //             element.checked = false;
+        //         } else {
+        //             element.value = '';
+        //         }
+        //     });
+
+        //     form.submit(); // إعادة تحميل الصفحة بالقيم الجديدة
+        // });
     </script>
 @endpush
 {{ BsForm::close() }}

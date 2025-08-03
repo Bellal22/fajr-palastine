@@ -22,7 +22,6 @@
                 @endif
 
                 <div class="ml-2 d-flex justify-content-between flex-grow-1">
-                    @include('dashboard.people.partials.actions.create')
                     @include('dashboard.people.partials.actions.trashed')
                     @include('dashboard.people.partials.actions.view')
                     @include('dashboard.people.partials.actions.search')

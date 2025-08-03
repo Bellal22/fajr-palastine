@@ -62,19 +62,22 @@ class PersonController extends Controller
         $people = Person::filter()
             ->whereNull('relationship')
             ->withCount('familyMembers');
-
+        // تنفيذ البحث
         $people = $people->latest()->paginate(
             $request->input('perPage', 15)
         );
-
         $blocks = Block::orderBy('name')->pluck('name', 'id');
-
         $areaResponsibles = AreaResponsible::query()
             ->orderBy('name')
             ->pluck('name', 'id')
             ->toArray();
 
-        return view('dashboard.people.search', compact('people','blocks','areaResponsibles'));
+        // إذا كانت النتائج فارغة، يمكنك إرجاع عرض فارغ أو رسالة
+        if ($people->isEmpty()) {
+            return view('dashboard.people.search', compact('people', 'blocks', 'areaResponsibles'))
+                ->with('message', 'لا توجد نتائج للبحث.');
+        }
+        return view('dashboard.people.search', compact('people', 'blocks', 'areaResponsibles'));
     }
 
     /**
