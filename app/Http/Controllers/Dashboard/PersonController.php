@@ -89,6 +89,8 @@ class PersonController extends Controller
             ->whereNotNull('area_responsible_id')
             ->whereNotNull('block_id')
             ->withCount('familyMembers')
+            // ** الكود الجديد: تحميل العلاقتين (eager loading) **
+            ->with(['block', 'areaResponsible'])
             ->when(auth()->user()?->isSupervisor(), function ($query) {
                 $query->where('area_responsible_id', auth()->user()->id);
             })
@@ -147,6 +149,7 @@ class PersonController extends Controller
      */
     public function show(Person $person)
     {
+        $person->load(['block', 'areaResponsible']);
         return view('dashboard.people.show', compact('person'));
     }
 

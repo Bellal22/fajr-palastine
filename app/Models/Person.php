@@ -43,4 +43,9 @@ class Person extends Model
     {
         return $this->belongsTo(User::class, 'area_responsible_id','id');
     }
+
+    public function block()
+    {
+        return $this->belongsTo(Block::class, 'block_id', 'id');
+    }
 }

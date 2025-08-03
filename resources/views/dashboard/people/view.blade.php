@@ -47,8 +47,8 @@
                 <td>{{ $person->phone}}</td>
                 <td>{{ __($person->social_status) }}</td>
                 <td>{{ __($person->current_city) }}</td>
-                <td>{{ $person->area_responsible }}</td>
-                <td>{{ $person->block }}</td>
+                <td>{{ $person->areaResponsible->name ?? 'لم يتم تحديده' }}</td>
+                <td>{{ $person->block->name ?? 'لم يتم تحديده' }}</td>
                 <td>{{ $person->has_condition == 1 ? 'نعم' : ($person->has_condition == 0 ? 'لا' : $person->has_condition) }}</td>
                 <td>{{ $person->relatives_count }}</td>
                 <td>{{ $person->family_members_count }}</td>
