@@ -1,9 +1,19 @@
 @can('assignBlock', $person)
+    @php
+        $currentRouteName = Route::currentRouteName();
+    @endphp
+
     <a href="#person-{{ $person->id }}-assign-model"
-       class="btn btn-outline-info btn-sm m-1"
-       data-toggle="modal">
-         ربط مسؤول المربع<i class="fas fa fa-fw fa-location-arrow"></i>
+    class="btn btn-outline-info btn-sm m-1"
+    data-toggle="modal">
+        @if($currentRouteName == 'dashboard.people.view')
+            تعديل المندوب
+        @else
+            ربط بالمندوب
+        @endif
+        <i class="fas fa fa-fw fa-location-arrow"></i>
     </a>
+
 
 
     <!-- Modal -->
@@ -21,7 +31,7 @@
                 <div class="modal-body">
                     {{ BsForm::select('block_id')
                     ->options($blocks)
-                    ->value(isset($person) ? $person->block_id : request('block_id'))->placeholder('اختر المسؤول') }}
+                    ->value(isset($person) ? $person->block_id : request('block_id'))->placeholder('اختر المندوب') }}
                 </div>
                 <div class="modal-footer">
 

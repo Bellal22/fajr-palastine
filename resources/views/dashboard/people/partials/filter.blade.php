@@ -13,6 +13,51 @@
         @endphp
 
         @if ($currentRouteName == 'dashboard.people.index')
+            <div class="col-md-6 form-group">
+                <label for="area_responsible_id">مسؤول المنطقة</label>
+                <?php
+                    $areaResponsiblesQuery = \App\Models\AreaResponsible::query();
+                    if (auth()->user()?->isSupervisor()) {
+                        // إذا كان المستخدم مشرف، يظهر فقط المسؤول الذي يتوافق مع المستخدم
+                        $areaResponsiblesQuery->where('id', auth()->user()->id);
+                    }
+                    $areaResponsiblesOptions = $areaResponsiblesQuery
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->toArray();
+                    $areaResponsiblesOptions = ['' => 'اختر مسؤول المنطقة'] + $areaResponsiblesOptions;
+                ?>
+                {{ BsForm::select('area_responsible_id', $areaResponsiblesOptions, request('area_responsible_id'), [
+                    'id' => 'area_responsible_select',
+                    'data-url' => route('dashboard.blocks.byAreaResponsible')
+                ]) }}
+            </div>
+
+            <div class="col-md-6 form-group" style="display: none;">
+                <label for="block_id">المندوب</label>
+                <?php
+                    $blocksQuery = \App\Models\Block::query();
+                    if (auth()->user()?->isSupervisor()) {
+                        $blocksQuery->where('area_responsible_id', auth()->user()->id);
+                    } elseif (auth()->user()?->isAdmin() && request('area_responsible_id')) {
+                        $blocksQuery->where('area_responsible_id', request('area_responsible_id'));
+                    }
+                    $blocksOptions = $blocksQuery
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->toArray();
+                    $blocksOptions = ['' => 'اختر المندوب'] + $blocksOptions;
+                ?>
+                {{ BsForm::select('block_id',
+                    $blocksOptions,
+                    request('block_id'),
+                    ['id' => 'block_select']
+                ) }}
+            </div>
+        @endif
+
+
+        @if ($currentRouteName == 'dashboard.people.view')
             @if(auth()->user()?->isAdmin())
                 <div class="col-md-6 form-group">
                     <label for="area_responsible_id">مسؤول المنطقة</label>
@@ -52,7 +97,6 @@
                 ) }}
             </div>
         @endif
-
 
         @if (! auth()->user()?->isSupervisor())
             <div class="col-md-6">
