@@ -21,6 +21,13 @@
                     </x-check-all-delete>
                 @endif
 
+                @if (auth()->user()?->isSupervisor())
+                    <x-check-all-assignBlock
+                            type="{{ \App\Models\Person::class }}"
+                            :resource="trans('people.plural')">
+                    </x-check-all-assignBlock>
+                @endif
+
                 <div class="ml-2 d-flex justify-content-between flex-grow-1">
                     @include('dashboard.people.partials.actions.trashed')
                     @include('dashboard.people.partials.actions.view')

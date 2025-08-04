@@ -24,7 +24,7 @@ return [
         'filter' => 'Filter',
         'empty_filters' => 'ُEmpty Filters',
         'view'=> 'View Family Heads',
-        'search' => 'Search for a person'
+        'search' => 'Search for a person',
     ],
     'messages' => [
         'created' => 'The person has been created successfully.',

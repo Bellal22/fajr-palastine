@@ -14,8 +14,6 @@
         <i class="fas fa fa-fw fa-location-arrow"></i>
     </a>
 
-
-
     <!-- Modal -->
     <div class="modal fade" id="person-{{ $person->id }}-assign-model" tabindex="-1" role="dialog"
          aria-labelledby="modal-title-{{ $person->id }}" aria-hidden="true">

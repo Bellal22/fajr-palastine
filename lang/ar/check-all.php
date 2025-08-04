@@ -5,6 +5,8 @@ return [
         'delete' => 'حذف المحدد',
         'restore' => 'استعادة المحدد',
         'export' => 'تصدير المحدد',
+        'assignBlock' => 'ربط بالمندوب ',
+        'assignToCurrentSupervisor' => 'ربط الفرد بك',
     ],
     'messages' => [
         'deleted' => 'تم حذف :type بنجاح.',
@@ -17,6 +19,12 @@ return [
             'info' => 'هل أنت متأكد انك تريد حذف :type',
             'confirm' => 'حذف',
             'cancel' => 'إلغاء',
+            'assign' => [
+                'title' => 'تعيين المندوب',
+                'cancel' => 'إلغاء',
+                'confirm' => 'تأكيد',
+                'info' => 'سيتم تعيين المندوب المحدد للأشخاص المختارين'
+            ]
         ],
         'restore' => [
             'title' => 'تحذير !',
