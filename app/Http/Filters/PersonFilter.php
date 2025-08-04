@@ -49,11 +49,17 @@ class PersonFilter extends BaseFilters
 
     protected function idNum($value)
     {
-        if (!is_null($value) && $value !== '') {
-            return $this->builder->where($this->getColumnName('id_num'), $value);
+        if (!empty(trim($value))) {
+            $ids = array_filter(
+                preg_split("/\r\n|\n|\r/", $value), // تقسيم حسب الأسطر
+                fn($id) => !empty(trim($id))
+            );
+
+            return $this->builder->whereIn($this->getColumnName('id_num'), $ids);
         }
         return $this->builder;
     }
+
 
     public function selectedId($value)
     {

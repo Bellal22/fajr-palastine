@@ -66,6 +66,7 @@ return [
     'placeholders' => [
         'name' => 'Person name',
         'id_num' => 'ID Number',
+        'id_num_placeholder' => 'Enter each ID number on a new line. You can search for a single ID number or a group of ID numbers.',
         'first_name' => 'First name',
         'father_name' => 'Father name',
         'grandfather_name' => 'Grandfather name',
@@ -86,7 +87,11 @@ return [
         'relationship' => 'Relationship',
         'has_condition' => 'Has condition',
         'condition_description' => 'Condition description',
-        'person_status' => 'Status'
+        'person_status' => 'Status',
+        'area_responsible_label' => 'Area Responsible',
+        'select_area_responsible' => 'Select Area Responsible',
+        'block_label' => 'Block',
+        'select_block' => 'Select Block',
     ],
     'dialogs' => [
         'delete' => [

@@ -65,6 +65,7 @@ return [
     'placeholders'=>[
         'name' => 'اسم الفرد',
         'id_num' => 'رقم الهوية',
+        'id_num_placeholder' => 'أدخل كل رقم هوية في سطر مستقل يمكنك البحث عن رقم هوية واحد أو مجموعة من أرقام الهويات',
         'first_name' => 'الاسم الأول',
         'father_name' => 'اسم الأب',
         'phone' => 'رقم الجوال',
@@ -85,7 +86,11 @@ return [
         'relationship' => 'صلة القرابة',
         'has_condition' => 'يعاني من حالة صحية',
         'condition_description' => 'وصف الحالة الصحية',
-        'person_status' => 'الحالة'
+        'person_status' => 'الحالة',
+        'area_responsible_label' => 'مسؤول المنطقة',
+        'select_area_responsible' => 'اختر مسؤول المنطقة',
+        'block_label' => 'المندوب',
+        'select_block' => 'اختر المندوب',
     ],
     'dialogs' => [
         'delete' => [

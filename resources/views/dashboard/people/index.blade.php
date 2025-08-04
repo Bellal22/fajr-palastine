@@ -40,11 +40,9 @@
           </th>
         </tr>
         <tr>
-            @if (auth()->user()?->isAdmin())
-                <th style="width: 30px;" class="text-center">
-                <x-check-all></x-check-all>
-                </th>
-            @endif
+            <th style="width: 30px;" class="text-center">
+            <x-check-all></x-check-all>
+            </th>
             <th>@lang('people.attributes.id_num')</th>
             <th>@lang('people.attributes.name')</th>
             <th>@lang('people.attributes.phone')</th>
@@ -60,11 +58,9 @@
         <tbody>
         @forelse($people as $person)
             <tr>
-                @if (auth()->user()?->isAdmin())
-                    <td class="text-center">
-                    <x-check-all-item :model="$person"></x-check-all-item>
-                    </td>
-                @endif
+                <td class="text-center">
+                <x-check-all-item :model="$person"></x-check-all-item>
+                </td>
                 <td>
                     <a href="{{ route('dashboard.people.show', $person) }}"
                        class="text-decoration-none text-ellipsis">

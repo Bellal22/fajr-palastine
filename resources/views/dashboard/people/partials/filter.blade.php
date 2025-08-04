@@ -4,8 +4,14 @@
 
     <div class="row">
 
-        <div class="col-md-6">
-            {{ BsForm::text('id_num')->value(request('id_num'))->label(trans('people.attributes.id_num')) }}
+        <div class="col-md-12">
+            {{ BsForm::textarea('id_num')
+                ->value(request('id_num'))
+                ->label(trans('people.attributes.id_num'))
+                ->attribute('class', 'form-control id-numbers-input')
+                ->attribute('style', 'height: 38px; min-height: 38px; max-height: 200px; overflow-y: auto; resize: vertical; line-height: 1.5; transition: height 0.2s ease; white-space: nowrap;')
+                ->attribute('rows', '1')
+                ->attribute('placeholder', trans('people.placeholders.id_num_placeholder')) }}
         </div>
 
         @php
@@ -14,7 +20,7 @@
 
         @if ($currentRouteName == 'dashboard.people.index')
             <div class="col-md-6 form-group">
-                <label for="area_responsible_id">مسؤول المنطقة</label>
+                <label for="area_responsible_id">{{ trans('people.placeholders.area_responsible_label') }}</label>
                 <?php
                     $areaResponsiblesQuery = \App\Models\AreaResponsible::query();
                     if (auth()->user()?->isSupervisor()) {
@@ -25,7 +31,7 @@
                         ->orderBy('name')
                         ->pluck('name', 'id')
                         ->toArray();
-                    $areaResponsiblesOptions = ['' => 'اختر مسؤول المنطقة'] + $areaResponsiblesOptions;
+                    $areaResponsiblesOptions = ['' => trans('people.placeholders.select_area_responsible')] + $areaResponsiblesOptions;
                 ?>
                 {{ BsForm::select('area_responsible_id', $areaResponsiblesOptions, request('area_responsible_id'), [
                     'id' => 'area_responsible_select',
@@ -34,7 +40,7 @@
             </div>
 
             <div class="col-md-6 form-group" style="display: none;">
-                <label for="block_id">المندوب</label>
+                <label for="block_id">{{ trans('people.placeholders.block_label') }}</label>
                 <?php
                     $blocksQuery = \App\Models\Block::query();
                     if (auth()->user()?->isSupervisor()) {
@@ -46,7 +52,7 @@
                         ->orderBy('name')
                         ->pluck('name', 'id')
                         ->toArray();
-                    $blocksOptions = ['' => 'اختر المندوب'] + $blocksOptions;
+                    $blocksOptions = ['' => trans('people.placeholders.select_block')] + $blocksOptions;
                 ?>
                 {{ BsForm::select('block_id',
                     $blocksOptions,
@@ -56,47 +62,53 @@
             </div>
         @endif
 
-
-        @if ($currentRouteName == 'dashboard.people.view')
-            @if(auth()->user()?->isAdmin())
-                <div class="col-md-6 form-group">
-                    <label for="area_responsible_id">مسؤول المنطقة</label>
-                    <?php
-                        $areaResponsiblesOptions = \App\Models\AreaResponsible::query()
-                            ->orderBy('name')
-                            ->pluck('name', 'id')
-                            ->toArray();
-                        $areaResponsiblesOptions = ['' => 'اختر مسؤول المنطقة'] + $areaResponsiblesOptions;
-                    ?>
-                    {{ BsForm::select('area_responsible_id', $areaResponsiblesOptions, request('area_responsible_id'), [
-                        'id' => 'area_responsible_select',
-                        'data-url' => route('dashboard.blocks.byAreaResponsible')
-                    ]) }}
-                </div>
-            @endif
-
+    @if ($currentRouteName == 'dashboard.people.view')
+        @if(auth()->user()?->isAdmin())
             <div class="col-md-6 form-group">
-                <label for="block_id">المندوب</label>
+                <label for="area_responsible_id">{{ trans('people.placeholders.area_responsible_label') }}</label>
                 <?php
-                    $blocksQuery = \App\Models\Block::query();
-                    if (auth()->user()?->isSupervisor()) {
-                        $blocksQuery->where('area_responsible_id', auth()->user()->id);
-                    } elseif (auth()->user()?->isAdmin() && request('area_responsible_id')) {
-                        $blocksQuery->where('area_responsible_id', request('area_responsible_id'));
-                    }
-                    $blocksOptions = $blocksQuery
+                    $areaResponsiblesOptions = \App\Models\AreaResponsible::query()
                         ->orderBy('name')
                         ->pluck('name', 'id')
                         ->toArray();
-                    $blocksOptions = ['' => 'اختر المندوب'] + $blocksOptions;
+                    $areaResponsiblesOptions = ['' => trans('people.placeholders.select_area_responsible')] + $areaResponsiblesOptions;
                 ?>
-                {{ BsForm::select('block_id',
-                    $blocksOptions,
-                    request('block_id'),
-                    ['id' => 'block_select']
-                ) }}
+                {{ BsForm::select('area_responsible_id', $areaResponsiblesOptions, request('area_responsible_id'), [
+                    'id' => 'area_responsible_select',
+                    'data-url' => route('dashboard.blocks.byAreaResponsible')
+                ]) }}
             </div>
         @endif
+
+        <div class="col-md-6 form-group">
+            <label for="block_id">{{ trans('people.placeholders.block_label') }}</label>
+            <?php
+                $blocksQuery = \App\Models\Block::query();
+                if (auth()->user()?->isSupervisor()) {
+                    $blocksQuery->where('area_responsible_id', auth()->user()->id);
+                } elseif (auth()->user()?->isAdmin() && request('area_responsible_id')) {
+                    $blocksQuery->where('area_responsible_id', request('area_responsible_id'));
+                }
+                $blocksOptions = $blocksQuery
+                    ->orderBy('name')
+                    ->pluck('name', 'id')
+                    ->toArray();
+                $blocksOptions = ['' => trans('people.placeholders.select_block')] + $blocksOptions;
+            ?>
+            {{ BsForm::select('block_id',
+                $blocksOptions,
+                request('block_id'),
+                ['id' => 'block_select']
+            ) }}
+        </div>
+    @endif
+
+        <div class="col-md-6">
+                {{ BsForm::number('perPage')
+                    ->value(request('perPage', 15))
+                    ->min(1)
+                    ->label(trans('people.perPage')) }}
+            </div>
 
         @if (! auth()->user()?->isSupervisor())
             <div class="col-md-6">
@@ -234,14 +246,8 @@
                 ])->value(request('has_condition'))
                 ->placeholder('اختر الحالة') }}
             </div>
-
-            <div class="col-md-6">
-                {{ BsForm::number('perPage')
-                    ->value(request('perPage', 15))
-                    ->min(1)
-                    ->label(trans('people.perPage')) }}
-            </div>
         @endif
+
     </div>
 
     @slot('footer')
@@ -311,6 +317,13 @@
                 }
             }
         });
+
+        const textarea = document.querySelector('.id-numbers-input');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto'; // إعادة تعيين الارتفاع
+            this.style.height = (this.scrollHeight) + 'px'; // تعيين الارتفاع بناءً على المحتوى
+        });
+
     </script>
 @endpush
 {{ BsForm::close() }}
