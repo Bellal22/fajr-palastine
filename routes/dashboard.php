@@ -56,6 +56,7 @@ Route::get('people/family/{person}', 'PersonController@listPersonFamily')->name(
 Route::get('people/export', 'PersonController@export')->name('people.export.selected'); // راوت الإكسبورت الجديد
 Route::put('people/supervisor/assign/{person}', 'PersonController@assignToSupervisor')->name('people.assignToSupervisor');
 Route::put('people/block/assign/{person}', 'PersonController@assignBlock')->name('people.assignBlock');
+Route::put('people/block/assign-bulk', 'PersonController@assignBlocks')->name('people.assignBlocks');
 Route::get('people/view', 'PersonController@view')->name('people.view');
 Route::get('people/search', 'PersonController@search')->name('people.search');
 Route::resource('people', 'PersonController');
@@ -86,8 +87,7 @@ Route::get('trashed/blocks', 'BlockController@trashed')->name('blocks.trashed');
 Route::get('trashed/blocks/{trashed_block}', 'BlockController@showTrashed')->name('blocks.trashed.show');
 Route::post('blocks/{trashed_block}/restore', 'BlockController@restore')->name('blocks.restore');
 Route::delete('blocks/{trashed_block}/forceDelete', 'BlockController@forceDelete')->name('blocks.forceDelete');
-Route::get('blocks/by-area', [BlockController::class, 'getByAreaResponsible'])
-    ->name('blocks.byAreaResponsible');
+Route::get('blocks/by-area', [BlockController::class, 'getByAreaResponsible'])->name('blocks.byAreaResponsible');
 Route::resource('blocks', 'BlockController');
 
 /*  The routes of generated crud will set here: Don't remove this line  */

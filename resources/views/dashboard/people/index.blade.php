@@ -1,14 +1,9 @@
 <x-layout :title="trans('people.plural')" :breadcrumbs="['dashboard.people.index']">
     @include('dashboard.people.partials.filter')
-
     @component('dashboard::components.table-box')
         @slot('title')
             @lang('people.actions.list') ({{ $people->total() }})
         @endslot
-
-        {{-- <a href="{{ route('people.export', request()->all()) }}" class="btn btn-success btn-sm">
-            <i class="fas fa-file-excel"></i> تصدير حسب الفلاتر
-        </a> --}}
 
         <thead>
         <tr>

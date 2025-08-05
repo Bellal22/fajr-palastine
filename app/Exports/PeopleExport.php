@@ -2,8 +2,6 @@
 
 namespace App\Exports;
 
-ini_set('memory_limit', '256M'); // or '512M'
-
 use App\Models\Person;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithHeadings;

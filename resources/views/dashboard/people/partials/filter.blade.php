@@ -62,53 +62,46 @@
             </div>
         @endif
 
-    @if ($currentRouteName == 'dashboard.people.view')
-        @if(auth()->user()?->isAdmin())
+        @if ($currentRouteName == 'dashboard.people.view')
+            @if(auth()->user()?->isAdmin())
+                <div class="col-md-6 form-group">
+                    <label for="area_responsible_id">{{ trans('people.placeholders.area_responsible_label') }}</label>
+                    <?php
+                        $areaResponsiblesOptions = \App\Models\AreaResponsible::query()
+                            ->orderBy('name')
+                            ->pluck('name', 'id')
+                            ->toArray();
+                        $areaResponsiblesOptions = ['' => trans('people.placeholders.select_area_responsible')] + $areaResponsiblesOptions;
+                    ?>
+                    {{ BsForm::select('area_responsible_id', $areaResponsiblesOptions, request('area_responsible_id'), [
+                        'id' => 'area_responsible_select',
+                        'data-url' => route('dashboard.blocks.byAreaResponsible')
+                    ]) }}
+                </div>
+            @endif
+
             <div class="col-md-6 form-group">
-                <label for="area_responsible_id">{{ trans('people.placeholders.area_responsible_label') }}</label>
+                <label for="block_id">{{ trans('people.placeholders.block_label') }}</label>
                 <?php
-                    $areaResponsiblesOptions = \App\Models\AreaResponsible::query()
+                    $blocksQuery = \App\Models\Block::query();
+                    if (auth()->user()?->isSupervisor()) {
+                        $blocksQuery->where('area_responsible_id', auth()->user()->id);
+                    } elseif (auth()->user()?->isAdmin() && request('area_responsible_id')) {
+                        $blocksQuery->where('area_responsible_id', request('area_responsible_id'));
+                    }
+                    $blocksOptions = $blocksQuery
                         ->orderBy('name')
                         ->pluck('name', 'id')
                         ->toArray();
-                    $areaResponsiblesOptions = ['' => trans('people.placeholders.select_area_responsible')] + $areaResponsiblesOptions;
+                    $blocksOptions = ['' => trans('people.placeholders.select_block')] + $blocksOptions;
                 ?>
-                {{ BsForm::select('area_responsible_id', $areaResponsiblesOptions, request('area_responsible_id'), [
-                    'id' => 'area_responsible_select',
-                    'data-url' => route('dashboard.blocks.byAreaResponsible')
-                ]) }}
+                {{ BsForm::select('block_id',
+                    $blocksOptions,
+                    request('block_id'),
+                    ['id' => 'block_select']
+                ) }}
             </div>
         @endif
-
-        <div class="col-md-6 form-group">
-            <label for="block_id">{{ trans('people.placeholders.block_label') }}</label>
-            <?php
-                $blocksQuery = \App\Models\Block::query();
-                if (auth()->user()?->isSupervisor()) {
-                    $blocksQuery->where('area_responsible_id', auth()->user()->id);
-                } elseif (auth()->user()?->isAdmin() && request('area_responsible_id')) {
-                    $blocksQuery->where('area_responsible_id', request('area_responsible_id'));
-                }
-                $blocksOptions = $blocksQuery
-                    ->orderBy('name')
-                    ->pluck('name', 'id')
-                    ->toArray();
-                $blocksOptions = ['' => trans('people.placeholders.select_block')] + $blocksOptions;
-            ?>
-            {{ BsForm::select('block_id',
-                $blocksOptions,
-                request('block_id'),
-                ['id' => 'block_select']
-            ) }}
-        </div>
-    @endif
-
-        <div class="col-md-6">
-                {{ BsForm::number('perPage')
-                    ->value(request('perPage', 15))
-                    ->min(1)
-                    ->label(trans('people.perPage')) }}
-            </div>
 
         @if (! auth()->user()?->isSupervisor())
             <div class="col-md-6">
@@ -247,6 +240,13 @@
                 ->placeholder('اختر الحالة') }}
             </div>
         @endif
+
+        <div class="col-md-6">
+            {{ BsForm::number('perPage')
+                ->value(request('perPage', 15))
+                ->min(1)
+                ->label(trans('people.perPage')) }}
+        </div>
 
     </div>
 

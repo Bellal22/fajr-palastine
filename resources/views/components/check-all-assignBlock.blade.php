@@ -1,51 +1,57 @@
-<div class="container">
-    @if($people->isNotEmpty())
-        @foreach($people as $person)
-            <button class="btn btn-outline-info btn-sm"
-                    data-checkbox=".item-checkbox"
-                    data-toggle="modal"
-                    data-target="#assign-selected-modal-{{ $person->id }}">
-                <i class="fas fa-location-arrow"></i>
-                @lang('check-all.actions.assignBlock')
-            </button>
+<button class="btn btn-outline-info btn-sm"
+        data-checkbox=".item-checkbox"
+        data-form="assign-blocks-form"
+        data-toggle="modal"
+        data-target="#assign-blocks-modal">
+    <i class="fas fa-location-arrow"></i>
+    @lang('check-all.actions.assignBlock')
+</button>
 
-            <!-- Modal لتعيين المندوب -->
-            <div class="modal fade" id="assign-selected-modal-{{ $person->id }}" tabindex="-1" role="dialog"
-                    aria-labelledby="assign-modal-title-{{ $person->id }}" aria-hidden="true">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="assign-modal-title-{{ $person->id }}">
-                                @lang('check-all.dialogs.assign.title')
-                            </h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        {{ BsForm::open(['url' => route('dashboard.people.assignBlock', $person->id), 'method' => 'PUT', 'id' => 'assign-block-form-' . $person->id]) }}
-                        <div class="modal-body">
-                            <input type="hidden" name="people_ids" id="selected-people-{{ $person->id }}" value="">
-                            {{ BsForm::select('block_id', $blocks)
-                                ->placeholder('اختر المندوب')
-                                ->required() }}
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
-                                @lang('check-all.dialogs.assign.cancel')
-                            </button>
-                            <button type="submit" class="btn btn-info btn-sm">
-                                @lang('check-all.dialogs.assign.confirm')
-                            </button>
-                        </div>
-                        {{ BsForm::close() }}
-                    </div>
-                </div>
+<!-- Modal -->
+<div class="modal fade" id="assign-blocks-modal" tabindex="-1" role="dialog"
+     aria-labelledby="assign-blocks-title" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assign-blocks-title">
+                    @lang('check-all.dialogs.assign.title')
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-        @endforeach
-
-        <!-- روابط الصفحات -->
-        {{ $people->links() }} <!-- هذا سيظهر روابط التنقل بين الصفحات -->
-    @else
-        <p>لا توجد بيانات لعرضها.</p>
-    @endif
+            <div class="modal-body">
+                <form action="{{ route('dashboard.people.assignBlocks') }}" method="POST" id="assign-blocks-form">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="items" id="selected-people" value="">
+                    {{ BsForm::select('block_id', $blocks->toArray())
+                        ->placeholder('اختر المندوب')
+                        ->label('المندوب')
+                        ->required() }}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                    @lang('check-all.dialogs.assign.cancel')
+                </button>
+                <button type="submit" class="btn btn-info btn-sm" form="assign-blocks-form">
+                    @lang('check-all.dialogs.assign.confirm')
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
+
+@push('scripts')
+    <script>
+        document.getElementById('bulk-assign-btn').addEventListener('click', function() {
+            const selectedIds = [];
+            document.querySelectorAll('.item-checkbox:checked').forEach(checkbox => {
+                selectedIds.push(checkbox.value);
+            });
+            document.getElementById('selected-people').value = selectedIds.join(',');
+        });
+
+    </script>
+@endpush

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\PersonRequest;
 use App\Models\AreaResponsible;
+use Gate;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -34,6 +35,7 @@ class PersonController extends Controller
      */
     public function index()
     {
+        // استعلام لجلب الأشخاص
         $query = Person::filter()
             ->whereNull('relationship')
             ->withCount('familyMembers')
@@ -43,6 +45,7 @@ class PersonController extends Controller
                         ->orWhereNull('area_responsible_id');
                 });
             });
+
         if ($areaResponsibleId = request('area_responsible_id')) {
             $query->where('area_responsible_id', $areaResponsibleId);
         }
@@ -51,12 +54,12 @@ class PersonController extends Controller
         }
         $people = $query->latest()->paginate();
 
+        // استعلام لجلب الكتل وتمريرها إلى الـ view
         $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
             $query->where('area_responsible_id', auth()->user()->id);
         })->when(auth()->user()?->isAdmin() && request('area_responsible_id'), function ($q) {
             $q->where('area_responsible_id', request('area_responsible_id'));
         })->orderBy('name')->pluck('name', 'id');
-
         return view('dashboard.people.index', compact('people', 'blocks'));
     }
 
@@ -88,7 +91,7 @@ class PersonController extends Controller
     }
 
     /**
-     *  Display a listing of the resource.
+     * Display a listing of the resource.
      *
      * @return \Illuminate\View\View
      */
@@ -119,10 +122,15 @@ class PersonController extends Controller
     public function listPersonFamily(Person $person)
     {
         $people = Person::filter()
-            ->where('relative_id',$person->id_num)
+            ->where('relative_id', $person->id_num)
             ->latest()->paginate();
 
-        return view('dashboard.people.families.index', compact('people'));
+        // جلب الكتل وتمريرها للمودال
+        $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
+            $query->where('area_responsible_id', auth()->user()->id);
+        })->orderBy('name')->pluck('name', 'id');
+
+        return view('dashboard.people.families.index', compact('people', 'blocks'));
     }
 
     /**
@@ -132,8 +140,8 @@ class PersonController extends Controller
      */
     public function create()
     {
-        $blocks = Block::when(auth()->user()?->isSupervisor(),function ($query){
-            $query->where('area_responsible_id',auth()->user()->id);
+        $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
+            $query->where('area_responsible_id', auth()->user()->id);
         })->orderBy('name')->get();
 
         return view('dashboard.people.create', compact('blocks'));
@@ -162,8 +170,15 @@ class PersonController extends Controller
      */
     public function show(Person $person)
     {
+        // تحميل العلاقات
         $person->load(['block', 'areaResponsible']);
-        return view('dashboard.people.show', compact('person'));
+
+        // جلب الكتل وتمريرها للمودال
+        $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
+            $query->where('area_responsible_id', auth()->user()->id);
+        })->orderBy('name')->pluck('name', 'id');
+
+        return view('dashboard.people.show', compact('person', 'blocks'));
     }
 
     /**
@@ -174,10 +189,10 @@ class PersonController extends Controller
      */
     public function edit(Person $person)
     {
-        $blocks = Block::when(auth()->user()?->isSupervisor(),function ($query){
-            $query->where('area_responsible_id',auth()->user()?->id);
+        $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
+            $query->where('area_responsible_id', auth()->user()?->id);
         })->orderBy('name')->get();
-        return view('dashboard.people.edit', compact('person','blocks'));
+        return view('dashboard.people.edit', compact('person', 'blocks'));
     }
 
     /**
@@ -290,18 +305,39 @@ class PersonController extends Controller
         flash()->success('تم إضافة الفرد لك بنحاج');
 
         return redirect()->route('dashboard.people.index');
-
     }
     public function assignBlock(Person $person, Request $request)
     {
+        // dd($request->all());
         $person->update([
             'block_id' => $request->block_id
         ]);
 
-        flash()->success('تم إضافة المسؤول');
+        flash()->success('تم إضافة المندوب');
 
-        return redirect()->route('dashboard.people.index');
-
+        return redirect()->route('dashboard.people.index', compact('person'));
     }
 
+    public function assignBlocks(Request $request)
+    {
+        $peopleIds = $request->input('items', []);
+        $blockId = $request->input('block_id');
+
+        if (!empty($peopleIds) && $blockId) {
+
+            Person::whereIn('id', $peopleIds)->each(function ($person) use ($blockId) {
+                if (Gate::allows('update', $person)) {
+                    $person->update(['block_id' => $blockId]);
+                }
+            });
+
+            flash()->success(trans('check-all.messages.updated', [
+                'type' => 'المندوبين',
+            ]));
+        } else {
+            flash()->error('يرجى تحديد فرد أو مجموعة أفراد.');
+        }
+
+        return redirect()->route('dashboard.people.index');
+    }
 }
