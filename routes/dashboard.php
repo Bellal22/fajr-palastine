@@ -59,6 +59,7 @@ Route::put('people/block/assign/{person}', 'PersonController@assignBlock')->name
 Route::put('people/block/assign-bulk', 'PersonController@assignBlocks')->name('people.assignBlocks');
 Route::get('people/view', 'PersonController@view')->name('people.view');
 Route::get('people/search', 'PersonController@search')->name('people.search');
+Route::post('people/clear', 'PersonController@clearSession')->name('people.clear');
 Route::resource('people', 'PersonController');
 
 // Complaints Routes.

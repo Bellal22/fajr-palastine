@@ -14,6 +14,53 @@
                 ->attribute('placeholder', trans('people.placeholders.id_num_placeholder')) }}
         </div>
 
+        <!-- مودال نتائج البحث -->
+        <div class="modal fade" id="not-found-modal" tabindex="-1" role="dialog" aria-labelledby="notFoundModalTitle" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="notFoundModalTitle">نتائج البحث عن الهويات</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        @if(!empty($notFoundIds))
+                            <div class="mb-4">
+                                <h6 class="font-weight-bold">الهويات التالية لم يتم العثور عليها:</h6>
+                                <ul>
+                                    @foreach($notFoundIds as $id)
+                                        <li>{{ $id }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        @if(!empty($unavailableIds))
+                            <div class="mb-4">
+                                <h6 class="font-weight-bold">الهويات التالية مسجلة ولكن غير متاحة في منطقتك:</h6>
+                                <ul>
+                                    @foreach($unavailableIds as $id)
+                                        <li>{{ $id }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        @if(empty($notFoundIds) && empty($unavailableIds))
+                            <div class="alert alert-success">
+                                جميع الهويات المدخلة موجودة ومتاحة في منطقتك.
+                            </div>
+                        @endif
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">موافق</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
         @php
             $currentRouteName = Route::currentRouteName();
         @endphp
@@ -248,8 +295,6 @@
                 ->label(trans('people.perPage')) }}
         </div>
 
-    </div>
-
     @slot('footer')
     <button type="submit" class="btn btn-primary btn-sm">
         <i class="fas fa fa-fw fa-filter"></i>
@@ -266,6 +311,40 @@
 @endcomponent
 @push('scripts')
     <script>
+
+        $(document).ready(function() {
+            // فتح المودال إذا كانت هناك هويات غير موجودة أو غير متاحة
+            @if(!empty($notFoundIds) || !empty($unavailableIds))
+                $('#not-found-modal').modal('show');
+            @endif
+
+            // إذا كانت هناك هويات غير موجودة في الجلسة
+            @if(session('notFoundIds') && count(session('notFoundIds')) > 0)
+                let html = '<p>الهويات التالية لم يتم العثور عليها:</p><ul>';
+                @foreach(session('notFoundIds') as $id)
+                    html += '<li>{{ $id }}</li>';
+                @endforeach
+                html += '</ul>';
+                $('#not-found-message').html(html);
+            @endif
+        });
+
+        // تفريغ الجلسة عند إغلاق المودال
+        $('#not-found-modal').on('hidden.bs.modal', function () {
+            $.ajax({
+                url: '{{ route("dashboard.people.clear") }}', // استدعاء Route لتفريغ الجلسة
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}' // تأكد من إرسال CSRF token
+                },
+                success: function(response) {
+                    console.log('Session cleared:', response);
+                },
+                error: function(xhr) {
+                    console.error('Error clearing session:', xhr);
+                }
+            });
+        });
 
         document.getElementById('resetFilters').addEventListener('click', function() {
             // إعادة تعيين حقول النموذج

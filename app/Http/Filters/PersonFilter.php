@@ -2,6 +2,7 @@
 
 namespace App\Http\Filters;
 
+use App\Models\Person;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -49,17 +50,33 @@ class PersonFilter extends BaseFilters
 
     protected function idNum($value)
     {
+        $notFoundIds = []; // مصفوفة لتخزين الهويات غير الموجودة
+        $ids = []; // تعريف المتغير كفارغ في البداية
+
         if (!empty(trim($value))) {
             $ids = array_filter(
                 preg_split("/\r\n|\n|\r/", $value), // تقسيم حسب الأسطر
                 fn($id) => !empty(trim($id))
             );
 
+            // تحقق مما إذا كانت الهوية موجودة في قاعدة البيانات
+            foreach ($ids as $id) {
+                if (!Person::where('id_num', trim($id))->exists()) {
+                    $notFoundIds[] = trim($id); // أضف الهوية إلى المصفوفة إذا لم توجد
+                }
+            }
+
+            // إذا كانت هناك هويات غير موجودة، مررها إلى الـ View
+            session(['notFoundIds' => $notFoundIds]); // تخزين الهويات غير الموجودة في الجلسة
+        }
+
+        // تأكد من أن الفلتر لا يعطل الفلاتر الأخرى
+        if (!empty($ids)) {
             return $this->builder->whereIn($this->getColumnName('id_num'), $ids);
         }
-        return $this->builder;
-    }
 
+        return $this->builder; // إذا لم يكن هناك هويات، أعد الـ builder كما هو
+    }
 
     public function selectedId($value)
     {

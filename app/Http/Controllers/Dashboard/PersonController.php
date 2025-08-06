@@ -35,32 +35,65 @@ class PersonController extends Controller
      */
     public function index()
     {
-        // استعلام لجلب الأشخاص
-        $query = Person::filter()
+        // استعلام أساسي للأشخاص
+        $baseQuery = Person::filter()
             ->whereNull('relationship')
-            ->withCount('familyMembers')
-            ->when(auth()->user()?->isSupervisor(), function ($query) {
-                $query->where(function ($q) {
-                    $q->where('area_responsible_id', auth()->user()->id)
-                        ->orWhereNull('area_responsible_id');
-                });
+            ->withCount('familyMembers');
+
+        // فلترة حسب صلاحيات المستخدم (مسؤول المنطقة)
+        if (auth()->user()?->isSupervisor()) {
+            $baseQuery->where(function ($q) {
+                $q->where('area_responsible_id', auth()->user()->id)
+                    ->orWhereNull('area_responsible_id');
             });
+        }
 
+        // تطبيق الفلاتر الإضافية
         if ($areaResponsibleId = request('area_responsible_id')) {
-            $query->where('area_responsible_id', $areaResponsibleId);
+            $baseQuery->where('area_responsible_id', $areaResponsibleId);
         }
-        if (request()->has('block_id') && !empty(request('block_id'))) {
-            $query->where('block_id', request('block_id'));
-        }
-        $people = $query->latest()->paginate();
 
-        // استعلام لجلب الكتل وتمريرها إلى الـ view
+        if (request()->has('block_id') && !empty(request('block_id'))) {
+            $baseQuery->where('block_id', request('block_id'));
+        }
+
+        // الحصول على النتائج النهائية
+        $people = $baseQuery->latest()->paginate();
+
+        // تحديد الأرقام غير المتاحة وغير المسجلة
+        $notFoundIds = [];
+        $unavailableIds = [];
+
+        if (request()->filled('id_num')) {
+            $searchedIds = array_filter(
+                preg_split("/\r\n|\n|\r/", request('id_num')),
+                fn($id) => !empty(trim($id))
+            );
+
+            // جميع الأرقام المتاحة في النظام
+            $availableIds = $people->pluck('id_num')->toArray();
+
+            // الأرقام غير الموجودة في النظام
+            $notFoundIds = array_values(array_diff($searchedIds, Person::pluck('id_num')->toArray()));
+
+            // الأرقام الموجودة في النظام ولكن غير متاحة للمستخدم
+            $unavailableIds = array_values(array_diff(
+                array_intersect($searchedIds, $availableIds),
+                $people->pluck('id_num')->toArray()
+            ));
+        }
+
+        // الكتل حسب الصلاحيات
         $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
             $query->where('area_responsible_id', auth()->user()->id);
-        })->when(auth()->user()?->isAdmin() && request('area_responsible_id'), function ($q) {
-            $q->where('area_responsible_id', request('area_responsible_id'));
         })->orderBy('name')->pluck('name', 'id');
-        return view('dashboard.people.index', compact('people', 'blocks'));
+
+        return view('dashboard.people.index', [
+            'people' => $people,
+            'blocks' => $blocks,
+            'notFoundIds' => $notFoundIds,
+            'unavailableIds' => $unavailableIds
+        ]);
     }
 
     /**
@@ -72,10 +105,35 @@ class PersonController extends Controller
         $people = Person::filter()
             ->whereNull('relationship')
             ->withCount('familyMembers');
+
+        // تحديد الأرقام غير المتاحة وغير المسجلة
+        $notFoundIds = [];
+        $unavailableIds = [];
+
+        if ($request->filled('id_num')) {
+            $searchedIds = array_filter(
+                preg_split("/\r\n|\n|\r/", $request->input('id_num')),
+                fn($id) => !empty(trim($id))
+            );
+
+            // جميع الأرقام المتاحة في النظام
+            $availableIds = $people->pluck('id_num')->toArray();
+
+            // الأرقام غير الموجودة في النظام
+            $notFoundIds = array_values(array_diff($searchedIds, Person::pluck('id_num')->toArray()));
+
+            // الأرقام الموجودة في النظام ولكن غير متاحة للمستخدم
+            $unavailableIds = array_values(array_diff(
+                array_intersect($searchedIds, $availableIds),
+                $people->pluck('id_num')->toArray()
+            ));
+        }
+
         // تنفيذ البحث
         $people = $people->latest()->paginate(
             $request->input('perPage', 15)
         );
+
         $blocks = Block::orderBy('name')->pluck('name', 'id');
         $areaResponsibles = AreaResponsible::query()
             ->orderBy('name')
@@ -84,11 +142,20 @@ class PersonController extends Controller
 
         // إذا كانت النتائج فارغة، يمكنك إرجاع عرض فارغ أو رسالة
         if ($people->isEmpty()) {
-            return view('dashboard.people.search', compact('people', 'blocks', 'areaResponsibles'))
+            return view('dashboard.people.search', compact('people', 'blocks', 'areaResponsibles', 'notFoundIds', 'unavailableIds'))
                 ->with('message', 'لا توجد نتائج للبحث.');
         }
-        return view('dashboard.people.search', compact('people', 'blocks', 'areaResponsibles'));
+
+        return view('dashboard.people.search', compact('people', 'blocks', 'areaResponsibles', 'notFoundIds', 'unavailableIds'));
     }
+
+    public function clearSession()
+    {
+        session()->forget('notFoundIds');
+        session()->forget('unavailableIds');
+        return response()->json(['success' => true]);
+    }
+
 
     /**
      * Display a listing of the resource.
@@ -292,7 +359,7 @@ class PersonController extends Controller
     public function export(Request $request)
     {
         // dd('Export Request Filters:', $request->all());
-        $filters = $request->all(); // احصل على جميع قيم الفلاتر من الـ URL
+        $filters = $request->all();
         return Excel::download(new PeopleExport($request, $filters), 'filtered_people.xlsx');
     }
 
