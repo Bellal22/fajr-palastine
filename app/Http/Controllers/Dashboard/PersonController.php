@@ -35,12 +35,10 @@ class PersonController extends Controller
      */
     public function index()
     {
-        // استعلام أساسي للأشخاص
         $baseQuery = Person::filter()
             ->whereNull('relationship')
             ->withCount('familyMembers');
 
-        // فلترة حسب صلاحيات المستخدم (مسؤول المنطقة)
         if (auth()->user()?->isSupervisor()) {
             $baseQuery->where(function ($q) {
                 $q->where('area_responsible_id', auth()->user()->id)
@@ -48,7 +46,6 @@ class PersonController extends Controller
             });
         }
 
-        // تطبيق الفلاتر الإضافية
         if ($areaResponsibleId = request('area_responsible_id')) {
             $baseQuery->where('area_responsible_id', $areaResponsibleId);
         }
@@ -57,10 +54,8 @@ class PersonController extends Controller
             $baseQuery->where('block_id', request('block_id'));
         }
 
-        // الحصول على النتائج النهائية
         $people = $baseQuery->latest()->paginate();
 
-        // تحديد الأرقام غير المتاحة وغير المسجلة
         $notFoundIds = [];
         $unavailableIds = [];
 
@@ -70,20 +65,16 @@ class PersonController extends Controller
                 fn($id) => !empty(trim($id))
             );
 
-            // جميع الأرقام المتاحة في النظام
             $availableIds = $people->pluck('id_num')->toArray();
 
-            // الأرقام غير الموجودة في النظام
             $notFoundIds = array_values(array_diff($searchedIds, Person::pluck('id_num')->toArray()));
 
-            // الأرقام الموجودة في النظام ولكن غير متاحة للمستخدم
             $unavailableIds = array_values(array_diff(
                 array_intersect($searchedIds, $availableIds),
                 $people->pluck('id_num')->toArray()
             ));
         }
 
-        // الكتل حسب الصلاحيات
         $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
             $query->where('area_responsible_id', auth()->user()->id);
         })->orderBy('name')->pluck('name', 'id');
@@ -106,7 +97,6 @@ class PersonController extends Controller
             ->whereNull('relationship')
             ->withCount('familyMembers');
 
-        // تحديد الأرقام غير المتاحة وغير المسجلة
         $notFoundIds = [];
         $unavailableIds = [];
 
@@ -116,20 +106,16 @@ class PersonController extends Controller
                 fn($id) => !empty(trim($id))
             );
 
-            // جميع الأرقام المتاحة في النظام
             $availableIds = $people->pluck('id_num')->toArray();
 
-            // الأرقام غير الموجودة في النظام
             $notFoundIds = array_values(array_diff($searchedIds, Person::pluck('id_num')->toArray()));
 
-            // الأرقام الموجودة في النظام ولكن غير متاحة للمستخدم
             $unavailableIds = array_values(array_diff(
                 array_intersect($searchedIds, $availableIds),
                 $people->pluck('id_num')->toArray()
             ));
         }
 
-        // تنفيذ البحث
         $people = $people->latest()->paginate(
             $request->input('perPage', 15)
         );
@@ -140,7 +126,6 @@ class PersonController extends Controller
             ->pluck('name', 'id')
             ->toArray();
 
-        // إذا كانت النتائج فارغة، يمكنك إرجاع عرض فارغ أو رسالة
         if ($people->isEmpty()) {
             return view('dashboard.people.search', compact('people', 'blocks', 'areaResponsibles', 'notFoundIds', 'unavailableIds'))
                 ->with('message', 'لا توجد نتائج للبحث.');
@@ -192,7 +177,6 @@ class PersonController extends Controller
             ->where('relative_id', $person->id_num)
             ->latest()->paginate();
 
-        // جلب الكتل وتمريرها للمودال
         $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
             $query->where('area_responsible_id', auth()->user()->id);
         })->orderBy('name')->pluck('name', 'id');
@@ -237,10 +221,8 @@ class PersonController extends Controller
      */
     public function show(Person $person)
     {
-        // تحميل العلاقات
         $person->load(['block', 'areaResponsible']);
 
-        // جلب الكتل وتمريرها للمودال
         $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
             $query->where('area_responsible_id', auth()->user()->id);
         })->orderBy('name')->pluck('name', 'id');
@@ -375,7 +357,6 @@ class PersonController extends Controller
     }
     public function assignBlock(Person $person, Request $request)
     {
-        // dd($request->all());
         $person->update([
             'block_id' => $request->block_id
         ]);

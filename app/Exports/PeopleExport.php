@@ -42,6 +42,7 @@ class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, Wi
                 'p.family_name',
                 'p.gender',
                 'p.phone',
+                'p.area_responsible_id',
                 'p.social_status',
                 'p.dob',
                 'p.relatives_count',
@@ -71,7 +72,7 @@ class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, Wi
     public function headings(): array
     {
         return [
-            '#', // الرقم التسلسلي
+            '#',
             'رقم الهوية',
             'الاسم الأول',
             'اسم الأب',
@@ -79,6 +80,7 @@ class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, Wi
             'اسم العائلة',
             'الجنس',
             'رقم الهاتف',
+            'مسؤول المنطقة',
             'الحالة الاجتماعية',
             'تاريخ الميلاد',
             'عدد أفراد الأسرة',
@@ -105,7 +107,7 @@ class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, Wi
         $rowNumber++;
 
         return [
-            $rowNumber, // الرقم التسلسلي
+            $rowNumber,
             $person->id_num,
             $person->first_name,
             $person->father_name,
@@ -113,6 +115,7 @@ class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, Wi
             $person->family_name,
             $person->gender,
             $person->phone,
+            $person->areaResponsible ? $person->areaResponsible->name : 'غير متوفر',
             __($person->social_status),
             $person->dob,
             $person->relatives_count,
@@ -139,7 +142,7 @@ class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, Wi
         $sheet->setRightToLeft(true);
 
         // تحديد الأعمدة لتكون عرضها تلقائي بناءً على المحتوى
-        foreach (range('A', 'Y') as $columnID) { // تم تعديل 'W' إلى 'X' لتغطية العمود الجديد
+        foreach (range('A', 'Z') as $columnID) { // تم تعديل 'W' إلى 'X' لتغطية العمود الجديد
             $sheet->getColumnDimension($columnID)->setAutoSize(true);
         }
 
@@ -147,10 +150,10 @@ class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, Wi
         $sheet->getRowDimension(1)->setRowHeight(30); // زيادة الارتفاع للوضوح
 
         // تنسيق الخط للصف الأول
-        $sheet->getStyle('A1:Y1')->getFont()->setBold(true)->setSize(12); // تم تعديل 'W' إلى 'X'
+        $sheet->getStyle('A1:Z1')->getFont()->setBold(true)->setSize(12); // تم تعديل 'W' إلى 'X'
 
         // توسيط النص في الصف الأول (العناوين)
-        $sheet->getStyle('A1:Y1')->getAlignment() // تم تعديل 'W' إلى 'X'
+        $sheet->getStyle('A1:Z1')->getAlignment() // تم تعديل 'W' إلى 'X'
             ->setHorizontal(Alignment::HORIZONTAL_CENTER)
             ->setVertical(Alignment::VERTICAL_CENTER);
 
@@ -159,16 +162,16 @@ class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, Wi
         $sheet->getStyle('A')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // تنسيق باقي الأعمدة لتكون لليمين (بدءًا من B)
-        $sheet->getStyle('B:Y')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT); // تم تعديل 'W' إلى 'X'
+        $sheet->getStyle('B:Z')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT); // تم تعديل 'W' إلى 'X'
 
         // إضافة الحدود لجميع الخلايا
-        $sheet->getStyle('A1:Y' . $sheet->getHighestRow()) // تم تعديل 'W' إلى 'X'
+        $sheet->getStyle('A1:Z' . $sheet->getHighestRow()) // تم تعديل 'W' إلى 'X'
             ->getBorders()
             ->getAllBorders()
             ->setBorderStyle(Border::BORDER_THIN);
 
         // تلوين الصف الأول
-        $sheet->getStyle('A1:Y1')->getFill() // تم تعديل 'W' إلى 'X'
+        $sheet->getStyle('A1:Z1')->getFill() // تم تعديل 'W' إلى 'X'
             ->setFillType(Fill::FILL_SOLID)
             ->getStartColor()->setRGB('FFA500'); // اللون البرتقالي للصف الأول
 

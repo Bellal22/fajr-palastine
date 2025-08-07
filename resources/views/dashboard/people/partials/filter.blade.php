@@ -54,12 +54,11 @@
                         @endif
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">موافق</button>
+                        <button type="button" class="btn btn-primary" id="clear-session-button">موافق</button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
         @php
             $currentRouteName = Route::currentRouteName();
@@ -327,22 +326,24 @@
                 html += '</ul>';
                 $('#not-found-message').html(html);
             @endif
-        });
 
-        // تفريغ الجلسة عند إغلاق المودال
-        $('#not-found-modal').on('hidden.bs.modal', function () {
-            $.ajax({
-                url: '{{ route("dashboard.people.clear") }}', // استدعاء Route لتفريغ الجلسة
-                type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}' // تأكد من إرسال CSRF token
-                },
-                success: function(response) {
-                    console.log('Session cleared:', response);
-                },
-                error: function(xhr) {
-                    console.error('Error clearing session:', xhr);
-                }
+            // تفريغ الجلسة عند الضغط على زر "موافق"
+            $('#clear-session-button').on('click', function() {
+                $.ajax({
+                    url: '{{ route("dashboard.people.clear") }}', // استدعاء Route لتفريغ الجلسة
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}' // تأكد من إرسال CSRF token
+                    },
+                    success: function(response) {
+                        console.log('Session cleared:', response);
+                        $('#not-found-modal').modal('hide'); // إغلاق المودال بعد التفريغ
+                    },
+                    error: function(xhr) {
+                        console.error('Error clearing session:', xhr);
+                        alert('حدث خطأ أثناء محاولة تفريغ الجلسة.'); // رسالة تنبيه للمستخدم
+                    }
+                });
             });
         });
 
