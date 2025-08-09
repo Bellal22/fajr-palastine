@@ -1,4 +1,4 @@
-<button class="btn btn-outline-info btn-sm"
+<button type="button" class="btn btn-outline-info btn-sm"
         data-checkbox=".item-checkbox"
         data-form="assign-blocks-form"
         data-toggle="modal"

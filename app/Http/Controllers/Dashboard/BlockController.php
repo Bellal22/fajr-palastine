@@ -95,7 +95,7 @@ class BlockController extends Controller
     public function edit(Block $block)
     {
         // جلب مسؤولي المناطق: aid_id كـ key والاسم (name) كـ value
-        $areaResponsibles = AreaResponsible::pluck('name', 'aid_id')->toArray();
+        $areaResponsibles = AreaResponsible::pluck('name')->toArray();
 
         return view('dashboard.blocks.edit', compact('block', 'areaResponsibles'));
     }

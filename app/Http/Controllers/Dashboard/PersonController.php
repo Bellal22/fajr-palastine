@@ -3,17 +3,16 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Exports\PeopleExport;
-use App\Http\Filters\PersonFilter;
 use App\Models\Block;
 use App\Models\Person;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\PersonRequest;
 use App\Models\AreaResponsible;
+use DB;
 use Gate;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\JsonResponse;
 use Maatwebsite\Excel\Facades\Excel;
 
 class PersonController extends Controller
@@ -37,6 +36,7 @@ class PersonController extends Controller
     {
         $baseQuery = Person::filter()
             ->whereNull('relationship')
+            ->whereNull('block_id') // فقط الأشخاص بدون مندوب
             ->withCount('familyMembers');
 
         if (auth()->user()?->isSupervisor()) {
@@ -50,9 +50,10 @@ class PersonController extends Controller
             $baseQuery->where('area_responsible_id', $areaResponsibleId);
         }
 
-        if (request()->has('block_id') && !empty(request('block_id'))) {
-            $baseQuery->where('block_id', request('block_id'));
-        }
+        // إزالة شرط فلترة block_id بناءً على الطلب لأنه نريد فقط الأشخاص بدون مندوب
+        // if (request()->has('block_id') && !empty(request('block_id'))) {
+        //     $baseQuery->where('block_id', request('block_id'));
+        // }
 
         $people = $baseQuery->latest()->paginate();
 
@@ -86,6 +87,7 @@ class PersonController extends Controller
             'unavailableIds' => $unavailableIds
         ]);
     }
+
 
     /**
      * @param \Illuminate\Http\Request $request
@@ -369,10 +371,15 @@ class PersonController extends Controller
     public function assignBlocks(Request $request)
     {
         $peopleIds = $request->input('items', []);
+
+        // حل المشكلة: إذا كانت String نحولها لمصفوفة
+        if (!is_array($peopleIds)) {
+            $peopleIds = array_filter(explode(',', $peopleIds));
+        }
+
         $blockId = $request->input('block_id');
 
         if (!empty($peopleIds) && $blockId) {
-
             Person::whereIn('id', $peopleIds)->each(function ($person) use ($blockId) {
                 if (Gate::allows('update', $person)) {
                     $person->update(['block_id' => $blockId]);
