@@ -34,60 +34,79 @@ class PersonController extends Controller
      */
     public function index()
     {
-        $baseQuery = Person::filter()
-            ->whereNull('relationship')
-            ->whereNull('block_id') // فقط الأشخاص بدون مندوب
-            ->withCount('familyMembers');
+        try {
+            $baseQuery = Person::filter()
+                ->whereNull('relationship')
+                ->withCount('familyMembers');
 
-        if (auth()->user()?->isSupervisor()) {
-            $baseQuery->where(function ($q) {
-                $q->where('area_responsible_id', auth()->user()->id)
-                    ->orWhereNull('area_responsible_id');
-            });
+            // تطبيق فلتر مسؤول المنطقة
+            if ($areaResponsibleId = request('area_responsible_id')) {
+                $baseQuery->where('area_responsible_id', $areaResponsibleId);
+            } elseif (auth()->user()?->isSupervisor()) {
+                $baseQuery->where(function ($q) {
+                    $q->where('area_responsible_id', auth()->user()->id)
+                        ->orWhereNull('area_responsible_id');
+                });
+            }
+
+            $people = $baseQuery->latest()->paginate();
+
+            $notFoundIds = [];
+            $unavailableIds = [];
+
+            if (request()->filled('id_num')) {
+                $searchedIds = array_filter(
+                    preg_split("/\r\n|\n|\r/", request('id_num')),
+                    fn($id) => !empty(trim($id))
+                );
+
+                $allExistingIds = Person::pluck('id_num')->toArray();
+                $availableIds = $people->pluck('id_num')->toArray();
+
+                $notFoundIds = array_values(array_diff($searchedIds, $allExistingIds));
+                $unavailableIds = array_values(array_diff(
+                    array_intersect($searchedIds, $allExistingIds),
+                    $availableIds
+                ));
+            }
+
+            $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
+                $query->where('area_responsible_id', auth()->user()->id);
+            })->orderBy('name')->pluck('name', 'id');
+
+            // تسجيل عملية البحث
+            logger()->info('تم عرض الصفحة الرئيسية للأشخاص', [
+                'user_id' => auth()->id(),
+                'filters' => request()->all(),
+                'results_count' => $people->total(),
+                'not_found_count' => count($notFoundIds),
+                'unavailable_count' => count($unavailableIds)
+            ]);
+
+            return view('dashboard.people.index', [
+                'people' => $people,
+                'blocks' => $blocks,
+                'notFoundIds' => $notFoundIds,
+                'unavailableIds' => $unavailableIds
+            ]);
+        } catch (\Exception $e) {
+            logger()->error('خطأ في الصفحة الرئيسية للأشخاص', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'user_id' => auth()->id()
+            ]);
+
+            flash()->error('حدث خطأ في تحميل البيانات. يرجى المحاولة مرة أخرى.');
+
+            return view('dashboard.people.index', [
+                'people' => Person::whereRaw('1=0')->paginate(),
+                'blocks' => collect(),
+                'notFoundIds' => [],
+                'unavailableIds' => []
+            ]);
         }
-
-        if ($areaResponsibleId = request('area_responsible_id')) {
-            $baseQuery->where('area_responsible_id', $areaResponsibleId);
-        }
-
-        // إزالة شرط فلترة block_id بناءً على الطلب لأنه نريد فقط الأشخاص بدون مندوب
-        // if (request()->has('block_id') && !empty(request('block_id'))) {
-        //     $baseQuery->where('block_id', request('block_id'));
-        // }
-
-        $people = $baseQuery->latest()->paginate();
-
-        $notFoundIds = [];
-        $unavailableIds = [];
-
-        if (request()->filled('id_num')) {
-            $searchedIds = array_filter(
-                preg_split("/\r\n|\n|\r/", request('id_num')),
-                fn($id) => !empty(trim($id))
-            );
-
-            $availableIds = $people->pluck('id_num')->toArray();
-
-            $notFoundIds = array_values(array_diff($searchedIds, Person::pluck('id_num')->toArray()));
-
-            $unavailableIds = array_values(array_diff(
-                array_intersect($searchedIds, $availableIds),
-                $people->pluck('id_num')->toArray()
-            ));
-        }
-
-        $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
-            $query->where('area_responsible_id', auth()->user()->id);
-        })->orderBy('name')->pluck('name', 'id');
-
-        return view('dashboard.people.index', [
-            'people' => $people,
-            'blocks' => $blocks,
-            'notFoundIds' => $notFoundIds,
-            'unavailableIds' => $unavailableIds
-        ]);
     }
-
 
     /**
      * @param \Illuminate\Http\Request $request
@@ -143,7 +162,6 @@ class PersonController extends Controller
         return response()->json(['success' => true]);
     }
 
-
     /**
      * Display a listing of the resource.
      *
@@ -151,26 +169,101 @@ class PersonController extends Controller
      */
     public function view()
     {
-        $query = Person::filter()
-            ->whereNotNull('area_responsible_id')
-            ->whereNotNull('block_id')
-            ->withCount('familyMembers')
-            ->with(['block', 'areaResponsible'])
-            ->when(auth()->user()?->isSupervisor(), function ($query) {
+        try {
+            // بناء الاستعلام الأساسي بدون استخدام filter() أولاً
+            $query = Person::query()
+                ->whereNotNull('area_responsible_id')
+                ->whereNotNull('block_id')
+                ->withCount('familyMembers')
+                ->with(['block', 'areaResponsible']);
+
+            // تطبيق فلتر مسؤول المنطقة أولاً
+            if ($areaResponsibleId = request('area_responsible_id')) {
+                $query->where('area_responsible_id', $areaResponsibleId);
+            } elseif (auth()->user()?->isSupervisor()) {
                 $query->where('area_responsible_id', auth()->user()->id);
-            });
+            }
 
-        if ($blockId = request('block_id')) {
-            $query->where('block_id', $blockId);
+            // تطبيق فلتر المندوب
+            if ($blockId = request('block_id')) {
+                $query->where('block_id', $blockId);
+            }
+
+            // الآن تطبيق باقي الفلاتر من PersonFilter
+            $query = $query->filter();
+
+            $people = $query->latest()->paginate();
+
+            // جلب المندوبين بناءً على صلاحيات المستخدم
+            $blocks = Block::query()
+                ->when(auth()->user()?->isSupervisor(), function ($query) {
+                    $query->where('area_responsible_id', auth()->user()->id);
+                })
+                ->when(request('area_responsible_id') && auth()->user()?->isAdmin(), function ($query) {
+                    $query->where('area_responsible_id', request('area_responsible_id'));
+                })
+                ->orderBy('name')
+                ->pluck('name', 'id');
+
+            // تسجيل عملية البحث للمراقبة
+            logger()->info('تم عرض قائمة الأشخاص', [
+                'user_id' => auth()->id(),
+                'filters' => request()->all(),
+                'results_count' => $people->total()
+            ]);
+
+            return view('dashboard.people.view', compact('people', 'blocks'));
+        } catch (\Exception $e) {
+            logger()->error('خطأ في عرض قائمة الأشخاص', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'user_id' => auth()->id(),
+                'filters' => request()->all()
+            ]);
+
+            flash()->error('حدث خطأ في تحميل البيانات. يرجى المحاولة مرة أخرى.');
+
+            return view('dashboard.people.view', [
+                'people' => Person::whereRaw('1=0')->paginate(),
+                'blocks' => collect()
+            ]);
         }
+    }
 
-        $people = $query->latest()->paginate();
+    /**
+     * Export filtered data from view page
+     */
+    public function exportView(Request $request)
+    {
+        try {
+            $request->validate([
+                'area_responsible_id' => 'nullable|exists:area_responsibles,id',
+                'block_id' => 'nullable|exists:blocks,id',
+                'perPage' => 'nullable|integer|min:1|max:1000'
+            ]);
 
-        $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
-            $query->where('area_responsible_id', auth()->user()->id);
-        })->orderBy('name')->pluck('name', 'id');
+            // إضافة معرف للتمييز أن هذا تصدير من صفحة view
+            $request->merge(['export_type' => 'view']);
 
-        return view('dashboard.people.view', compact('people', 'blocks'));
+            logger()->info('بدء تصدير البيانات من صفحة العرض', [
+                'user_id' => auth()->id(),
+                'filters' => $request->all()
+            ]);
+
+            $export = new PeopleExport($request);
+
+            return Excel::download($export, 'people_view_filtered.xlsx');
+        } catch (\Exception $e) {
+            logger()->error('خطأ في تصدير البيانات من صفحة العرض', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+                'filters' => $request->all()
+            ]);
+
+            flash()->error('حدث خطأ أثناء تصدير الملف. يرجى المحاولة مرة أخرى.');
+            return back();
+        }
     }
 
     public function listPersonFamily(Person $person)
@@ -342,9 +435,43 @@ class PersonController extends Controller
 
     public function export(Request $request)
     {
-        // dd('Export Request Filters:', $request->all());
-        $filters = $request->all();
-        return Excel::download(new PeopleExport($request, $filters), 'filtered_people.xlsx');
+        try {
+            // التحقق من صحة البيانات
+            $request->validate([
+                'area_responsible_id' => 'nullable|exists:area_responsibles,id',
+                'block_id' => 'nullable|exists:blocks,id',
+                'perPage' => 'nullable|integer|min:1|max:1000'
+            ]);
+
+            // تسجيل عملية التصدير
+            logger()->info('بدء عملية تصدير البيانات', [
+                'user_id' => auth()->id(),
+                'filters' => $request->all()
+            ]);
+
+            $filters = $request->all();
+            $export = new PeopleExport($request, $filters);
+
+            return Excel::download($export, 'filtered_people.xlsx');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            logger()->warning('بيانات غير صحيحة في التصدير', [
+                'errors' => $e->errors(),
+                'user_id' => auth()->id()
+            ]);
+
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            logger()->error('خطأ في تصدير الملف', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'user_id' => auth()->id(),
+                'filters' => $request->all()
+            ]);
+
+            flash()->error('حدث خطأ أثناء تصدير الملف. يرجى المحاولة مرة أخرى.');
+            return back();
+        }
     }
 
     public function assignToSupervisor(Person $person)
@@ -372,7 +499,6 @@ class PersonController extends Controller
     {
         $peopleIds = $request->input('items', []);
 
-        // حل المشكلة: إذا كانت String نحولها لمصفوفة
         if (!is_array($peopleIds)) {
             $peopleIds = array_filter(explode(',', $peopleIds));
         }

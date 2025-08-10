@@ -14,7 +14,6 @@
                 ->attribute('placeholder', trans('people.placeholders.id_num_placeholder')) }}
         </div>
 
-        <!-- مودال نتائج البحث -->
         <div class="modal fade" id="not-found-modal" tabindex="-1" role="dialog" aria-labelledby="notFoundModalTitle" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
@@ -312,12 +311,10 @@
     <script>
 
         $(document).ready(function() {
-            // فتح المودال إذا كانت هناك هويات غير موجودة أو غير متاحة
             @if(!empty($notFoundIds) || !empty($unavailableIds))
                 $('#not-found-modal').modal('show');
             @endif
 
-            // إذا كانت هناك هويات غير موجودة في الجلسة
             @if(session('notFoundIds') && count(session('notFoundIds')) > 0)
                 let html = '<p>الهويات التالية لم يتم العثور عليها:</p><ul>';
                 @foreach(session('notFoundIds') as $id)
@@ -326,41 +323,35 @@
                 html += '</ul>';
                 $('#not-found-message').html(html);
             @endif
-
-            // تفريغ الجلسة عند الضغط على زر "موافق"
             $('#clear-session-button').on('click', function() {
                 $.ajax({
-                    url: '{{ route("dashboard.people.clear") }}', // استدعاء Route لتفريغ الجلسة
+                    url: '{{ route("dashboard.people.clear") }}',
                     type: 'POST',
                     data: {
-                        _token: '{{ csrf_token() }}' // تأكد من إرسال CSRF token
+                        _token: '{{ csrf_token() }}'
                     },
                     success: function(response) {
                         console.log('Session cleared:', response);
-                        $('#not-found-modal').modal('hide'); // إغلاق المودال بعد التفريغ
+                        $('#not-found-modal').modal('hide');
                     },
                     error: function(xhr) {
                         console.error('Error clearing session:', xhr);
-                        alert('حدث خطأ أثناء محاولة تفريغ الجلسة.'); // رسالة تنبيه للمستخدم
+                        alert('حدث خطأ أثناء محاولة تفريغ الجلسة.');
                     }
                 });
             });
         });
 
         document.getElementById('resetFilters').addEventListener('click', function() {
-            // إعادة تعيين حقول النموذج
             const form = document.querySelector('form');
             if(form) {
                 form.reset();
             }
 
-            // الحصول على الرابط الحالي بدون كويري باراميترز
             const cleanUrl = window.location.origin + window.location.pathname;
 
-            // تحديث الرابط في شريط العناوين
             history.pushState({}, document.title, cleanUrl);
 
-            // إعادة تحميل الصفحة
             window.location.reload();
         });
 
@@ -376,14 +367,10 @@
                     fetch(`${url}?area_responsible_id=${areaId}`)
                         .then(response => response.json())
                         .then(data => {
-                            // مسح الخيارات القديمة
                             blockSelect.innerHTML = '';
 
-                            // إضافة الخيار الافتراضي
                             const defaultOption = new Option('اختر المندوب', '');
                             blockSelect.add(defaultOption);
-
-                            // إضافة الخيارات الجديدة
                             Object.entries(data).forEach(([id, name]) => {
                                 const option = new Option(name, id);
                                 blockSelect.add(option);
@@ -391,7 +378,6 @@
                         });
                 });
 
-                // تشغيل الحدث عند التحميل إذا كانت قيمة مسؤول المنطقة مختارة
                 if (areaSelect.value) {
                     areaSelect.dispatchEvent(new Event('change'));
                 }
@@ -400,8 +386,8 @@
 
         const textarea = document.querySelector('.id-numbers-input');
         textarea.addEventListener('input', function() {
-            this.style.height = 'auto'; // إعادة تعيين الارتفاع
-            this.style.height = (this.scrollHeight) + 'px'; // تعيين الارتفاع بناءً على المحتوى
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
         });
 
     </script>

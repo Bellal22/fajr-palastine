@@ -54,6 +54,7 @@ Route::post('people/{trashed_person}/restore', 'PersonController@restore')->name
 Route::delete('people/{trashed_person}/forceDelete', 'PersonController@forceDelete')->name('people.forceDelete');
 Route::get('people/family/{person}', 'PersonController@listPersonFamily')->name('people.family.list');
 Route::get('people/export', 'PersonController@export')->name('people.export.selected'); // راوت الإكسبورت الجديد
+Route::get('/people/export-view', 'PersonController@exportView')->name('people.export.view');
 Route::put('people/supervisor/assign/{person}', 'PersonController@assignToSupervisor')->name('people.assignToSupervisor');
 Route::put('people/block/assign/{person}', 'PersonController@assignBlock')->name('people.assignBlock');
 Route::put('people/block/assign-bulk', 'PersonController@assignBlocks')->name('people.assignBlocks');
