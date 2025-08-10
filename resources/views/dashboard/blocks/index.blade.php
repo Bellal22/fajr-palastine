@@ -28,6 +28,7 @@
             <th>@lang('blocks.attributes.name')</th>
             <th>@lang('blocks.attributes.title')</th>
             <th>@lang('blocks.attributes.phone')</th>
+            <th>@lang('blocks.attributes.people_count')</th>
             <th>@lang('blocks.attributes.area_responsible')</th>
             <th style="width: 160px">...</th>
         </tr>
@@ -47,6 +48,7 @@
 
                 <td>{{ $block->title }}</td>
                 <td>{{ $block->phone }}</td>
+                <td>{{ $block->people_count }}</td>
                 <td>{{ $block->areaResponsible->name }}</td>
 
                 <td style="width: 160px">

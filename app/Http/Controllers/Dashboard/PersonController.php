@@ -8,6 +8,7 @@ use App\Models\Person;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\PersonRequest;
+use App\Jobs\UpdateBlockPeopleCount;
 use App\Models\AreaResponsible;
 use DB;
 use Gate;
@@ -37,6 +38,7 @@ class PersonController extends Controller
         try {
             $baseQuery = Person::filter()
                 ->whereNull('relationship')
+                ->whereNull('block_id')
                 ->withCount('familyMembers');
 
             // تطبيق فلتر مسؤول المنطقة
@@ -231,41 +233,6 @@ class PersonController extends Controller
         }
     }
 
-    /**
-     * Export filtered data from view page
-     */
-    public function exportView(Request $request)
-    {
-        try {
-            $request->validate([
-                'area_responsible_id' => 'nullable|exists:area_responsibles,id',
-                'block_id' => 'nullable|exists:blocks,id',
-                'perPage' => 'nullable|integer|min:1|max:1000'
-            ]);
-
-            // إضافة معرف للتمييز أن هذا تصدير من صفحة view
-            $request->merge(['export_type' => 'view']);
-
-            logger()->info('بدء تصدير البيانات من صفحة العرض', [
-                'user_id' => auth()->id(),
-                'filters' => $request->all()
-            ]);
-
-            $export = new PeopleExport($request);
-
-            return Excel::download($export, 'people_view_filtered.xlsx');
-        } catch (\Exception $e) {
-            logger()->error('خطأ في تصدير البيانات من صفحة العرض', [
-                'error' => $e->getMessage(),
-                'user_id' => auth()->id(),
-                'filters' => $request->all()
-            ]);
-
-            flash()->error('حدث خطأ أثناء تصدير الملف. يرجى المحاولة مرة أخرى.');
-            return back();
-        }
-    }
-
     public function listPersonFamily(Person $person)
     {
         $people = Person::filter()
@@ -433,6 +400,9 @@ class PersonController extends Controller
         return redirect()->route('dashboard.people.trashed');
     }
 
+    /**
+     * Export filtered data from index page
+     */
     public function export(Request $request)
     {
         try {
@@ -474,6 +444,40 @@ class PersonController extends Controller
         }
     }
 
+    /**
+     * Export filtered data from view page
+     */
+    public function exportView(Request $request)
+    {
+        try {
+            $request->validate([
+                'area_responsible_id' => 'nullable|exists:area_responsibles,id',
+                'block_id' => 'nullable|exists:blocks,id',
+                'perPage' => 'nullable|integer|min:1|max:1000'
+            ]);
+
+            // إضافة معرف للتمييز أن هذا تصدير من صفحة view
+            $request->merge(['export_type' => 'view']);
+
+            logger()->info('بدء تصدير البيانات من صفحة العرض', [
+                'user_id' => auth()->id(),
+                'filters' => $request->all()
+            ]);
+
+            $export = new PeopleExport($request);
+
+            return Excel::download($export, 'people_view_filtered.xlsx');
+        } catch (\Exception $e) {
+            logger()->error('خطأ في تصدير البيانات من صفحة العرض', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+                'filters' => $request->all()
+            ]);
+
+            flash()->error('حدث خطأ أثناء تصدير الملف. يرجى المحاولة مرة أخرى.');
+            return back();
+        }
+    }
     public function assignToSupervisor(Person $person)
     {
         $person->update([
@@ -486,39 +490,81 @@ class PersonController extends Controller
     }
     public function assignBlock(Person $person, Request $request)
     {
-        $person->update([
-            'block_id' => $request->block_id
-        ]);
+        try {
+            $oldBlockId = $person->block_id;
 
-        flash()->success('تم إضافة المندوب');
+            $person->update([
+                'block_id' => $request->block_id
+            ]);
 
-        return redirect()->route('dashboard.people.index', compact('person'));
+            // تحديث العدد في الخلفية
+            if ($oldBlockId) {
+                UpdateBlockPeopleCount::dispatch($oldBlockId);
+            }
+
+            if ($request->block_id) {
+                UpdateBlockPeopleCount::dispatch($request->block_id);
+            }
+
+            flash()->success('تم إضافة المندوب وسيتم تحديث العدد قريباً');
+
+            return redirect()->route('dashboard.people.index', compact('person'));
+        } catch (\Exception $e) {
+            logger()->error('خطأ في تخصيص مندوب', [
+                'person_id' => $person->id,
+                'block_id' => $request->block_id,
+                'error' => $e->getMessage()
+            ]);
+
+            flash()->error('حدث خطأ في تخصيص المندوب');
+            return back();
+        }
     }
 
     public function assignBlocks(Request $request)
     {
-        $peopleIds = $request->input('items', []);
+        try {
+            $peopleIds = $request->input('items', []);
 
-        if (!is_array($peopleIds)) {
-            $peopleIds = array_filter(explode(',', $peopleIds));
+            if (!is_array($peopleIds)) {
+                $peopleIds = array_filter(explode(',', $peopleIds));
+            }
+
+            $blockId = $request->input('block_id');
+
+            if (!empty($peopleIds) && $blockId) {
+                $updatedCount = 0;
+
+                Person::whereIn('id', $peopleIds)->each(function ($person) use ($blockId, &$updatedCount) {
+                    if (Gate::allows('update', $person)) {
+                        // تحديث block_id
+                        $person->update(['block_id' => $blockId]);
+
+                        // تعيين area_responsible_id إلى المستخدم الحالي
+                        $person->update(['area_responsible_id' => auth()->user()?->id]);
+
+                        $updatedCount++;
+                    }
+                });
+
+                // تحديث عدد المندوب في الخلفية
+                UpdateBlockPeopleCount::dispatch($blockId);
+
+                flash()->success("تم تحديث {$updatedCount} شخص وسيتم تحديث عدد المندوب قريباً");
+            } else {
+                flash()->error('يرجى تحديد فرد أو مجموعة أفراد.');
+            }
+
+            return redirect()->route('dashboard.people.index');
+        } catch (\Exception $e) {
+            logger()->error('خطأ في تخصيص مندوبين متعددين', [
+                'error' => $e->getMessage(),
+                'people_ids' => $request->input('items', []),
+                'block_id' => $request->input('block_id')
+            ]);
+
+            flash()->error('حدث خطأ في تخصيص المندوبين');
+            return back();
         }
-
-        $blockId = $request->input('block_id');
-
-        if (!empty($peopleIds) && $blockId) {
-            Person::whereIn('id', $peopleIds)->each(function ($person) use ($blockId) {
-                if (Gate::allows('update', $person)) {
-                    $person->update(['block_id' => $blockId]);
-                }
-            });
-
-            flash()->success(trans('check-all.messages.updated', [
-                'type' => 'المندوبين',
-            ]));
-        } else {
-            flash()->error('يرجى تحديد فرد أو مجموعة أفراد.');
-        }
-
-        return redirect()->route('dashboard.people.index');
     }
 }

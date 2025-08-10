@@ -34,7 +34,7 @@ return [
         'area_responsible' => 'Area Responsible',
         'title' => 'Title',
         'phone' => 'Phone Number',
-        'limit_num' => 'Limit Number',
+        'people_count' => 'People Count',
         'lan' => 'Longitude',
         'lat' => 'Latitude',
         'note' => 'Notes',
