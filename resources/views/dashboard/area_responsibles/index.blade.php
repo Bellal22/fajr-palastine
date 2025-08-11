@@ -27,6 +27,8 @@
             </th>
             <th>@lang('area_responsibles.attributes.name')</th>
             <th>@lang('area_responsibles.attributes.phone')</th>
+            <th>@lang('area_responsibles.attributes.block_count')</th>
+            <th>@lang('area_responsibles.attributes.person_count')</th>
             <th>@lang('area_responsibles.attributes.address')</th>
             <th style="width: 160px">...</th>
         </tr>
@@ -44,12 +46,22 @@
                     </a>
                 </td>
                 <td>{{ $area_responsible->phone }}</td>
+                <td>
+                    <span class="badge badge-secondary">{{ $area_responsible->blocks->count() }}</span>
+                </td>
+                <td>
+                    <span class="badge badge-info">{{ $area_responsible->people_count }}</span>
+                </td>
                 <td>{{ $area_responsible->address }}</td>
 
                 <td style="width: 160px">
                     @include('dashboard.area_responsibles.partials.actions.show')
                     @include('dashboard.area_responsibles.partials.actions.edit')
                     @include('dashboard.area_responsibles.partials.actions.delete')
+                    <button class="btn btn-sm btn-secondary"
+                            onclick="refreshCount({{ $area_responsible->id }})">
+                        <i class="fas fa-sync"></i> تحديث العدد
+                    </button>
                 </td>
             </tr>
         @empty
@@ -64,4 +76,36 @@
             @endslot
         @endif
     @endcomponent
+
+    <script>
+        fetch(`/dashboard/area-responsibles/${areaResponsibleId}/refresh-count`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        })
+        .then(async response => {
+            const text = await response.text();
+            try {
+                const data = JSON.parse(text);
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('حدث خطأ في التحديث: ' + data.message);
+                }
+            } catch (err) {
+                console.error('Response is not JSON:', text);
+                alert('حدث خطأ في التحديث: الرد غير صحيح من السيرفر');
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            alert('حدث خطأ في التحديث: ' + error.message);
+        });
+
+    </script>
+
+
 </x-layout>

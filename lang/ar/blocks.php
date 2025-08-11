@@ -22,6 +22,7 @@ return [
         'options' => 'خيارات',
         'save' => 'حفظ',
         'filter' => 'بحث',
+        'list_for_area_responsible'=>'عرض المندوبين الفرعيين ل'
     ],
     'messages' => [
         'created' => 'تم اضافة المندوب بنجاح.',
@@ -30,6 +31,7 @@ return [
         'restored' => 'تم استعادة المندوب بنجاح.',
     ],
     'attributes' => [
+        'id'=>'الرقم التعريفي',
         'name' => 'اسم المندوب',
         'area_responsible' => ' مسؤول المنطقة ',
         'title' => ' العنوان ',

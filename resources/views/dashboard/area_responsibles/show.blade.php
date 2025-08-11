@@ -37,7 +37,7 @@
         @isset($area_responsible)
             @php
                 // Get the aid_id from the current AreaResponsible object.
-                $currentAreaResponsibleAidId = $area_responsible->aid_id;
+                $currentAreaResponsibleAidId = $area_responsible->id;
 
                 // Fetch all blocks associated with this area_responsible_id (which is the aid_id of the current area responsible)
                 $blocksInArea = \App\Models\Block::where('area_responsible_id', $currentAreaResponsibleAidId)->paginate();

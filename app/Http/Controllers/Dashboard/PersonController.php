@@ -8,6 +8,7 @@ use App\Models\Person;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\PersonRequest;
+use App\Jobs\UpdateAreaResponsiblePeopleCount;
 use App\Jobs\UpdateBlockPeopleCount;
 use App\Models\AreaResponsible;
 use DB;
@@ -484,10 +485,14 @@ class PersonController extends Controller
             'area_responsible_id' => auth()->user()?->id
         ]);
 
-        flash()->success('تم إضافة الفرد لك بنحاج');
+        // تشغيل جوب تحديث عدد الأشخاص لمسؤول المنطقة الجديد
+        UpdateAreaResponsiblePeopleCount::dispatch(auth()->user()->id);
+
+        flash()->success('تم إضافة الفرد لك بنجاح');
 
         return redirect()->route('dashboard.people.index');
     }
+
     public function assignBlock(Person $person, Request $request)
     {
         try {
@@ -525,7 +530,6 @@ class PersonController extends Controller
     {
         try {
             $peopleIds = $request->input('items', []);
-
             if (!is_array($peopleIds)) {
                 $peopleIds = array_filter(explode(',', $peopleIds));
             }
@@ -534,23 +538,29 @@ class PersonController extends Controller
 
             if (!empty($peopleIds) && $blockId) {
                 $updatedCount = 0;
+                $areaResponsibleId = null;
 
-                Person::whereIn('id', $peopleIds)->each(function ($person) use ($blockId, &$updatedCount) {
+                Person::whereIn('id', $peopleIds)->each(function ($person) use ($blockId, &$updatedCount, &$areaResponsibleId) {
                     if (Gate::allows('update', $person)) {
-                        // تحديث block_id
-                        $person->update(['block_id' => $blockId]);
-
-                        // تعيين area_responsible_id إلى المستخدم الحالي
-                        $person->update(['area_responsible_id' => auth()->user()?->id]);
+                        $person->update([
+                            'block_id' => $blockId,
+                            'area_responsible_id' => auth()->user()?->id,
+                        ]);
 
                         $updatedCount++;
+                        $areaResponsibleId = auth()->user()?->id; // نفترض أن المستخدم الحالي هو مسؤول المنطقة
                     }
                 });
 
-                // تحديث عدد المندوب في الخلفية
+                // تشغيل جوب تحديث عدد الأشخاص للمندوب
                 UpdateBlockPeopleCount::dispatch($blockId);
 
-                flash()->success("تم تحديث {$updatedCount} شخص وسيتم تحديث عدد المندوب قريباً");
+                // تشغيل جوب تحديث عدد الأشخاص لمسؤول المنطقة (إذا تم تحديده)
+                if ($areaResponsibleId) {
+                    UpdateAreaResponsiblePeopleCount::dispatch($areaResponsibleId);
+                }
+
+                flash()->success("تم تحديث {$updatedCount} شخص وسيتم تحديث عدد المندوب ومسؤول المنطقة قريباً");
             } else {
                 flash()->error('يرجى تحديد فرد أو مجموعة أفراد.');
             }

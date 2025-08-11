@@ -172,4 +172,31 @@ class AreaResponsibleController extends Controller
 
         return redirect()->route('dashboard.area_responsibles.trashed');
     }
+
+    public function refreshCount(AreaResponsible $areaResponsible)
+    {
+        try {
+            $oldCount = $areaResponsible->people_count;
+            $newCount = $areaResponsible->updatePeopleCount();
+
+            return response()->json([
+                'success' => true,
+                'old_count' => $oldCount,
+                'new_count' => $newCount,
+                'message' => 'تم تحديث العدد بنجاح'
+            ]);
+        } catch (\Exception $e) {
+            logger()->error('خطأ في تحديث عدد مسؤول المنطقة يدوياً', [
+                'area_responsible_id' => $areaResponsible->id,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine() // إضافة معلومات السطر
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ في التحديث: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

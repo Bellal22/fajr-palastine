@@ -65,7 +65,7 @@ class Block extends Model
     public function areaResponsible(): BelongsTo
     {
         // تحديد الموديل الصحيح بناءً على البيانات
-        return $this->belongsTo(Supervisor::class, 'area_responsible_id', 'id');
+        return $this->belongsTo(AreaResponsible::class, 'area_responsible_id', 'id');
     }
 
     /**
@@ -124,11 +124,11 @@ class Block extends Model
         return $this->calculatePeopleCount();
     }
 
-    // Boot method لتحديث العدد عند إنشاء المندوب
     protected static function boot()
     {
         parent::boot();
 
+        // عند إنشاء المندوب - تحديث عدد الأفراد
         static::created(function ($block) {
             try {
                 $block->updatePeopleCount();
@@ -138,6 +138,50 @@ class Block extends Model
                     'error' => $e->getMessage()
                 ]);
             }
+
+            if ($block->area_responsible_id) {
+                $block->updateAreaResponsiblePeopleCount($block->area_responsible_id);
+            }
         });
+
+        // عند تحديث مندوب
+        static::updated(function ($block) {
+            if ($block->isDirty('area_responsible_id')) {
+                $oldAreaResponsibleId = $block->getOriginal('area_responsible_id');
+                $newAreaResponsibleId = $block->area_responsible_id;
+
+                if ($oldAreaResponsibleId) {
+                    $block->updateAreaResponsiblePeopleCount($oldAreaResponsibleId);
+                }
+
+                if ($newAreaResponsibleId) {
+                    $block->updateAreaResponsiblePeopleCount($newAreaResponsibleId);
+                }
+            }
+        });
+
+        // عند حذف مندوب
+        static::deleted(function ($block) {
+            if ($block->area_responsible_id) {
+                $block->updateAreaResponsiblePeopleCount($block->area_responsible_id);
+            }
+        });
+    }
+
+    // دالة لتحديث عدد الأفراد في مسؤول المنطقة
+    protected function updateAreaResponsiblePeopleCount($areaResponsibleId)
+    {
+        try {
+            $areaResponsible = AreaResponsible::find($areaResponsibleId);
+            if ($areaResponsible) {
+                $areaResponsible->updatePeopleCount();
+            }
+        } catch (\Exception $e) {
+            logger()->error('خطأ في تحديث عدد مسؤول المنطقة من Block', [
+                'block_id' => $this->id,
+                'area_responsible_id' => $areaResponsibleId,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

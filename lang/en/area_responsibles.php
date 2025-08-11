@@ -35,6 +35,8 @@ return [
         'name' => 'Area responsible name',
         'aid_id' => 'Main Responsible ID',
         'phone' => 'Phone Number',
+        'block_count' => 'Number of Delegates',
+        'person_count' => 'Number of People',
         'address' => 'Address',
     ],
     'dialogs' => [

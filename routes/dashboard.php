@@ -83,6 +83,7 @@ Route::get('trashed/area_responsibles/{trashed_area_responsible}', 'AreaResponsi
 Route::post('area_responsibles/{trashed_area_responsible}/restore', 'AreaResponsibleController@restore')->name('area_responsibles.restore');
 Route::delete('area_responsibles/{trashed_area_responsible}/forceDelete', 'AreaResponsibleController@forceDelete')->name('area_responsibles.forceDelete');
 Route::resource('area_responsibles', 'AreaResponsibleController');
+Route::post('area_responsibles/{areaResponsible}/refresh-count','AreaResponsibleController@refreshCount')->name('area-responsibles.refresh-count');
 
 // Blocks Routes.
 Route::get('trashed/blocks', 'BlockController@trashed')->name('blocks.trashed');

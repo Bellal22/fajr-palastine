@@ -22,6 +22,7 @@ return [
         'options' => 'Options',
         'save' => 'Save',
         'filter' => 'Filter',
+        'list_for_area_responsible' => 'List of Blocks To',
     ],
     'messages' => [
         'created' => 'The block has been created successfully.',
@@ -30,6 +31,7 @@ return [
         'restored' => 'The block has been restored successfully.',
     ],
     'attributes' => [
+        'id' => 'ID',
         'name' => 'Block name',
         'area_responsible' => 'Area Responsible',
         'title' => 'Title',

@@ -58,7 +58,7 @@ class Person extends Model
      */
     public function areaResponsible(): BelongsTo
     {
-        return $this->belongsTo(Supervisor::class, 'area_responsible_id', 'id');
+        return $this->belongsTo(AreaResponsible::class, 'area_responsible_id', 'id');
     }
 
     /**
@@ -69,46 +69,6 @@ class Person extends Model
     public function block(): BelongsTo
     {
         return $this->belongsTo(Block::class, 'block_id', 'id');
-    }
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        // عند إنشاء شخص جديد
-        static::created(function ($person) {
-            if ($person->block_id) {
-                $person->updateBlockPeopleCount($person->block_id);
-            }
-        });
-
-        // عند تحديث شخص
-        static::updated(function ($person) {
-            // إذا تم تغيير المندوب
-            if ($person->isDirty('block_id')) {
-                $oldBlockId = $person->getOriginal('block_id');
-                $newBlockId = $person->block_id;
-
-                // تحديث المندوب القديم
-                if ($oldBlockId) {
-                    $person->updateBlockPeopleCount($oldBlockId);
-                }
-
-                // تحديث المندوب الجديد
-                if ($newBlockId) {
-                    $person->updateBlockPeopleCount($newBlockId);
-                }
-            }
-        });
-
-        // عند حذف شخص
-        static::deleted(function ($person) {
-            if ($person->block_id) {
-                $person->updateBlockPeopleCount($person->block_id);
-            }
-        });
-
-        // تم حذف restored() event لأنه غير مطلوب بدون SoftDeletes
     }
 
     /**
@@ -131,6 +91,80 @@ class Person extends Model
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
+            ]);
+        }
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        // عند إنشاء شخص جديد
+        static::created(function ($person) {
+            if ($person->block_id) {
+                // تحديث عدد الأشخاص في المندوب
+                $person->updateBlockPeopleCount($person->block_id);
+                // تحديث عدد الأشخاص في مسؤول المنطقة
+                $person->updateAreaResponsiblePeopleCount();
+            }
+        });
+
+        // عند تحديث شخص
+        static::updated(function ($person) {
+            // إذا تم تغيير المندوب
+            if ($person->isDirty('block_id')) {
+                $oldBlockId = $person->getOriginal('block_id');
+                $newBlockId = $person->block_id;
+
+                // تحديث المندوب القديم
+                if ($oldBlockId) {
+                    $person->updateBlockPeopleCount($oldBlockId);
+                    // تحديث مسؤول المنطقة للمندوب القديم
+                    $oldBlock = Block::find($oldBlockId);
+                    if ($oldBlock && $oldBlock->area_responsible_id) {
+                        $person->updateAreaResponsiblePeopleCountById($oldBlock->area_responsible_id);
+                    }
+                }
+
+                // تحديث المندوب الجديد
+                if ($newBlockId) {
+                    $person->updateBlockPeopleCount($newBlockId);
+                    // تحديث مسؤول المنطقة للمندوب الجديد
+                    $person->updateAreaResponsiblePeopleCount();
+                }
+            }
+        });
+
+        // عند حذف شخص
+        static::deleted(function ($person) {
+            if ($person->block_id) {
+                $person->updateBlockPeopleCount($person->block_id);
+                $person->updateAreaResponsiblePeopleCount();
+            }
+        });
+
+    }
+
+    // دالة لتحديث عدد الأفراد في مسؤول المنطقة
+    protected function updateAreaResponsiblePeopleCount()
+    {
+        if ($this->block && $this->block->area_responsible_id) {
+            $this->updateAreaResponsiblePeopleCountById($this->block->area_responsible_id);
+        }
+    }
+
+    protected function updateAreaResponsiblePeopleCountById($areaResponsibleId)
+    {
+        try {
+            $areaResponsible = AreaResponsible::find($areaResponsibleId);
+            if ($areaResponsible) {
+                $areaResponsible->updatePeopleCount();
+            }
+        } catch (\Exception $e) {
+            logger()->error('خطأ في تحديث عدد مسؤول المنطقة من Person', [
+                'person_id' => $this->id,
+                'area_responsible_id' => $areaResponsibleId,
+                'error' => $e->getMessage()
             ]);
         }
     }
