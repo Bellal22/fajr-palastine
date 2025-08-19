@@ -19,6 +19,45 @@ foreach (glob(__DIR__.'/dashboard/*.php') as $routes) {
     include $routes;
 }
 
+
+Route::get('/test-api', function () {
+    $url = "https://aid.fajeryouth.org/public/API/convert/person/reg";
+
+    $response = Http::withHeaders([
+        'auth' => 'aaa@aaa@aaa@rrr',
+    ])
+        ->asMultipart()
+        ->post($url, [
+            'pid' => '801853813',
+            'fname' => 'محمد',
+            'sname' => 'تيسير',
+            'tname' => 'سليمان',
+            'lname' => 'الاغا',
+            'fcount' => '7',
+            'mob_1' => '0599023209',
+            'mob_2' => '0569023209',
+            'block' => '6',
+            'note' => 'اي حاجة',
+            'wife_id' => '',
+            'wife_name' => '',
+            'num_mail' => '3',
+            'num_femail' => '4',
+            'f_num_liss_3' => '1',
+            'f_num_ill' => '',
+            'f_num_sn' => '',
+            'income' => '1',
+            'home_status' => '1',
+            'date_of_birth' => '2025-08-14',
+            'Original_governorate' => '',
+            'marital_status' => '',
+        ]);
+
+    return response()->json([
+        'status' => $response->status(),
+        'body'   => $response->json() ?? $response->body(),
+    ]);
+});
+
 // Families Routes.
 Route::get('trashed/families', 'FamilyController@trashed')->name('families.trashed');
 Route::get('trashed/families/{trashed_family}', 'FamilyController@showTrashed')->name('families.trashed.show');
