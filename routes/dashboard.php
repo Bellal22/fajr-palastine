@@ -23,13 +23,7 @@ foreach (glob(__DIR__.'/dashboard/*.php') as $routes) {
 
 Route::get('/sync-people-to-api', function () {
     try {
-        // جلب جميع الأشخاص مع العلاقات
-        $people = Person::with([
-            'block',
-            'relatives' => function ($query) {
-                $query->where('relationship', 'wife');
-            }
-        ])->get();
+        $people = Person::with(['block', 'relatives'])->get();
 
         $results = [];
         $successCount = 0;
@@ -37,7 +31,6 @@ Route::get('/sync-people-to-api', function () {
 
         foreach ($people as $person) {
             try {
-                // إعداد البيانات للإرسال
                 $data = [
                     'pid' => $person->id_num ?? '',
                     'fname' => $person->first_name ?? '',
@@ -46,107 +39,65 @@ Route::get('/sync-people-to-api', function () {
                     'lname' => $person->family_name ?? '',
                     'fcount' => $person->relatives_count ?? 0,
                     'mob_1' => $person->phone ?? '',
-                    'mob_2' => '', // مش موجود
+                    'mob_2' => '', // غير موجود
                     'block' => $person->block_id ?? '',
                     'note' => $person->notes ?? 'تم المزامنة تلقائياً',
                     'wife_id' => $person->getWifeId(),
                     'wife_name' => $person->getWifeName(),
-                    'num_mail' => '', // مش موجود
-                    'num_femail' => '', // مش موجود
+                    'num_mail' => '', // غير موجود
+                    'num_femail' => '', // غير موجود
                     'f_num_liss_3' => $person->getChildrenUnder3Count(),
                     'f_num_ill' => '',
-                    'f_num_sn' =>'',
-                    'income' => '', // افتراضي
+                    'f_num_sn' => '',
+                    'income' => '1',
                     'home_status' => $person->getHomeStatus(),
                     'date_of_birth' => $person->dob ? $person->dob->format('Y-m-d') : '',
                     'Original_governorate' => $person->original_governorate ?? '',
                     'marital_status' => $person->social_status ?? '',
                 ];
 
-                // إرسال البيانات للAPI
-                $url = "https://aid.fajeryouth.org/public/API/convert/person/reg";
-                $response = Http::timeout(30)->withHeaders([
-                    'auth' => 'aaa@aaa@aaa@rrr',
-                ])
+                $response = Http::timeout(30)
+                    ->withHeaders(['auth' => 'aaa@aaa@aaa@rrr'])
                     ->asMultipart()
-                    ->post($url, $data);
+                    ->post('https://reg.fajeryouth.org/sync-status', $data);
 
                 if ($response->successful()) {
-                    $results[] = [
-                        'person_id' => $person->id,
-                        'name' => $person->first_name . ' ' . $person->family_name,
-                        'status' => 'success',
-                        'response' => $response->json()
-                    ];
-                    $successCount++;
-
-                    // تحديث حالة المزامنة
                     $person->update([
                         'api_synced_at' => now(),
                         'api_sync_status' => 'success'
                     ]);
+                    $successCount++;
                 } else {
-                    $results[] = [
-                        'person_id' => $person->id,
-                        'name' => $person->first_name . ' ' . $person->family_name,
-                        'status' => 'error',
-                        'error' => $response->body(),
-                        'status_code' => $response->status()
-                    ];
-                    $errorCount++;
-
                     $person->update([
                         'api_sync_status' => 'failed',
                         'api_sync_error' => $response->body()
                     ]);
+                    $errorCount++;
                 }
-
-                // تأخير بسيط بين الطلبات
-                usleep(500000); // 0.5 ثانية
-
             } catch (\Exception $e) {
-                $results[] = [
-                    'person_id' => $person->id,
-                    'name' => $person->first_name . ' ' . $person->family_name,
-                    'status' => 'exception',
-                    'error' => $e->getMessage()
-                ];
-                $errorCount++;
-
-                logger()->error('خطأ في مزامنة الشخص مع API', [
-                    'person_id' => $person->id,
-                    'error' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine()
+                $person->update([
+                    'api_sync_status' => 'failed',
+                    'api_sync_error' => $e->getMessage()
                 ]);
+                $errorCount++;
             }
+
+            usleep(500000); // نصف ثانية بين كل طلب
         }
 
         return response()->json([
-            'message' => 'تمت المزامنة',
-            'total' => count($people),
+            'total' => $people->count(),
             'success' => $successCount,
             'errors' => $errorCount,
-            'results' => $results
         ]);
     } catch (\Exception $e) {
-        logger()->error('خطأ عام في المزامنة', [
-            'error' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
-        ]);
-
-        return response()->json([
-            'message' => 'حدث خطأ في المزامنة',
-            'error' => $e->getMessage()
-        ], 500);
+        return response()->json(['error' => $e->getMessage()], 500);
     }
 });
 
 // Route لمزامنة شخص واحد فقط
 Route::get('/sync-person-to-api/{person}', function (Person $person) {
     try {
-        // تحميل العلاقات
         $person->load(['block', 'relatives']);
 
         $data = [
@@ -165,8 +116,8 @@ Route::get('/sync-person-to-api/{person}', function (Person $person) {
             'num_mail' => '',
             'num_femail' => '',
             'f_num_liss_3' => $person->getChildrenUnder3Count(),
-            'f_num_ill' => $person->getIllCount() ?? '',
-            'f_num_sn' => $person->getSpecialNeedsCount() ?? '',
+            'f_num_ill' => '',
+            'f_num_sn' => '',
             'income' => '1',
             'home_status' => $person->getHomeStatus(),
             'date_of_birth' => $person->dob ? $person->dob->format('Y-m-d') : '',
@@ -174,12 +125,10 @@ Route::get('/sync-person-to-api/{person}', function (Person $person) {
             'marital_status' => $person->social_status ?? '',
         ];
 
-        $url = "https://aid.fajeryouth.org/public/API/convert/person/reg";
-        $response = Http::timeout(30)->withHeaders([
-            'auth' => 'aaa@aaa@aaa@rrr',
-        ])
+        $response = Http::timeout(30)
+            ->withHeaders(['auth' => 'aaa@aaa@aaa@rrr'])
             ->asMultipart()
-            ->post($url, $data);
+            ->post('https://reg.fajeryouth.org/sync-status', $data);
 
         if ($response->successful()) {
             $person->update([
@@ -196,18 +145,10 @@ Route::get('/sync-person-to-api/{person}', function (Person $person) {
         return response()->json([
             'person' => $person->first_name . ' ' . $person->family_name,
             'status' => $response->status(),
-            'body' => $response->json() ?? $response->body(),
-            'sent_data' => $data
+            'response' => $response->json() ?? $response->body(),
         ]);
     } catch (\Exception $e) {
-        logger()->error('خطأ في مزامنة الشخص', [
-            'person_id' => $person->id,
-            'error' => $e->getMessage()
-        ]);
-
-        return response()->json([
-            'error' => $e->getMessage()
-        ], 500);
+        return response()->json(['error' => $e->getMessage()], 500);
     }
 });
 

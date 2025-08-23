@@ -227,13 +227,13 @@ class Person extends Model
         switch ($this->home_status) {
             case 'excellent':
             case 'notAffected':
-                return 'ممتاز';
+                return '3';
             case 'good':
             case 'partial':
-                return 'جيد';
+                return '2';
             case 'bad':
             case 'total':
-                return 'سيء';
+                return '1';
             default:
                 return 'غير محدد';
         }
