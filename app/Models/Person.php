@@ -168,4 +168,74 @@ class Person extends Model
             ]);
         }
     }
+
+    public function getWifeId()
+    {
+        $wife = $this->relatives()
+            ->where('relationship', 'wife')
+            ->first();
+
+        if ($wife) {
+            $wifePerson = Person::where('relative_id', $wife->relative_id)
+                ->where('id', '!=', $this->id)
+                ->first();
+            return $wifePerson ? $wifePerson->id_num : '';
+        }
+
+        return '';
+    }
+
+    public function getWifeName()
+    {
+        $wife = $this->relatives()
+            ->where('relationship', 'wife')
+            ->first();
+
+        if ($wife) {
+            $wifePerson = Person::where('relative_id', $wife->relative_id)
+                ->where('id', '!=', $this->id)
+                ->first();
+
+            if ($wifePerson) {
+                return trim(
+                    ($wifePerson->first_name ?? '') . ' ' .
+                    ($wifePerson->father_name ?? '') . ' ' .
+                    ($wifePerson->grandfather_name ?? '') . ' ' .
+                    ($wifePerson->family_name ?? '')
+                );
+            }
+        }
+
+        return '';
+    }
+
+    public function getChildrenUnder3Count()
+    {
+        if (!$this->dob || !$this->relative_id) {
+            return 0;
+        }
+
+        return Person::where('relative_id', $this->relative_id)
+            ->where('id', '!=', $this->id)
+            ->where('dob', '>', now()->subYears(3))
+            ->count();
+    }
+
+    public function getHomeStatus()
+    {
+        // تحويل home_status لقيم API
+        switch ($this->home_status) {
+            case 'excellent':
+            case 'notAffected':
+                return 'ممتاز';
+            case 'good':
+            case 'partial':
+                return 'جيد';
+            case 'bad':
+            case 'total':
+                return 'سيء';
+            default:
+                return 'غير محدد';
+        }
+    }
 }
