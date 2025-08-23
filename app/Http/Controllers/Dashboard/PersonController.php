@@ -577,4 +577,13 @@ class PersonController extends Controller
             return back();
         }
     }
+
+    public function deleteAreaResponsible(Person $person)
+    {
+        $person->update([
+            'area_responsible_id' => null
+        ]);
+        flash()->success('تم الغاء الربط');
+        return back();
+    }
 }

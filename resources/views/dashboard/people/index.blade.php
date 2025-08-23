@@ -85,6 +85,10 @@
                     @include('dashboard.people.partials.actions.show')
                     @include('dashboard.people.partials.actions.edit')
                     @include('dashboard.people.partials.actions.delete')
+                    <a href="{{ route('dashboard.people.areaResponsible.delete', $person) }}" class="btn btn-outline-dark btn-sm">
+                        حذف المسؤول
+                    </a>
+
                 </td>
             </tr>
         @empty
