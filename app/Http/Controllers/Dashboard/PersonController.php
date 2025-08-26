@@ -580,10 +580,76 @@ class PersonController extends Controller
 
     public function deleteAreaResponsible(Person $person)
     {
-        $person->update([
-            'area_responsible_id' => null
+        try {
+            $person->update([
+                'area_responsible_id' => null,
+                'block_id' => null
+            ]);
+
+            // تسجيل العملية
+            logger()->info('تم حذف المسؤول من شخص', [
+                'user_id' => auth()->id(),
+                'person_id' => $person->id,
+                'person_name' => $person->first_name . ' ' . $person->family_name
+            ]);
+
+            flash()->success('تم إلغاء الربط بنجاح');
+            return back();
+        } catch (\Exception $e) {
+            logger()->error('خطأ في حذف المسؤول من الشخص', [
+                'error' => $e->getMessage(),
+                'person_id' => $person->id,
+                'user_id' => auth()->id()
+            ]);
+
+            flash()->error('حدث خطأ أثناء إلغاء الربط');
+            return back();
+        }
+    }
+
+    public function deleteAreaResponsibles(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|string'
         ]);
-        flash()->success('تم الغاء الربط');
-        return back();
+
+        try {
+            $personIds = explode(',', $request->items);
+            $personIds = array_filter($personIds);
+
+            if (empty($personIds)) {
+                flash()->error('لم يتم تحديد أي أشخاص');
+                return back();
+            }
+
+            // تحديث المجموعة
+            $updatedCount = Person::whereIn('id', $personIds)
+                ->update([
+                    'area_responsible_id' => null,
+                    'block_id' => null
+                ]);
+            dd($updatedCount);
+
+            // تسجيل العملية
+            logger()->info('تم حذف المسؤول من مجموعة أشخاص', [
+                'user_id' => auth()->id(),
+                'person_ids' => $personIds,
+                'updated_count' => $updatedCount
+            ]);
+
+            flash()->success("تم إلغاء ربط المسؤول من {$updatedCount} شخص بنجاح");
+            return back();
+        } catch (\Exception $e) {
+            logger()->error('خطأ في حذف المسؤول من المجموعة', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'user_id' => auth()->id(),
+                'request_data' => $request->all()
+            ]);
+
+            flash()->error('حدث خطأ أثناء إلغاء ربط المسؤول. يرجى المحاولة مرة أخرى.');
+            return back();
+        }
     }
 }

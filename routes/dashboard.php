@@ -210,8 +210,9 @@ Route::get('people/export', 'PersonController@export')->name('people.export.sele
 Route::get('/people/export-view', 'PersonController@exportView')->name('people.export.view');
 Route::put('people/supervisor/assign/{person}', 'PersonController@assignToSupervisor')->name('people.assignToSupervisor');
 Route::put('people/block/assign/{person}', 'PersonController@assignBlock')->name('people.assignBlock');
-Route::put('people/areaResponsible/delete/{person}', 'PersonController@deleteAreaResponsible')->name('people.areaResponsible.delete');
 Route::put('people/block/assign-bulk', 'PersonController@assignBlocks')->name('people.assignBlocks');
+Route::put('people/areaResponsible/delete/{person}', 'PersonController@deleteAreaResponsible')->name('people.areaResponsible.delete');
+Route::put('people/areaResponsible/bulk-delete', 'PersonController@deleteAreaResponsibles')->name('people.areaResponsible.bulkDelete');
 Route::get('people/view', 'PersonController@view')->name('people.view');
 Route::get('people/search', 'PersonController@search')->name('people.search');
 Route::post('people/clear', 'PersonController@clearSession')->name('people.clear');
