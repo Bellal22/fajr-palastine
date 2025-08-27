@@ -2,7 +2,8 @@
         data-checkbox=".item-checkbox"
         data-form="export-selected-form"
         data-toggle="modal"
-        data-target="#export-selected-model">
+        data-target="#export-selected-model"
+        style="margin-right: 10px;">
     <i class="fas fa-file-excel"></i>
     @lang('check-all.actions.export')
 </button>

@@ -2,7 +2,8 @@
         data-checkbox=".item-checkbox"
         data-form="delete-selected-form"
         data-toggle="modal"
-        data-target="#delete-selected-model">
+        data-target="#delete-selected-model"
+        style="margin-right: 10px;">
     <i class="fas fa-trash"></i>
     @lang('check-all.actions.delete')
 </button>

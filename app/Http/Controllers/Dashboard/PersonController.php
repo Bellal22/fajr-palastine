@@ -332,12 +332,25 @@ class PersonController extends Controller
      */
     public function destroy(Person $person)
     {
+        // احفظ رقم الهوية للشخص الذي سيتم حذفه
+        $idNum = $person->id_num;
+
+        // احذف الشخص
         $person->delete();
+
+        // ابحث عن الأفراد المرتبطين بنفس رقم الهوية في عمود relative_id
+        $relatedPeople = Person::where('relative_id', $idNum)->get();
+
+        // احذف الأفراد المرتبطين
+        foreach ($relatedPeople as $relatedPerson) {
+            $relatedPerson->delete();
+        }
 
         flash()->success(trans('people.messages.deleted'));
 
         return redirect()->route('dashboard.people.index');
     }
+
 
     /**
      * Display a listing of the trashed resource.
@@ -348,10 +361,20 @@ class PersonController extends Controller
     {
         $this->authorize('viewAnyTrash', Person::class);
 
+        // استرجاع الأشخاص المحذوفين
         $people = Person::onlyTrashed()->latest('deleted_at')->paginate();
 
-        return view('dashboard.people.trashed', compact('people'));
+        // استرجاع الأفراد المرتبطين بنفس رقم الهوية
+        $relatedPeople = Person::onlyTrashed()
+            ->whereIn('relative_id', $people->pluck('id_num'))
+            ->get();
+
+        // دمج النتائج
+        $allTrashedPeople = $people->merge($relatedPeople)->unique('id');
+
+        return view('dashboard.people.trashed', compact('allTrashedPeople'));
     }
+
 
     /**
      * Display the specified trashed resource.
@@ -394,7 +417,19 @@ class PersonController extends Controller
     {
         $this->authorize('forceDelete', $person);
 
+        // احفظ رقم الهوية للشخص الذي سيتم حذفه
+        $idNum = $person->id_num;
+
+        // احذف الشخص
         $person->forceDelete();
+
+        // ابحث عن الأفراد المرتبطين بنفس رقم الهوية في عمود relative_id
+        $relatedPeople = Person::where('relative_id', $idNum)->get();
+
+        // احذف الأفراد المرتبطين
+        foreach ($relatedPeople as $relatedPerson) {
+            $relatedPerson->forceDelete();
+        }
 
         flash()->success(trans('people.messages.deleted'));
 
@@ -610,45 +645,57 @@ class PersonController extends Controller
     public function deleteAreaResponsibles(Request $request)
     {
         $request->validate([
-            'items' => 'required|string'
+            'items' => 'required|string',
+            'action' => 'sometimes|in:area_responsible_only,block_only,both'
         ]);
 
         try {
+            // تنظيف وتجهيز الـ IDs
             $personIds = explode(',', $request->items);
-            $personIds = array_filter($personIds);
+            $personIds = array_map('trim', $personIds);
+            $personIds = array_filter($personIds, function ($id) {
+                return !empty($id) && is_numeric($id);
+            });
 
             if (empty($personIds)) {
-                flash()->error('لم يتم تحديد أي أشخاص');
+                flash()->error('لم يتم تحديد أي أشخاص صالحين');
                 return back();
             }
 
-            // تحديث المجموعة
-            $updatedCount = Person::whereIn('id', $personIds)
-                ->update([
-                    'area_responsible_id' => null,
-                    'block_id' => null
-                ]);
-            dd($updatedCount);
+            // تحديد نوع العملية
+            $action = $request->get('action', 'both');
 
-            // تسجيل العملية
-            logger()->info('تم حذف المسؤول من مجموعة أشخاص', [
-                'user_id' => auth()->id(),
-                'person_ids' => $personIds,
-                'updated_count' => $updatedCount
-            ]);
+            // إعداد البيانات للتحديث
+            $updateData = [];
+            switch ($action) {
+                case 'area_responsible_only':
+                    $updateData['area_responsible_id'] = null;
+                    $actionText = 'مسؤول المنطقة';
+                    break;
+                case 'block_only':
+                    $updateData['block_id'] = null;
+                    $actionText = 'المندوب';
+                    break;
+                case 'both':
+                default:
+                    $updateData['area_responsible_id'] = null;
+                    $updateData['block_id'] = null;
+                    $actionText = 'مسؤول المنطقة والمندوب';
+                    break;
+            }
 
-            flash()->success("تم إلغاء ربط المسؤول من {$updatedCount} شخص بنجاح");
+            // تنفيذ التحديث
+            $updatedCount = Person::whereIn('id', $personIds)->update($updateData);
+
+            if ($updatedCount > 0) {
+                flash()->success("تم إلغاء ربط {$actionText} من {$updatedCount} شخص بنجاح");
+            } else {
+                flash()->warning("لم يتم تحديث أي سجل. قد تكون البيانات محدثة مسبقاً");
+            }
+
             return back();
         } catch (\Exception $e) {
-            logger()->error('خطأ في حذف المسؤول من المجموعة', [
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'user_id' => auth()->id(),
-                'request_data' => $request->all()
-            ]);
-
-            flash()->error('حدث خطأ أثناء إلغاء ربط المسؤول. يرجى المحاولة مرة أخرى.');
+            flash()->error('حدث خطأ أثناء إلغاء الربط. يرجى المحاولة مرة أخرى.');
             return back();
         }
     }

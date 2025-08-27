@@ -1,11 +1,10 @@
 <!-- زر حذف المسؤول للمجموعة -->
-<button type="button" class="btn btn-outline-dark btn-sm"
+<button type="button" class="btn btn-outline-dark btn-sm bulk-delete-btn"
+        id="bulk-delete-area-responsible-btn"
         data-checkbox=".item-checkbox"
-        data-form="bulk-delete-area-responsible-form"
-        data-toggle="modal"
-        data-target="#bulk-delete-area-responsible-modal">
+        style="margin-right: 10px;">
     <i class="fas fa-user-times"></i>
-    حذف المسؤول من المجموعة
+    حذف مسؤول المنطقة
 </button>
 
 <!-- Modal حذف المسؤول للمجموعة -->
@@ -22,24 +21,23 @@
                 </button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    هل أنت متأكد من إلغاء ربط المسؤول والمندوب من الأشخاص المحددين؟
-                    <br>
-                    <small class="text-muted">سيتم إزالة area_responsible_id و block_id من جميع الأشخاص المحددين</small>
-                </div>
+                <i class="fas fa-exclamation-triangle"></i>
+                هل أنت متأكد من إلغاء ربط المسؤول والمندوب من الأشخاص المحددين؟
+                <br>
+                <small class="text-muted">سيتم إزالة مسؤول المنطقة والمندوب من جميع الأشخاص المحددين</small>
 
                 <form action="{{ route('dashboard.people.areaResponsible.bulkDelete') }}" method="POST" id="bulk-delete-area-responsible-form">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="items" id="selected-people-delete" value="">
+                    <input type="hidden" name="action" value="both">
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
                     إلغاء
                 </button>
-                <button type="submit" class="btn btn-danger btn-sm" form="bulk-delete-area-responsible-form">
+                <button type="submit" class="btn btn-danger btn-sm" form="bulk-delete-area-responsible-form" id="confirm-delete-btn">
                     <i class="fas fa-user-times"></i>
                     تأكيد حذف المسؤول
                 </button>
@@ -50,43 +48,69 @@
 
 @push('scripts')
 <script>
-    // معالج زر حذف المسؤول للمجموعة
-    document.addEventListener('DOMContentLoaded', function() {
-        // زر فتح modal حذف المسؤول
-        const bulkDeleteBtn = document.querySelector('[data-target="#bulk-delete-area-responsible-modal"]');
+document.addEventListener('DOMContentLoaded', function() {
+    const bulkDeleteBtn = document.getElementById('bulk-delete-area-responsible-btn');
+    const modal = document.getElementById('bulk-delete-area-responsible-modal');
+    const deleteForm = document.getElementById('bulk-delete-area-responsible-form');
+    const selectedInput = document.getElementById('selected-people-delete');
+    const confirmBtn = document.getElementById('confirm-delete-btn');
 
-        if (bulkDeleteBtn) {
-            bulkDeleteBtn.addEventListener('click', function() {
-                const selectedIds = [];
-                document.querySelectorAll('.item-checkbox:checked').forEach(checkbox => {
-                    selectedIds.push(checkbox.value);
-                });
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
 
-                if (selectedIds.length === 0) {
-                    alert('يرجى تحديد أشخاص أولاً');
-                    return false;
-                }
+            // جمع الـ IDs المحددة
+            const selectedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+            const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value).filter(id => id);
 
-                document.getElementById('selected-people-delete').value = selectedIds.join(',');
+            if (selectedIds.length === 0) {
+                alert('يرجى تحديد أشخاص أولاً');
+                return;
+            }
 
-                // تحديث النص في Modal ليعرض العدد
-                const modalTitle = document.getElementById('bulk-delete-area-responsible-title');
+            // تحديث قيمة الـ input
+            if (selectedInput) {
+                selectedInput.value = selectedIds.join(',');
+            }
+
+            // تحديث عنوان الـ modal
+            const modalTitle = document.getElementById('bulk-delete-area-responsible-title');
+            if (modalTitle) {
                 modalTitle.textContent = `تأكيد حذف المسؤول من ${selectedIds.length} شخص`;
-            });
-        }
+            }
 
-        // التأكد من وجود أشخاص محددين قبل الإرسال
-        const deleteForm = document.getElementById('bulk-delete-area-responsible-form');
-        if (deleteForm) {
-            deleteForm.addEventListener('submit', function(e) {
-                const selectedIds = document.getElementById('selected-people-delete').value;
-                if (!selectedIds || selectedIds.trim() === '') {
-                    e.preventDefault();
-                    alert('يرجى تحديد أشخاص أولاً');
-                    return false;
-                }
-            });
-        }
+            // فتح الـ modal
+            $('#bulk-delete-area-responsible-modal').modal('show');
+        });
+    }
+
+    // التحقق قبل الإرسال
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', function(e) {
+            const selectedIds = selectedInput ? selectedInput.value : '';
+
+            if (!selectedIds || selectedIds.trim() === '') {
+                e.preventDefault();
+                alert('يرجى تحديد أشخاص أولاً');
+                return false;
+            }
+
+            // إظهار مؤشر تحميل
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المعالجة...';
+            }
+        });
+    }
+
+    // إضافة listener لإغلاق الـ modal
+    const closeButtons = document.querySelectorAll('[data-dismiss="modal"]');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            $('#bulk-delete-area-responsible-modal').modal('hide');
+        });
     });
+});
 </script>
 @endpush
+

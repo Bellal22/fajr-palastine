@@ -2,7 +2,8 @@
         data-checkbox=".item-checkbox"
         data-form="restore-selected-form"
         data-toggle="modal"
-        data-target="#restore-selected-model">
+        data-target="#restore-selected-model"
+        style="margin-right: 10px;">
     <i class="fas fa-trash-restore"></i>
     @lang('check-all.actions.restore')
 </button>

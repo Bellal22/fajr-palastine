@@ -2,7 +2,8 @@
         data-checkbox=".item-checkbox"
         data-form="assign-blocks-form"
         data-toggle="modal"
-        data-target="#assign-blocks-modal">
+        data-target="#assign-blocks-modal"
+        style="margin-right: 10px;">
     <i class="fas fa-location-arrow"></i>
     @lang('check-all.actions.assignBlock')
 </button>

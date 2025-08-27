@@ -8,26 +8,33 @@
         <thead>
         <tr>
           <th colspan="100">
-            <div class="d-flex">
+            <div class="ml-2 d-flex justify-content-between flex-grow-1">
+                <x-check-all-deleteAreaResponsibles
+                    type="{{ \App\Models\Person::class }}"
+                    :resource="trans('people.plural')"
+                    style="margin-left: 10px;">
+                </x-check-all-deleteAreaResponsibles>
+
                 @if (auth()->user()?->isAdmin())
                     <x-check-all-delete
-                            type="{{ \App\Models\Person::class }}"
-                            :resource="trans('people.plural')">
-                    </x-check-all-delete>
-
-                    <x-check-all-deleteAreaResponsibles
                         type="{{ \App\Models\Person::class }}"
                         :resource="trans('people.plural')"
-                        :blocks="$blocks">
-                    </x-check-all-deleteAreaResponsibles>
+                        style="margin-left: 10px;">
+                    </x-check-all-delete>
 
+                    <x-check-all-export
+                        type="{{ \App\Models\Person::class }}"
+                        :resource="trans('people.plural')"
+                        style="margin-left: 10px;">
+                    </x-check-all-export>
                 @endif
 
                 @if (auth()->user()?->isSupervisor())
                     <x-check-all-assignBlock
                         type="{{ \App\Models\Person::class }}"
                         :resource="trans('people.plural')"
-                        :blocks="$blocks">
+                        :blocks="$blocks"
+                        style="margin-left: 10px;">
                     </x-check-all-assignBlock>
                 @endif
 
@@ -40,10 +47,6 @@
                             <i class="fa-fw fas fa-file-excel"></i>
                             @lang('تصدير الكل (تطبق نتائج البحث)')
                         </a>
-                        <x-check-all-export
-                            type="{{ \App\Models\Person::class }}"
-                            :resource="trans('people.plural')">
-                        </x-check-all-export>
                     @endif
                 </div>
             </div>
@@ -51,7 +54,7 @@
         </tr>
         <tr>
             <th style="width: 30px;" class="text-center">
-            <x-check-all></x-check-all>
+                <x-check-all></x-check-all>
             </th>
             <th>@lang('people.attributes.id_num')</th>
             <th>@lang('people.attributes.name')</th>
@@ -69,7 +72,7 @@
         @forelse($people as $person)
             <tr>
                 <td class="text-center">
-                <x-check-all-item :model="$person"></x-check-all-item>
+                    <x-check-all-item :model="$person"></x-check-all-item>
                 </td>
                 <td>
                     <a href="{{ route('dashboard.people.show', $person) }}"

@@ -9,15 +9,30 @@
 
             <thead>
             <tr>
-              <th colspan="100">
-                <div class="d-flex">
-                    <div class="ml-2 d-flex justify-content-between flex-grow-1">
-                        @include('dashboard.people.partials.actions.search')
+                <th colspan="100">
+                    <div class="d-flex">
+                        <div class="ml-2 d-flex justify-content-between flex-grow-1">
+                            @include('dashboard.people.partials.actions.search')
+
+                            @if (auth()->user()?->isAdmin())
+                                <x-check-all-export
+                                    type="{{ \App\Models\Person::class }}"
+                                    :resource="trans('people.plural')">
+                                </x-check-all-export>
+
+                                <a href="{{ route('dashboard.people.export.selected', request()->all()) }}" class="btn btn-outline-success btn-sm">
+                                    <i class="fa-fw fas fa-file-excel"></i>
+                                    @lang('تصدير الكل (تطبق نتائج البحث)')
+                                </a>
+                            @endif
+                        </div>
                     </div>
-                </div>
-              </th>
+                </th>
             </tr>
             <tr>
+                <th style="width: 30px;" class="text-center">
+                    <x-check-all></x-check-all>
+                </th>
                 <th>@lang('people.attributes.id_num')</th>
                 <th>@lang('people.attributes.name')</th>
                 <th>@lang('people.attributes.phone')</th>
@@ -33,6 +48,9 @@
             <tbody>
             @forelse($people as $person)
                 <tr>
+                    <td class="text-center">
+                        <x-check-all-item :model="$person"></x-check-all-item>
+                    </td>
                     <td>
                         <a href="{{ route('dashboard.people.show', $person) }}"
                            class="text-decoration-none text-ellipsis">
@@ -45,7 +63,7 @@
                     <td>{{ __($person->current_city) }}</td>
                     <td>{{ $person->areaResponsible->name ?? 'لم يتم تحديده' }}</td>
                     <td>{{ $person->block->name ?? 'لم يتم تحديده' }}</td>
-                    <td>{{ $person->has_condition == 1 ? 'نعم' : ($person->has_condition == 0 ? 'لا' : $person->has_condition) }}</td>
+                    <td>{{ $person->has_condition == 1 ? 'نعم' : 'لا' }}</td>
                     <td>{{ $person->relatives_count }}</td>
                     <td>{{ $person->family_members_count }}</td>
                 </tr>
