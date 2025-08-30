@@ -95,6 +95,7 @@
                     @include('dashboard.people.partials.actions.show')
                     @include('dashboard.people.partials.actions.edit')
                     @include('dashboard.people.partials.actions.delete')
+                    @include('dashboard.people.partials.actions.assignToUser')
                     <form action="{{ route('dashboard.people.areaResponsible.delete', $person) }}" method="POST" style="display:inline">
                         @csrf
                         @method('PUT')
