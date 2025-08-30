@@ -21,6 +21,13 @@
                 </x-check-all-deleteAreaResponsibles>
 
                 @if (auth()->user()?->isAdmin())
+
+                    <x-check-all-assignToUser
+                        type="{{ \App\Models\Person::class }}"
+                        :resource="trans('people.plural')"
+                        :blocks="$blocks"
+                        style="margin-left: 10px;">
+                    </x-check-all-assignToUser>
                     <x-check-all-delete
                         type="{{ \App\Models\Person::class }}"
                         :resource="trans('people.plural')"

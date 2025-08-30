@@ -704,4 +704,86 @@ class PersonController extends Controller
     {
         dd($request->all());
     }
+
+    public function assignSupervisorAndRepresentative(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|string',
+            'area_responsible_id' => 'required|exists:users,id',
+            'block_id' => 'required|exists:blocks,id'
+        ]);
+
+        try {
+            $peopleIds = explode(',', $request->items);
+            $people = Person::whereIn('id', $peopleIds)->get();
+
+            $oldResponsibleIds = [];
+            $oldBlockIds = [];
+
+            foreach ($people as $person) {
+                // حفظ القيم القديمة لتحديث العداد
+                if ($person->area_responsible_id) {
+                    $oldResponsibleIds[] = $person->area_responsible_id;
+                }
+                if ($person->block_id) {
+                    $oldBlockIds[] = $person->block_id;
+                }
+
+                // تحديث البيانات
+                $person->update([
+                    'area_responsible_id' => $request->area_responsible_id,
+                    'block_id' => $request->block_id
+                ]);
+            }
+
+            // تشغيل الجوبات لتحديث العدادات
+            // تحديث عدادات مسؤولي المنطقة القدامى
+            foreach (array_unique($oldResponsibleIds) as $oldResponsibleId) {
+                UpdateAreaResponsiblePeopleCount::dispatch($oldResponsibleId);
+            }
+
+            // تحديث عداد مسؤول المنطقة الجديد
+            UpdateAreaResponsiblePeopleCount::dispatch($request->area_responsible_id);
+
+            // تحديث عدادات المندوبين القدامى
+            foreach (array_unique($oldBlockIds) as $oldBlockId) {
+                UpdateBlockPeopleCount::dispatch($oldBlockId);
+            }
+
+            // تحديث عداد المندوب الجديد
+            UpdateBlockPeopleCount::dispatch($request->block_id);
+
+            flash()->success('تم تخصيص مسؤول المنطقة والمندوب بنجاح وسيتم تحديث العدادات قريباً');
+
+            return redirect()->route('dashboard.people.index');
+        } catch (\Exception $e) {
+            logger()->error('خطأ في تخصيص مسؤول المنطقة والمندوب', [
+                'items' => $request->items,
+                'area_responsible_id' => $request->area_responsible_id,
+                'block_id' => $request->block_id,
+                'error' => $e->getMessage()
+            ]);
+
+            flash()->error('حدث خطأ في تخصيص مسؤول المنطقة والمندوب');
+            return back();
+        }
+    }
+
+    // AJAX Method لجلب المندوبين حسب مسؤول المنطقة
+    public function getRepresentativesByResponsible(Request $request)
+    {
+        $responsibleId = $request->get('responsible_id');
+
+        if (!$responsibleId) {
+            return response()->json(['representatives' => []]);
+        }
+
+        // استعلام لجلب المندوبين التابعين لمسؤول المنطقة
+        // يمكنك تعديل هذا الاستعلام حسب هيكل قاعدة البيانات لديك
+        $representatives = Block::where('area_responsible_id', $responsibleId)
+            ->select('id', 'name')
+            ->get();
+
+        return response()->json(['representatives' => $representatives]);
+    }
 }
