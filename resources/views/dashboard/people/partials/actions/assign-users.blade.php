@@ -1,21 +1,21 @@
 <!-- الزر -->
 <button type="button" class="btn btn-outline-success btn-sm"
         data-checkbox=".item-checkbox"
-        data-form="assign-supervisor-representative-form"
+        data-form="assign-supervisor-block-form"
         data-toggle="modal"
-        data-target="#assign-supervisor-representative-modal"
+        data-target="#assign-supervisor-block-modal"
         style="margin-right: 10px;">
     <i class="fas fa-user-tie"></i>
     تخصيص مسؤول ومندوب
 </button>
 
 <!-- المودال -->
-<div class="modal fade" id="assign-supervisor-representative-modal" tabindex="-1" role="dialog"
-     aria-labelledby="assign-supervisor-representative-title" aria-hidden="true">
+<div class="modal fade" id="assign-supervisor-block-modal" tabindex="-1" role="dialog"
+     aria-labelledby="assign-supervisor-block-title" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="assign-supervisor-representative-title">
+                <h5 class="modal-title" id="assign-supervisor-block-title">
                     تخصيص مسؤول المنطقة والمندوب
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -23,7 +23,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form action="{{ route('dashboard.people.assignSupervisorAndRepresentative') }}" method="POST" id="assign-supervisor-representative-form">
+                <form action="{{ route('dashboard.people.assignToUsers') }}" method="POST" id="assign-supervisor-block-form">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="items" id="selected-people-supervisor" value="">
@@ -53,7 +53,7 @@
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
                     إلغاء
                 </button>
-                <button type="submit" class="btn btn-success btn-sm" form="assign-supervisor-representative-form">
+                <button type="submit" class="btn btn-success btn-sm" form="assign-supervisor-block-form">
                     تحديث
                 </button>
             </div>
@@ -65,7 +65,7 @@
 <script>
 $(document).ready(function() {
     // عند النقر على الزر لفتح المودال
-    $('button[data-target="#assign-supervisor-representative-modal"]').on('click', function() {
+    $('button[data-target="#assign-supervisor-block-modal"]').on('click', function() {
         // جمع الـ IDs المحددة
         const selectedIds = [];
         $('.item-checkbox:checked').each(function() {
@@ -85,7 +85,7 @@ $(document).ready(function() {
         if (responsibleId) {
             // طلب AJAX لجلب المندوبين التابعين لمسؤول المنطقة
             $.ajax({
-                url: "{{ route('dashboard.ajax.getRepresentativesByResponsible') }}",
+                url: "{{ route('dashboard.ajax.getBlocksByResponsible') }}",
                 type: 'GET',
                 data: {
                     responsible_id: responsibleId
@@ -93,9 +93,9 @@ $(document).ready(function() {
                 success: function(response) {
                     blockSelect.html('<option value="">اختر المندوب</option>');
 
-                    if (response.representatives && response.representatives.length > 0) {
-                        $.each(response.representatives, function(index, representative) {
-                            blockSelect.append(`<option value="${representative.id}">${representative.name}</option>`);
+                    if (response.blocks && response.blocks.length > 0) {
+                        $.each(response.blocks, function(index, block) {
+                            blockSelect.append(`<option value="${block.id}">${block.name}</option>`);
                         });
                         blockSelect.prop('disabled', false);
                     } else {
@@ -113,8 +113,8 @@ $(document).ready(function() {
     });
 
     // إعادة تعيين المودال عند إغلاقه
-    $('#assign-supervisor-representative-modal').on('hidden.bs.modal', function() {
-        $('#assign-supervisor-representative-form')[0].reset();
+    $('#assign-supervisor-block-modal').on('hidden.bs.modal', function() {
+        $('#assign-supervisor-block-form')[0].reset();
         $('#block_id').html('<option value="">اختر المندوب</option>').prop('disabled', true);
     });
 });

@@ -9,11 +9,6 @@
         <tr>
           <th colspan="100">
             <div class="ml-2 d-flex justify-content-between flex-grow-1">
-                {{-- <x-check-all-assign-users
-                    type="{{ \App\Models\Person::class }}"
-                    :resource="trans('people.plural')"
-                    style="margin-left: 10px;">
-                </x-check-all-assign-users> --}}
                 <x-check-all-deleteAreaResponsibles
                     type="{{ \App\Models\Person::class }}"
                     :resource="trans('people.plural')"
