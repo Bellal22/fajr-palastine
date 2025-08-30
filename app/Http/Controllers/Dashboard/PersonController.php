@@ -699,4 +699,9 @@ class PersonController extends Controller
             return back();
         }
     }
+
+    public function assignToUsers(Request $request)
+    {
+        dd($request->all());
+    }
 }

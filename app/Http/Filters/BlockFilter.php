@@ -12,6 +12,7 @@ class BlockFilter extends BaseFilters
     protected $filters = [
         'name',
         'selected_id',
+        'area_responsible_id'
     ];
 
     /**
@@ -39,6 +40,15 @@ class BlockFilter extends BaseFilters
     {
         if ($value) {
             $this->builder->sortingByIds($value);
+        }
+
+        return $this->builder;
+    }
+
+    public function areaResponsibleId($value)
+    {
+        if ($value) {
+            $this->builder->where('area_responsible_id',$value);
         }
 
         return $this->builder;

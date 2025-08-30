@@ -211,6 +211,7 @@ Route::get('/people/export-view', 'PersonController@exportView')->name('people.e
 Route::put('people/supervisor/assign/{person}', 'PersonController@assignToSupervisor')->name('people.assignToSupervisor');
 Route::put('people/block/assign/{person}', 'PersonController@assignBlock')->name('people.assignBlock');
 Route::put('people/block/assign-bulk', 'PersonController@assignBlocks')->name('people.assignBlocks');
+Route::put('people/assign/people.bulk_assign_to_users', 'PersonController@assignToUsers')->name('people.bulk_assign_to_users');
 Route::put('people/areaResponsible/delete/{person}', 'PersonController@deleteAreaResponsible')->name('people.areaResponsible.delete');
 Route::put('people/areaResponsible/bulk-delete', 'PersonController@deleteAreaResponsibles')->name('people.areaResponsible.bulkDelete');
 Route::get('people/view', 'PersonController@view')->name('people.view');
