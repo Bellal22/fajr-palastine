@@ -23,7 +23,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form action="{{ route('dashboard.people.assignSupervisorAndBlock') }}" method="POST" id="assign-supervisor-block-form">
+                <form action="{{ route('dashboard.people.assignToUsers') }}" method="POST" id="assign-supervisor-block-form">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="items" id="selected-people-supervisor" value="">
