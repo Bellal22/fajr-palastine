@@ -213,6 +213,8 @@ Route::put('people/block/assign/{person}', 'PersonController@assignBlock')->name
 Route::put('people/block/assign-bulk', 'PersonController@assignBlocks')->name('people.assignBlocks');
 Route::put('people/areaResponsible/delete/{person}', 'PersonController@deleteAreaResponsible')->name('people.areaResponsible.delete');
 Route::put('people/areaResponsible/bulk-delete', 'PersonController@deleteAreaResponsibles')->name('people.areaResponsible.bulkDelete');
+Route::put('people/assign-supervisor-representative', 'PersonController@assignSupervisorAndRepresentative')->name('people.assignSupervisorAndRepresentative');
+Route::get('ajax/representatives-by-responsible', 'PersonController@getRepresentativesByResponsible')->name('ajax.getRepresentativesByResponsible');
 Route::get('people/view', 'PersonController@view')->name('people.view');
 Route::get('people/search', 'PersonController@search')->name('people.search');
 Route::post('people/clear', 'PersonController@clearSession')->name('people.clear');
