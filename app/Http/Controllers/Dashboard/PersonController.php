@@ -702,11 +702,6 @@ class PersonController extends Controller
 
     public function assignToUsers(Request $request)
     {
-        dd($request->all());
-    }
-
-    public function assignSupervisorAndRepresentative(Request $request)
-    {
         $request->validate([
             'items' => 'required|string',
             'area_responsible_id' => 'required|exists:users,id',
@@ -775,15 +770,15 @@ class PersonController extends Controller
         $responsibleId = $request->get('responsible_id');
 
         if (!$responsibleId) {
-            return response()->json(['representatives' => []]);
+            return response()->json(['blocks' => []]);
         }
 
         // استعلام لجلب المندوبين التابعين لمسؤول المنطقة
         // يمكنك تعديل هذا الاستعلام حسب هيكل قاعدة البيانات لديك
-        $representatives = Block::where('area_responsible_id', $responsibleId)
+        $blocks = Block::where('area_responsible_id', $responsibleId)
             ->select('id', 'name')
             ->get();
 
-        return response()->json(['representatives' => $representatives]);
+        return response()->json(['blocks' => $blocks]);
     }
 }

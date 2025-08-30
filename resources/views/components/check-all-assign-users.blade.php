@@ -1,110 +1,122 @@
-<button type="button" class="btn btn-outline-info btn-sm"
+<!-- الزر -->
+<button type="button" class="btn btn-outline-success btn-sm"
         data-checkbox=".item-checkbox"
-        data-form="assign-blocks-form"
+        data-form="assign-supervisor-block-form"
         data-toggle="modal"
-        data-target="#assign-blocks-modal"
+        data-target="#assign-supervisor-block-modal"
         style="margin-right: 10px;">
-    <i class="fas fa-location-arrow"></i>
-    @lang('ربط الفرد')
+    <i class="fas fa-user-tie"></i>
+    تخصيص مسؤول ومندوب
 </button>
 
-<!-- Modal -->
-<div class="modal fade" id="assign-blocks-modal" tabindex="-1" role="dialog"
-     aria-labelledby="assign-blocks-title" aria-hidden="true">
+<!-- المودال -->
+<div class="modal fade" id="assign-supervisor-block-modal" tabindex="-1" role="dialog"
+     aria-labelledby="assign-supervisor-block-title" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="assign-blocks-title">
-                    @lang('check-all.dialogs.assign.title')
+                <h5 class="modal-title" id="assign-supervisor-block-title">
+                    تخصيص مسؤول المنطقة والمندوب
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <form action="{{ route('dashboard.people.bulk_assign_to_users') }}" method="POST" id="assign-blocks-form">
+                <form action="{{ route('dashboard.people.assignSupervisorAndBlock') }}" method="POST" id="assign-supervisor-block-form">
                     @csrf
                     @method('PUT')
-                    <input type="hidden" name="items" id="selected-people" value="">
-                    <label>@lang('المشرف')</label>
-                    <select id="supervisor-select" name="supervisor_id" class="form-control">
-                        <option value="">@lang('اختر مشرف')</option>
-                        @foreach(\App\Models\Supervisor::all() as $supervisor)
-                            <option value="{{ $supervisor->id }}">{{ $supervisor->name }}</option>
-                        @endforeach
-                    </select>
-                    <div id="user-wrapper" style="display:none;" class="mt-3">
-                        <label>@lang('المندوب')</label>
-                        <select id="user-select" name="user_id" class="form-control">
-                            <option value="">@lang('اختر المندوب')</option>
+                    <input type="hidden" name="items" id="selected-people-supervisor" value="">
+
+                    <!-- اختيار مسؤول المنطقة -->
+                    <div class="form-group">
+                        <label for="area_responsible_id">مسؤول المنطقة <span class="text-danger">*</span></label>
+                        <select class="form-control" name="area_responsible_id" id="area_responsible_id" required>
+                            <option value="">اختر مسؤول المنطقة</option>
+                            @foreach($areaResponsibles as $responsible)
+                                <option value="{{ $responsible->id }}">{{ $responsible->name }}</option>
+                            @endforeach
                         </select>
                     </div>
 
-                    <input type="hidden" name="user_id" id="hidden-supervisor">
-                    <input type="hidden" name="block_id" id="hidden-user">
+                    <!-- اختيار المندوب -->
+                    <div class="form-group">
+                        <label for="block_id">المندوب <span class="text-danger">*</span></label>
+                        <select class="form-control" name="block_id" id="block_id" required disabled>
+                            <option value="">اختر المندوب</option>
+                        </select>
+                        <small class="text-muted">يجب اختيار مسؤول المنطقة أولاً</small>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">@lang('الغاء')</button>
-                <button type="submit" form="assign-blocks-form" class="btn btn-info" disabled id="submit-btn">@lang('تم')</button>
-
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                    إلغاء
+                </button>
+                <button type="submit" class="btn btn-success btn-sm" form="assign-supervisor-block-form">
+                    تحديث
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 @push('scripts')
-    <script>
-        document.getElementById('bulk-assign-btn').addEventListener('click', function() {
-            const selectedIds = [];
-            document.querySelectorAll('.item-checkbox:checked').forEach(checkbox => {
-                selectedIds.push(checkbox.value);
-            });
-            document.getElementById('selected-people').value = selectedIds.join(',');
+<script>
+$(document).ready(function() {
+    // عند النقر على الزر لفتح المودال
+    $('button[data-target="#assign-supervisor-block-modal"]').on('click', function() {
+        // جمع الـ IDs المحددة
+        const selectedIds = [];
+        $('.item-checkbox:checked').each(function() {
+            selectedIds.push($(this).val());
         });
+        $('#selected-people-supervisor').val(selectedIds.join(','));
+    });
 
-    </script>
+    // عند تغيير مسؤول المنطقة
+    $('#area_responsible_id').on('change', function() {
+        const responsibleId = $(this).val();
+        const blockSelect = $('#block_id');
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            let supervisorSelect = document.getElementById("supervisor-select");
-            let userWrapper = document.getElementById("user-wrapper");
-            let userSelect = document.getElementById("user-select");
-            let hiddenSupervisor = document.getElementById("hidden-supervisor");
-            let hiddenUser = document.getElementById("hidden-user");
-            let submitBtn = document.getElementById("submit-btn");
+        // تنظيف وتعطيل select المندوبين
+        blockSelect.html('<option value="">جارِ التحميل...</option>').prop('disabled', true);
 
-            supervisorSelect.addEventListener("change", function () {
-                hiddenSupervisor.value = this.value;
-                hiddenUser.value = "";
-                userSelect.innerHTML = '<option value="">@lang("اختر المندوب")</option>';
-                if (this.value) {
-                    userWrapper.style.display = "block";
-                    axios.get("{{ route('api.blocks.select') }}", {
-                    // axios.get("#", {
-                        params: {area_responsible_id: this.value}
-                    }).then(res => {
-                        res.data.data.forEach(user => {
-                            let opt = document.createElement("option");
-                            opt.value = user.id;
-                            opt.text = user.text;
-                            userSelect.appendChild(opt);
+        if (responsibleId) {
+            // طلب AJAX لجلب المندوبين التابعين لمسؤول المنطقة
+            $.ajax({
+                url: "{{ route('dashboard.ajax.getblocksByResponsible') }}",
+                type: 'GET',
+                data: {
+                    responsible_id: responsibleId
+                },
+                success: function(response) {
+                    blockSelect.html('<option value="">اختر المندوب</option>');
+
+                    if (response.blocks && response.blocks.length > 0) {
+                        $.each(response.blocks, function(index, block) {
+                            blockSelect.append(`<option value="${block.id}">${block.name}</option>`);
                         });
-                    });
-                } else {
-                    userWrapper.style.display = "none";
+                        blockSelect.prop('disabled', false);
+                    } else {
+                        blockSelect.html('<option value="">لا توجد مندوبين لهذا المسؤول</option>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('خطأ في تحميل المندوبين:', error);
+                    blockSelect.html('<option value="">حدث خطأ في التحميل</option>');
                 }
-                checkSubmit();
             });
+        } else {
+            blockSelect.html('<option value="">اختر المندوب</option>').prop('disabled', true);
+        }
+    });
 
-            userSelect.addEventListener("change", function () {
-                hiddenUser.value = this.value;
-                checkSubmit();
-            });
-
-            function checkSubmit() {
-                submitBtn.disabled = !(hiddenSupervisor.value && hiddenUser.value);
-            }
-        });
-    </script>
+    // إعادة تعيين المودال عند إغلاقه
+    $('#assign-supervisor-block-modal').on('hidden.bs.modal', function() {
+        $('#assign-supervisor-block-form')[0].reset();
+        $('#block_id').html('<option value="">اختر المندوب</option>').prop('disabled', true);
+    });
+});
+</script>
 @endpush

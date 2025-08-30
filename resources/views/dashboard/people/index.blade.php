@@ -9,11 +9,11 @@
         <tr>
           <th colspan="100">
             <div class="ml-2 d-flex justify-content-between flex-grow-1">
-                <x-check-all-assign-users
+                {{-- <x-check-all-assign-users
                     type="{{ \App\Models\Person::class }}"
                     :resource="trans('people.plural')"
                     style="margin-left: 10px;">
-                </x-check-all-assign-users>
+                </x-check-all-assign-users> --}}
                 <x-check-all-deleteAreaResponsibles
                     type="{{ \App\Models\Person::class }}"
                     :resource="trans('people.plural')"
@@ -22,12 +22,12 @@
 
                 @if (auth()->user()?->isAdmin())
 
-                    <x-check-all-assignToUser
-                        type="{{ \App\Models\Person::class }}"
-                        :resource="trans('people.plural')"
-                        :blocks="$blocks"
-                        style="margin-left: 10px;">
-                    </x-check-all-assignToUser>
+                    <x-check-all-assign-users
+                    type="{{ \App\Models\Person::class }}"
+                    :resource="trans('people.plural')"
+                    style="margin-left: 10px;">
+                </x-check-all-assign-users>
+
                     <x-check-all-delete
                         type="{{ \App\Models\Person::class }}"
                         :resource="trans('people.plural')"
@@ -107,7 +107,6 @@
                     @include('dashboard.people.partials.actions.show')
                     @include('dashboard.people.partials.actions.edit')
                     @include('dashboard.people.partials.actions.delete')
-                    @include('dashboard.people.partials.actions.assignToUser')
                     <form action="{{ route('dashboard.people.areaResponsible.delete', $person) }}" method="POST" style="display:inline">
                         @csrf
                         @method('PUT')
