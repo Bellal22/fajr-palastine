@@ -60,171 +60,171 @@
 </div>
 
 @push('scripts')
-<script>
-$(document).ready(function() {
-    let selectedPeopleIds = [];
+    <script>
+        $(document).ready(function() {
+            let selectedPeopleIds = [];
 
-    // عند النقر على الزر لفتح المودال
-    $('button[data-target="#assign-areaResponsible-block-modal"]').on('click', function(e) {
-        selectedPeopleIds = [];
-        $('.item-checkbox:checked').each(function() {
-            selectedPeopleIds.push($(this).val());
-        });
-
-        if (selectedPeopleIds.length === 0) {
-            alert('يرجى اختيار أشخاص للتخصيص أولاً');
-            e.preventDefault();
-            return false;
-        }
-
-        console.log('الأشخاص المحددون:', selectedPeopleIds);
-    });
-
-    // عند تغيير مسؤول المنطقة
-    $('#area_responsible_id').on('change', function() {
-        const responsibleId = $(this).val();
-        const blockSelect = $('#block_id');
-
-        blockSelect.html('<option value="">جارِ التحميل...</option>').prop('disabled', true);
-
-        if (responsibleId) {
-            $.ajax({
-                url: "{{ route('dashboard.ajax.getBlocksByResponsible') }}",
-                type: 'GET',
-                data: {
-                    responsible_id: responsibleId
-                },
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                    'Accept': 'application/json'
-                },
-                success: function(response) {
-                    console.log('استجابة المندوبين:', response);
-                    blockSelect.html('<option value="">اختر المندوب</option>');
-
-                    if (response.blocks && response.blocks.length > 0) {
-                        $.each(response.blocks, function(index, block) {
-                            blockSelect.append(`<option value="${block.id}">${block.name}</option>`);
-                        });
-                        blockSelect.prop('disabled', false);
-                    } else {
-                        blockSelect.html('<option value="">لا توجد مندوبين لهذا المسؤول</option>');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('خطأ في تحميل المندوبين:', {
-                        status: xhr.status,
-                        statusText: xhr.statusText,
-                        responseText: xhr.responseText,
-                        error: error
-                    });
-                    blockSelect.html('<option value="">حدث خطأ في التحميل</option>');
-                }
-            });
-        } else {
-            blockSelect.html('<option value="">اختر المندوب</option>').prop('disabled', true);
-        }
-    });
-
-    // عند إرسال النموذج
-    $('#assign-areaResponsible-block-form').on('submit', function(e) {
-        e.preventDefault();
-
-        console.log('بدء إرسال النموذج...');
-
-        if (selectedPeopleIds.length === 0) {
-            alert('يرجى اختيار أشخاص للتخصيص أولاً');
-            return false;
-        }
-
-        const areaResponsibleId = $('#area_responsible_id').val();
-        const blockId = $('#block_id').val();
-
-        if (!areaResponsibleId || !blockId) {
-            alert('يرجى اختيار مسؤول المنطقة والمندوب');
-            return false;
-        }
-
-        // تحضير البيانات
-        const postData = {
-            '_token': $('meta[name="csrf-token"]').attr('content'),
-            'items': selectedPeopleIds.join(','),
-            'area_responsible_id': areaResponsibleId,
-            'block_id': blockId
-        };
-
-        console.log('البيانات المرسلة:', postData);
-
-        const submitBtn = $('button[type="submit"][form="assign-areaResponsible-block-form"]');
-        submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> جاري التحديث...');
-
-        $.ajax({
-            url: $(this).attr('action'),
-            type: 'POST',
-            data: postData,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                'Accept': 'application/json',
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-            },
-            beforeSend: function(xhr) {
-                console.log('إرسال الطلب...');
-            },
-            success: function(response) {
-                console.log('استجابة ناجحة:', response);
-                $('#assign-areaResponsible-block-modal').modal('hide');
-
-                if (response.success) {
-                    alert('تم التخصيص بنجاح');
-                    window.location.reload();
-                } else {
-                    alert(response.message || 'حدث خطأ غير متوقع');
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('خطأ في الطلب:', {
-                    status: xhr.status,
-                    statusText: xhr.statusText,
-                    responseText: xhr.responseText,
-                    readyState: xhr.readyState,
-                    error: error
+            // عند النقر على الزر لفتح المودال
+            $('button[data-target="#assign-areaResponsible-block-modal"]').on('click', function(e) {
+                selectedPeopleIds = [];
+                $('.item-checkbox:checked').each(function() {
+                    selectedPeopleIds.push($(this).val());
                 });
 
-                let errorMessage = 'حدث خطأ في التخصيص';
-
-                if (xhr.status === 422) {
-                    // خطأ في validation
-                    if (xhr.responseJSON && xhr.responseJSON.errors) {
-                        errorMessage = Object.values(xhr.responseJSON.errors).flat().join('\n');
-                    }
-                } else if (xhr.status === 419) {
-                    // خطأ في CSRF token
-                    errorMessage = 'انتهت صلاحية الجلسة. يرجى إعادة تحميل الصفحة';
-                } else if (xhr.status === 404) {
-                    errorMessage = 'الرابط غير موجود';
-                } else if (xhr.status === 500) {
-                    errorMessage = 'خطأ في الخادم';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage += ': ' + xhr.responseJSON.message;
-                    }
-                } else if (xhr.status === 0) {
-                    errorMessage = 'فشل الاتصال بالخادم';
+                if (selectedPeopleIds.length === 0) {
+                    alert('يرجى اختيار أشخاص للتخصيص أولاً');
+                    e.preventDefault();
+                    return false;
                 }
 
-                alert(errorMessage);
-            },
-            complete: function() {
-                submitBtn.prop('disabled', false).html('تحديث');
-            }
-        });
-    });
+                console.log('الأشخاص المحددون:', selectedPeopleIds);
+            });
 
-    // إعادة تعيين المودال عند إغلاقه
-    $('#assign-areaResponsible-block-modal').on('hidden.bs.modal', function() {
-        $('#assign-areaResponsible-block-form')[0].reset();
-        $('#block_id').html('<option value="">اختر المندوب</option>').prop('disabled', true);
-        selectedPeopleIds = [];
-    });
-});
-</script>
+            // عند تغيير مسؤول المنطقة
+            $('#area_responsible_id').on('change', function() {
+                const responsibleId = $(this).val();
+                const blockSelect = $('#block_id');
+
+                blockSelect.html('<option value="">جارِ التحميل...</option>').prop('disabled', true);
+
+                if (responsibleId) {
+                    $.ajax({
+                        url: "{{ route('dashboard.ajax.getBlocksByResponsible') }}",
+                        type: 'GET',
+                        data: {
+                            responsible_id: responsibleId
+                        },
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                            'Accept': 'application/json'
+                        },
+                        success: function(response) {
+                            console.log('استجابة المندوبين:', response);
+                            blockSelect.html('<option value="">اختر المندوب</option>');
+
+                            if (response.blocks && response.blocks.length > 0) {
+                                $.each(response.blocks, function(index, block) {
+                                    blockSelect.append(`<option value="${block.id}">${block.name}</option>`);
+                                });
+                                blockSelect.prop('disabled', false);
+                            } else {
+                                blockSelect.html('<option value="">لا توجد مندوبين لهذا المسؤول</option>');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('خطأ في تحميل المندوبين:', {
+                                status: xhr.status,
+                                statusText: xhr.statusText,
+                                responseText: xhr.responseText,
+                                error: error
+                            });
+                            blockSelect.html('<option value="">حدث خطأ في التحميل</option>');
+                        }
+                    });
+                } else {
+                    blockSelect.html('<option value="">اختر المندوب</option>').prop('disabled', true);
+                }
+            });
+
+            // عند إرسال النموذج
+            $('#assign-areaResponsible-block-form').on('submit', function(e) {
+                e.preventDefault();
+
+                console.log('بدء إرسال النموذج...');
+
+                if (selectedPeopleIds.length === 0) {
+                    alert('يرجى اختيار أشخاص للتخصيص أولاً');
+                    return false;
+                }
+
+                const areaResponsibleId = $('#area_responsible_id').val();
+                const blockId = $('#block_id').val();
+
+                if (!areaResponsibleId || !blockId) {
+                    alert('يرجى اختيار مسؤول المنطقة والمندوب');
+                    return false;
+                }
+
+                // تحضير البيانات
+                const postData = {
+                    '_token': $('meta[name="csrf-token"]').attr('content'),
+                    'items': selectedPeopleIds.join(','),
+                    'area_responsible_id': areaResponsibleId,
+                    'block_id': blockId
+                };
+
+                console.log('البيانات المرسلة:', postData);
+
+                const submitBtn = $('button[type="submit"][form="assign-areaResponsible-block-form"]');
+                submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> جاري التحديث...');
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: postData,
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    beforeSend: function(xhr) {
+                        console.log('إرسال الطلب...');
+                    },
+                    success: function(response) {
+                        console.log('استجابة ناجحة:', response);
+                        $('#assign-areaResponsible-block-modal').modal('hide');
+
+                        if (response.success) {
+                            alert('تم التخصيص بنجاح');
+                            window.location.reload();
+                        } else {
+                            alert(response.message || 'حدث خطأ غير متوقع');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('خطأ في الطلب:', {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            responseText: xhr.responseText,
+                            readyState: xhr.readyState,
+                            error: error
+                        });
+
+                        let errorMessage = 'حدث خطأ في التخصيص';
+
+                        if (xhr.status === 422) {
+                            // خطأ في validation
+                            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                                errorMessage = Object.values(xhr.responseJSON.errors).flat().join('\n');
+                            }
+                        } else if (xhr.status === 419) {
+                            // خطأ في CSRF token
+                            errorMessage = 'انتهت صلاحية الجلسة. يرجى إعادة تحميل الصفحة';
+                        } else if (xhr.status === 404) {
+                            errorMessage = 'الرابط غير موجود';
+                        } else if (xhr.status === 500) {
+                            errorMessage = 'خطأ في الخادم';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage += ': ' + xhr.responseJSON.message;
+                            }
+                        } else if (xhr.status === 0) {
+                            errorMessage = 'فشل الاتصال بالخادم';
+                        }
+
+                        alert(errorMessage);
+                    },
+                    complete: function() {
+                        submitBtn.prop('disabled', false).html('تحديث');
+                    }
+                });
+            });
+
+            // إعادة تعيين المودال عند إغلاقه
+            $('#assign-areaResponsible-block-modal').on('hidden.bs.modal', function() {
+                $('#assign-areaResponsible-block-form')[0].reset();
+                $('#block_id').html('<option value="">اختر المندوب</option>').prop('disabled', true);
+                selectedPeopleIds = [];
+            });
+        });
+    </script>
 @endpush

@@ -703,10 +703,6 @@ class PersonController extends Controller
     // أضف هذه الدالة مؤقتاً في الـ Controller لتشخيص المشكلة
     public function assignToUsers(Request $request)
     {
-        // إضافة log لرؤية ما يصل
-        \Log::info('Received request data:', $request->all());
-        \Log::info('Request headers:', $request->headers->all());
-
         try {
             $request->validate([
                 'items' => 'required|string',
@@ -714,12 +710,7 @@ class PersonController extends Controller
                 'block_id' => 'required|exists:blocks,id'
             ]);
 
-            \Log::info('Validation passed');
-
             $peopleIds = explode(',', $request->items);
-            \Log::info('People IDs:', $peopleIds);
-
-            // باقي الكود...
             $people = Person::whereIn('id', $peopleIds)->get();
 
             if ($people->isEmpty()) {
@@ -750,7 +741,7 @@ class PersonController extends Controller
 
             DB::commit();
 
-            // Jobs dispatch...
+            // تشغيل الجوبات لتحديث العدادات
             foreach (array_unique($oldResponsibleIds) as $oldResponsibleId) {
                 UpdateAreaResponsiblePeopleCount::dispatch($oldResponsibleId);
             }
@@ -765,10 +756,9 @@ class PersonController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'تم تخصيص مسؤول المنطقة والمندوب بنجاح وسيتم تحديث العدادات قريباً'
+                'message' => 'تم تخصيص مسؤول المنطقة والمندوب بنجاح'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Validation error:', $e->errors());
             return response()->json([
                 'success' => false,
                 'message' => 'خطأ في البيانات المدخلة',
@@ -776,15 +766,18 @@ class PersonController extends Controller
             ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('General error in assignToUsers:', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
+
+            // فقط تسجيل الأخطاء المهمة
+            logger()->error('خطأ في تخصيص مسؤول المنطقة والمندوب', [
+                'error' => $e->getMessage(),
+                'items_count' => count(explode(',', $request->items ?? '')),
+                'area_responsible_id' => $request->area_responsible_id,
+                'block_id' => $request->block_id
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'حدث خطأ في الخادم: ' . $e->getMessage()
+                'message' => 'حدث خطأ في التخصيص'
             ], 500);
         }
     }
