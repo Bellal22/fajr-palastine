@@ -700,23 +700,41 @@ class PersonController extends Controller
         }
     }
 
+    // أضف هذه الدالة مؤقتاً في الـ Controller لتشخيص المشكلة
     public function assignToUsers(Request $request)
     {
-        $request->validate([
-            'items' => 'required|string',
-            'area_responsible_id' => 'required|exists:users,id',
-            'block_id' => 'required|exists:blocks,id'
-        ]);
+        // إضافة log لرؤية ما يصل
+        \Log::info('Received request data:', $request->all());
+        \Log::info('Request headers:', $request->headers->all());
 
         try {
+            $request->validate([
+                'items' => 'required|string',
+                'area_responsible_id' => 'required|exists:area_responsibles,id',
+                'block_id' => 'required|exists:blocks,id'
+            ]);
+
+            \Log::info('Validation passed');
+
             $peopleIds = explode(',', $request->items);
+            \Log::info('People IDs:', $peopleIds);
+
+            // باقي الكود...
             $people = Person::whereIn('id', $peopleIds)->get();
+
+            if ($people->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'لم يتم العثور على أشخاص للتحديث'
+                ], 404);
+            }
 
             $oldResponsibleIds = [];
             $oldBlockIds = [];
 
+            DB::beginTransaction();
+
             foreach ($people as $person) {
-                // حفظ القيم القديمة لتحديث العداد
                 if ($person->area_responsible_id) {
                     $oldResponsibleIds[] = $person->area_responsible_id;
                 }
@@ -724,61 +742,92 @@ class PersonController extends Controller
                     $oldBlockIds[] = $person->block_id;
                 }
 
-                // تحديث البيانات
                 $person->update([
                     'area_responsible_id' => $request->area_responsible_id,
                     'block_id' => $request->block_id
                 ]);
             }
 
-            // تشغيل الجوبات لتحديث العدادات
-            // تحديث عدادات مسؤولي المنطقة القدامى
+            DB::commit();
+
+            // Jobs dispatch...
             foreach (array_unique($oldResponsibleIds) as $oldResponsibleId) {
                 UpdateAreaResponsiblePeopleCount::dispatch($oldResponsibleId);
             }
 
-            // تحديث عداد مسؤول المنطقة الجديد
             UpdateAreaResponsiblePeopleCount::dispatch($request->area_responsible_id);
 
-            // تحديث عدادات المندوبين القدامى
             foreach (array_unique($oldBlockIds) as $oldBlockId) {
                 UpdateBlockPeopleCount::dispatch($oldBlockId);
             }
 
-            // تحديث عداد المندوب الجديد
             UpdateBlockPeopleCount::dispatch($request->block_id);
 
-            flash()->success('تم تخصيص مسؤول المنطقة والمندوب بنجاح وسيتم تحديث العدادات قريباً');
-
-            return redirect()->route('dashboard.people.index');
+            return response()->json([
+                'success' => true,
+                'message' => 'تم تخصيص مسؤول المنطقة والمندوب بنجاح وسيتم تحديث العدادات قريباً'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation error:', $e->errors());
+            return response()->json([
+                'success' => false,
+                'message' => 'خطأ في البيانات المدخلة',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
-            logger()->error('خطأ في تخصيص مسؤول المنطقة والمندوب', [
-                'items' => $request->items,
-                'area_responsible_id' => $request->area_responsible_id,
-                'block_id' => $request->block_id,
-                'error' => $e->getMessage()
+            DB::rollBack();
+            \Log::error('General error in assignToUsers:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
             ]);
 
-            flash()->error('حدث خطأ في تخصيص مسؤول المنطقة والمندوب');
-            return back();
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ في الخادم: ' . $e->getMessage()
+            ], 500);
         }
     }
 
     // AJAX Method لجلب المندوبين حسب مسؤول المنطقة
-    public function getRepresentativesByResponsible(Request $request)
+    public function getBlocksByResponsible(Request $request)
     {
-        $responsibleId = $request->get('responsible_id');
+        try {
+            $responsibleId = $request->get('responsible_id');
 
-        if (!$responsibleId) {
-            return response()->json(['blocks' => []]);
+            if (!$responsibleId) {
+                return response()->json(['blocks' => []]);
+            }
+
+            // التحقق من وجود مسؤول المنطقة
+            $areaResponsible = AreaResponsible::find($responsibleId);
+            if (!$areaResponsible) {
+                return response()->json([
+                    'blocks' => [],
+                    'message' => 'مسؤول المنطقة غير موجود'
+                ], 404);
+            }
+
+            // استعلام لجلب المندوبين التابعين لمسؤول المنطقة
+            $blocks = Block::where('area_responsible_id', $responsibleId)
+                ->select('id', 'name')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'blocks' => $blocks,
+                'message' => 'تم جلب المندوبين بنجاح'
+            ]);
+        } catch (\Exception $e) {
+            logger()->error('خطأ في جلب المندوبين', [
+                'responsible_id' => $request->get('responsible_id'),
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'blocks' => [],
+                'message' => 'حدث خطأ في جلب المندوبين'
+            ], 500);
         }
-
-        // استعلام لجلب المندوبين التابعين لمسؤول المنطقة
-        // يمكنك تعديل هذا الاستعلام حسب هيكل قاعدة البيانات لديك
-        $blocks = Block::where('area_responsible_id', $responsibleId)
-            ->select('id', 'name')
-            ->get();
-
-        return response()->json(['blocks' => $blocks]);
     }
 }
