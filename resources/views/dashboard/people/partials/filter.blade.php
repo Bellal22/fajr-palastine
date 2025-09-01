@@ -26,8 +26,11 @@
                     <div class="modal-body">
                         @if(!empty($notFoundIds))
                             <div class="mb-4">
-                                <h6 class="font-weight-bold">الهويات التالية لم يتم العثور عليها:</h6>
-                                <ul>
+                                <h6 class="font-weight-bold">
+                                    <i class="fas fa-times-circle"></i>
+                                    الهويات التالية لم يتم العثور عليها:
+                                </h6>
+                                <ul class="mb-0">
                                     @foreach($notFoundIds as $id)
                                         <li>{{ $id }}</li>
                                     @endforeach
@@ -37,8 +40,11 @@
 
                         @if(!empty($unavailableIds))
                             <div class="mb-4">
-                                <h6 class="font-weight-bold">الهويات التالية مسجلة ولكن غير متاحة في منطقتك:</h6>
-                                <ul>
+                                <h6 class="font-weight-bold">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    الهويات التالية مسجلة ولكن غير متاحة في منطقتك:
+                                </h6>
+                                <ul class="mb-0">
                                     @foreach($unavailableIds as $id)
                                         <li>{{ $id }}</li>
                                     @endforeach
@@ -46,8 +52,23 @@
                             </div>
                         @endif
 
-                        @if(empty($notFoundIds) && empty($unavailableIds))
+                        @if(!empty($processedIds))
+                            <div class="mb-4">
+                                <h6 class="font-weight-bold">
+                                    <i class="fas fa-check-circle"></i>
+                                    الهويات التالية موجودة ولكن تمت معالجتها مسبقاً:
+                                </h6>
+                                <ul class="mb-0">
+                                    @foreach($processedIds as $id)
+                                        <li>{{ $id }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        @if(empty($notFoundIds) && empty($unavailableIds) && empty($processedIds))
                             <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
                                 جميع الهويات المدخلة موجودة ومتاحة في منطقتك.
                             </div>
                         @endif
@@ -311,7 +332,8 @@
     <script>
 
         $(document).ready(function() {
-            @if(!empty($notFoundIds) || !empty($unavailableIds))
+            // إظهار المودال إذا كان هناك أي من الحالات الثلاث
+            @if(!empty($notFoundIds) || !empty($unavailableIds) || !empty($processedIds))
                 $('#not-found-modal').modal('show');
             @endif
 
@@ -323,6 +345,7 @@
                 html += '</ul>';
                 $('#not-found-message').html(html);
             @endif
+
             $('#clear-session-button').on('click', function() {
                 $.ajax({
                     url: '{{ route("dashboard.people.clear") }}',

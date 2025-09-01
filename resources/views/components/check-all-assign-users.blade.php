@@ -1,10 +1,10 @@
 <!-- الزر -->
-<button type="button" class="btn btn-outline-success btn-sm"
+<button type="button" class="btn btn-sm"
         data-checkbox=".item-checkbox"
         data-form="assign-areaResponsible-block-form"
         data-toggle="modal"
         data-target="#assign-areaResponsible-block-modal"
-        style="margin-right: 10px;">
+        style="color:#f57c00; border:1px solid #f57c00;margin-right: 10px;">
     <i class="fas fa-user-tie"></i>
     تخصيص مسؤول ومندوب
 </button>

@@ -56,6 +56,7 @@ class PersonController extends Controller
 
             $notFoundIds = [];
             $unavailableIds = [];
+            $processedIds = []; // الحالة الثالثة: موجود ولكن تمت معالجته
 
             if (request()->filled('id_num')) {
                 $searchedIds = array_filter(
@@ -66,11 +67,24 @@ class PersonController extends Controller
                 $allExistingIds = Person::pluck('id_num')->toArray();
                 $availableIds = $people->pluck('id_num')->toArray();
 
-                $notFoundIds = array_values(array_diff($searchedIds, $allExistingIds));
-                $unavailableIds = array_values(array_diff(
+                // الحصول على الأشخاص الموجودين ولكن ليسوا في النتائج المتاحة
+                $existingButNotAvailable = array_values(array_diff(
                     array_intersect($searchedIds, $allExistingIds),
                     $availableIds
                 ));
+
+                // تحديد الأشخاص المعالجين (موجودين ولكن لديهم relationship أو block_id)
+                $processedPersons = Person::whereIn('id_num', $existingButNotAvailable)
+                    ->where(function ($q) {
+                        $q->whereNotNull('relationship')
+                            ->orWhereNotNull('block_id');
+                    })
+                    ->pluck('id_num')
+                    ->toArray();
+
+                $notFoundIds = array_values(array_diff($searchedIds, $allExistingIds));
+                $unavailableIds = array_values(array_diff($existingButNotAvailable, $processedPersons));
+                $processedIds = array_values($processedPersons);
             }
 
             $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
@@ -83,14 +97,16 @@ class PersonController extends Controller
                 'filters' => request()->all(),
                 'results_count' => $people->total(),
                 'not_found_count' => count($notFoundIds),
-                'unavailable_count' => count($unavailableIds)
+                'unavailable_count' => count($unavailableIds),
+                'processed_count' => count($processedIds)
             ]);
 
             return view('dashboard.people.index', [
                 'people' => $people,
                 'blocks' => $blocks,
                 'notFoundIds' => $notFoundIds,
-                'unavailableIds' => $unavailableIds
+                'unavailableIds' => $unavailableIds,
+                'processedIds' => $processedIds
             ]);
         } catch (\Exception $e) {
             logger()->error('خطأ في الصفحة الرئيسية للأشخاص', [
@@ -106,7 +122,8 @@ class PersonController extends Controller
                 'people' => Person::whereRaw('1=0')->paginate(),
                 'blocks' => collect(),
                 'notFoundIds' => [],
-                'unavailableIds' => []
+                'unavailableIds' => [],
+                'processedIds' => []
             ]);
         }
     }
@@ -141,7 +158,7 @@ class PersonController extends Controller
         }
 
         $people = $people->latest()->paginate(
-            $request->input('perPage', 15)
+            $request->input('perPage', 1000)
         );
 
         $blocks = Block::orderBy('name')->pluck('name', 'id');

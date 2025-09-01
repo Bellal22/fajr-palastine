@@ -14,6 +14,18 @@
                             type="{{ \App\Models\Person::class }}"
                             :resource="trans('people.plural')">
                     </x-check-all-delete>
+
+                    <x-check-all-deleteAreaResponsibles
+                        type="{{ \App\Models\Person::class }}"
+                        :resource="trans('people.plural')"
+                        style="margin-left: 10px;">
+                    </x-check-all-deleteAreaResponsibles>
+
+                    <x-check-all-assign-users
+                        type="{{ \App\Models\Person::class }}"
+                        :resource="trans('people.plural')"
+                        style="margin-left: 10px;">
+                    </x-check-all-assign-users>
                 @endif
 
                     @if (auth()->user()?->isSupervisor())
@@ -32,10 +44,10 @@
                             <i class="fa-fw fas fa-file-excel"></i>
                             @lang('تصدير الكل (تطبق نتائج البحث)')
                         </a>
-                        <x-check-all-export
+                        {{-- <x-check-all-export
                             type="{{ \App\Models\Person::class }}"
                             :resource="trans('people.plural')">
-                        </x-check-all-export>
+                        </x-check-all-export> --}}
                     @endif
                 </div>
             </div>

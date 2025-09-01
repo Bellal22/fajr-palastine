@@ -18,10 +18,10 @@
                 @if (auth()->user()?->isAdmin())
 
                     <x-check-all-assign-users
-                    type="{{ \App\Models\Person::class }}"
-                    :resource="trans('people.plural')"
-                    style="margin-left: 10px;">
-                </x-check-all-assign-users>
+                        type="{{ \App\Models\Person::class }}"
+                        :resource="trans('people.plural')"
+                        style="margin-left: 10px;">
+                    </x-check-all-assign-users>
 
                     <x-check-all-delete
                         type="{{ \App\Models\Person::class }}"
@@ -29,11 +29,11 @@
                         style="margin-left: 10px;">
                     </x-check-all-delete>
 
-                    <x-check-all-export
+                    {{-- <x-check-all-export
                         type="{{ \App\Models\Person::class }}"
                         :resource="trans('people.plural')"
                         style="margin-left: 10px;">
-                    </x-check-all-export>
+                    </x-check-all-export> --}}
                 @endif
 
                 @if (auth()->user()?->isSupervisor())
