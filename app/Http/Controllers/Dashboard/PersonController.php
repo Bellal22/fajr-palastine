@@ -12,9 +12,13 @@ use App\Jobs\UpdateAreaResponsiblePeopleCount;
 use App\Jobs\UpdateBlockPeopleCount;
 use App\Models\AreaResponsible;
 use DB;
+use Exception;
 use Gate;
+use Illuminate\Http\Client\RequestException;
+use Http;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Client\Response;
 use Maatwebsite\Excel\Facades\Excel;
 
 class PersonController extends Controller
@@ -838,6 +842,262 @@ class PersonController extends Controller
                 'blocks' => [],
                 'message' => 'حدث خطأ في جلب المندوبين'
             ], 500);
+        }
+    }
+
+    public function api(Person $person)
+    {
+        try {
+            // Load relationships if not already loaded
+            $person->loadMissing(['block', 'familyMembers', 'wife']);
+
+            // Prepare API data
+            $data = $this->prepareApiData($person);
+
+            // Make API request
+            $response = $this->makeApiRequest($data);
+
+            // Update person sync status
+            $this->updateSyncStatus($person, $response);
+
+            return response()->json([
+                'person' => $person->getFullName(),
+                'status' => $response->status(),
+                'response' => $response->json() ?? $response->body(),
+                // أضف هذا للتشخيص: البيانات اللي اترسلت
+                'sent_data_wife' => [
+                    'wifi_id' => $data['wifi_id'] ?? 'not set',
+                    'wifi_name' => $data['wifi_name'] ?? 'not set'
+                ]
+            ]);
+        } catch (RequestException $e) {  // أعد الـ full namespace
+            // Handle HTTP client exceptions
+            $person->update([
+                'api_sync_status' => 'failed',
+                'api_sync_error' => 'HTTP Error: ' . $e->getMessage()
+            ]);
+
+            return response()->json([
+                'error' => 'API request failed: ' . $e->getMessage(),
+                'response' => $e->response?->json() ?? $e->response?->body()  // أضف response للتشخيص
+            ], 503);
+        } catch (Exception $e) {
+            // Handle general exceptions
+            $person->update([
+                'api_sync_status' => 'failed',
+                'api_sync_error' => 'System Error: ' . $e->getMessage()
+            ]);
+
+            return response()->json([
+                'error' => 'An error occurred: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function bulkApiSync()
+    {
+        try {
+            // جلب كل أرباب الأسر اللي عندهم passkey و block_id
+            $familyHeads = Person::whereNotNull('passkey')
+                ->whereNotNull('block_id')
+                ->where('relationship', 'رب الأسرة') // أو أي condition تانية تحدد رب الأسرة
+                ->with(['block', 'familyMembers', 'wife']) // Load relationships مسبقاً
+                ->get();
+
+            $results = [
+                'total' => $familyHeads->count(),
+                'successful' => 0,
+                'failed' => 0,
+                'details' => []
+            ];
+
+            \Log::info('Bulk API Sync Started', [
+                'total_persons' => $familyHeads->count()
+            ]);
+
+            foreach ($familyHeads as $person) {
+                try {
+                    // Prepare API data للشخص
+                    $data = $this->prepareApiData($person);
+
+                    // Make API request
+                    $response = $this->makeApiRequest($data);
+
+                    // Update person sync status
+                    $this->updateSyncStatus($person, $response);
+
+                    if ($response->successful()) {
+                        $results['successful']++;
+                        $results['details'][] = [
+                            'person' => $person->getFullName(),
+                            'id' => $person->id,
+                            'status' => 'success',
+                            'response_status' => $response->status()
+                        ];
+                    } else {
+                        $results['failed']++;
+                        $results['details'][] = [
+                            'person' => $person->getFullName(),
+                            'id' => $person->id,
+                            'status' => 'failed',
+                            'error' => 'HTTP ' . $response->status() . ': ' . $response->body()
+                        ];
+                    }
+
+                    // أضف تأخير صغير عشان ما تحمّلش على الـ API
+                    usleep(500000); // 0.5 seconds
+
+                } catch (RequestException $e) {
+                    $results['failed']++;
+
+                    $person->update([
+                        'api_sync_status' => 'failed',
+                        'api_sync_error' => 'HTTP Error: ' . $e->getMessage()
+                    ]);
+
+                    $results['details'][] = [
+                        'person' => $person->getFullName(),
+                        'id' => $person->id,
+                        'status' => 'failed',
+                        'error' => 'HTTP Error: ' . $e->getMessage()
+                    ];
+
+                    \Log::error('API Sync Failed - HTTP Error', [
+                        'person_id' => $person->id,
+                        'error' => $e->getMessage()
+                    ]);
+                } catch (Exception $e) {
+                    $results['failed']++;
+
+                    $person->update([
+                        'api_sync_status' => 'failed',
+                        'api_sync_error' => 'System Error: ' . $e->getMessage()
+                    ]);
+
+                    $results['details'][] = [
+                        'person' => $person->getFullName(),
+                        'id' => $person->id,
+                        'status' => 'failed',
+                        'error' => 'System Error: ' . $e->getMessage()
+                    ];
+
+                    \Log::error('API Sync Failed - System Error', [
+                        'person_id' => $person->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            \Log::info('Bulk API Sync Completed', $results);
+
+            return response()->json([
+                'message' => 'Bulk sync completed',
+                'results' => $results
+            ]);
+        } catch (Exception $e) {
+            \Log::error('Bulk API Sync Failed', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'error' => 'Bulk sync failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    /**
+     * Prepare data for API request
+     */
+    private function prepareApiData(Person $person): array
+    {
+        $wifeId = $person->getWifeId();
+        $wifeName = $person->getWifeName();
+
+        // Log للتشخيص
+        \Log::info('API Sync - Person ID: ' . $person->id, [
+            'wife_loaded' => $person->relationLoaded('wife'),
+            'wifi_id' => $wifeId,
+            'wifi_name' => $wifeName,
+            'person_id_num' => $person->id_num
+        ]);
+
+        return [
+            'pid' => $person->id_num ?? '',
+            'fname' => $person->first_name ?? '',
+            'sname' => $person->father_name ?? '',
+            'tname' => $person->grandfather_name ?? '',
+            'lname' => $person->family_name ?? '',
+            'fcount' => $person->relatives_count ?? 0,
+            'mob_1' => $person->phone ?? '',
+            'mob_2' => $person->secondary_phone ?? '',
+            'block' => $person->block?->aid_id ?? '',
+            'note' => $person->notes ?? 'تم المزامنة تلقائياً',
+            'wifi_id' => $wifeId,
+            'wifi_name' => $wifeName,
+            'num_mail' => null,
+            'num_femail' => null,
+            'f_num_liss_3' => $person->getChildrenUnder3Count(),
+            'f_num_ill' => null,
+            'f_num_sn' => null,
+            'income' => $person->income_level ?? '1',
+            'home_status' => $person->getHomeStatus(),
+            'date_of_birth' => $person->dob?->format('Y-m-d') ?? '',
+            'Original_governorate' => $person->original_governorate ?? '',
+            'marital_status' => $person->social_status ?? '',
+        ];
+    }
+
+
+    /**
+     * Make API request
+     */
+    private function makeApiRequest(array $data): Response
+    {
+        $apiUrl = config('services.aid_api.url', 'https://aid.fajeryouth.org/public/API/convert/person/reg');
+        $authToken = config('services.aid_api.token', 'aaa@aaa@aaa@rrr');
+
+        // Log الـ data قبل الإرسال (خاصة wife)
+        \Log::info('API Request Data', [
+            'url' => $apiUrl,
+            'wif_id_sent' => $data['wifi_id'] ?? 'missing',
+            'wifi_name_sent' => $data['wifi_name'] ?? 'missing',
+            'full_data' => $data  // احذف ده بعد الاختبار عشان الـ log ميكبرش
+        ]);
+
+        $response = Http::timeout(30)
+            ->retry(3, 1000)
+            ->withHeaders(['auth' => $authToken])
+            ->asMultipart()
+            ->post($apiUrl, $data);
+
+        // Log الـ response
+        \Log::info('API Response', [
+            'status' => $response->status(),
+            'body' => $response->body(),
+            'json' => $response->json()
+        ]);
+
+        return $response;
+    }
+
+
+    /**
+     * Update person sync status
+     */
+    private function updateSyncStatus(Person $person, Response $response): void
+    {
+        if ($response->successful()) {
+            $person->update([
+                'api_synced_at' => now(),
+                'api_sync_status' => 'success',
+                'api_sync_error' => null, // Clear previous errors
+            ]);
+        } else {
+            $person->update([
+                'api_sync_status' => 'failed',
+                'api_sync_error' => 'HTTP ' . $response->status() . ': ' . $response->body(),
+            ]);
         }
     }
 }

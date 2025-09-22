@@ -20,6 +20,62 @@ foreach (glob(__DIR__.'/dashboard/*.php') as $routes) {
     include $routes;
 }
 
+// Route::get('ec',function(){
+//     try {
+//         $person->load(['block', 'relatives']);
+
+//         $data = [
+//             'pid' => $person->id_num ?? '',
+//             'fname' => $person->first_name ?? '',
+//             'sname' => $person->father_name ?? '',
+//             'tname' => $person->grandfather_name ?? '',
+//             'lname' => $person->family_name ?? '',
+//             'fcount' => $person->relatives_count ?? 0,
+//             'mob_1' => $person->phone ?? '',
+//             'mob_2' => '',
+//             'block' => $person->block_id ?? '',
+//             'note' => $person->notes ?? 'تم المزامنة تلقائياً',
+//             'wife_id' => $person->getWifeId(),
+//             'wife_name' => $person->getWifeName(),
+//             'num_mail' => '',
+//             'num_femail' => '',
+//             'f_num_liss_3' => $person->getChildrenUnder3Count(),
+//             'f_num_ill' => '',
+//             'f_num_sn' => '',
+//             'income' => '1',
+//             'home_status' => $person->getHomeStatus(),
+//             'date_of_birth' => $person->dob ? $person->dob->format('Y-m-d') : '',
+//             'Original_governorate' => $person->original_governorate ?? '',
+//             'marital_status' => $person->social_status ?? '',
+//         ];
+
+//         $response = Http::timeout(30)
+//             ->withHeaders(['auth' => 'aaa@aaa@aaa@rrr'])
+//             ->asMultipart()
+//             ->post('https://aid.fajeryouth.org/public/API/convert/person/reg', $data);
+
+//         if ($response->successful()) {
+//             $person->update([
+//                 'api_synced_at' => now(),
+//                 'api_sync_status' => 'success'
+//             ]);
+//         } else {
+//             $person->update([
+//                 'api_sync_status' => 'failed',
+//                 'api_sync_error' => $response->body()
+//             ]);
+//         }
+
+//         return response()->json([
+//             'person' => $person->first_name . ' ' . $person->family_name,
+//             'status' => $response->status(),
+//             'response' => $response->json() ?? $response->body(),
+//         ]);
+//     } catch (\Exception $e) {
+//         return response()->json(['error' => $e->getMessage()], 500);
+//     }
+// });
+
 
 Route::get('/sync-people-to-api', function () {
     try {
@@ -39,13 +95,13 @@ Route::get('/sync-people-to-api', function () {
                     'lname' => $person->family_name ?? '',
                     'fcount' => $person->relatives_count ?? 0,
                     'mob_1' => $person->phone ?? '',
-                    'mob_2' => '', // غير موجود
+                    'mob_2' => '',
                     'block' => $person->block_id ?? '',
                     'note' => $person->notes ?? 'تم المزامنة تلقائياً',
                     'wife_id' => $person->getWifeId(),
                     'wife_name' => $person->getWifeName(),
-                    'num_mail' => '', // غير موجود
-                    'num_femail' => '', // غير موجود
+                    'num_mail' => '',
+                    'num_femail' => '',
                     'f_num_liss_3' => $person->getChildrenUnder3Count(),
                     'f_num_ill' => '',
                     'f_num_sn' => '',
@@ -59,7 +115,7 @@ Route::get('/sync-people-to-api', function () {
                 $response = Http::timeout(30)
                     ->withHeaders(['auth' => 'aaa@aaa@aaa@rrr'])
                     ->asMultipart()
-                    ->post('https://reg.fajeryouth.org/sync-status', $data);
+                    ->post('https://aid.fajeryouth.org/public/API/convert/person/reg', $data);
 
                 if ($response->successful()) {
                     $person->update([
@@ -128,7 +184,7 @@ Route::get('/sync-person-to-api/{person}', function (Person $person) {
         $response = Http::timeout(30)
             ->withHeaders(['auth' => 'aaa@aaa@aaa@rrr'])
             ->asMultipart()
-            ->post('https://reg.fajeryouth.org/sync-status', $data);
+            ->post('https://aid.fajeryouth.org/public/API/convert/person/reg', $data);
 
         if ($response->successful()) {
             $person->update([
@@ -219,6 +275,11 @@ Route::get('people/view', 'PersonController@view')->name('people.view');
 Route::get('people/search', 'PersonController@search')->name('people.search');
 Route::post('people/clear', 'PersonController@clearSession')->name('people.clear');
 Route::resource('people', 'PersonController');
+
+Route::get('people/aid/api/{person}', 'PersonController@api')->name('people.aid.api');
+Route::post('people/aid/bulk-sync', 'PersonController@bulkApiSync')->name('people.aid.bulk-sync');
+Route::get('people/aid/sync-status', 'PersonController@syncStatus')->name('people.aid.sync-status');
+Route::post('people/aid/retry-failed', 'PersonController@retryFailedSync')->name('people.aid.retry-failed');
 
 // Complaints Routes.
 Route::get('trashed/complaints', 'ComplaintController@trashed')->name('complaints.trashed');

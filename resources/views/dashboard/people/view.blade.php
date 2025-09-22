@@ -15,6 +15,12 @@
                             :resource="trans('people.plural')">
                     </x-check-all-delete>
 
+                    <x-check-all-api
+                        type="{{ \App\Models\Person::class }}"
+                        :resource="trans('people.plural')"
+                        style="margin-left: 10px;">
+                    </x-check-all-api>
+
                     <x-check-all-deleteAreaResponsibles
                         type="{{ \App\Models\Person::class }}"
                         :resource="trans('people.plural')"

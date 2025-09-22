@@ -35,4 +35,10 @@ return [
         'beams_secret_key' => env('PUSHER_BEAMS_SECRET_KEY'),
     ],
 
+    // config/services.php
+    'aid_api' => [
+        'url' => env('AID_API_URL', 'https://aid.fajeryouth.org/public/API/convert/person/reg'),
+        'token' => env('AID_API_TOKEN', 'aaa@aaa@aaa@rrr'),
+    ],
+
 ];

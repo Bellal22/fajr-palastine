@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Person extends Model
 {
@@ -39,6 +40,16 @@ class Person extends Model
     public function familyMembers(): HasMany
     {
         return $this->hasMany(Person::class, 'relative_id', 'id_num');
+    }
+
+
+    /**
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function relatives(): HasMany
+    {
+        return $this->hasMany(Person::class, 'relative_id', 'relative_id');
     }
 
     /**
@@ -168,45 +179,27 @@ class Person extends Model
             ]);
         }
     }
-
+    public function wife(): HasOne
+    {
+        return $this->hasOne(Person::class, 'relative_id', 'id_num')
+            ->where('relationship', 'wife');
+    }
     public function getWifeId()
     {
-        $wife = $this->relatives()
-            ->where('relationship', 'wife')
-            ->first();
-
-        if ($wife) {
-            $wifePerson = Person::where('relative_id', $wife->relative_id)
-                ->where('id', '!=', $this->id)
-                ->first();
-            return $wifePerson ? $wifePerson->id_num : '';
-        }
-
-        return '';
+        return $this->wife ? $this->wife->id_num : '';
     }
-
     public function getWifeName()
     {
-        $wife = $this->relatives()
-            ->where('relationship', 'wife')
-            ->first();
-
-        if ($wife) {
-            $wifePerson = Person::where('relative_id', $wife->relative_id)
-                ->where('id', '!=', $this->id)
-                ->first();
-
-            if ($wifePerson) {
-                return trim(
-                    ($wifePerson->first_name ?? '') . ' ' .
-                    ($wifePerson->father_name ?? '') . ' ' .
-                    ($wifePerson->grandfather_name ?? '') . ' ' .
-                    ($wifePerson->family_name ?? '')
-                );
-            }
+        if (!$this->wife) {
+            return '';
         }
-
-        return '';
+        $nameParts = [
+            $this->wife->first_name ?? '',
+            $this->wife->father_name ?? '',
+            $this->wife->grandfather_name ?? '',
+            $this->wife->family_name ?? ''
+        ];
+        return trim(implode(' ', array_filter($nameParts))); // يزيل المسافات الزيادة والأجزاء الفارغة
     }
 
     public function getChildrenUnder3Count()
@@ -237,5 +230,10 @@ class Person extends Model
             default:
                 return 'غير محدد';
         }
+    }
+
+    public function getFullName(): string
+    {
+        return trim("{$this->first_name} {$this->family_name}");
     }
 }

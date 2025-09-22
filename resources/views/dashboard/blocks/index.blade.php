@@ -10,9 +10,10 @@
         <tr>
           <th colspan="100">
             <div class="d-flex">
-                <x-check-all-delete
+                {{-- <x-check-all-delete
                         type="{{ \App\Models\Block::class }}"
-                        :resource="trans('blocks.plural')"></x-check-all-delete>
+                        :resource="trans('blocks.plural')">
+                </x-check-all-delete> --}}
 
                 <div class="ml-2 d-flex justify-content-between flex-grow-1">
                     @include('dashboard.blocks.partials.actions.create')
@@ -22,9 +23,9 @@
           </th>
         </tr>
         <tr>
-            <th style="width: 30px;" class="text-center">
+            {{-- <th style="width: 30px;" class="text-center">
               <x-check-all></x-check-all>
-            </th>
+            </th> --}}
             <th>@lang('blocks.attributes.name')</th>
             <th>@lang('blocks.attributes.title')</th>
             <th>@lang('blocks.attributes.phone')</th>
@@ -36,9 +37,9 @@
         <tbody>
         @forelse($blocks as $block)
             <tr>
-                <td class="text-center">
+                {{-- <td class="text-center">
                   <x-check-all-item :model="$block"></x-check-all-item>
-                </td>
+                </td> --}}
                 <td>
                     <a href="{{ route('dashboard.blocks.show', $block) }}"
                        class="text-decoration-none text-ellipsis">
@@ -54,7 +55,7 @@
                 <td style="width: 160px">
                     @include('dashboard.blocks.partials.actions.show')
                     @include('dashboard.blocks.partials.actions.edit')
-                    @include('dashboard.blocks.partials.actions.delete')
+                    {{-- @include('dashboard.blocks.partials.actions.delete') --}}
                 </td>
             </tr>
         @empty
