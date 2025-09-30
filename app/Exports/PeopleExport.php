@@ -2,28 +2,32 @@
 
 namespace App\Exports;
 
+ini_set('memory_limit', '1024M');   // 1 GB
+ini_set('max_execution_time', 0);
+ini_set('max_input_time', -1);
+
 use App\Models\Person;
 use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\FromQuery;      // المصدر
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
-use App\Http\Filters\PersonFilter;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use App\Http\Filters\PersonFilter;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithMapping;
 
-class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, WithStyles, WithMapping
+class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithStyles, WithMapping, ShouldQueue
 {
     use Exportable;
 
     protected array $filters;
-    protected $request;
+    protected Request $request;
 
     public function __construct(Request $request, array $filters = [])
     {
@@ -31,7 +35,8 @@ class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, Wi
         $this->filters = $filters;
     }
 
-    public function collection(): Collection
+    /* =============== مصدر البيانات =============== */
+    public function query()
     {
         try {
             $query = Person::query()
@@ -48,14 +53,63 @@ class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, Wi
                     'p.social_status',
                     'p.dob',
                     'p.relatives_count',
-                    DB::raw('(SELECT id_num FROM persons WHERE relative_id = p.id_num AND relationship = \'wife\' ORDER BY id_num LIMIT 1) AS wife1_id_num'),
-                    DB::raw('(SELECT TRIM(CONCAT(first_name, \' \', father_name, \' \', grandfather_name, \' \', family_name)) FROM persons WHERE relative_id = p.id_num AND relationship = \'wife\' ORDER BY id_num LIMIT 1) AS wife1_full_name'),
-                    DB::raw('(SELECT id_num FROM persons WHERE relative_id = p.id_num AND relationship = \'wife\' ORDER BY id_num LIMIT 1, 1) AS wife2_id_num'),
-                    DB::raw('(SELECT TRIM(CONCAT(first_name, \' \', father_name, \' \', grandfather_name, \' \', family_name)) FROM persons WHERE relative_id = p.id_num AND relationship = \'wife\' ORDER BY id_num LIMIT 1, 1) AS wife2_full_name'),
-                    DB::raw('(SELECT id_num FROM persons WHERE relative_id = p.id_num AND relationship = \'wife\' ORDER BY id_num LIMIT 2, 1) AS wife3_id_num'),
-                    DB::raw('(SELECT TRIM(CONCAT(first_name, \' \', father_name, \' \', grandfather_name, \' \', family_name)) FROM persons WHERE relative_id = p.id_num AND relationship = \'wife\' ORDER BY id_num LIMIT 2, 1) AS wife3_full_name'),
-                    DB::raw('(SELECT id_num FROM persons WHERE relative_id = p.id_num AND relationship = \'wife\' ORDER BY id_num LIMIT 3, 1) AS wife4_id_num'),
-                    DB::raw('(SELECT TRIM(CONCAT(first_name, \' \', father_name, \' \', grandfather_name, \' \', family_name)) FROM persons WHERE relative_id = p.id_num AND relationship = \'wife\' ORDER BY id_num LIMIT 3, 1) AS wife4_full_name'),
+
+                    // الزوجة 1
+                    DB::raw('(SELECT id_num
+                              FROM persons
+                              WHERE relative_id = p.id_num
+                                    AND relationship = "wife"
+                              ORDER BY id_num
+                              LIMIT 1) AS wife1_id_num'),
+                    DB::raw('(SELECT TRIM(CONCAT(first_name," ",father_name," ",grandfather_name," ",family_name))
+                              FROM persons
+                              WHERE relative_id = p.id_num
+                                    AND relationship = "wife"
+                              ORDER BY id_num
+                              LIMIT 1) AS wife1_full_name'),
+
+                    // الزوجة 2
+                    DB::raw('(SELECT id_num
+                              FROM persons
+                              WHERE relative_id = p.id_num
+                                    AND relationship = "wife"
+                              ORDER BY id_num
+                              LIMIT 1 OFFSET 1) AS wife2_id_num'),
+                    DB::raw('(SELECT TRIM(CONCAT(first_name," ",father_name," ",grandfather_name," ",family_name))
+                              FROM persons
+                              WHERE relative_id = p.id_num
+                                    AND relationship = "wife"
+                              ORDER BY id_num
+                              LIMIT 1 OFFSET 1) AS wife2_full_name'),
+
+                    // الزوجة 3
+                    DB::raw('(SELECT id_num
+                              FROM persons
+                              WHERE relative_id = p.id_num
+                                    AND relationship = "wife"
+                              ORDER BY id_num
+                              LIMIT 1 OFFSET 2) AS wife3_id_num'),
+                    DB::raw('(SELECT TRIM(CONCAT(first_name," ",father_name," ",grandfather_name," ",family_name))
+                              FROM persons
+                              WHERE relative_id = p.id_num
+                                    AND relationship = "wife"
+                              ORDER BY id_num
+                              LIMIT 1 OFFSET 2) AS wife3_full_name'),
+
+                    // الزوجة 4
+                    DB::raw('(SELECT id_num
+                              FROM persons
+                              WHERE relative_id = p.id_num
+                                    AND relationship = "wife"
+                              ORDER BY id_num
+                              LIMIT 1 OFFSET 3) AS wife4_id_num'),
+                    DB::raw('(SELECT TRIM(CONCAT(first_name," ",father_name," ",grandfather_name," ",family_name))
+                              FROM persons
+                              WHERE relative_id = p.id_num
+                                    AND relationship = "wife"
+                              ORDER BY id_num
+                              LIMIT 1 OFFSET 3) AS wife4_full_name'),
+
                     'p.city',
                     'p.current_city',
                     'p.neighborhood',
@@ -65,58 +119,51 @@ class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, Wi
                 ])
                 ->from('persons AS p');
 
-            // تحديد نوع الاستعلام بناءً على الصفحة المطلوبة
-            $isViewPage = $this->request->route() &&
+            /* منطق الفلاتر كما هو */
+            $isView = $this->request->route() &&
                 str_contains($this->request->route()->getName(), 'view');
 
-            if ($isViewPage) {
-                // إذا كان التصدير من صفحة view
+            if ($isView) {
+                // صفحة view: شرط وجود area_responsible_id و block_id
                 $query->whereNotNull('p.area_responsible_id')
                     ->whereNotNull('p.block_id');
             } else {
-                // إذا كان التصدير من صفحة index
-                $query->whereNull('p.relationship');
+                // صفحة index: شرط عدم وجود relationship و عدم وجود block_id
+                $query->whereNull('p.relationship')
+                    ->whereNull('p.block_id');
             }
 
-            // تطبيق فلتر مسؤول المنطقة
-            if ($areaResponsibleId = $this->request->get('area_responsible_id')) {
-                $query->where('p.area_responsible_id', $areaResponsibleId);
+            if ($id = $this->request->get('area_responsible_id')) {
+                $query->where('p.area_responsible_id', $id);
             } elseif (auth()->user()?->isSupervisor()) {
-                if ($isViewPage) {
-                    $query->where('p.area_responsible_id', auth()->user()->id);
-                } else {
-                    $query->where(function ($q) {
-                        $q->where('p.area_responsible_id', auth()->user()->id)
+                $isView
+                    ? $query->where('p.area_responsible_id', auth()->id())
+                    : $query->where(function ($q) {
+                        $q->where('p.area_responsible_id', auth()->id())
                             ->orWhereNull('p.area_responsible_id');
                     });
-                }
             }
 
-            // تطبيق فلتر المندوب
-            if ($blockId = $this->request->get('block_id')) {
-                $query->where('p.block_id', $blockId);
+            if ($block = $this->request->get('block_id')) {
+                $query->where('p.block_id', $block);
             }
 
             $query->latest('p.created_at');
 
-            // تطبيق باقي الفلاتر
+            /* تطبيق بقية الفلاتر */
             $filter = new PersonFilter($query, 'p');
-            $filteredQuery = $filter->apply($this->request->all());
-
-            return $filteredQuery->get();
+            return $filter->apply($this->request->all());
         } catch (\Exception $e) {
-            logger()->error('خطأ في تصدير البيانات', [
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'filters' => $this->request->all()
+            logger()->error('Export query failed', [
+                'msg'   => $e->getMessage(),
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine()
             ]);
-
-            return collect();
+            return Person::query()->whereRaw('0 = 1');
         }
     }
 
-    // باقي الكود كما هو...
+    /* =============== العناوين =============== */
     public function headings(): array
     {
         return [
@@ -150,113 +197,66 @@ class PeopleExport implements FromCollection, WithHeadings, WithChunkReading, Wi
         ];
     }
 
-    public function map($person): array
+    /* =============== تحويل كل صف =============== */
+    public function map($p): array
     {
-        static $rowNumber = 0;
-        $rowNumber++;
-
-        try {
-            return [
-                $rowNumber,
-                $person->id_num ?? '',
-                $person->first_name ?? '',
-                $person->father_name ?? '',
-                $person->grandfather_name ?? '',
-                $person->family_name ?? '',
-                $person->gender ?? '',
-                $person->phone ?? '',
-                $person->areaResponsible?->name ?? 'غير متوفر',
-                $person->block?->name ?? 'غير متوفر',
-                __($person->social_status) ?? '',
-                $person->dob ?? '',
-                $person->relatives_count ?? 0,
-                $person->wife1_id_num ?? '',
-                $person->wife1_full_name ?? '',
-                $person->wife2_id_num ?? '',
-                $person->wife2_full_name ?? '',
-                $person->wife3_id_num ?? '',
-                $person->wife3_full_name ?? '',
-                $person->wife4_id_num ?? '',
-                $person->wife4_full_name ?? '',
-                __($person->city) ?? '',
-                __($person->current_city) ?? '',
-                __($person->neighborhood) ?? '',
-                $person->employment_status ?? '',
-                $person->has_condition == 1 ? 'نعم' : 'لا',
-                $person->condition_description ?? '',
-            ];
-        } catch (\Exception $e) {
-            logger()->error('خطأ في تحويل البيانات للصف: ' . $rowNumber, [
-                'error' => $e->getMessage(),
-                'person_id' => $person->id ?? 'غير معروف'
-            ]);
-
-            // إرجاع صف فارغ في حالة الخطأ
-            return array_fill(0, 26, '');
-        }
-    }
-
-    public function styles(Worksheet $sheet)
-    {
-        try {
-            // تفعيل الاتجاه من اليمين إلى اليسار
-            $sheet->setRightToLeft(true);
-
-            // تحديد الأعمدة لتكون عرضها تلقائي بناءً على المحتوى
-            foreach (range('A', 'Z') as $columnID) {
-                $sheet->getColumnDimension($columnID)->setAutoSize(true);
-            }
-
-            // تغيير ارتفاع الصف الأول
-            $sheet->getRowDimension(1)->setRowHeight(30);
-
-            // تنسيق الخط للصف الأول
-            $sheet->getStyle('A1:Z1')->getFont()->setBold(true)->setSize(12);
-
-            // توسيط النص في الصف الأول (العناوين)
-            $sheet->getStyle('A1:Z1')->getAlignment()
-                ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                ->setVertical(Alignment::VERTICAL_CENTER);
-
-            // تنسيق عمود الرقم التسلسلي (A)
-            $sheet->getStyle('A')->getFont()->setSize(11);
-            $sheet->getStyle('A')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-            // تنسيق باقي الأعمدة لتكون لليمين (بدءًا من B)
-            $sheet->getStyle('B:Z')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-
-            // إضافة الحدود لجميع الخلايا
-            $sheet->getStyle('A1:Z' . $sheet->getHighestRow())
-                ->getBorders()
-                ->getAllBorders()
-                ->setBorderStyle(Border::BORDER_THIN);
-
-            // تلوين الصف الأول
-            $sheet->getStyle('A1:Z1')->getFill()
-                ->setFillType(Fill::FILL_SOLID)
-                ->getStartColor()->setRGB('FFA500');
-
-            // تلوين العمود الأول بالكامل
-            $column = 'A';
-            $highestRow = $sheet->getHighestRow();
-            $sheet->getStyle("{$column}1:{$column}{$highestRow}")
-                ->getFill()
-                ->setFillType(Fill::FILL_SOLID)
-                ->getStartColor()
-                ->setRGB('FFA500');
-        } catch (\Exception $e) {
-            logger()->error('خطأ في تنسيق ملف الإكسل', [
-                'error' => $e->getMessage()
-            ]);
-        }
+        static $i = 0;
+        $i++;
 
         return [
-            1 => ['font' => ['bold' => true]],
+            $i,
+            $p->id_num,
+            $p->first_name,
+            $p->father_name,
+            $p->grandfather_name,
+            $p->family_name,
+            $p->gender,
+            $p->phone,
+            $p->areaResponsible?->name ?? 'غير متوفر',
+            $p->block?->name ?? 'غير متوفر',
+            __($p->social_status),
+            $p->dob,
+            $p->relatives_count,
+            $p->wife1_id_num,
+            $p->wife1_full_name,
+            $p->wife2_id_num,
+            $p->wife2_full_name,
+            $p->wife3_id_num,
+            $p->wife3_full_name,
+            $p->wife4_id_num,
+            $p->wife4_full_name,
+            __($p->city),
+            __($p->current_city),
+            __($p->neighborhood),
+            $p->employment_status,
+            $p->has_condition ? 'نعم' : 'لا',
+            $p->condition_description,
         ];
+    }
+
+    /* =============== تنسيق مبسّط =============== */
+    public function styles(Worksheet $sheet)
+    {
+        $sheet->setRightToLeft(true);
+        foreach (range('A', 'AA') as $col) {
+            $sheet->getColumnDimension($col)->setWidth(15);
+        }
+        $sheet->getStyle('A1:AA1')->applyFromArray([
+            'font' => ['bold' => true],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'FFA500']
+            ],
+            'borders' => [
+                'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+            ]
+        ]);
+        return [];
     }
 
     public function chunkSize(): int
     {
-        return 1000;
+        return 500;  // يناسب 1 GB ذاكرة
     }
 }
