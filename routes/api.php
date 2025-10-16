@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Dashboard\DataSyncController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,6 +14,14 @@ use Illuminate\Support\Facades\Route;
 | and "api." route's alias name. Enjoy building your API!
 |
 */
+
+
+Route::middleware('auth:api')->get('/user', function (Request $request) {
+    return $request->user();
+});
+
+// إضافة مسار لاستقبال البيانات من السيرفر الأول
+Route::post('/sync-data', [DataSyncController::class, 'sync']);
 
 foreach (glob(__DIR__.'/api/*.php') as $routes) {
     include $routes;

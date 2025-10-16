@@ -30,6 +30,18 @@ return [
 
     'env' => env('APP_ENV', 'production'),
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sync API Key
+    |--------------------------------------------------------------------------
+    |
+    | This key is used to authenticate incoming data sync requests.
+    |
+    */
+
+    'sync_api_key' => env('SYNC_API_KEY'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode
