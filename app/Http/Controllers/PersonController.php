@@ -61,7 +61,6 @@ class PersonController extends Controller
         return view('person', array_merge(['id_num' => $request->session()->get('id_num')], $data));
     }
 
-
     public function store(StorePersonRequest $request)
     {
         try {
@@ -105,7 +104,6 @@ class PersonController extends Controller
         return redirect()->route('persons.createFamily');
 
     }
-
 
     public function createFamily(Request $request)
     {
@@ -153,6 +151,10 @@ class PersonController extends Controller
         // تجهيز البيانات للإدخال في قاعدة البيانات مع الحفاظ على gender
         $persons = collect($peopleList)
             ->map(function ($p) use ($id_num) {
+                // تصحيح قيمة area_responsible_id لتكون null إذا كانت فارغة
+                if (array_key_exists('area_responsible_id', $p) && $p['area_responsible_id'] === '') {
+                    $p['area_responsible_id'] = null;
+                }
                 return array_merge($p, [
                     'relative_id' => $id_num,
                     'id_num' => $p['id_num'] ?? Session::get('id_num'),
@@ -160,14 +162,25 @@ class PersonController extends Controller
                 ]);
             })
             ->push(array_merge($person, [
+                // نفس التصحيح على الشخص الأساسي
+                'area_responsible_id' => (array_key_exists('area_responsible_id', $person) && $person['area_responsible_id'] === '') ? null : ($person['area_responsible_id'] ?? null),
                 'id_num' => $person['id_num'] ?? Session::get('id_num'),
                 'has_condition' => array_key_exists('has_condition', $person) && $person['has_condition'] === '' ? 0 : ($person['has_condition'] ?? 0)
             ]))
             ->toArray();
 
-        // إدخال جميع البيانات دفعة واحدة لتقليل عدد الاستعلامات
+        // إدخال جميع البيانات دفعة واحدة لتقليل عدد الاستعلامات مع تسجيل الأخطاء
         foreach ($persons as $person) {
-            Person::create($person);
+            try {
+                Log::info('Creating person:', $person);
+                Person::create($person);
+            } catch (\Exception $e) {
+                Log::error('Error creating person: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'خطأ في إدخال بيانات الشخص: ' . $e->getMessage()
+                ]);
+            }
         }
 
         // تفريغ الجلسة
@@ -300,13 +313,36 @@ class PersonController extends Controller
 
     public function updateProfileParent(Request $request)
     {
-        // Retrieve the authenticated user
         $user = Person::where('id_num', $request->id_num)->first();
-        // Update user profile
-        $user->update($request->all());
+
+        $data = $request->all();
+
+        // تحويل النص "null" أو السلسلة الفارغة إلى قيمة null الحقيقية
+        if (isset($data['area_responsible_id']) && ($data['area_responsible_id'] === 'null' || $data['area_responsible_id'] === '')) {
+            $data['area_responsible_id'] = null;
+        }
+
+        $allowedNeighborhoods = [
+            'westernLine',
+            'alMahatta',
+            'alKatiba',
+            'alBatanAlSameen',
+            'alMaskar',
+            'alMashroo',
+            'hamidCity',
+            'downtown'
+        ];
+
+        // حذف إعادة تعيين area_responsible_id إلى null عند حي غير مسموح به
+        // if (!in_array($request->neighborhood, $allowedNeighborhoods)) {
+        //     $data['area_responsible_id'] = null;
+        // }
+
+        $user->update($data);
 
         return response()->json(['success' => true, 'message' => 'Profile updated successfully']);
     }
+
 
     public function updateProfileChild(Request $request)
     {

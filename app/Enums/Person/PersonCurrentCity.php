@@ -6,6 +6,9 @@ use Illuminate\Support\Str;
 use Spatie\Enum\Enum;
 
 /**
+ * @method static self northGaza()
+ * @method static self gaza()
+ * @method static self alwsta()
  * @method static self khanYounis()
  * @method static self rafah()
  */

@@ -166,15 +166,16 @@ class DataSyncController extends Controller
 
     /**
      * دالة مساعدة لفصل الاسم الكامل إلى أربعة أجزاء.
+     * تم تعديلها لإرجاع سلاسل فارغة بدلاً من null لتجنب أخطاء قاعدة البيانات.
      */
     private function parseFullName($fullName)
     {
         $parts = explode(' ', trim($fullName), 4);
         return [
-            'first_name'        => $parts[0] ?? null,
-            'father_name'       => $parts[1] ?? null,
-            'grandfather_name'  => $parts[2] ?? null,
-            'family_name'       => $parts[3] ?? null,
+            'first_name'        => $parts[0] ?? '', // تغيير من null إلى ''
+            'father_name'       => $parts[1] ?? '', // تغيير من null إلى ''
+            'grandfather_name'  => $parts[2] ?? '', // تغيير من null إلى ''
+            'family_name'       => $parts[3] ?? '', // تغيير من null إلى ''
         ];
     }
 }

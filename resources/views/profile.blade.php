@@ -1398,27 +1398,120 @@
 
     <script>
 
-        document.addEventListener('DOMContentLoaded', function () {
-            var citySelect = document.getElementById('edit_current_city');
-            if (citySelect && citySelect.value) {
-                // Trigger the function manually
+        // document.addEventListener('DOMContentLoaded', function () {
+        //     var citySelect = document.getElementById('edit_current_city');
+        //     if (citySelect && citySelect.value) {
+        //         updateNeighborhoods(citySelect.value, '{{ $person->neighborhood }}', null);
 
-                updateNeighborhoods(citySelect.value, '{{ $person->neighborhood }}',null);
+        //         const neighborhoodSelect = document.getElementById('edit_neighborhood');
+        //         const areaResponsibleContainer = document.getElementById('edit_areaResponsibleField');
+        //         const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
 
-                const neighborhoodSelect = document.getElementById('edit_neighborhood');
-                const areaResponsibleContainer = document.getElementById('edit_areaResponsibleField');
-                const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
+        //         const visibleNeighborhoods = [
+        //             'المواصي',
+        //             'السطر الغربي',
+        //             'السطر الشرقي',
+        //             'المخطة',
+        //             'الكنيبة',
+        //             'البطن السمين',
+        //             'المعسكر',
+        //             'المشروع',
+        //             'مدينة حمد',
+        //             'وسط البلد'
+        //         ];
 
+        //         const selectedOption = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text.trim();
 
-                // Check if the selected option's text is "مواصي"
-                const selectedOption = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text.trim();
+        //         if (visibleNeighborhoods.includes(selectedOption)) {
+        //             areaResponsibleContainer.style.display = 'block';  // أظهر الحقل
+        //         } else {
+        //             areaResponsibleContainer.style.display = 'none';   // أخفِ الحقل
+        //             areaResponsibleSelect.value = '';                  // إعادة تعيين القيمة
+        //         }
+        //     }
+        // });
 
-                if (selectedOption === 'المواصي') {
-                    areaResponsibleContainer.style.display = 'block';
-                } else {
-                    areaResponsibleContainer.style.display = 'none';
-                    areaResponsibleSelect.value = ''; // Reset the value when not مواصي
+        // حفظ نسخة من كافة خيارات مسؤول المنطقة الأصلية عند تحميل الصفحة (بحقل edit_area_responsible_id)
+        const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
+        const areaResponsibleField = document.getElementById('edit_areaResponsibleField');
+        const allOptions = Array.from(areaResponsibleSelect.options).map(option => ({
+            value: option.value,
+            text: option.text
+        }));
+
+        document.getElementById('edit_neighborhood').addEventListener('change', function() {
+            const neighborhood = this.value;
+
+            function showOptions(ids, addPlaceholder = false, defaultValue = null) {
+                areaResponsibleSelect.innerHTML = '';
+
+                if (addPlaceholder) {
+                    const placeholderOption = document.createElement('option');
+                    placeholderOption.value = '';
+                    placeholderOption.text = 'اختر مسؤول المنطقة';
+                    placeholderOption.disabled = true;
+                    placeholderOption.selected = true;
+                    areaResponsibleSelect.appendChild(placeholderOption);
                 }
+
+                ids.forEach(id => {
+                    const opt = allOptions.find(o => o.value === id.toString());
+                    if (opt) {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = opt.value;
+                        optionElement.text = opt.text;
+                        // تعيين تحديد القيمة الافتراضية
+                        if (defaultValue && opt.value === defaultValue.toString()) {
+                            optionElement.selected = true;
+                        }
+                        areaResponsibleSelect.appendChild(optionElement);
+                    }
+                });
+
+                if (!addPlaceholder && !defaultValue) {
+                    areaResponsibleSelect.value = '';
+                }
+            }
+
+            // تحديث عرض خيارات مسؤول المنطقة بناءً على الحي المختار
+            if (neighborhood === 'alMawasi') {
+                areaResponsibleField.style.display = 'flex';
+                let excluded = ['29', '30', '31', '32', '33', '34'];
+                const filtered = allOptions.filter(o => !excluded.includes(o.value));
+                areaResponsibleSelect.innerHTML = '';
+                filtered.forEach(opt => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = opt.value;
+                    optionElement.text = opt.text;
+                    areaResponsibleSelect.appendChild(optionElement);
+                });
+                areaResponsibleSelect.value = '';
+
+            } else if (neighborhood === 'hamidCity') {
+                areaResponsibleField.style.display = 'flex';
+                showOptions(['29'], false, '29');
+
+            } else if (neighborhood === 'downtown') {
+                areaResponsibleField.style.display = 'flex';
+                showOptions(['31', '32'], true, null);
+
+            } else if (['westernLine', 'alMahatta', 'alKatiba'].includes(neighborhood)) {
+                areaResponsibleField.style.display = 'flex';
+                showOptions(['34'], false, '34');
+
+            } else if (neighborhood === 'alBatanAlSameen') {
+                areaResponsibleField.style.display = 'flex';
+                showOptions(['30'], false, '30');
+
+            } else if (['alMaskar', 'alMashroo'].includes(neighborhood)) {
+                areaResponsibleField.style.display = 'flex';
+                showOptions(['33'], false, '33');
+
+            } else {
+                areaResponsibleField.style.display = 'none';
+                areaResponsibleSelect.innerHTML = '';
+                areaResponsibleSelect.value = '';
+                document.getElementById('area_responsible_id_error').style.display = 'none';
             }
         });
 
@@ -1921,11 +2014,33 @@
                 descriptionRow.classList.add("hidden");
             }
         }
-
-
         function saveChangesParent() {
             console.log("✅ الدالة saveChangesParent تعمل!");
 
+            let neighborhoodValue = document.getElementById('edit_neighborhood').value.trim();
+
+            let allowedNeighborhoods = [
+                "westernLine",
+                "alMahatta",
+                "alKatiba",
+                "alBatanAlSameen",
+                "alMaskar",
+                "alMashroo",
+                "hamidCity",
+                "downtown"
+            ];
+
+            let areaResponsibleInput = document.getElementById('edit_area_responsible_id');
+
+            // إزالة إعادة تعيين قيمة مسؤول المنطقة عند حي غير مسموح لكي لا تصبح null تلقائياً
+            // if (!allowedNeighborhoods.includes(neighborhoodValue)) {
+            //     areaResponsibleInput.value = '';
+            // }
+
+            // جلب القيمة المحدثة بعد التعديل
+            let rawValue = areaResponsibleInput.value.trim();
+
+            // تجهيز بيانات النموذج مع تحويل القيمة الفارغة إلى null
             let formData = {
                 first_name: document.getElementById('edit_first_name').value.trim(),
                 father_name: document.getElementById('edit_father_name').value.trim(),
@@ -1943,14 +2058,16 @@
                 housing_damage_status: document.getElementById('edit_housing_damage_status').value.trim(),
                 current_city: document.getElementById('edit_current_city').value.trim(),
                 housing_type: document.getElementById('edit_housing_type').value.trim(),
-                neighborhood: document.getElementById('edit_neighborhood').value.trim(),
-                area_responsible_id: document.getElementById('edit_area_responsible_id').value.trim(),
+                neighborhood: neighborhoodValue,
+                area_responsible_id: rawValue === '' ? null : rawValue,
                 landmark: document.getElementById('edit_landmark').value.trim()
             };
 
-            // التحقق من القيم المطلوبة
+            // التحقق من الحقول المطلوبة باستثناء 'area_responsible_id' و 'condition_description'
             for (let key in formData) {
-                if (!formData[key] && key !== 'condition_description') {
+                if ((key !== 'condition_description') &&
+                    (key !== 'area_responsible_id') &&
+                    (!formData[key])) {
                     Swal.fire({
                         title: 'تنبيه!',
                         text: `يرجى ملء جميع الحقول المطلوبة (${key})`,
@@ -2526,26 +2643,26 @@
             }
         }
 
-        document.addEventListener("DOMContentLoaded", function () {
-            console.log("DOMContentLoaded event fired");
+        // document.addEventListener("DOMContentLoaded", function () {
+        //     console.log("DOMContentLoaded event fired");
 
-            const currentCitySelect = document.getElementById("edit_current_city");
-            const neighborhoodSelect = document.getElementById("edit_neighborhood");
-            const storedNeighborhood = "{{ $person->neighborhood }}";
-            const storedCity = "{{ $person->current_city }}";
-            const originalCity = "{{ $person->current_city }}"; // احفظ المحافظة الأصلية
-            console.log("Original City (بعد التعريف):", originalCity);
+        //     const currentCitySelect = document.getElementById("edit_current_city");
+        //     const neighborhoodSelect = document.getElementById("edit_neighborhood");
+        //     const storedNeighborhood = "{{ $person->neighborhood }}";
+        //     const storedCity = "{{ $person->current_city }}";
+        //     const originalCity = "{{ $person->current_city }}"; // احفظ المحافظة الأصلية
+        //     console.log("Original City (بعد التعريف):", originalCity);
 
-            console.log("Stored City:", storedCity);
-            console.log("Stored Neighborhood:", storedNeighborhood);
+        //     console.log("Stored City:", storedCity);
+        //     console.log("Stored Neighborhood:", storedNeighborhood);
 
-            updateNeighborhoods(storedCity, storedNeighborhood, originalCity); // مرر المحافظة الأصلية
+        //     updateNeighborhoods(storedCity, storedNeighborhood, originalCity); // مرر المحافظة الأصلية
 
-            currentCitySelect.addEventListener("change", function () {
-                console.log("City changed to:", this.value);
-                updateNeighborhoods(this.value, null, originalCity); // مرر المحافظة الأصلية
-            });
-        });
+        //     currentCitySelect.addEventListener("change", function () {
+        //         console.log("City changed to:", this.value);
+        //         updateNeighborhoods(this.value, null, originalCity); // مرر المحافظة الأصلية
+        //     });
+        // });
 
         function populateNeighborhoodSelect(neighborhoods, neighborhoodSelect) {
             neighborhoods.forEach(neighborhood => {
@@ -2595,6 +2712,38 @@
                     { value: "mirage", label: "ميراج" },
                     { value: "european", label: "الأوروبي" },
                     { value: "alFakhari", label: "الفخاري" }
+                ],
+                "northGaza": [
+                    { value: "jabalia", label: "جباليا" },
+                    { value: "beitLahia", label: "بيت لاهيا" },
+                    { value: "beitHanoun", label: "بيت حانون" },
+                    { value: "omAlNasr", label: "أم النصر" },
+                    { value: "nazla", label: "النزلة" }
+                ],
+                "alwsta": [
+                    { value: "alZahra", label: "الزهراء" },
+                    { value: "alMughraqa", label: "المغراقة" },
+                    { value: "alBureij", label: "البريج" },
+                    { value: "alNuseirat", label: "النصيرات" },
+                    { value: "alMaghazi", label: "المغازي" },
+                    { value: "alZawaida", label: "الزوايدة" },
+                    { value: "deirAlBalah", label: "دير البلح" }
+                ],
+                "gaza": [
+                    { value: "shujaiya", label: "الشجاعية" },
+                    { value: "alDaraj", label: "الدرج" },
+                    { value: "alTuffah", label: "التفاح" },
+                    { value: "alRimal", label: "الرمال" },
+                    { value: "alZaytoun", label: "الزيتون" },
+                    { value: "alNasr", label: "النصر" },
+                    { value: "sheikhRadwan", label: "الشيخ رضوان" },
+                    { value: "telAlHawa", label: "تل الهوا" },
+                    { value: "sheikhAjleen", label: "الشيخ عجلين" },
+                    { value: "alSabra", label: "الصبرة" },
+                    { value: "alKaramah", label: "الكرامة" },
+                    { value: "birAlNajah", label: "بير النعجة" },
+                    { value: "juhrAlDeek", label: "جحر الديك" },
+                    { value: "shatiCamp", label: "مخيم الشاطئ" }
                 ]
             };
 
@@ -2615,7 +2764,6 @@
                 }
             }
         }
-
 
         window.onload = function () {
             const currentCitySelect = document.getElementById('edit_current_city');
@@ -2671,71 +2819,89 @@
             const areaResponsibleContainer = document.getElementById('edit_areaResponsibleField');
             const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
 
+            const visibleNeighborhoods = [
+                    'المواصي',
+                    'السطر الغربي',
+                    'السطر الشرقي',
+                    'المخطة',
+                    'الكنيبة',
+                    'البطن السمين',
+                    'المعسكر',
+                    'المشروع',
+                    'مدينة حمد',
+                    'وسط البلد'
+                ];
 
-            // Check if the selected option's text is "مواصي"
             const selectedOption = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text.trim();
 
-            if (selectedOption === 'المواصي') {
+            if (visibleNeighborhoods.includes(selectedOption)) {
                 areaResponsibleContainer.style.display = 'block';
             } else {
                 areaResponsibleContainer.style.display = 'none';
-                areaResponsibleSelect.value = ''; // Reset the value when not مواصي
+                areaResponsibleSelect.value = ''; // إعادة تعيين القيمة عندما لا يكون في القائمة
             }
 
             // جلب القيم المسموحة من الخادم
             const validValues = @json(\App\Enums\Person\PersonNeighborhood::toValues());
 
-            // إذا كان الحقل فارغًا
             if (value === '') {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 neighborhoodInput.style.borderColor = 'red';
             }
-            // إذا كانت القيمة غير صالحة
             else if (!validValues.includes(value)) {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'القيمة المدخلة غير صالحة.';
                 neighborhoodInput.style.borderColor = 'red';
             }
-            // إذا كانت القيمة صالحة
             else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
-                neighborhoodInput.style.borderColor = ''; // إزالة لون الإطار
+                neighborhoodInput.style.borderColor = '';
                 return true;
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const editNeighborhoodSelect = document.getElementById('edit_neighborhood');
-            const areaResponsibleField = document.getElementById('areaResponsibleField');
-            const editAreaResponsibleSelect = document.getElementById('edit_area_responsible_id');
-            const editAreaResponsibleError = document.getElementById('edit_area_responsible_id_error');
 
-            // دالة لتحديث حالة حقل مسؤول المنطقة
-            function updateAreaResponsibleVisibility() {
-                if (editNeighborhoodSelect && areaResponsibleField) {
-                    // إضافة/إزالة فئات CSS بدلاً من تعديل الأنماط المضمنة
-                    if (editNeighborhoodSelect.value === 'alMawasi') {
-                        areaResponsibleField.classList.remove('hidden');
-                    } else {
-                        areaResponsibleField.classList.add('hidden');
-                        if (editAreaResponsibleSelect) {
-                            editAreaResponsibleSelect.value = '';
-                        }
-                        if (editAreaResponsibleError) {
-                            editAreaResponsibleError.style.display = 'none'; // أو .classList.add('hidden') إذا كان ذلك متاحًا في الـ CSS
-                        }
-                    }
-                }
-            }
+        // document.addEventListener('DOMContentLoaded', function () {
+        //     const editNeighborhoodSelect = document.getElementById('edit_neighborhood');
+        //     const areaResponsibleField = document.getElementById('areaResponsibleField');
+        //     const editAreaResponsibleSelect = document.getElementById('edit_area_responsible_id');
+        //     const editAreaResponsibleError = document.getElementById('edit_area_responsible_id_error');
 
-            // تشغيل الدالة عند تحميل الصفحة
-            if (editNeighborhoodSelect) {
-                updateAreaResponsibleVisibility();
-                editNeighborhoodSelect.addEventListener('change', updateAreaResponsibleVisibility);
-            }
-        });
+        //     function updateAreaResponsibleVisibility() {
+        //         if (editNeighborhoodSelect && areaResponsibleField) {
+        //             const visibleNeighborhoods = [
+        //                 'alMawasi',
+        //                 'westernLine',
+        //                 'alMahatta',
+        //                 'alKatiba',
+        //                 'alBatanAlSameen',
+        //                 'alMaskar',
+        //                 'alMashroo',
+        //                 'hamidCity',
+        //                 'downtown'
+        //             ];
+        //             if (visibleNeighborhoods.includes(editNeighborhoodSelect.value)) {
+        //                 areaResponsibleField.style.display = 'flex';  // أظهر الحقل
+        //             } else {
+        //                 areaResponsibleField.style.display = 'none';  // أخفِ الحقل
+        //                 if (editAreaResponsibleSelect) {
+        //                     editAreaResponsibleSelect.value = '';
+        //                 }
+        //                 if (editAreaResponsibleError) {
+        //                     editAreaResponsibleError.style.display = 'none';
+        //                 }
+        //             }
+        //         }
+        //     }
+
+        //     // تشغيل الدالة عند تحميل الصفحة
+        //     if (editNeighborhoodSelect) {
+        //         updateAreaResponsibleVisibility();
+        //         editNeighborhoodSelect.addEventListener('change', updateAreaResponsibleVisibility);
+        //     }
+        // });
 
         function validateAreaResponsible() {
             const select = document.getElementById('edit_area_responsible_id');

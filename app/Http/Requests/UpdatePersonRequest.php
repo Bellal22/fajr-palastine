@@ -54,9 +54,9 @@ class UpdatePersonRequest extends FormRequest
             'area_responsible_id' => [
                 'nullable',
                 Rule::exists('area_responsibles', 'id')->when(
-                    $this->input('neighborhood') === PersonNeighborhood::alMawasi(),
-                    function (Rule $rule) {
-                        return $rule->required();
+                    $this->input('neighborhood') === PersonNeighborhood::alMawasi() && $this->filled('area_responsible_id'),
+                    function ($rule) {
+                        return $rule;
                     }
                 ),
             ],
