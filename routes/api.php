@@ -67,4 +67,16 @@ Route::get('/select/area_responsibles', 'AreaResponsibleController@select')->nam
 Route::apiResource('blocks', 'BlockController');
 Route::get('/select/blocks', 'BlockController@select')->name('blocks.select');
 
+// Items Routes.
+Route::apiResource('items', 'ItemController');
+Route::get('/select/items', 'ItemController@select')->name('items.select');
+
+// Items Routes.
+Route::apiResource('items', 'ItemController');
+Route::get('/select/items', 'ItemController@select')->name('items.select');
+
+// InboundShipments Routes.
+Route::apiResource('inbound_shipments', 'InboundShipmentController');
+Route::get('/select/inbound_shipments', 'InboundShipmentController@select')->name('inbound_shipments.select');
+
 /*  The routes of generated crud will set here: Don't remove this line  */

@@ -311,4 +311,25 @@ Route::delete('blocks/{trashed_block}/forceDelete', 'BlockController@forceDelete
 Route::get('blocks/by-area', [BlockController::class, 'getByAreaResponsible'])->name('blocks.byAreaResponsible');
 Route::resource('blocks', 'BlockController');
 
+// Items Routes.
+Route::get('trashed/items', 'ItemController@trashed')->name('items.trashed');
+Route::get('trashed/items/{trashed_item}', 'ItemController@showTrashed')->name('items.trashed.show');
+Route::post('items/{trashed_item}/restore', 'ItemController@restore')->name('items.restore');
+Route::delete('items/{trashed_item}/forceDelete', 'ItemController@forceDelete')->name('items.forceDelete');
+Route::resource('items', 'ItemController');
+
+// Items Routes.
+Route::get('trashed/items', 'ItemController@trashed')->name('items.trashed');
+Route::get('trashed/items/{trashed_item}', 'ItemController@showTrashed')->name('items.trashed.show');
+Route::post('items/{trashed_item}/restore', 'ItemController@restore')->name('items.restore');
+Route::delete('items/{trashed_item}/forceDelete', 'ItemController@forceDelete')->name('items.forceDelete');
+Route::resource('items', 'ItemController');
+
+// InboundShipments Routes.
+Route::get('trashed/inbound_shipments', 'InboundShipmentController@trashed')->name('inbound_shipments.trashed');
+Route::get('trashed/inbound_shipments/{trashed_inbound_shipment}', 'InboundShipmentController@showTrashed')->name('inbound_shipments.trashed.show');
+Route::post('inbound_shipments/{trashed_inbound_shipment}/restore', 'InboundShipmentController@restore')->name('inbound_shipments.restore');
+Route::delete('inbound_shipments/{trashed_inbound_shipment}/forceDelete', 'InboundShipmentController@forceDelete')->name('inbound_shipments.forceDelete');
+Route::resource('inbound_shipments', 'InboundShipmentController');
+
 /*  The routes of generated crud will set here: Don't remove this line  */
