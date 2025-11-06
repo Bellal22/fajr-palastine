@@ -216,8 +216,13 @@
         </p>
 
         <p class="styled-text">
-            يمكنكم الآن التسجيل و تقديم الشكاوي عن طريق هذا النظام بعد التحقق من صحة رقم الهوية🤗
+            يمكنكم الآن التسجيل وتحديث بياناتك وتقديم الشكاوي عن طريق هذا النظام بعد التحقق من صحة رقم الهوية🤗
         </p>
+
+        {{-- <h1>
+            النظام قيد الصيانة الان سنكون متواجدين في أقرب وقت
+        </h1> --}}
+
         <!-- النموذج -->
         <form action="{{ url('/set-session') }}" method="POST" onsubmit="return validateIdNumber()">
             @csrf
@@ -231,9 +236,19 @@
             </div>
             <div class="buttons-container">
                 <button type="submit">التالي</button>
-                <button onclick="checkAndRedirectToLogin()">لقد سجلت بالفعل؟ الذهاب لتسجيل الدخول</button>
+                {{-- <button onclick="checkAndRedirectToLogin()">لقد سجلت بالفعل؟ الذهاب لتسجيل الدخول</button> --}}
             </div>
         </form>
+
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+            <button onclick="window.location.href='{{ route('loginView') }}'">
+                لقد سجلت بالفعل؟ الذهاب لتسجيل الدخول
+            </button>
+            <button onclick="window.location.href='{{ route('complaint') }}'">
+                انتقال إلى صفحة الشكاوى
+            </button>
+        </div>
+
     </div>
 
     <script>

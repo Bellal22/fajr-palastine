@@ -149,8 +149,11 @@
             @csrf
             <div class="form-group">
                 <label for="id_num">رقم الهوية</label>
-                <input type="number" id="id_num" name="id_num" value="{{ session('id_num') }}" readonly disabled>
-            </div>
+                <input type="number" id="id_num" name="id_num"
+                    placeholder="أدخل رقم الهوية"
+                    value="{{ old('id_num') }}"
+                    required>
+                </div>
 
             <div class="form-group">
                 <label for="complaint_title">عنوان الشكوى</label>
@@ -175,6 +178,7 @@
 
             <button type="submit">إرسال الشكوى</button>
         </form>
+
     </div>
 
     <!-- رسائل SweetAlert -->

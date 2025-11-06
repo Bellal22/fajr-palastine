@@ -1476,7 +1476,7 @@
             // تحديث عرض خيارات مسؤول المنطقة بناءً على الحي المختار
             if (neighborhood === 'alMawasi') {
                 areaResponsibleField.style.display = 'flex';
-                let excluded = ['29', '30', '31', '32', '33', '34'];
+                let excluded = ['29', '30', '31', '32', '33', '34','35'];
                 const filtered = allOptions.filter(o => !excluded.includes(o.value));
                 areaResponsibleSelect.innerHTML = '';
                 filtered.forEach(opt => {
@@ -1491,17 +1491,13 @@
                 areaResponsibleField.style.display = 'flex';
                 showOptions(['29'], false, '29');
 
-            } else if (neighborhood === 'downtown') {
+            } else if (['downtown', 'alQalaaSouth', 'alBatanAlSameen', 'qizanAbuRashwan'].includes(neighborhood)) {
                 areaResponsibleField.style.display = 'flex';
-                showOptions(['31', '32'], true, null);
+                showOptions(['31', '32', '30'], true, null);
 
-            } else if (['westernLine', 'alMahatta', 'alKatiba'].includes(neighborhood)) {
+            } else if (['westernLine', 'easternLine', 'alMahatta', 'alKatiba', 'northJalalStreet'].includes(neighborhood)) {
                 areaResponsibleField.style.display = 'flex';
                 showOptions(['34'], false, '34');
-
-            } else if (neighborhood === 'alBatanAlSameen') {
-                areaResponsibleField.style.display = 'flex';
-                showOptions(['30'], false, '30');
 
             } else if (['alMaskar', 'alMashroo'].includes(neighborhood)) {
                 areaResponsibleField.style.display = 'flex';
@@ -2711,7 +2707,9 @@
                     { value: "downtown", label: "وسط البلد" },
                     { value: "mirage", label: "ميراج" },
                     { value: "european", label: "الأوروبي" },
-                    { value: "alFakhari", label: "الفخاري" }
+                    { value: "alFakhari", label: "الفخاري" },
+                    { value: "alQalaaSouth", label: "القلعة وجنوبها" },
+                    { value: "northJalalStreet", label: "شمال شارع جلال" }
                 ],
                 "northGaza": [
                     { value: "jabalia", label: "جباليا" },
@@ -2823,13 +2821,15 @@
                     'المواصي',
                     'السطر الغربي',
                     'السطر الشرقي',
-                    'المخطة',
-                    'الكنيبة',
+                    'المحطة',
+                    'الكتيبة',
                     'البطن السمين',
                     'المعسكر',
                     'المشروع',
                     'مدينة حمد',
-                    'وسط البلد'
+                    'وسط البلد',
+                    'القلعة وجنوبها',
+                    'شمال شارع جلال'
                 ];
 
             const selectedOption = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text.trim();
@@ -2859,6 +2859,10 @@
                 errorMessage.textContent = '';
                 neighborhoodInput.style.borderColor = '';
                 return true;
+            }
+            if (editNeighborhoodSelect) {
+                updateAreaResponsibleVisibility();
+                editNeighborhoodSelect.addEventListener('change', updateAreaResponsibleVisibility);
             }
         }
 

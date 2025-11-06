@@ -166,7 +166,7 @@
 
         <div class="buttons-container">
             <button onclick="checkIdNumberAndRedirect()">انتقال إلى صفحة التسجيل</button>
-            <button onclick="checkAndRedirectToComplaints()">انتقال إلى صفحة الشكاوى</button>
+            <button onclick="window.location.href='{{ route('complaint') }}'">انتقال إلى صفحة الشكاوى</button>
         </div>
     </div>
 

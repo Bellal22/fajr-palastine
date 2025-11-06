@@ -152,7 +152,7 @@ class AuthController extends Controller
         }
 
         // إنشاء كلمة مرور جديدة
-        $newPassword = Str::random(8);
+        $newPassword = '123456789';
 
         // تحديث كلمة المرور
         DB::table('persons')->where('id_num', $idNum)->update([

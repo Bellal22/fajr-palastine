@@ -115,7 +115,7 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
                     'p.neighborhood',
                     'p.employment_status',
                     'p.has_condition',
-                    'p.condition_description',
+                    'p.api_sync_status',
                 ])
                 ->from('persons AS p');
 
@@ -193,7 +193,7 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
             'الحي السكني',
             'حالة العمل',
             'لديه حالة صحية',
-            'وصف الحالة الصحية',
+            'حالة المزامنة',
         ];
     }
 
@@ -230,7 +230,7 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
             __($p->neighborhood),
             $p->employment_status,
             $p->has_condition ? 'نعم' : 'لا',
-            $p->condition_description,
+            $p->api_sync_status,
         ];
     }
 

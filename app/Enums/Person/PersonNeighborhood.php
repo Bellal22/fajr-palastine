@@ -17,6 +17,8 @@ use Spatie\Enum\Enum;
  * @method static self alMahatta()
  * @method static self alKatiba()
  * @method static self alBatanAlSameen()
+ * @method static self alQalaaSouth()
+ * @method static self northJalalStreet()
  * @method static self alMaskar()
  * @method static self alMashroo()
  * @method static self hamidCity()

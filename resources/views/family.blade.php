@@ -395,9 +395,12 @@
                 </tr>
             </tbody>
         </table>
-        <button type="button" onclick="submitForm()" class="custom-btn">
+        <button id="send-btn"type="button" onclick="submitForm()" class="custom-btn">
             إرسال البيانات
         </button>
+        <div id="loadingModal" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); color: white; font-size: 20px; text-align:center; padding-top: 20%;">
+            جاري تسجيل بياناتك...
+        </div>
 
     </div>
 
@@ -881,12 +884,26 @@
             });
 
             window.submitForm = function submitForm() {
+                const submitBtn = document.getElementById('send-btn');
+                submitBtn.disabled = true;
+
+                // إظهار رسالة "جاري تسجيل بياناتك"
+                Swal.fire({
+                    title: 'جاري تسجيل بياناتك...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
                 let person = @json($person);
 
                 if (peopleList.length === 0 &&
                     !(['single', 'divorced', 'widowed'].includes(person.social_status))
                 ) {
+                    Swal.close(); // إخفاء رسالة التحميل
                     showAlert('لا توجد بيانات لإرسالها!', 'warning');
+                    submitBtn.disabled = false; // إعادة تفعيل الزر
                     return;
                 }
 
@@ -894,12 +911,16 @@
 
                 if (person.social_status === 'married') { // "متزوج"
                     if (wivesCount !== 1) {
+                        Swal.close();
                         showAlert('الشخص المتزوج يجب أن يكون لديه زوجة واحدة فقط في قائمة الأفراد.', 'error');
+                        submitBtn.disabled = false;
                         return;
                     }
-                } else if (person.social_status === 'polygamous') { // "متعدد" (لأكثر من زوجة)
+                } else if (person.social_status === 'polygamous') { // "متعدد"
                     if (wivesCount < 2 || wivesCount > 4) {
+                        Swal.close();
                         showAlert('الشخص المتعدد يجب أن يكون لديه من 2 إلى 4 زوجات في قائمة الأفراد.', 'error');
+                        submitBtn.disabled = false;
                         return;
                     }
                 }
@@ -919,33 +940,38 @@
                                 type: 'POST',
                                 data: { _token: csrfToken },
                                 success: function(res) {
+                                    Swal.close(); // إغلاق رسالة التحميل
                                     console.log("تم تنفيذ storeFamily بنجاح، إعادة التوجيه إلى:", res.redirect);
                                     if (res.redirect) {
                                         window.location.href = res.redirect;
                                     } else {
                                         console.error("إعادة التوجيه غير معرفة في الاستجابة");
+                                        submitBtn.disabled = false;
                                     }
                                 },
                                 error: function(xhr) {
+                                    Swal.close();
                                     console.error("خطأ أثناء تنفيذ storeFamily:", xhr.responseText);
+                                    submitBtn.disabled = false;
                                 }
                             });
                         }
                     },
                     error: function (xhr) {
+                        Swal.close();
                         const response = xhr.responseJSON;
+                        submitBtn.disabled = false;
                         if (response.error) {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'خطأ!',
-                                text: response.error,  // عرض الخطأ مع أرقام الهوية المكررة
+                                text: response.error,
                                 confirmButtonColor: '#d33',
                                 iconColor: '#d33',
                                 confirmButtonText: 'إغلاق'
                             }).then(() => {
-                                // إعادة البيانات المدخلة مع أرقام الهوية المكررة إلى الصفحة
-                                sessionStorage.setItem('peopleList', JSON.stringify(response.peopleList));  // حفظ البيانات في sessionStorage
-                                window.location.href = response.redirect;  // الرجوع إلى صفحة الإدخال مع البيانات
+                                sessionStorage.setItem('peopleList', JSON.stringify(response.peopleList));
+                                window.location.href = response.redirect;
                             });
                         }
                     }

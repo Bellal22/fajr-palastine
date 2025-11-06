@@ -14,6 +14,7 @@ use App\Http\Requests\StorePersonRequest;
 use App\Http\Requests\UpdateFamilyRequest;
 use App\Http\Requests\UpdatePersonRequest;
 use App\Models\Person;
+use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
@@ -80,7 +81,13 @@ class PersonController extends Controller
             $data['relationship'] = 'رب الأسرة نفسه'; // تعيين صلة القرابة
 
             // حفظ البيانات في الجلسة
-            $request->session()->put('person', array_merge($request->all(), ['id_num' => $id_num,'passkey' => Str::random(8)]));
+            $request->session()->put('person', array_merge(
+                $request->all(),
+                [
+                    'id_num' => $id_num,
+                    'passkey' => '123456789'
+                ]
+            ));
 
             // حفظ البيانات في الجلسة (طريقة واحدة وموحدة)
             $firstPersonData = [
@@ -136,24 +143,29 @@ class PersonController extends Controller
             return redirect()->route('persons.intro');
         }
 
-        $peopleList = session('peopleList', []);
-        $gender = session('person')['gender'];
-        $socialStatus = session('person')['social_status'];
+        // تحقق من وجود رب الأسرة مسبقاً
+        if (Person::where('id_num', $id_num)->exists()) {
+            // ارجع برسالة تفيد أن بيانات رب الأسرة مسجلة مسبقاً لتجنب التكرار
+            return response()->json([
+                'success' => false,
+                'message' => 'رب الأسرة مسجل مسبقًا، لا يمكن تكرار التسجيل.'
+            ]);
+        }
 
+        $peopleList = session('peopleList', []);
         $person = $session->get('person');
         $person['relatives_count'] = count($peopleList) + 1;
 
-        // التحقق من شرط التعدد
-        if ($person['social_status'] === 'polygamous' && collect($peopleList)->where('relationship', 'wife')->count() < 2) {
-            return back()->withErrors(['persons' => 'يجب أن يكون لديك زوجتان على الأقل في حالة التعدد.']);
-        }
-
-        // تجهيز البيانات للإدخال في قاعدة البيانات مع الحفاظ على gender
+        // تجهيز بيانات الأشخاص مع التنظيف كما في كودك الحالي
         $persons = collect($peopleList)
             ->map(function ($p) use ($id_num) {
-                // تصحيح قيمة area_responsible_id لتكون null إذا كانت فارغة
                 if (array_key_exists('area_responsible_id', $p) && $p['area_responsible_id'] === '') {
                     $p['area_responsible_id'] = null;
+                }
+                if (isset($p['phone'])) {
+                    $cleanPhone = str_replace('-', '', $p['phone']);
+                    $cleanPhone = ltrim($cleanPhone, '0');
+                    $p['phone'] = $cleanPhone;
                 }
                 return array_merge($p, [
                     'relative_id' => $id_num,
@@ -162,36 +174,36 @@ class PersonController extends Controller
                 ]);
             })
             ->push(array_merge($person, [
-                // نفس التصحيح على الشخص الأساسي
                 'area_responsible_id' => (array_key_exists('area_responsible_id', $person) && $person['area_responsible_id'] === '') ? null : ($person['area_responsible_id'] ?? null),
                 'id_num' => $person['id_num'] ?? Session::get('id_num'),
-                'has_condition' => array_key_exists('has_condition', $person) && $person['has_condition'] === '' ? 0 : ($person['has_condition'] ?? 0)
+                'has_condition' => array_key_exists('has_condition', $person) && $person['has_condition'] === '' ? 0 : ($person['has_condition'] ?? 0),
+                'phone' => isset($person['phone']) ? ltrim(str_replace('-', '', $person['phone']), '0') : null,
             ]))
             ->toArray();
 
-        // إدخال جميع البيانات دفعة واحدة لتقليل عدد الاستعلامات مع تسجيل الأخطاء
-        foreach ($persons as $person) {
-            try {
-                Log::info('Creating person:', $person);
+        try {
+            DB::beginTransaction();
+
+            foreach ($persons as $person) {
                 Person::create($person);
-            } catch (\Exception $e) {
-                Log::error('Error creating person: ' . $e->getMessage());
-                return response()->json([
-                    'success' => false,
-                    'message' => 'خطأ في إدخال بيانات الشخص: ' . $e->getMessage()
-                ]);
             }
+
+            DB::commit();
+            $session->forget('peopleList');
+
+            return response()->json([
+                'success' => true,
+                'redirect' => route('persons.success')
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ أثناء تسجيل البيانات: ' . $e->getMessage()
+            ]);
         }
-
-        // تفريغ الجلسة
-        $session->forget('peopleList');
-
-        // إعادة التوجيه إلى صفحة النجاح
-        return response()->json([
-            'success' => true,
-            'redirect' => route('persons.success')
-        ]);
     }
+
 
     public function addFamily(Request $request)
     {
@@ -333,16 +345,19 @@ class PersonController extends Controller
             'downtown'
         ];
 
-        // حذف إعادة تعيين area_responsible_id إلى null عند حي غير مسموح به
-        // if (!in_array($request->neighborhood, $allowedNeighborhoods)) {
-        //     $data['area_responsible_id'] = null;
-        // }
+        // تنظيف رقم الهاتف قبل الحفظ (إذا موجود)
+        if (isset($data['phone'])) {
+            // إزالة الشرطات
+            $cleanPhone = str_replace('-', '', $data['phone']);
+            // حذف الصفر الأول إذا موجود في البداية
+            $cleanPhone = ltrim($cleanPhone, '0');
+            $data['phone'] = $cleanPhone;
+        }
 
         $user->update($data);
 
         return response()->json(['success' => true, 'message' => 'Profile updated successfully']);
     }
-
 
     public function updateProfileChild(Request $request)
     {

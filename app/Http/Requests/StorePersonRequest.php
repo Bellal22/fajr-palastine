@@ -44,10 +44,16 @@ class StorePersonRequest extends FormRequest
             'gender'                  => ['required', 'in:ذكر,أنثى'],
             'dob'                     => ['required', 'date'],
             'phone'                   => ['required', 'string', 'regex:/^(059|056)\d{7}$/'],
-            'social_status'           => [ 'required', Rule::in(PersonSocialStatus::toValues()),
+            'social_status' => [
+                'required',
+                Rule::in(PersonSocialStatus::toValues()),
                 function ($attribute, $value, $fail) {
                     if (request('gender') === 'أنثى' && ($value === 'married' || $value === 'polygamous')) {
                         $fail('يرجى التسجيل ببيانات الزوج حتى لو كان الزوج متزوج أكثر من زوجة.');
+                    }
+                    // إضافة شرط منع الذكر الأعزب من التسجيل
+                    if (request('gender') === 'ذكر' && $value === 'single') {
+                        $fail('ممنوع التسجيل للذكر الغير متزوج.');
                     }
                 }
             ],

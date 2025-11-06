@@ -40,12 +40,20 @@ Route::post('/set-session', function (Request $request) {
         'id_num.digits' => 'رقم الهوية يجب أن يتكون من 9 أرقام',
     ]);
 
-    // تخزين الرقم في الجلسة
-    session(['id_num' => $request->id_num]);
+    // تخزين الرقم في الجلسة بشكل صحيح
+    $request->session()->put('id_num', $request->id_num);
 
-    // التوجيه إلى صفحة 'choose'
+    // حفظ الجلسة فوراً
+    $request->session()->save();
+
+    // إعادة التوجيه إلى صفحة choose
     return view('choose');
 });
+
+Route::get('/complaint', function () {
+    return view('complaint');  // هذا يشير إلى resources/views/complaint.blade.php
+})->name('complaint');
+
 
 Route::get('/create', function (Request $request) {
     $id_num = session('id_num', 'Session not found'); // إذا كانت الجلسة غير موجودة سترجع "Session not found"

@@ -248,6 +248,8 @@
             <img src="{{asset('background/image.jpg')}}" alt="جمعية الفجر الشبابي الفلسطيني" class="logo">
         </div>
 
+        {{-- <h1>النظام قيد الصيانة سنكون متواجدين في أقرب وقت</h1> --}}
+
         <h1>تسجيل الدخول</h1>
 
         <form id="loginForm" action="{{ route('user.login') }}" method="POST">

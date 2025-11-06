@@ -34,28 +34,23 @@ class ComplaintController extends Controller
      */
     public function store(Request $request)
     {
-        // جلب رقم الهوية من الجلسة
-        $idNum = session('id_num');
-
-        // التحقق من صحة الحقول الأخرى باستثناء id_num
-        $validatedData = $request->validate([
-            'complaint_title' => 'required|string|max:255',
-            'complaint_text'  => 'required|string',
+        // تحقق وجود id_num مع الشروط المناسبة
+        $request->validate([
+            'id_num' => ['required', 'numeric', 'digits:9'],
+            'complaint_title' => ['required', 'string', 'max:255'],
+            'complaint_text' => ['required', 'string'],
         ]);
 
-        // حذف الحقل id_num من الطلب (لحماية إضافية)
-        $request->request->remove('id_num');
-
-        // تخزين البيانات مع رقم الهوية من الجلسة
+        // التخزين في القاعدة
         Complaint::create([
-            'id_num'          => $idNum, // رقم الهوية من الجلسة
-            'complaint_title' => $validatedData['complaint_title'], // عنوان الشكوى
-            'complaint_text'  => $validatedData['complaint_text'], // نص الشكوى
+            'id_num' => $request->id_num,
+            'complaint_title' => $request->complaint_title,
+            'complaint_text' => $request->complaint_text,
         ]);
 
-        // إعادة المستخدم مع رسالة نجاح
-        return view('successcomplaint');
+        return redirect()->back()->with('success', 'تم إرسال الشكوى بنجاح!');
     }
+
 
 
     /**
