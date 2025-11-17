@@ -236,7 +236,6 @@
             </div>
             <div class="buttons-container">
                 <button type="submit">التالي</button>
-                {{-- <button onclick="checkAndRedirectToLogin()">لقد سجلت بالفعل؟ الذهاب لتسجيل الدخول</button> --}}
             </div>
         </form>
 

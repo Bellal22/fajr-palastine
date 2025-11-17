@@ -48,12 +48,27 @@ class StorePersonRequest extends FormRequest
                 'required',
                 Rule::in(PersonSocialStatus::toValues()),
                 function ($attribute, $value, $fail) {
-                    if (request('gender') === 'أنثى' && ($value === 'married' || $value === 'polygamous')) {
+                    $gender = request('gender');
+
+                    if ($gender === 'أنثى' && ($value === 'married' || $value === 'polygamous')) {
                         $fail('يرجى التسجيل ببيانات الزوج حتى لو كان الزوج متزوج أكثر من زوجة.');
                     }
-                    // إضافة شرط منع الذكر الأعزب من التسجيل
-                    if (request('gender') === 'ذكر' && $value === 'single') {
+                    if ($gender === 'ذكر' && $value === 'single') {
                         $fail('ممنوع التسجيل للذكر الغير متزوج.');
+                    }
+
+                    // منع وجود علاقات 'husband' أو 'wife' في أفراد الأسرة عند الحالات الاجتماعية التالية:
+                    $forbiddenStatuses = ['single', 'divorced', 'widowed'];
+                    if (in_array($value, $forbiddenStatuses)) {
+                        $familyMembers = request('family_members'); // أو اسم الحقل الذي يحتوي على قائمة أفراد الأسرة
+                        if (is_array($familyMembers)) {
+                            foreach ($familyMembers as $member) {
+                                if (isset($member['relationship']) && in_array($member['relationship'], ['husband', 'wife'])) {
+                                    $fail('لا يمكن تسجيل الزوج أو الزوجة إذا كانت الحالة الاجتماعية ' . $value);
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             ],

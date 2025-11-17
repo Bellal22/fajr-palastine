@@ -898,6 +898,17 @@
 
                 let person = @json($person);
 
+                if (['single', 'divorced', 'widowed'].includes(person.social_status)) {
+                    const forbiddenRelationships = ['husband', 'wife'];
+                    const hasForbidden = peopleList.some(p => forbiddenRelationships.includes(p.relationship));
+                    if (hasForbidden) {
+                        Swal.close();
+                        showAlert('لا يمكن تسجيل أفراد الأسرة ذات علاقات زوج/زوجة إذا كانت الحالة الاجتماعية أعزب/ة أو مطلق/ة أو أرمل/ة.', 'error');
+                        submitBtn.disabled = false;
+                        return;
+                    }
+                }
+
                 if (peopleList.length === 0 &&
                     !(['single', 'divorced', 'widowed'].includes(person.social_status))
                 ) {
