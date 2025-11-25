@@ -425,6 +425,15 @@
                 <input type="text" id="family_name" name="family_name" placeholder="اسم العائلة" required>
             </div>
         </div>
+        <div class="form-group">
+            <label for="relationship">صلة القرابة</label>
+            <select id="relationship" name="relationship" required>
+                <option value="">اختر صلة القرابة</option>
+                @foreach($relationships as $key => $relationship)
+                    <option value="{{$key}}">{{$relationship}}</option>
+                @endforeach
+            </select>
+        </div>
         <div class="form-row">
             <div class="form-group">
                 <label for="id_num">رقم الهوية:</label>
@@ -435,15 +444,8 @@
             <div class="form-group">
                 <label for="dob">تاريخ الميلاد</label>
                 <input type="date" id="dob" name="dob" required>
+                <span id="dob_error" class="error-message" style="display:none; color:#ff0000;"></span>
             </div>
-        </div>
-        <div class="form-group">
-            <label for="relationship">صلة القرابة</label>
-            <select id="relationship" name="relationship" required>
-                @foreach($relationships as $key => $relationship)
-                    <option value="{{$key}}">{{$relationship}}</option>
-                @endforeach
-            </select>
         </div>
         <div class="form-group">
             <label for="has_condition">هل يعاني من من مرض أو إعاقة أو إصابة حرب</label>
@@ -482,6 +484,15 @@
                 <input type="text" id="edit_family_name" name="edit_family_name" placeholder="اسم العائلة" required>
             </div>
         </div>
+        <div class="form-group">
+            <label for="relationship">صلة القرابة</label>
+            <select id="edit_relationship" name="edit_relationship" required>
+                <option value="">اختر صلة القرابة</option>
+                @foreach($relationships as $key => $relationship)
+                    <option value="{{$key}}">{{$relationship}}</option>
+                @endforeach
+            </select>
+        </div>
         <div class="form-row">
             <div class="form-group">
                 <label for="id_num">رقم الهوية:</label>
@@ -492,15 +503,8 @@
             <div class="form-group">
                 <label for="dob">تاريخ الميلاد</label>
                 <input type="date" id="edit_dob" name="edit_dob" required>
+                <span id="edit_dob_error" class="error-message" style="display:none; color:#ff0000;"></span>
             </div>
-        </div>
-        <div class="form-group">
-            <label for="relationship">صلة القرابة</label>
-            <select id="edit_relationship" name="edit_relationship" required>
-                @foreach($relationships as $key => $relationship)
-                    <option value="{{$key}}">{{$relationship}}</option>
-                @endforeach
-            </select>
         </div>
         <div class="form-group">
             <label for="has_condition">هل يعاني من من مرض أو إعاقة أو إصابة حرب</label>
@@ -518,8 +522,107 @@
 
     </div>
 
-
     <script>
+
+        function calculateAge(dobStr) {
+            const dob = new Date(dobStr);
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        // عناصر الإضافة
+        const relationship     = document.getElementById('relationship');
+        const dob              = document.getElementById('dob');
+        const dobError         = document.getElementById('dob_error');
+        const addBtn           = document.getElementById('add-person-btn');
+
+        // عناصر التعديل
+        const editRelationship = document.getElementById('edit_relationship');
+        const editDob          = document.getElementById('edit_dob');
+        const editDobError     = document.getElementById('edit_dob_error');
+        const saveEditBtn      = document.getElementById('save-edits');
+
+        // في البداية تاريخ الميلاد disabled
+        dob.disabled = true;
+        editDob.disabled = true;
+
+        relationship.addEventListener('change', function () {
+            dob.disabled = false;
+            dobError.style.display = 'none';
+        });
+
+        editRelationship.addEventListener('change', function () {
+            editDob.disabled = false;
+            editDobError.style.display = 'none';
+        });
+
+        // دالة فحص الزوج/الزوجة
+        function isSpouse(rel) {
+            // غيّري القيم حسب الـ key عندك في الـ relationships
+            return ['زوج', 'زوجة', 'wife', 'husband'].includes(rel);
+        }
+
+        // زر إضافة فرد (AJAX)
+        addBtn.addEventListener('click', function (e) {
+            dobError.style.display = 'none';
+            dobError.textContent   = '';
+
+            const rel      = relationship.value;
+            const dobValue = dob.value;
+
+            if (isSpouse(rel)) {
+                if (!dobValue) {
+                    dobError.textContent = 'يرجى إدخال تاريخ الميلاد للزوج/الزوجة.';
+                    dobError.style.display = 'block';
+                    return; // لا تكمل، لا تستدعي AJAX
+                }
+
+                const age = calculateAge(dobValue);
+                if (age < 16) {
+                    dobError.textContent = 'عمر الزوج/الزوجة يجب أن يكون 16 سنة فأكثر.';
+                    dobError.style.display = 'block';
+                    return; // لا تكمل، لا تستدعي AJAX
+                }
+            }
+
+            // لو كل شيء تمام، هنا استدعي دالة الـ AJAX حقتك
+            // مثال:
+            // submitAddPersonAjax();
+        });
+
+        // زر حفظ التعديل (AJAX)
+        saveEditBtn.addEventListener('click', function (e) {
+            editDobError.style.display = 'none';
+            editDobError.textContent   = '';
+
+            const rel      = editRelationship.value;
+            const dobValue = editDob.value;
+
+            if (isSpouse(rel)) {
+                if (!dobValue) {
+                    editDobError.textContent = 'يرجى إدخال تاريخ الميلاد للزوج/الزوجة.';
+                    editDobError.style.display = 'block';
+                    return; // لا تكمل AJAX
+                }
+
+                const age = calculateAge(dobValue);
+                if (age < 16) {
+                    editDobError.textContent = 'عمر الزوج/الزوجة يجب أن يكون 16 سنة فأكثر.';
+                    editDobError.style.display = 'block';
+                    return; // لا تكمل AJAX
+                }
+            }
+
+            // لو التحقق تمام، استدعي AJAX التعديل
+            // مثال:
+            // submitEditPersonAjax();
+            // هنا يكمل الحفظ عادي
+        });
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const relationshipTranslations = {
             'father':'أب',
@@ -794,31 +897,58 @@
             });
 
             $('#add-person-btn').click(function () {
+                dobError.style.display = 'none';
+                dobError.textContent = '';
+
                 const id_num = $('#id_num').val();
                 const first_name = $('#first_name').val();
                 const father_name = $('#father_name').val();
                 const grandfather_name = $('#grandfather_name').val();
                 const family_name = $('#family_name').val();
-                const dob = $('#dob').val();
-                const relationship = $('#relationship').val();
+                const dobVal = $('#dob').val();
+                const relationshipVal = $('#relationship').val();
                 const has_condition = $('#has_condition').val();
                 const condition_description = $('#condition_description').val();
 
-                if (!id_num || !first_name ||!father_name ||!grandfather_name ||!family_name || !dob || !relationship || !has_condition || (has_condition === 'نعم' && !condition_description)) {
+                // دالة تساعد على التحقق إذا كانت العلاقة زوج أو زوجة حسب قيم keys
+                function isSpouse(rel) {
+                    return ['زوج', 'زوجة', 'wife', 'husband'].includes(rel);
+                }
+
+                // تحقق من العمر لو كانت الزوج/زوجة
+                if (isSpouse(relationshipVal)) {
+                    if (!dobVal) {
+                        dobError.textContent = 'يرجى إدخال تاريخ الميلاد للزوج/الزوجة.';
+                        dobError.style.display = 'block';
+                        return; // منع الإضافة
+                    }
+                    const age = calculateAge(dobVal);
+                    if (age < 16) {
+                        dobError.textContent = 'عمر الزوج/الزوجة يجب أن يكون 16 سنة فأكثر.';
+                        dobError.style.display = 'block';
+                        return; // منع الإضافة
+                    }
+                }
+
+                // تحقق من الحقول المطلوبة
+                if (!id_num || !first_name || !father_name || !grandfather_name || !family_name || !dobVal || !relationshipVal || !has_condition || (has_condition === 'نعم' && !condition_description)) {
                     showAlert('يرجى ملء جميع الحقول المطلوبة!', 'error');
                     return;
                 }
+
                 if (!validateIdNumber('id_num')) {
                     return;
                 }
+
+                // إضافة البيانات بعد التحقق
                 peopleList.push({
                     id_num,
                     first_name,
                     father_name,
                     grandfather_name,
                     family_name,
-                    dob,
-                    relationship,
+                    dob: dobVal,
+                    relationship: relationshipVal,
                     has_condition: has_condition === 'نعم' ? 1 : 0,
                     condition_description: has_condition === 'نعم' ? condition_description : null
                 });
@@ -829,6 +959,7 @@
                 if (addedPeople === maxPeople) {
                     $('#open-form-btn').prop('disabled', true);
                 }
+
                 $('#form-popup input[type="text"], #form-popup input[type="number"], #form-popup input[type="date"], #form-popup select, #form-popup textarea').val('');
                 $('#form-popup').fadeOut();
                 $('#overlay').fadeOut();
@@ -855,9 +986,33 @@
                 deletePerson(index);
             });
 
-            $('#save-edits').off('click').on('click', function() {
+            $('#save-edits').off('click').on('click', function (e) {
+                e.preventDefault(); // منع الإرسال الافتراضي مؤقتاً للتحقق
+
+                editDobError.style.display = 'none';
+                editDobError.textContent = '';
+
+                const rel = $('#edit_relationship').val();
+                const dobVal = $('#edit_dob').val();
+
+                if (isSpouse(rel)) {
+                    if (!dobVal) {
+                        editDobError.textContent = 'يرجى إدخال تاريخ الميلاد للزوج/الزوجة.';
+                        editDobError.style.display = 'block';
+                        return; // توقف عن الحفظ
+                    }
+                    const age = calculateAge(dobVal);
+                    if (age < 16) {
+                        editDobError.textContent = 'عمر الزوج/الزوجة يجب أن يكون 16 سنة فأكثر.';
+                        editDobError.style.display = 'block';
+                        return; // توقف عن الحفظ
+                    }
+                }
+
+                // تحقق من باقي الحقول المطلوبة إذا أردتِ (اختياري)
+
+                // إذا التحقق ناجح، استمري بالحفظ
                 let index = $(this).data('index');
-                console.log("📌 حفظ التعديلات للشخص رقم:", index);
                 if (index !== undefined && peopleList[index]) {
                     peopleList[index] = {
                         first_name: $('#edit_first_name').val(),
@@ -865,8 +1020,8 @@
                         grandfather_name: $('#edit_grandfather_name').val(),
                         family_name: $('#edit_family_name').val(),
                         id_num: $('#edit_id_num').val(),
-                        dob: $('#edit_dob').val(),
-                        relationship: $('#edit_relationship').val(),
+                        dob: dobVal,
+                        relationship: rel,
                         has_condition: $('#edit_has_condition').val() === 'نعم' ? 1 : 0,
                         condition_description: $('#edit_condition_description').val()
                     };
