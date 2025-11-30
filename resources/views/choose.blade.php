@@ -172,15 +172,12 @@
 
     <script>
         function checkIdNumberAndRedirect() {
-            // جلب رقم الهوية من meta tag بدلاً من تمريره مباشرةً
-            let id_num = document.querySelector('meta[name="id_num"]').content;
-
-            if (!id_num) {
+            let id_num_meta = document.querySelector('meta[name="id_num"]');
+            if (!id_num_meta || !id_num_meta.content) {
                 console.error("رقم الهوية غير موجود في الجلسة.");
                 return;
             }
 
-            // إرسال طلب للتحقق من رقم الهوية
             fetch(`/check-id`, {
                 method: 'GET',
                 headers: {
@@ -189,7 +186,8 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.exists) {
+                // 1) مسجل في جدول الأشخاص
+                if (data.exists_in_persons) {
                     Swal.fire({
                         icon: 'error',
                         title: 'رقم الهوية مسجل مسبقاً',
@@ -203,9 +201,34 @@
                     }).then(() => {
                         window.location.href = '/';
                     });
-                } else {
-                    window.location.href = '/create';
+                    return;
                 }
+
+                // 2) غير مسجل في الأشخاص لكن موجود في قائمة المحظورين
+                if (data.exists_in_banned) {
+                    let reasonText = data.banned_reason
+                        ? `سبب الرفض: ${data.banned_reason}`
+                        : 'لا يمكنك إكمال التسجيل لهذا الرقم.';
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'رقم الهوية مرفوض من التسجيل',
+                        text: reasonText,
+                        background: '#fff',
+                        confirmButtonColor: '#d33',
+                        iconColor: '#d33',
+                        confirmButtonText: 'إغلاق',
+                        customClass: {
+                            confirmButton: 'swal-button-custom'
+                        }
+                    }).then(() => {
+                        window.location.href = '/';
+                    });
+                    return;
+                }
+
+                // 3) لا مسجل ولا محظور → يكمل على صفحة الإنشاء
+                window.location.href = '/create';
             })
             .catch(error => console.error('Error:', error));
         }

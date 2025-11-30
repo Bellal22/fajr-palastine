@@ -109,13 +109,13 @@ function isValidLuhn($number)
 
 Route::get('/check-id', [PersonController::class, 'checkId'])->name('check-id');
 
-Route::get('/check-id/{id_num}', function ($id_num) {
-    $exists = Person::where('id_num', $id_num)->first();
-    return response()->json([
-        'exists' => (bool)$exists,
-        'id_num' => $exists ? $exists->id_num : null
-    ]);
-});
+// Route::get('/check-id/{id_num}', function ($id_num) {
+//     $exists = Person::where('id_num', $id_num)->first();
+//     return response()->json([
+//         'exists' => (bool)$exists,
+//         'id_num' => $exists ? $exists->id_num : null
+//     ]);
+// });
 
 Route::post('/store-people-session', function (Request $request) {
     $peopleList = $request->input('peopleList', []);
@@ -146,6 +146,7 @@ Route::post('/store-people-session', function (Request $request) {
 Route::get('/loginView', function () {
     return view('login');
 })->name('loginView');
+
 Route::post('/user/login', [AuthController::class, 'login'])->name('user.login');
 
 Route::get('/profile', [AuthController::class, 'profile'])->name('profile');

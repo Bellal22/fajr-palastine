@@ -13,6 +13,7 @@ use App\Http\Requests\StoreFamilyRequest;
 use App\Http\Requests\StorePersonRequest;
 use App\Http\Requests\UpdateFamilyRequest;
 use App\Http\Requests\UpdatePersonRequest;
+use App\Models\BanList;
 use App\Models\Person;
 use DB;
 use Illuminate\Http\Request;
@@ -65,31 +66,35 @@ class PersonController extends Controller
     public function store(StorePersonRequest $request)
     {
         try {
-            // جلب رقم الهوية من الجلسة
             $id_num = $request->session()->get('id_num');
             if (!$id_num) {
                 return response()->json([
                     'success' => false,
-                    'error' => 'رقم الهوية غير موجود في الجلسة.'
+                    'error'   => 'رقم الهوية غير موجود في الجلسة.'
                 ], 400);
             }
 
-            // جلب البيانات والتحقق منها
+            // فحص قائمة المحظورين قبل أي شيء
+            $banned = BanList::where('id_num', $id_num)->first();
+            if ($banned) {
+                return back()->withErrors([
+                    'id_num' => 'لا يمكن التسجيل بهذا الرقم لأنه مرفوض من النظام. سبب الرفض: ' . ($banned->reason ?? 'غير محدد')
+                ]);
+            }
+
             $data = $request->validated();
             $data['id_num']   = $id_num;
             $data['phone']    = Str::of($data['phone'])->replace('-', '')->toInteger();
-            $data['relationship'] = 'رب الأسرة نفسه'; // تعيين صلة القرابة
+            $data['relationship'] = 'رب الأسرة نفسه';
 
-            // حفظ البيانات في الجلسة
             $request->session()->put('person', array_merge(
                 $request->all(),
                 [
-                    'id_num' => $id_num,
+                    'id_num'  => $id_num,
                     'passkey' => '123456789'
                 ]
             ));
 
-            // حفظ البيانات في الجلسة (طريقة واحدة وموحدة)
             $firstPersonData = [
                 'id_num'                => $data['id_num'],
                 'first_name'            => $data['first_name'],
@@ -103,13 +108,11 @@ class PersonController extends Controller
             ];
 
             $request->session()->put('first_person_data', $firstPersonData);
-            // dd(session('first_person_data'));
-
         } catch (\Exception $e) {
-            return redirect()->back()->with('error','حدث خطأ');
+            return redirect()->back()->with('error', 'حدث خطأ');
         }
-        return redirect()->route('persons.createFamily');
 
+        return redirect()->route('persons.createFamily');
     }
 
     public function createFamily(Request $request)
@@ -137,66 +140,117 @@ class PersonController extends Controller
     public function storeFamily(StoreFamilyRequest $request)
     {
         $session = $request->session();
-        $id_num = $session->get('id_num');
+        $id_num  = $session->get('id_num');
 
+        // في حال عدم وجود رقم الهوية في الجلسة
         if (!$id_num) {
-            return redirect()->route('persons.intro');
+            return response()->json([
+                'success' => false,
+                'message' => 'رقم الهوية غير موجود في الجلسة، يرجى البدء من جديد.'
+            ]);
         }
 
-        // تحقق من وجود رب الأسرة مسبقاً
+        // رب الأسرة مسجل مسبقًا في persons
         if (Person::where('id_num', $id_num)->exists()) {
-            // ارجع برسالة تفيد أن بيانات رب الأسرة مسجلة مسبقاً لتجنب التكرار
             return response()->json([
                 'success' => false,
                 'message' => 'رب الأسرة مسجل مسبقًا، لا يمكن تكرار التسجيل.'
             ]);
         }
 
-        $peopleList = session('peopleList', []);
-        $person = $session->get('person');
+        // جلب بيانات أفراد الأسرة من الجلسة
+        $peopleList = $session->get('peopleList', []);
+        $person     = $session->get('person'); // بيانات رب الأسرة من الخطوة السابقة
+
+        // لرئيس الأسرة المحظور
+        if ($banned = BanList::where('id_num', $id_num)->first()) {
+            return response()->json([
+                'success' => false,
+                'message' => "رقم الهوية {$banned->id_num} مرفوض: " . ($banned->reason ?? 'غير محدد'),
+                'rejected_id' => $banned->id_num,
+                'reason' => $banned->reason ?? 'غير محدد'
+            ]);
+        }
+
+        // لأحد أفراد الأسرة المحظورين
+        foreach ($peopleList as $p) {
+            if (!empty($p['id_num'])) {
+                if ($banned = BanList::where('id_num', $p['id_num'])->first()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "رقم الهوية {$banned->id_num} (من أفراد الأسرة) مرفوض: " . ($banned->reason ?? 'غير محدد'),
+                        'rejected_id' => $banned->id_num,
+                        'reason' => $banned->reason ?? 'غير محدد'
+                    ]);
+                }
+            }
+        }
+
+        // عدد الأقارب (أفراد الأسرة) + رب الأسرة
         $person['relatives_count'] = count($peopleList) + 1;
 
-        // تجهيز بيانات الأشخاص مع التنظيف كما في كودك الحالي
+        // فحص كل فرد في peopleList لو رقمه محظور
+        foreach ($peopleList as $p) {
+            if (!empty($p['id_num'])) {
+                if ($banned = BanList::where('id_num', $p['id_num'])->first()) {
+                    return response()->json([
+                        'success'     => false,
+                        'rejected_id' => $banned->id_num,
+                        'reason'      => $banned->reason ?? 'غير محدد',
+                        'message'     => 'لا يمكن إضافة بعض أفراد الأسرة لأن أحد أرقام الهويات موجود في قائمة المحظورين.'
+                    ]);
+                }
+            }
+        }
+
+        // تجهيز مصفوفة الأشخاص للإدخال في persons
         $persons = collect($peopleList)
             ->map(function ($p) use ($id_num) {
                 if (array_key_exists('area_responsible_id', $p) && $p['area_responsible_id'] === '') {
                     $p['area_responsible_id'] = null;
                 }
+
                 if (isset($p['phone'])) {
                     $cleanPhone = str_replace('-', '', $p['phone']);
                     $cleanPhone = ltrim($cleanPhone, '0');
                     $p['phone'] = $cleanPhone;
                 }
+
                 return array_merge($p, [
-                    'relative_id' => $id_num,
-                    'id_num' => $p['id_num'] ?? Session::get('id_num'),
-                    'has_condition' => array_key_exists('has_condition', $p) && $p['has_condition'] === '' ? 0 : ($p['has_condition'] ?? 0)
+                    'relative_id'   => $id_num,
+                    'id_num'        => $p['id_num'] ?? $id_num,
+                    'has_condition' => array_key_exists('has_condition', $p) && $p['has_condition'] === '' ? 0 : ($p['has_condition'] ?? 0),
                 ]);
             })
             ->push(array_merge($person, [
                 'area_responsible_id' => (array_key_exists('area_responsible_id', $person) && $person['area_responsible_id'] === '') ? null : ($person['area_responsible_id'] ?? null),
-                'id_num' => $person['id_num'] ?? Session::get('id_num'),
+                'id_num'        => $person['id_num'] ?? $id_num,
                 'has_condition' => array_key_exists('has_condition', $person) && $person['has_condition'] === '' ? 0 : ($person['has_condition'] ?? 0),
-                'phone' => isset($person['phone']) ? ltrim(str_replace('-', '', $person['phone']), '0') : null,
+                'phone'         => isset($person['phone']) ? ltrim(str_replace('-', '', $person['phone']), '0') : null,
             ]))
             ->toArray();
 
         try {
             DB::beginTransaction();
 
-            foreach ($persons as $person) {
-                Person::create($person);
+            foreach ($persons as $row) {
+                Person::create($row);
             }
 
             DB::commit();
+
+            // تنظيف بيانات الجلسة
             $session->forget('peopleList');
+            // ممكن برضه تنظف person و id_num لو حابب
+            // $session->forget(['person', 'id_num']);
 
             return response()->json([
-                'success' => true,
+                'success'  => true,
                 'redirect' => route('persons.success')
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'حدث خطأ أثناء تسجيل البيانات: ' . $e->getMessage()
@@ -204,44 +258,88 @@ class PersonController extends Controller
         }
     }
 
-
     public function addFamily(Request $request)
     {
-        Log::info('Received Data:', $request->all()); // تحقق من البيانات المستلمة
+        Log::info('Received Data:', $request->all());
 
         // التحقق من صحة البيانات
-        $validatedData = $request->validate([
-            'id_num'                  => 'required|numeric|digits:9',
-            'first_name'              => 'required|string|regex:/^[\p{Arabic} ]+$/u',
-            'father_name'             => 'required|string|regex:/^[\p{Arabic} ]+$/u',
-            'grandfather_name'        => 'required|string|regex:/^[\p{Arabic} ]+$/u',
-            'family_name'             => 'required|string|regex:/^[\p{Arabic} ]+$/u',
-            'dob'                     => 'required|date',
-            'relationship'            => 'required|string',
-            'has_condition'           => 'required|in:0,1',
-            'condition_description'   => 'nullable|string|max:500'
-        ]);
-
-        // إضافة relative_id باستخدام رقم الهوية المخزن في الجلسة
-        $relative_id = session('person')['id_num'];  // أخذ id_num من الشخص المخزن في الجلسة
-        $validatedData['relative_id'] = $relative_id;
-
-        // إدخال البيانات إلى قاعدة البيانات
-        $person = Person::create($validatedData);
-
-        // التأكد من أن الشخص الأساسي (صاحب الجلسة) موجود
-        $parentPerson = Person::where('id_num', $relative_id)->first(); // جلب الشخص الأساسي باستخدام id_num
-
-        if ($parentPerson) {
-            // إذا كان الشخص الأساسي موجودًا، نقوم بتحديث relatives_count
-            $parentPerson->increment('relatives_count');  // زيادة relatives_count بمقدار 1
-            Log::info("Updated relatives_count for parent person with id_num: $relative_id");
-        } else {
-            // في حالة عدم وجود الشخص الأساسي، يمكن إضافة رسالة تحذير في الـ log
-            Log::warning("Parent person with id_num: $relative_id not found.");
+        try {
+            $validatedData = $request->validate([
+                'id_num'                => 'required|numeric|digits:9',
+                'first_name'            => 'required|string|regex:/^[\p{Arabic} ]+$/u',
+                'father_name'           => 'required|string|regex:/^[\p{Arabic} ]+$/u',
+                'grandfather_name'      => 'required|string|regex:/^[\p{Arabic} ]+$/u',
+                'family_name'           => 'required|string|regex:/^[\p{Arabic} ]+$/u',
+                'dob'                   => 'required|date',
+                'relationship'          => 'required|string',
+                'has_condition'         => 'required|in:0,1',
+                'condition_description' => 'nullable|string|max:500'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'خطأ في البيانات المدخلة',
+                'errors' => $e->errors()
+            ], 422);
         }
 
-        return response()->json(['success' => 'تمت إضافة الفرد بنجاح', 'person' => $person]);
+        // ✅ التحقق من قائمة الحظر أولاً
+        $banned = BanList::where('id_num', $validatedData['id_num'])->first();
+        if ($banned) {
+            return response()->json([
+                'success' => false,
+                'rejected_id' => $banned->id_num,
+                'reason' => $banned->reason ?? 'غير محدد',
+                'message' => "لا يمكن إضافة الفرد برقم الهوية {$banned->id_num} لأنه مرفوض من النظام. سبب الرفض: " . ($banned->reason ?? 'غير محدد')
+            ], 422);
+        }
+
+        // ✅ التحقق من عدم تكرار رقم الهوية
+        $existingPerson = Person::where('id_num', $validatedData['id_num'])->first();
+        if ($existingPerson) {
+            return response()->json([
+                'success' => false,
+                'message' => "رقم الهوية {$validatedData['id_num']} مسجل مسبقاً في النظام."
+            ], 422);
+        }
+
+        // الحصول على رقم هوية المستخدم الحالي
+        $relative_id = session('person')['id_num'] ?? null;
+
+        if (!$relative_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'خطأ: لم يتم العثور على معلومات المستخدم في الجلسة.'
+            ], 401);
+        }
+
+        $validatedData['relative_id'] = $relative_id;
+
+        try {
+            // إنشاء السجل الجديد
+            $person = Person::create($validatedData);
+
+            // تحديث عدد الأقارب للمستخدم الأساسي
+            $parentPerson = Person::where('id_num', $relative_id)->first();
+            if ($parentPerson) {
+                $parentPerson->increment('relatives_count');
+                Log::info("✅ Updated relatives_count for parent person with id_num: $relative_id");
+            } else {
+                Log::warning("⚠️ Parent person with id_num: $relative_id not found.");
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تمت إضافة الفرد بنجاح',
+                'person'  => $person
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error creating person: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ أثناء إضافة الفرد. يرجى المحاولة مرة أخرى.'
+            ], 500);
+        }
     }
 
     public function update(UpdatePersonRequest $request)
@@ -267,50 +365,82 @@ class PersonController extends Controller
     {
         $id_num = $request->session()->get('id_num');
         if (!$id_num) {
-            return redirect()->route(
-                'loginView'
-            )->with('error', 'يجب تسجيل الدخول أولاً.');
-            return redirect()->route('profile');
+            return redirect()
+                ->route('loginView')
+                ->with('error', 'يجب تسجيل الدخول أولاً.');
         }
 
-        $data    = $request->validated();
-        $person  = $request->session()->get('person');
+        $data = $request->validated();
+        $person = $request->session()->get('person');
         $person['relatives_count'] = count($data['persons']);
-        // if person PersonSocialStatus = polygamous then relatives_count must be greater than 1
 
+        // شرط تعدد الزوجات
         if ($person['social_status'] === 'polygamous' && $person['relatives_count'] < 2) {
             return back()->withErrors(['persons' => 'عدد الاقارب يجب ان يكون اكثر من 1']);
         }
 
+        // فحص رب الأسرة المحظور مع إرجاع معرف وسبب مرفقين بالخطأ
+        if ($banned = BanList::where('id_num', $id_num)->first()) {
+            $reason = $banned->reason ?? 'غير محدد';
+
+            return back()->withErrors([
+                'id_num' => "لا يمكن تحديث بيانات الأسرة لأن رب الأسرة برقم الهوية {$banned->id_num} مرفوض من النظام. سبب الرفض: {$reason}"
+            ]);
+        }
+
+        // فحص أفراد الأسرة ومع توضيح كل رفض برقم وهوية وسبب
+        foreach ($data['persons'] as $member) {
+            if (!empty($member['id_num'])) {
+                $banned = BanList::where('id_num', $member['id_num'])->first();
+                if ($banned) {
+                    $reason = $banned->reason ?? 'غير محدد';
+                    return back()->withErrors([
+                        'persons' => "لا يمكن إضافة/تحديث الفرد برقم الهوية {$banned->id_num} لأنه مرفوض من النظام. سبب الرفض: {$reason}"
+                    ]);
+                }
+            }
+        }
+
         $persons = collect($data['persons'])
-            ->map(fn($person) => array_merge($person, ['relative_id' => $id_num]))
+            ->map(fn($p) => array_merge($p, ['relative_id' => $id_num]))
             ->push($person);
 
-
-        $persons->each(function ($person) {
-            Person::create($person);
+        $persons->each(function ($p) {
+            Person::create($p);
         });
 
         return redirect()->route('profile');
     }
+
     /*
      * api
      */
     public function checkId(Request $request)
     {
-        // التأكد من أن الجلسة تحتوي على رقم الهوية
         if (!session()->has('id_num')) {
             return response()->json(['error' => 'رقم الهوية غير موجود في الجلسة'], 400);
         }
 
-        // جلب رقم الهوية من الجلسة
         $id_num = session('id_num');
 
-        // التحقق من وجود الرقم في قاعدة البيانات
-        $exists = Person::where('id_num', $id_num)->exists();
+        $existsInPersons = Person::where('id_num', $id_num)->exists();
 
-        // إرجاع النتيجة بصيغة JSON
-        return response()->json(['exists' => $exists]);
+        $existsInBanned = false;
+        $bannedReason   = null;
+
+        if (! $existsInPersons) {
+            $banned = BanList::where('id_num', $id_num)->first();
+            if ($banned) {
+                $existsInBanned = true;
+                $bannedReason   = $banned->reason; // عمود السبب في جدول المحظورين
+            }
+        }
+
+        return response()->json([
+            'exists_in_persons' => $existsInPersons,
+            'exists_in_banned'  => $existsInBanned,
+            'banned_reason'     => $bannedReason,
+        ]);
     }
 
     public function success(Request $request)
@@ -325,48 +455,135 @@ class PersonController extends Controller
 
     public function updateProfileParent(Request $request)
     {
-        $user = Person::where('id_num', $request->id_num)->first();
+        // جلب المستخدم الحالي حسب رقم هويته القديمة (لو متوفرة) أو الجديدة
+        $user = Person::where('id_num', $request->old_id_num ?? $request->id_num)->first();
 
-        $data = $request->all();
+        if (!$user) {
+            $banned = BanList::where('id_num', $request->id_num)->first();
 
-        // تحويل النص "null" أو السلسلة الفارغة إلى قيمة null الحقيقية
+            if ($banned) {
+                return response()->json([
+                    'success' => false,
+                    'rejected_id' => $banned->id_num,
+                    'reason' => $banned->reason ?? 'غير محدد',
+                    'message' => "لا يمكن تحديث الملف الشخصي برقم الهوية {$banned->id_num} لأنه مرفوض من النظام. سبب الرفض: " . ($banned->reason ?? 'غير محدد')
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => "رقم الهوية {$request->id_num} غير مسجل مسبقاً وبالتالي لا يمكن تحديثه."
+            ], 404);
+        }
+
+        // التحقق من تكرار رقم الهوية الجديد
+        if ($request->id_num !== $request->old_id_num) {
+            $exists = Person::where('id_num', $request->id_num)
+                ->where('id', '<>', $user->id)
+                ->exists();
+
+            if ($exists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "رقم الهوية {$request->id_num} مسجل مسبقاً لشخص آخر."
+                ], 422);
+            }
+        }
+
+        $banned = BanList::where('id_num', $request->id_num)->first();
+        if ($banned) {
+            return response()->json([
+                'success' => false,
+                'rejected_id' => $banned->id_num,
+                'reason' => $banned->reason ?? 'غير محدد',
+                'message' => "لا يمكن تحديث الملف الشخصي للمستخدم برقم الهوية {$banned->id_num} لأنه مرفوض من النظام. سبب الرفض: " . ($banned->reason ?? 'غير محدد')
+            ], 422);
+        }
+
+        // استبعاد old_id_num من بيانات التحديث لأنه ليس عمود
+        $data = $request->except('old_id_num');
+
         if (isset($data['area_responsible_id']) && ($data['area_responsible_id'] === 'null' || $data['area_responsible_id'] === '')) {
             $data['area_responsible_id'] = null;
         }
 
-        $allowedNeighborhoods = [
-            'westernLine',
-            'alMahatta',
-            'alKatiba',
-            'alBatanAlSameen',
-            'alMaskar',
-            'alMashroo',
-            'hamidCity',
-            'downtown'
-        ];
-
-        // تنظيف رقم الهاتف قبل الحفظ (إذا موجود)
         if (isset($data['phone'])) {
-            // إزالة الشرطات
             $cleanPhone = str_replace('-', '', $data['phone']);
-            // حذف الصفر الأول إذا موجود في البداية
             $cleanPhone = ltrim($cleanPhone, '0');
             $data['phone'] = $cleanPhone;
         }
 
-        $user->update($data);
+        $updated = $user->update($data);
 
-        return response()->json(['success' => true, 'message' => 'Profile updated successfully']);
+        if ($updated) {
+            return response()->json(['success' => true, 'message' => 'تم تحديث الملف الشخصي بنجاح']);
+        } else {
+            return response()->json(['success' => false, 'message' => 'فشل تحديث البيانات. يرجى المحاولة مرة أخرى.'], 500);
+        }
     }
 
     public function updateProfileChild(Request $request)
     {
-        // Retrieve the authenticated user
-        $user = Person::where('id_num', $request->id_num)->first();
-        // Update user profile
-        $user->update($request->all());
+        // ✅ استخدام id بدلاً من id_num للبحث عن المستخدم
+        $user = Person::find($request->id);
 
-        return response()->json(['success' => true, 'message' => 'Family member updated successfully']);
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => "المستخدم غير موجود."
+            ], 404);
+        }
+
+        $oldId = $user->id_num; // ✅ الرقم القديم من قاعدة البيانات
+        $newId = $request->id_num;
+
+        // ✅ التحقق من رقم الهوية الجديد فقط إذا تغير
+        if ($oldId !== $newId) {
+            // التحقق من وجود رقم الهوية الجديد لشخص آخر
+            $exists = Person::where('id_num', $newId)
+                ->where('id', '<>', $user->id)
+                ->exists();
+
+            if ($exists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "رقم الهوية {$newId} مسجل مسبقاً لشخص آخر."
+                ], 422);
+            }
+
+            // التحقق من قائمة الحظر
+            $banned = BanList::where('id_num', $newId)->first();
+            if ($banned) {
+                return response()->json([
+                    'success' => false,
+                    'rejected_id' => $banned->id_num,
+                    'reason' => $banned->reason ?? 'غير محدد',
+                    'message' => "لا يمكن تحديث رقم الهوية إلى {$banned->id_num} لأنه مرفوض من النظام. سبب الرفض: " . ($banned->reason ?? 'غير محدد')
+                ], 422);
+            }
+        }
+
+        // التحقق من قائمة الحظر للرقم القديم (اختياري)
+        $bannedOld = BanList::where('id_num', $oldId)->first();
+        if ($bannedOld) {
+            return response()->json([
+                'success' => false,
+                'rejected_id' => $bannedOld->id_num,
+                'reason' => $bannedOld->reason ?? 'غير محدد',
+                'message' => "لا يمكن تحديث الملف الشخصي لأن رقم الهوية {$bannedOld->id_num} مرفوض من النظام. سبب الرفض: " . ($bannedOld->reason ?? 'غير محدد')
+            ], 422);
+        }
+
+        // تحديث البيانات
+        $data = $request->except(['old_id_num', 'id']);
+
+        $updated = $user->update($data);
+
+        if ($updated) {
+            return response()->json(['success' => true, 'message' => 'تم تحديث فرد الأسرة بنجاح']);
+        } else {
+            return response()->json(['success' => false, 'message' => 'فشل تحديث البيانات. يرجى المحاولة مرة أخرى.'], 500);
+        }
     }
 
     public function updatePasskey(Request $request)

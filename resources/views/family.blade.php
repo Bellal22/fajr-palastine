@@ -1038,11 +1038,10 @@
                 }
             });
 
-            window.submitForm = function submitForm() {
+         window.submitForm = function submitForm() {
                 const submitBtn = document.getElementById('send-btn');
                 submitBtn.disabled = true;
 
-                // إظهار رسالة "جاري تسجيل بياناتك"
                 Swal.fire({
                     title: 'جاري تسجيل بياناتك...',
                     allowOutsideClick: false,
@@ -1053,44 +1052,41 @@
 
                 let person = @json($person);
 
+                // التحقق من صحة العلاقات الزوجية
                 if (['single', 'divorced', 'widowed'].includes(person.social_status)) {
                     const forbiddenRelationships = ['husband', 'wife'];
                     const hasForbidden = peopleList.some(p => forbiddenRelationships.includes(p.relationship));
                     if (hasForbidden) {
                         Swal.close();
-                        showAlert('لا يمكن تسجيل أفراد الأسرة ذات علاقات زوج/زوجة إذا كانت الحالة الاجتماعية أعزب/ة أو مطلق/ة أو أرمل/ة.', 'error');
+                        showAlert('لا يمكن تسجيل أفراد الأسرة ذات علاقات زوج/زوجة إذا كانت الحالة الاجتماعية أعزب/ة أو مطلق/ة أرمل/ة.', 'error');
                         submitBtn.disabled = false;
                         return;
                     }
                 }
 
-                if (peopleList.length === 0 &&
-                    !(['single', 'divorced', 'widowed'].includes(person.social_status))
-                ) {
-                    Swal.close(); // إخفاء رسالة التحميل
+                // التحقق من وجود بيانات
+                if (peopleList.length === 0 && !(['single', 'divorced', 'widowed'].includes(person.social_status))) {
+                    Swal.close();
                     showAlert('لا توجد بيانات لإرسالها!', 'warning');
-                    submitBtn.disabled = false; // إعادة تفعيل الزر
+                    submitBtn.disabled = false;
                     return;
                 }
 
+                // التحقق من عدد الزوجات حسب الحالة الاجتماعية
                 const wivesCount = peopleList.filter(p => p.relationship === 'wife').length;
-
-                if (person.social_status === 'married') { // "متزوج"
-                    if (wivesCount !== 1) {
-                        Swal.close();
-                        showAlert('الشخص المتزوج يجب أن يكون لديه زوجة واحدة فقط في قائمة الأفراد.', 'error');
-                        submitBtn.disabled = false;
-                        return;
-                    }
-                } else if (person.social_status === 'polygamous') { // "متعدد"
-                    if (wivesCount < 2 || wivesCount > 4) {
-                        Swal.close();
-                        showAlert('الشخص المتعدد يجب أن يكون لديه من 2 إلى 4 زوجات في قائمة الأفراد.', 'error');
-                        submitBtn.disabled = false;
-                        return;
-                    }
+                if (person.social_status === 'married' && wivesCount !== 1) {
+                    Swal.close();
+                    showAlert('الشخص المتزوج يجب أن يكون لديه زوجة واحدة فقط في قائمة الأفراد.', 'error');
+                    submitBtn.disabled = false;
+                    return;
+                } else if (person.social_status === 'polygamous' && (wivesCount < 2 || wivesCount > 4)) {
+                    Swal.close();
+                    showAlert('الشخص المتعدد يجب أن يكون لديه من 2 إلى 4 زوجات في قائمة الأفراد.', 'error');
+                    submitBtn.disabled = false;
+                    return;
                 }
 
+                // حفظ بيانات الأسرة في الجلسة
                 $.ajax({
                     url: '/store-people-session',
                     method: 'POST',
@@ -1099,50 +1095,100 @@
                     },
                     contentType: 'application/json',
                     data: JSON.stringify({ peopleList: peopleList }),
-                    success: function (response) {
-                        if (response.success) {
-                            $.ajax({
-                                url: response.postRedirect,
-                                type: 'POST',
-                                data: { _token: csrfToken },
-                                success: function(res) {
-                                    Swal.close(); // إغلاق رسالة التحميل
-                                    console.log("تم تنفيذ storeFamily بنجاح، إعادة التوجيه إلى:", res.redirect);
-                                    if (res.redirect) {
-                                        window.location.href = res.redirect;
-                                    } else {
-                                        console.error("إعادة التوجيه غير معرفة في الاستجابة");
-                                        submitBtn.disabled = false;
-                                    }
-                                },
-                                error: function(xhr) {
-                                    Swal.close();
-                                    console.error("خطأ أثناء تنفيذ storeFamily:", xhr.responseText);
-                                    submitBtn.disabled = false;
-                                }
-                            });
+                    success: function(sessionResponse) {
+                        if (!sessionResponse.success) {
+                            Swal.close();
+                            showAlert(sessionResponse.message || 'حدث خطأ أثناء تجهيز بيانات الأسرة.', 'error');
+                            submitBtn.disabled = false;
+                            return;
                         }
+
+                        // تسجيل الأسرة نهائياً
+                        $.ajax({
+                            url: sessionResponse.postRedirect || '/store-family', // fallback URL
+                            type: 'POST',
+                            data: { _token: $('meta[name="csrf-token"]').attr('content') },
+                            success: function(storeResponse) {
+                                Swal.close();
+
+                                if (!storeResponse.success) {
+                                    // عرض رسائل الرفض المفصلة
+                                    if (storeResponse.rejected_id && storeResponse.reason) {
+                                        showAlert(
+                                            `رقم الهوية المرفوض: <strong>${storeResponse.rejected_id}</strong><br>` +
+                                            `سبب الرفض: <strong>${storeResponse.reason}</strong>`,
+                                            'error'
+                                        );
+                                    } else {
+                                        showAlert(storeResponse.message || 'حدث خطأ أثناء تسجيل البيانات.', 'error');
+                                    }
+                                    submitBtn.disabled = false;
+                                    return;
+                                }
+
+                                // نجح التسجيل
+                                if (storeResponse.redirect) {
+                                    window.location.href = storeResponse.redirect;
+                                } else {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'تم التسجيل بنجاح!',
+                                        text: 'سيتم تحويلك قريباً...',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    }).then(() => {
+                                        window.location.href = '/persons/success'; // fallback
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.close();
+                                submitBtn.disabled = false;
+
+                                const errorResponse = xhr.responseJSON || {};
+                                if (errorResponse.message) {
+                                    showAlert(errorResponse.message, 'error');
+                                } else if (errorResponse.rejected_id && errorResponse.reason) {
+                                    showAlert(
+                                        `رقم الهوية المرفوض: <strong>${errorResponse.rejected_id}</strong><br>` +
+                                        `سبب الرفض: <strong>${errorResponse.reason}</strong>`,
+                                        'error'
+                                    );
+                                } else {
+                                    showAlert('حدث خطأ غير متوقع أثناء التسجيل.', 'error');
+                                }
+                            }
+                        });
                     },
-                    error: function (xhr) {
+                    error: function(xhr) {
                         Swal.close();
-                        const response = xhr.responseJSON;
                         submitBtn.disabled = false;
-                        if (response.error) {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'خطأ!',
-                                text: response.error,
-                                confirmButtonColor: '#d33',
-                                iconColor: '#d33',
-                                confirmButtonText: 'إغلاق'
-                            }).then(() => {
-                                sessionStorage.setItem('peopleList', JSON.stringify(response.peopleList));
-                                window.location.href = response.redirect;
-                            });
+                        const response = xhr.responseJSON || {};
+
+                        if (response.message) {
+                            showAlert(response.message, 'error');
+                        } else {
+                            showAlert('فشل في حفظ بيانات الجلسة. يرجى المحاولة مرة أخرى.', 'error');
                         }
                     }
                 });
             };
+
+            // دالة مساعدة موحدة لعرض التنبيهات
+            function showAlert(message, type = 'info') {
+                const config = {
+                    error: { icon: 'error', title: 'خطأ!', confirmButtonColor: '#d33', iconColor: '#d33' },
+                    warning: { icon: 'warning', title: 'تحذير!', confirmButtonColor: '#ffc107' },
+                    success: { icon: 'success', title: 'نجح!', confirmButtonColor: '#28a745' },
+                    info: { icon: 'info', title: 'معلومات', confirmButtonColor: '#17a2b8' }
+                };
+
+                Swal.fire({
+                    ...config[type],
+                    html: message, // دعم HTML
+                    confirmButtonText: 'إغلاق'
+                });
+            }
         });
 
         // تطبيق خوارزمية Luhn للتحقق من صحة الرقم

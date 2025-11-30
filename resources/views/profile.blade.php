@@ -736,6 +736,10 @@
                     <input type="text" id="social_status" value="{{ $person->social_status ? __($person->social_status) : 'غير محدد' }}" disabled>
                 </div>
                 <div class="profile-item">
+                    <label for="gender">الحالة الاجتماعية:</label>
+                    <input type="text" id="gender" value="{{ $person->gender ? __($person->gender) : 'غير محدد' }}" disabled>
+                </div>
+                <div class="profile-item">
                     <label for="family_members">عدد أفراد الأسرة:</label>
                     <input type="text" id="family_members" value="{{ $person->relatives_count}}" disabled>
                 </div>
@@ -874,7 +878,7 @@
                 <div class="row">
                     <div class="form-group">
                         <label for="id_num">رقم الهوية</label>
-                        <input type="number" id="edit_id_num" name="id_num" value="{{ $person->id_num }}" required oninput="validateIdOnInput()" maxlength="9" >
+                        <input type="number" id="edit_id_num" name="id_num" value="{{ $person->id_num }}" data-original="{{ $person->id_num }}" required oninput="validateIdOnInput()" maxlength="9">
                         <span id="edit_id_num_error" class="error-message" style="display:none;">رقم الهوية غير صالح.</span>
                         <span id="edit_id_num_success" class="success-message" style="display:none;">رقم الهوية صحيح.</span>
                     </div>
@@ -1312,8 +1316,9 @@
                     <div class="row">
                         <div class="form-group">
                             <label for="id_num">رقم الهوية:</label>
-                            <input type="number" id="edit_f_id_num" name="id_num" placeholder="أدخل رقم الهوية" required>
+                            <input type="number" id="edit_f_id_num" name="id_num" placeholder="أدخل رقم الهوية" required data-original="{{ $person->id_num }}">
                         </div>
+
 
                         <div class="form-group">
                             <label for="dob">تاريخ الميلاد:</label>
@@ -1645,15 +1650,15 @@
 
             // إضافة فرد جديد إلى قاعدة البيانات
             $('#add-person-btn').click(function() {
-                const id_num = $('#id_numf').val();
-                const first_name = $('#first_namef').val();
-                const father_name = $('#father_namef').val();
-                const grandfather_name = $('#grandfather_namef').val();
-                const family_name = $('#family_namef').val();
-                const dob = $('#dobf').val();
-                const relationship = $('#relationshipf').val();
+                const id_num = $('#id_numf').val().trim();
+                const first_name = $('#first_namef').val().trim();
+                const father_name = $('#father_namef').val().trim();
+                const grandfather_name = $('#grandfather_namef').val().trim();
+                const family_name = $('#family_namef').val().trim();
+                const dob = $('#dobf').val().trim();
+                const relationship = $('#relationshipf').val().trim();
                 const has_condition = $('#has_conditionf').val();
-                const condition_description = has_condition == '1' ? $('#condition_descriptionf').val() : null;
+                const condition_description = has_condition == '1' ? $('#condition_descriptionf').val().trim() : null;
 
                 // التحقق من الحقول المطلوبة
                 if (!id_num || !first_name || !father_name || !grandfather_name || !family_name || !dob || !relationship) {
@@ -1661,9 +1666,9 @@
                     return;
                 }
 
-                // إرسال البيانات مباشرة إلى السيرفر
+                // إرسال البيانات إلى السيرفر مع دعم عرض الأخطاء المفصلة
                 $.ajax({
-                    url: '{{ route("persons.addFamily") }}', // تأكد من أن هذا المسار صحيح في Laravel
+                    url: '{{ route("persons.addFamily") }}',
                     method: 'POST',
                     dataType: 'json',
                     headers: {
@@ -1681,29 +1686,95 @@
                         condition_description: condition_description
                     },
                     success: function(response) {
-                        showAlert('تمت إضافة الفرد بنجاح', 'success');
+                        if (response.success) {
+                            showAlert('تمت إضافة الفرد بنجاح', 'success');
+                            // تفريغ الحقول بعد الإضافة
+                            $('#form-popup').find('input, select, textarea').val('');
+                            $('#form-popup').hide();
 
-                        // تفريغ الحقول بعد الإضافة
-                        $('#form-popup').find('input, select, textarea').val('');
-                        $('#form-popup').hide();
-
-                        // تحديث الصفحة لرؤية البيانات الجديدة (يمكن استبداله بتحديث جزء معين من الصفحة)
-                        location.reload();
+                            // تحديث الصفحة بعد 1.5 ثانية
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            // التعامل مع الأخطاء المفصلة
+                            if (response.rejected_id && response.reason) {
+                                showAlert(
+                                    `رقم الهوية المرفوض: <strong>${response.rejected_id}</strong><br>` +
+                                    `سبب الرفض: <strong>${response.reason}</strong>`,
+                                    'error'
+                                );
+                            } else {
+                                showAlert(response.message || 'حدث خطأ أثناء الإضافة!', 'error');
+                            }
+                        }
                     },
                     error: function(xhr) {
-                        showAlert('حدث خطأ أثناء الإرسال!', 'error');
-                        console.error(xhr.responseText);
+                        console.error('❌ خطأ في الإرسال:', xhr.responseText);
+
+                        let response = xhr.responseJSON || {};
+
+                        // معالجة رسائل الرفض من قائمة الحظر
+                        if (response.rejected_id && response.reason) {
+                            showAlert(
+                                `رقم الهوية المرفوض: <strong>${response.rejected_id}</strong><br>` +
+                                `سبب الرفض: <strong>${response.reason}</strong>`,
+                                'error'
+                            );
+                        }
+                        // معالجة أخطاء التحقق من البيانات (Validation Errors)
+                        else if (response.errors) {
+                            let errorMessages = [];
+                            for (let field in response.errors) {
+                                errorMessages.push(response.errors[field].join('<br>'));
+                            }
+                            showAlert(
+                                '<strong>أخطاء في البيانات:</strong><br>' + errorMessages.join('<br>'),
+                                'error'
+                            );
+                        }
+                        // معالجة رسالة الخطأ العامة
+                        else if (response.message) {
+                            showAlert(response.message, 'error');
+                        }
+                        // رسالة افتراضية في حالة عدم وجود تفاصيل
+                        else {
+                            showAlert('حدث خطأ أثناء الإرسال! يرجى المحاولة مرة أخرى.', 'error');
+                        }
                     }
                 });
             });
 
-            // دالة عرض التنبيهات
             function showAlert(message, type) {
+                let iconColor, confirmButtonColor, iconType;
+
+                switch (type) {
+                    case 'success':
+                        iconType = 'success';        // أيقونة صح ✓
+                        iconColor = '#28a745';       // أخضر
+                        confirmButtonColor = '#28a745';
+                        break;
+                    case 'warning':
+                        iconType = 'warning';        // علامة تعجب !
+                        iconColor = '#fd7e14';       // برتقالي
+                        confirmButtonColor = '#fd7e14';
+                        break;
+                    case 'error':
+                    default:
+                        iconType = 'error';          // أيقونة خطأ ✖
+                        iconColor = '#dc3545';       // أحمر
+                        confirmButtonColor = '#dc3545';
+                        break;
+                }
+
                 Swal.fire({
-                    icon: type,
-                    title: message,
-                    showConfirmButton: true,
-                    confirmButtonText: 'إغلاق'
+                    html: message,
+                    icon: iconType,
+                    background: '#fff',
+                    color: '#000',
+                    iconColor: iconColor,
+                    confirmButtonColor: confirmButtonColor,
+                    confirmButtonText: 'حسناً'
                 });
             }
 
@@ -2010,40 +2081,58 @@
                 descriptionRow.classList.add("hidden");
             }
         }
+
+        function showAlert(message, type) {
+            let iconType, iconColor, confirmButtonColor;
+
+            switch (type) {
+                case 'success':
+                    iconType = 'success';       // أيقونة صح
+                    iconColor = '#28a745';      // أخضر
+                    confirmButtonColor = '#28a745';
+                    break;
+                case 'warning':
+                    iconType = 'warning';       // علامة تعجب
+                    iconColor = '#fd7e14';      // برتقالي
+                    confirmButtonColor = '#fd7e14';
+                    break;
+                case 'error':
+                default:
+                    iconType = 'error';         // خطأ
+                    iconColor = '#dc3545';      // أحمر
+                    confirmButtonColor = '#dc3545';
+                    break;
+            }
+
+            Swal.fire({
+                html: message,
+                icon: iconType,
+                iconColor: iconColor,
+                background: '#fff',
+                color: '#000',
+                confirmButtonColor: confirmButtonColor,
+                confirmButtonText: 'حسناً'
+            });
+        }
+
         function saveChangesParent() {
             console.log("✅ الدالة saveChangesParent تعمل!");
 
             let neighborhoodValue = document.getElementById('edit_neighborhood').value.trim();
-
-            let allowedNeighborhoods = [
-                "westernLine",
-                "alMahatta",
-                "alKatiba",
-                "alBatanAlSameen",
-                "alMaskar",
-                "alMashroo",
-                "hamidCity",
-                "downtown"
-            ];
-
             let areaResponsibleInput = document.getElementById('edit_area_responsible_id');
-
-            // إزالة إعادة تعيين قيمة مسؤول المنطقة عند حي غير مسموح لكي لا تصبح null تلقائياً
-            // if (!allowedNeighborhoods.includes(neighborhoodValue)) {
-            //     areaResponsibleInput.value = '';
-            // }
-
-            // جلب القيمة المحدثة بعد التعديل
             let rawValue = areaResponsibleInput.value.trim();
+            let originalIdNumValue = document.getElementById('edit_id_num').getAttribute('data-original') || '';
+            console.log('originalIdNumValue:', originalIdNumValue);
 
-            // تجهيز بيانات النموذج مع تحويل القيمة الفارغة إلى null
             let formData = {
+                old_id_num: originalIdNumValue,
+                id_num: document.getElementById('edit_id_num').value.trim(),
                 first_name: document.getElementById('edit_first_name').value.trim(),
                 father_name: document.getElementById('edit_father_name').value.trim(),
                 grandfather_name: document.getElementById('edit_grandfather_name').value.trim(),
                 family_name: document.getElementById('edit_family_name').value.trim(),
-                id_num: document.getElementById('edit_id_num').value.trim(),
                 dob: document.getElementById('edit_dob').value.trim(),
+                gender: document.getElementById('edit_gender').value.trim(),
                 phone: document.getElementById('edit_phone').value.trim(),
                 social_status: document.getElementById('edit_social_status').value.trim(),
                 relatives_count: document.getElementById('edit_relatives_count').value.trim(),
@@ -2059,23 +2148,16 @@
                 landmark: document.getElementById('edit_landmark').value.trim()
             };
 
-            // التحقق من الحقول المطلوبة باستثناء 'area_responsible_id' و 'condition_description'
+            console.log('formData to send:', formData);
+
+            // التحقق من الحقول المطلوبة
             for (let key in formData) {
-                if ((key !== 'condition_description') &&
-                    (key !== 'area_responsible_id') &&
-                    (!formData[key])) {
-                    Swal.fire({
-                        title: 'تنبيه!',
-                        text: `يرجى ملء جميع الحقول المطلوبة (${key})`,
-                        icon: 'warning',
-                        confirmButtonColor: '#FF6F00',
-                        confirmButtonText: 'حسناً'
-                    });
+                if ((key !== 'condition_description' && key !== 'area_responsible_id' && key !== 'phone') && (!formData[key])) {
+                    showAlert(`يرجى ملء جميع الحقول المطلوبة (${key})`, 'warning');
                     return;
                 }
             }
 
-            // إرسال البيانات إلى الخادم
             fetch('/update-profile', {
                 method: 'POST',
                 headers: {
@@ -2084,39 +2166,46 @@
                 },
                 body: JSON.stringify(formData)
             })
-            .then(response => response.json())
+            .then(response => {
+                return response.json().then(data => {
+                    if (!response.ok) {
+                        return Promise.reject({ status: response.status, data: data });
+                    }
+                    return data;
+                });
+            })
             .then(data => {
                 console.log("📌 استجابة السيرفر:", data);
                 if (data.success) {
-                    Swal.fire({
-                        title: 'تم التحديث بنجاح!',
-                        text: 'تم تعديل بياناتك الشخصية.',
-                        icon: 'success',
-                        confirmButtonColor: '#FF6F00',
-                        confirmButtonText: 'حسناً'
-                    }).then(() => {
-                        closePopup(); // ✅ إغلاق النافذة
-                        location.reload(); // ✅ إعادة تحميل الصفحة
+                    showAlert('تم تحديث الملف الشخصي بنجاح!', 'success', () => {
+                        closePopup();
+                        location.reload();
                     });
+                } else if (data.rejected_id && data.reason) {
+                    showAlert(
+                        `رقم الهوية المرفوض: <strong>${data.rejected_id}</strong><br>` +
+                        `سبب الرفض: <strong>${data.reason}</strong>`,
+                        'error'
+                    );
                 } else {
-                    Swal.fire({
-                        title: 'خطأ!',
-                        text: 'حدث خطأ أثناء التحديث، الرجاء المحاولة مرة أخرى.',
-                        icon: 'error',
-                        confirmButtonColor: '#d33',
-                        confirmButtonText: 'حسناً'
-                    });
+                    showAlert(data.message || 'حدث خطأ أثناء التحديث', 'error');
                 }
             })
             .catch(error => {
-                console.error("❌ خطأ في جلب البيانات:", error);
-                Swal.fire({
-                    title: 'خطأ!',
-                    text: 'تعذر الاتصال بالخادم، يرجى التحقق من الاتصال بالإنترنت.',
-                    icon: 'error',
-                    confirmButtonColor: '#d33',
-                    confirmButtonText: 'حسناً'
-                });
+                if (error.data) {
+                    if (error.data.rejected_id && error.data.reason) {
+                        showAlert(
+                            `رقم الهوية المرفوض: <strong>${error.data.rejected_id}</strong><br>` +
+                            `سبب الرفض: <strong>${error.data.reason}</strong>`,
+                            'error'
+                        );
+                    } else {
+                        showAlert(error.data.message || 'حدث خطأ أثناء التحديث', 'error');
+                    }
+                } else {
+                    console.error("❌ خطأ في جلب البيانات:", error);
+                    showAlert('[translate:تعذر الاتصال بالخادم، يرجى التحقق من الاتصال بالإنترنت.]', 'error');
+                }
             });
         }
 
@@ -2125,84 +2214,114 @@
 
             let familyMemberId = document.getElementById('familyMemberId');
             if (!familyMemberId) {
-                console.error("❌ خطأ: العنصر familyMemberId غير موجود في الصفحة!");
+                showAlert('[translate:خطأ: العنصر familyMemberId غير موجود]', 'error');
                 return;
             }
 
             let hasConditionElement = document.getElementById('edit_f_has_condition');
             let conditionDescriptionElement = document.getElementById('edit_f_condition_description');
 
+            let newIdNum = document.getElementById('edit_f_id_num')?.value.trim() || "";
+            let originalIdNumValue = document.getElementById('edit_f_id_num').getAttribute('data-original') || "";
+            originalIdNumValue = originalIdNumValue.trim();
+
             let formData = {
+                id_num: newIdNum,
                 id: familyMemberId.value.trim(),
                 first_name: document.getElementById('edit_f_first_name')?.value.trim() || "",
                 father_name: document.getElementById('edit_f_father_name')?.value.trim() || "",
                 grandfather_name: document.getElementById('edit_f_grandfather_name')?.value.trim() || "",
                 family_name: document.getElementById('edit_f_family_name')?.value.trim() || "",
-                id_num: document.getElementById('edit_f_id_num')?.value.trim() || "",
                 dob: document.getElementById('edit_f_dob')?.value.trim() || "",
                 relationship: document.getElementById('edit_f_relationship')?.value.trim() || "",
                 has_condition: hasConditionElement?.value.trim() || "",
                 condition_description: conditionDescriptionElement?.value.trim() || ""
             };
 
-            // إذا كان المستخدم قد اختار "لا"، قم بتفريغ حقل الوصف
+            // أرسل old_id_num فقط إذا اختلف عن الرقم الجديد وباي قيمة صالحة
+            if (originalIdNumValue && originalIdNumValue !== newIdNum) {
+                formData.old_id_num = originalIdNumValue;
+            }
+
+            // معالجة حالة لا يوجد حالة صحية
             if (formData.has_condition === "لا" || formData.has_condition === "0") {
-                formData.has_condition = 0; // تأكد من إرسالها كعدد
-                formData.condition_description = null; // أرسل null بدلًا من نص فارغ
+                formData.has_condition = 0;
+                formData.condition_description = null;
                 if (conditionDescriptionElement) {
-                    conditionDescriptionElement.value = ""; // تفريغ الحقل في الفورم
+                    conditionDescriptionElement.value = "";
                 }
             }
 
             console.log("📌 البيانات المُرسلة:", formData);
 
-            let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            if (!csrfToken) {
-                console.error("❌ خطأ: CSRF Token غير موجود في الصفحة!");
-                return;
-            }
-
             fetch('/update-family-member', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                 },
                 body: JSON.stringify(formData)
             })
-            .then(response => response.json())
+            .then(response => {
+                return response.json().then(data => {
+                    if (!response.ok) {
+                        return Promise.reject({ status: response.status, data: data });
+                    }
+                    return data;
+                });
+            })
             .then(data => {
                 console.log("📌 استجابة السيرفر:", data);
                 if (data.success) {
-                    Swal.fire({
-                        title: 'تم التحديث بنجاح!',
-                        text: 'تم تعديل بيانات فرد العائلة.',
-                        icon: 'success',
-                        confirmButtonColor: '#FF6F00',
-                        confirmButtonText: 'حسناً'
-                    }).then(() => {
-                        closeFamilyPopup(); // ✅ إغلاق الفورم
-                        location.reload(); // ✅ إعادة تحميل الصفحة
+                    showAlert('[translate:تم تحديث فرد الأسرة بنجاح!]', 'success', () => {
+                        closeFamilyPopup();
+                        location.reload();
                     });
+                } else if (data.rejected_id && data.reason) {
+                    showAlert(
+                        `[translate:رقم الهوية المرفوض:] <strong>${data.rejected_id}</strong><br>` +
+                        `[translate:سبب الرفض:] <strong>${data.reason}</strong>`,
+                        'error'
+                    );
                 } else {
-                    Swal.fire({
-                        title: 'خطأ!',
-                        text: 'حدث خطأ أثناء التحديث، الرجاء المحاولة مرة أخرى.',
-                        icon: 'error',
-                        confirmButtonColor: '#d33',
-                        confirmButtonText: 'حسناً'
-                    });
+                    showAlert(data.message || '[translate:حدث خطأ أثناء التحديث]', 'error');
                 }
             })
             .catch(error => {
-                console.error("❌ خطأ في جلب البيانات:", error);
-                Swal.fire({
-                    title: 'خطأ!',
-                    text: 'تعذر الاتصال بالخادم، يرجى التحقق من الاتصال بالإنترنت.',
-                    icon: 'error',
-                    confirmButtonColor: '#d33',
-                    confirmButtonText: 'حسناً'
-                });
+                if (error.data) {
+                    if (error.data.rejected_id && error.data.reason) {
+                        showAlert(
+                            `[translate:رقم الهوية المرفوض:] <strong>${error.data.rejected_id}</strong><br>` +
+                            `[translate:سبب الرفض:] <strong>${error.data.reason}</strong>`,
+                            'error'
+                        );
+                    } else {
+                        showAlert(error.data.message || '[translate:حدث خطأ أثناء التحديث]', 'error');
+                    }
+                } else {
+                    console.error("❌ خطأ في جلب البيانات:", error);
+                    showAlert('[translate:تعذر الاتصال بالخادم، يرجى التحقق من الاتصال بالإنترنت.]', 'error');
+                }
+            });
+        }
+
+        // دالة موحدة محسّنة للتنبيهات
+        function showAlert(message, type = 'info', callback = null) {
+            const config = {
+                error: { icon: 'error', title: 'خطأ!', confirmButtonColor: '#d33' },
+                warning: { icon: 'warning', title: 'تحذير!', confirmButtonColor: '#ffc107' },
+                success: { icon: 'success', title: 'نجح!', confirmButtonColor: '#28a745' },
+                info: { icon: 'info', title: 'معلومات', confirmButtonColor: '#17a2b8' }
+            };
+
+            Swal.fire({
+                ...config[type],
+                html: message, // دعم HTML للرسائل المفصلة
+                confirmButtonText: 'إغلاق'
+            }).then((result) => {
+                if (callback && result.isConfirmed) {
+                    callback();
+                }
             });
         }
 
@@ -2866,7 +2985,6 @@
             }
         }
 
-
         // document.addEventListener('DOMContentLoaded', function () {
         //     const editNeighborhoodSelect = document.getElementById('edit_neighborhood');
         //     const areaResponsibleField = document.getElementById('areaResponsibleField');
@@ -3109,46 +3227,80 @@
             }
         });
 
-
         function editFamilyMember(familyMemberId) {
             // إرسال طلب AJAX إلى الخادم للحصول على بيانات العضو
             fetch(`/get-family-member-data/${familyMemberId}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(familyMemberData => {
-                    console.log(familyMemberData);
+                    console.log("📌 بيانات عضو الأسرة:", familyMemberData);
+
+                    if (!familyMemberData.success) {
+                        showAlert(familyMemberData.message || 'تعذر تحميل بيانات العضو', 'error');
+                        return;
+                    }
 
                     // تعبئة البيانات في الفورم
-                    document.getElementById('familyMemberId').value = familyMemberData.id;
-                    document.getElementById('edit_f_first_name').value = familyMemberData.first_name;
-                    document.getElementById('edit_f_father_name').value = familyMemberData.father_name;
-                    document.getElementById('edit_f_grandfather_name').value = familyMemberData.grandfather_name;
-                    document.getElementById('edit_f_family_name').value = familyMemberData.family_name;
-                    document.getElementById('edit_f_id_num').value = familyMemberData.id_num;
+                    document.getElementById('familyMemberId').value = familyMemberData.data.id || familyMemberData.id;
+                    document.getElementById('edit_f_first_name').value = familyMemberData.data.first_name || familyMemberData.first_name || '';
+                    document.getElementById('edit_f_father_name').value = familyMemberData.data.father_name || familyMemberData.father_name || '';
+                    document.getElementById('edit_f_grandfather_name').value = familyMemberData.data.grandfather_name || familyMemberData.grandfather_name || '';
+                    document.getElementById('edit_f_family_name').value = familyMemberData.data.family_name || familyMemberData.family_name || '';
+                    document.getElementById('edit_f_id_num').value = familyMemberData.data.id_num || familyMemberData.id_num || '';
 
-                    // معالجة تاريخ الميلاد إذا كان غير نصي
-                    let dobValue = familyMemberData.dob
-                        ? String(familyMemberData.dob).split('T')[0]
-                        : '';
-                    document.getElementById('edit_f_dob').value = dobValue;
-                    document.getElementById('edit_f_relationship').value = familyMemberData.relationship;
-                    document.getElementById('edit_f_has_condition').value = familyMemberData.has_condition;
-                    document.getElementById('edit_f_condition_description').value = familyMemberData.condition_description || '';
+                    // معالجة تاريخ الميلاد
+                    let dobValue = familyMemberData.data.dob || familyMemberData.dob;
+                    if (dobValue) {
+                        dobValue = String(dobValue).split('T')[0];
+                    }
+                    document.getElementById('edit_f_dob').value = dobValue || '';
+
+                    document.getElementById('edit_f_relationship').value = familyMemberData.data.relationship || familyMemberData.relationship || '';
+
+                    // معالجة has_condition
+                    let hasConditionValue = familyMemberData.data.has_condition || familyMemberData.has_condition;
+                    document.getElementById('edit_f_has_condition').value = hasConditionValue === 1 || hasConditionValue === '1' || hasConditionValue === true ? '1' : '0';
+
+                    document.getElementById('edit_f_condition_description').value = familyMemberData.data.condition_description || familyMemberData.condition_description || '';
 
                     // فتح الفورم المنبثق
                     document.getElementById('editFamilyMemberModal').classList.remove('hidden');
-
+                    console.log("✅ تم تعبئة الفورم وفتحه بنجاح");
                 })
                 .catch(error => {
-                    console.error("Error fetching data:", error);
+                    console.error("❌ خطأ في جلب بيانات العضو:", error);
 
-                    // ❌ إظهار رسالة خطأ بـ SweetAlert2
-                    Swal.fire({
-                        title: 'حدث خطأ!',
-                        text: 'تعذر تحميل بيانات العضو، يرجى المحاولة مرة أخرى.',
-                        icon: 'error',
-                        confirmButtonColor: '#d33',
-                        confirmButtonText: 'حسناً'
-                    });
+                    // معالجة أخطاء الرفض المفصلة
+                    if (error.name === 'SyntaxError' || error.message.includes('HTTP error')) {
+                        // جرب قراءة الاستجابة كـ text لمعرفة نوع الخطأ
+                        fetch(`/get-family-member-data/${familyMemberId}`)
+                            .then(response => response.text())
+                            .then(text => {
+                                try {
+                                    const errorData = JSON.parse(text);
+                                    if (errorData.rejected_id && errorData.reason) {
+                                        showAlert(
+                                            `رقم الهوية المرفوض: <strong>${errorData.rejected_id}</strong><br>` +
+                                            `سبب الرفض: <strong>${errorData.reason}</strong>`,
+                                            'error'
+                                        );
+                                    } else {
+                                        showAlert(errorData.message || 'تعذر تحميل بيانات العضو', 'error');
+                                    }
+                                } catch (e) {
+                                    showAlert('تعذر تحميل بيانات العضو، يرجى المحاولة مرة أخرى.', 'error');
+                                }
+                            })
+                            .catch(() => {
+                                showAlert('تعذر الاتصال بالخادم، يرجى التحقق من الاتصال بالإنترنت.', 'error');
+                            });
+                    } else {
+                        showAlert('حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى.', 'error');
+                    }
                 });
         }
 

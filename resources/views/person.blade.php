@@ -374,7 +374,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="phone">رقم الجوال</label>
+                    <label for="phone">رقم الجوال المعتمد</label>
                     <input
                         type="text"
                         class="text-left"
@@ -415,7 +415,7 @@
             </div>
 
             <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                <label for="has_condition">هل لديك حالة صحية؟</label>
+                <label for="has_condition">هل لديك حالة صحية مرض مزمن حالة خالصة إصابة حرب ؟</label>
                 <select id="has_condition" name="has_condition" onchange="toggleConditionDescription()">
                     <option value="0" {{ old('has_condition') == '0' ? 'selected' : '' }}>لا</option>
                     <option value="1" {{ old('has_condition') == '1' ? 'selected' : '' }}>نعم</option>
@@ -468,12 +468,12 @@
 
             <div class="row">
                 <div class="col-md-6 form-group">
-                    <label for="current_city">المحافظة الحالية</label>
+                    <label for="current_city">المحافظة التي تسكن فيها حالياً</label>
                     <select id="current_city" name="current_city" required
                     oninput="validateCurrentCity()"
                     onfocus="resetBorderAndError('current_city')"
                     onblur="validateCurrentCity()" class="form-control">
-                        <option value="">اختر المحافظة الحالية</option>
+                        <option value="">اختر المحافظة التي تسكن فيها حالياً</option>
                         @foreach($current_cities as $key => $city)
                             <option value="{{ $key }}" {{ old('current_city') == $key ? 'selected' : '' }}>{{ $city }}</option>
                         @endforeach
@@ -482,12 +482,12 @@
                 </div>
 
                 <div class="col-md-6 form-group">
-                    <label for="housing_type">نوع السكن الحالي</label>
+                    <label for="housing_type">نوع السكن الذي تعيش فيه حالياً</label>
                     <select id="housing_type" name="housing_type" required
                     oninput="validateHousingType()"
                     onfocus="resetBorderAndError('housing_type')"
                     onblur="validateHousingType()" class="form-control">
-                        <option value="">اختر نوع السكن الحالي</option>
+                        <option value="">اختر نوع السكن الذي تعيش فيه حالياً</option>
                         @foreach($housing_types as $key => $type)
                             <option value="{{ $key }}" {{ old('housing_type') == $key ? 'selected' : '' }}>{{ $type }}</option>
                         @endforeach
@@ -498,18 +498,18 @@
 
             <div class="row">
                 <div class="col-md-4 form-group">
-                    <label for="neighborhood">الحي السكني الحالي</label>
+                    <label for="neighborhood">الحي السكني الذي تتواجد فيه حالياً</label>
                     <select id="neighborhood" name="neighborhood" required
                     oninput="validateNeighborhood()"
                     onfocus="resetBorderAndError('neighborhood')"
                     onblur="validateNeighborhood()" class="form-control">
-                        <option value="">اختر الحي السكني الحالي </option>
+                        <option value="">اختر الحي السكني الذي تتواجد فيه حالياً </option>
                         </select>
                     <div class="error-message" id="neighborhood_error" style="color: red;"></div>
                 </div>
 
                 <div class="col-md-4 form-group area-responsible-container" id="areaResponsibleField" style="display:none;">
-                    <label for="area_responsible_id" class="form-label custom-label-style">مسؤول المنطقة في المواصي</label>
+                    <label for="area_responsible_id" class="form-label custom-label-style">مسؤول المنطقة </label>
                     <select class="form-control"
                             id="area_responsible_id"
                             name="area_responsible_id"
