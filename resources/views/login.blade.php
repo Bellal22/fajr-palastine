@@ -308,17 +308,118 @@
         });
 
         document.getElementById('loginForm').addEventListener('submit', function(event) {
-            const idNum = document.getElementById('id_num').value;
-            if (idNum.length !== 9) {
-                event.preventDefault();
-                document.getElementById('id_num_error').style.display = 'block';
+            event.preventDefault(); // منع الإرسال الافتراضي
+
+            const idNum = document.getElementById('id_num').value.trim();
+            const passkey = document.getElementById('passkey').value.trim();
+            const idNumError = document.getElementById('id_num_error');
+            const form = event.target;
+
+            idNumError.style.display = 'none'; // إخفاء الخطأ افتراضياً
+
+            // التحقق من رقم الهوية في الفرونت إند
+            if (idNum.length !== 9 || !/^\d{9}$/.test(idNum)) {
+                idNumError.style.display = 'block';
+                idNumError.textContent = 'رقم الهوية يجب أن يتكون من 9 أرقام فقط.';
                 Swal.fire({
                     icon: 'error',
                     title: 'خطأ في تسجيل الدخول',
-                    text: 'رقم الهوية يجب أن يكون مكونًا من 9 أرقام.',
+                    text: 'رقم الهوية يجب أن يكون مكونًا من 9 أرقام فقط.',
                     confirmButtonText: 'إغلاق'
                 });
+                return;
             }
+
+            // التحقق من أن كلمة المرور غير فارغة
+            if (passkey === '') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ في تسجيل الدخول',
+                    text: 'كلمة المرور مطلوبة.',
+                    confirmButtonText: 'إغلاق'
+                });
+                return;
+            }
+
+            // إظهار مؤشر التحميل
+            Swal.fire({
+                title: 'جاري تسجيل الدخول...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // إرسال النموذج باستخدام AJAX
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                // التحقق من نوع الاستجابة
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(data => ({
+                        ok: response.ok,
+                        status: response.status,
+                        data: data
+                    }));
+                } else {
+                    // في حالة عدم وجود JSON (مثل أخطاء الـ validation من Laravel)
+                    return response.text().then(text => {
+                        throw new Error('حدث خطأ في الاتصال بالخادم.');
+                    });
+                }
+            })
+            .then(result => {
+                if (result.ok && result.data.success) {
+                    // إعادة التوجيه في حالة النجاح
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم تسجيل الدخول بنجاح',
+                        text: 'جاري تحويلك إلى صفحة الملف الشخصي...',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = result.data.redirect;
+                    });
+                } else {
+                    // عرض رسالة الخطأ حسب نوع الخطأ
+                    let errorTitle = 'خطأ في تسجيل الدخول';
+                    let errorIcon = 'error';
+
+                    // تخصيص العنوان حسب حالة الخطأ
+                    if (result.status === 404) {
+                        errorTitle = 'رقم هوية غير موجود';
+                    } else if (result.status === 403) {
+                        errorTitle = 'تسجيل دخول غير مسموح';
+                        errorIcon = 'warning';
+                    } else if (result.status === 401) {
+                        errorTitle = 'كلمة مرور خاطئة';
+                    }
+
+                    Swal.fire({
+                        icon: errorIcon,
+                        title: errorTitle,
+                        text: result.data.message || 'حدث خطأ أثناء تسجيل الدخول.',
+                        confirmButtonText: 'إغلاق'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ في الاتصال',
+                    text: 'حدث خطأ غير متوقع. الرجاء التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.',
+                    confirmButtonText: 'إغلاق'
+                });
+            });
         });
 
         document.addEventListener("DOMContentLoaded", function () {
@@ -329,34 +430,43 @@
             const resetIdInput = document.getElementById("reset_id");
             const resetPhoneInput = document.getElementById("reset_phone");
 
-            // فتح البوب أب عند الضغط على رابط استعادة كلمة المرور
             forgotPasswordLink.addEventListener("click", function (event) {
                 event.preventDefault();
                 modal.style.display = "flex";
+                // إعادة تعيين الحقول والرسائل عند فتح البوب أب
+                resetIdInput.value = "";
+                resetPhoneInput.value = "";
             });
 
-            // إغلاق البوب أب عند الضغط على زر الإغلاق
             closeModal.addEventListener("click", function () {
                 modal.style.display = "none";
             });
 
-            // إغلاق البوب أب عند النقر خارج المحتوى
             window.addEventListener("click", function (event) {
                 if (event.target === modal) {
                     modal.style.display = "none";
                 }
             });
 
-            // إرسال طلب استعادة كلمة المرور
             resetPasswordBtn.addEventListener("click", function () {
                 let idNum = resetIdInput.value.trim();
                 let phone = resetPhoneInput.value.trim();
 
-                if (!idNum || !phone) {
+                if (!/^\d{9}$/.test(idNum)) {
                     Swal.fire({
                         icon: "warning",
                         title: "تنبيه",
-                        text: "يرجى إدخال رقم الهوية ورقم الجوال.",
+                        text: "يرجى إدخال رقم هوية صحيح مكون من 9 أرقام.",
+                        confirmButtonColor: "#ff7f00",
+                    });
+                    return;
+                }
+
+                if (!phone.match(/^\d{10,15}$/)) {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "تنبيه",
+                        text: "يرجى إدخال رقم جوال صحيح (من 10 إلى 15 رقمًا).",
                         confirmButtonColor: "#ff7f00",
                     });
                     return;
@@ -400,7 +510,6 @@
                         text: 'حدث خطأ أثناء معالجة الطلب. حاول مرة أخرى لاحقًا.',
                         confirmButtonColor: '#FF6F00',
                         confirmButtonText: 'إغلاق',
-
                     });
                 });
             });

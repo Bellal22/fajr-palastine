@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Person;
 use App\Models\Block;
 use App\Models\AreaResponsible;
+use App\Models\BanList;
 
 class DataSyncController extends Controller
 {
@@ -36,22 +37,24 @@ class DataSyncController extends Controller
 
         // 2. إنشاء قالب موحد لجميع السجلات
         $recordTemplate = [
-            'id_num'            => null,
-            'passkey'           => null,
-            'first_name'        => null,
-            'father_name'       => null,
-            'grandfather_name'  => null,
-            'family_name'       => null,
-            'phone'             => null,
-            'relatives_count'   => 0,
-            'block_id'          => null,
+            'id_num'              => null,
+            'passkey'             => null,
+            'first_name'          => null,
+            'father_name'         => null,
+            'grandfather_name'    => null,
+            'family_name'         => null,
+            'phone'               => null,
+            'relatives_count'     => 2,
+            'block_id'            => null,
             'area_responsible_id' => null,
-            'relative_id'       => null,
-            'relationship'      => null,
+            'relative_id'         => null,
+            'relationship'        => null,
+            'social_status'       => null,
         ];
 
         $beneficiariesToInsert = [];
         $skippedCount = 0;
+
         foreach ($sourceData as $index => $person) {
             try {
                 if (!isset($person['CI_ID_NUM'])) {
@@ -60,77 +63,92 @@ class DataSyncController extends Controller
                     continue;
                 }
 
+                $personIdNum = trim($person['CI_ID_NUM']);
+
+                // تحقق رقم الهوية للزوج في BanList أو Person
+                if (BanList::where('id_num', $personIdNum)->exists() || Person::where('id_num', $personIdNum)->exists()) {
+                    Log::warning("رقم الهوية {$personIdNum} للزوج محظور أو مسجل مسبقاً، تم تجاهل السجل في الفهرس: {$index}");
+                    $skippedCount++;
+                    continue;
+                }
+
                 $representativeValue = trim($person['Representative_name'] ?? '');
                 if (empty($representativeValue)) {
-                    Log::warning("سجل الشخص رقم: {$person['CI_ID_NUM']} لا يحتوي على اسم أو رقم مندوب.");
+                    Log::warning("سجل الشخص رقم: {$personIdNum} لا يحتوي على اسم أو رقم مندوب.");
                     $skippedCount++;
                     continue;
                 }
 
                 $block = null;
 
-                // البحث عن المندوب بالرقم أو بالاسم
                 if (is_numeric($representativeValue)) {
                     $block = Block::find($representativeValue);
                     if ($block) {
-                        Log::info("تم العثور على المندوب '{$block->name}' بالرقم (ID: {$representativeValue}) للشخص رقم: {$person['CI_ID_NUM']}");
+                        Log::info("تم العثور على المندوب '{$block->name}' بالرقم (ID: {$representativeValue}) للشخص رقم: {$personIdNum}");
                     } else {
-                        Log::warning("لم يتم العثور على مندوب بالرقم (ID: {$representativeValue}) للشخص رقم: {$person['CI_ID_NUM']}. سيتم تجاهل السجل.");
+                        Log::warning("لم يتم العثور على مندوب بالرقم (ID: {$representativeValue}) للشخص رقم: {$personIdNum}. سيتم تجاهل السجل.");
                     }
                 } else {
                     $block = Block::where('name', 'LIKE', '%' . $representativeValue . '%')->first();
                     if ($block) {
-                        Log::info("تم العثور على المندوب '{$block->name}' بالاسم المطابق لـ '{$representativeValue}' للشخص رقم: {$person['CI_ID_NUM']}");
+                        Log::info("تم العثور على المندوب '{$block->name}' بالاسم المطابق لـ '{$representativeValue}' للشخص رقم: {$personIdNum}");
                     } else {
-                        Log::warning("لم يتم العثور على مندوب بالاسم المطابق لـ '{$representativeValue}' للشخص رقم: {$person['CI_ID_NUM']}. سيتم تجاهل السجل.");
+                        Log::warning("لم يتم العثور على مندوب بالاسم المطابق لـ '{$representativeValue}' للشخص رقم: {$personIdNum}. سيتم تجاهل السجل.");
                     }
                 }
 
-                // إذا تم العثور على المندوب، قم بإنشاء السجلات
-                if ($block) {
-                    // **التحقق الإضافي يبدأ من هنا**
-                    // التحقق مما إذا كان المندوب مرتبطًا بمسؤول منطقة
-                    if ($block->area_responsible_id) {
-                        Log::info("المندوب '{$block->name}' مرتبط بمسؤول المنطقة رقم: {$block->area_responsible_id}.");
-                    } else {
-                        Log::warning("المندوب '{$block->name}' (ID: {$block->id}) غير مرتبط بأي مسؤول منطقة. سيتم تخزين الشخص مع قيمة null في حقل area_responsible_id.");
-                    }
-                    // **التحقق الإضافي ينتهي هنا**
-
-                    // --- إنشاء سجل الزوج ---
-                    $husbandRecord = $recordTemplate;
-                    $husbandRecord['id_num'] = $person['CI_ID_NUM'];
-                    $husbandRecord['passkey'] = '123456789';
-                    $husbandRecord['first_name'] = $person['CI_FIRST_ARB'] ?? null;
-                    $husbandRecord['father_name'] = $person['CI_FATHER_ARB'] ?? null;
-                    $husbandRecord['grandfather_name'] = $person['CI_GRAND_FATHER_ARB'] ?? null;
-                    $husbandRecord['family_name'] = $person['CI_FAMILY_ARB'] ?? null;
-                    $husbandRecord['phone'] = $person['Phone_number'] ?? null;
-                    $husbandRecord['relatives_count'] = $person['Family_count'] ?? 0;
-
-                    // تخزين معرفات المندوب ومسؤول المنطقة
-                    $husbandRecord['block_id'] = $block->id;
-                    $husbandRecord['area_responsible_id'] = $block->area_responsible_id; // **هنا يتم تخزين معرف مسؤول المنطقة**
-
-                    $beneficiariesToInsert[] = $husbandRecord;
-
-                    // --- إنشاء سجل الزوجة ---
-                    if (!empty($person['Wife_id']) && !empty($person['Wife_name'])) {
-                        $wifeNameParts = $this->parseFullName($person['Wife_name']);
-                        $wifeRecord = $recordTemplate;
-                        $wifeRecord['id_num'] = $person['Wife_id'];
-                        $wifeRecord['passkey'] = null;
-                        $wifeRecord['first_name'] = $wifeNameParts['first_name'];
-                        $wifeRecord['father_name'] = $wifeNameParts['father_name'];
-                        $wifeRecord['grandfather_name'] = $wifeNameParts['grandfather_name'];
-                        $wifeRecord['family_name'] = $wifeNameParts['family_name'];
-                        $wifeRecord['relative_id'] = $person['CI_ID_NUM'];
-                        $wifeRecord['relationship'] = 'wife';
-                        $beneficiariesToInsert[] = $wifeRecord;
-                    }
-                } else {
+                if (!$block) {
                     $skippedCount++;
                     continue;
+                }
+
+                if ($block->area_responsible_id) {
+                    Log::info("المندوب '{$block->name}' مرتبط بمسؤول المنطقة رقم: {$block->area_responsible_id}.");
+                } else {
+                    Log::warning("المندوب '{$block->name}' (ID: {$block->id}) غير مرتبط بأي مسؤول منطقة. سيتم تخزين الشخص مع قيمة null في حقل area_responsible_id.");
+                }
+
+                // تحقق رقم هوية الزوجة قبل إضافة السجل
+                $wifeIdNum = trim($person['Wife_id'] ?? '');
+
+                if (!empty($wifeIdNum) && (BanList::where('id_num', $wifeIdNum)->exists() || Person::where('id_num', $wifeIdNum)->exists())) {
+                    Log::warning("رقم هوية الزوجة {$wifeIdNum} محظور أو مسجل مسبقاً، تم تجاهل السجل للزوج رقم: {$personIdNum} في الفهرس: {$index}");
+                    $skippedCount++;
+                    continue;
+                }
+
+                // استخراج الحالة الاجتماعية من عمود Notes
+                $socialStatus = $this->extractSocialStatusFromNotes($person['Notes'] ?? '');
+
+                // إنشاء سجل الزوج مع إضافة خانة الحالة الاجتماعية
+                $husbandRecord = $recordTemplate;
+                $husbandRecord['id_num'] = $personIdNum;
+                $husbandRecord['passkey'] = '123456789';
+                $husbandRecord['first_name'] = $person['CI_FIRST_ARB'] ?? null;
+                $husbandRecord['father_name'] = $person['CI_FATHER_ARB'] ?? null;
+                $husbandRecord['grandfather_name'] = $person['CI_GRAND_FATHER_ARB'] ?? null;
+                $husbandRecord['family_name'] = $person['CI_FAMILY_ARB'] ?? null;
+                $husbandRecord['phone'] = $person['Phone_number'] ?? null;
+                $husbandRecord['relatives_count'] = $person['Family_count'] ?? 0;
+                $husbandRecord['social_status'] = $socialStatus;
+                $husbandRecord['block_id'] = $block->id;
+                $husbandRecord['area_responsible_id'] = $block->area_responsible_id;
+
+                $beneficiariesToInsert[] = $husbandRecord;
+
+                // إنشاء سجل الزوجة
+                if (!empty($person['Wife_id']) && !empty($person['Wife_name'])) {
+                    $wifeNameParts = $this->parseFullName($person['Wife_name']);
+                    $wifeRecord = $recordTemplate;
+                    $wifeRecord['id_num'] = $person['Wife_id'];
+                    $wifeRecord['passkey'] = null;
+                    $wifeRecord['first_name'] = $wifeNameParts['first_name'];
+                    $wifeRecord['father_name'] = $wifeNameParts['father_name'];
+                    $wifeRecord['grandfather_name'] = $wifeNameParts['grandfather_name'];
+                    $wifeRecord['family_name'] = $wifeNameParts['family_name'];
+                    $wifeRecord['relative_id'] = $personIdNum;
+                    $wifeRecord['relationship'] = 'wife';
+                    $beneficiariesToInsert[] = $wifeRecord;
                 }
             } catch (\Exception $e) {
                 Log::error("خطأ في معالجة السجل في الفهرس {$index}: " . $e->getMessage());
@@ -148,7 +166,7 @@ class DataSyncController extends Controller
             }
 
             if ($skippedCount > 0) {
-                Log::info("تم تجاهل {$skippedCount} سجل بسبب عدم العثور على مندوب مطابق أو بيانات ناقصة.");
+                Log::info("تم تجاهل {$skippedCount} سجل بسبب عدم العثور على مندوب مطابق أو بيانات ناقصة أو وجودها مسبقاً.");
             }
 
             DB::commit();
@@ -165,6 +183,28 @@ class DataSyncController extends Controller
     }
 
     /**
+     * دالة مساعدة لاستخراج الحالة الاجتماعية من النص
+     */
+    private function extractSocialStatusFromNotes($notes)
+    {
+        // البحث عن النمط "سبب الرفض: ... widowed|divorced|single"
+        if (preg_match('/سبب الرفض:.*?(widowed|divorced|single)/u', $notes, $matches)) {
+            return $matches[1];
+        }
+
+        // البحث عن الكلمات العربية مباشرة
+        if (stripos($notes, 'أرمل/ة') !== false) {
+            return 'widowed';
+        } elseif (stripos($notes, 'مطلق/ة') !== false) {
+            return 'divorced';
+        } elseif (stripos($notes, 'انسة') !== false) {
+            return 'single';
+        }
+
+        return null;
+    }
+
+    /**
      * دالة مساعدة لفصل الاسم الكامل إلى أربعة أجزاء.
      * تم تعديلها لإرجاع سلاسل فارغة بدلاً من null لتجنب أخطاء قاعدة البيانات.
      */
@@ -172,10 +212,10 @@ class DataSyncController extends Controller
     {
         $parts = explode(' ', trim($fullName), 4);
         return [
-            'first_name'        => $parts[0] ?? '', // تغيير من null إلى ''
-            'father_name'       => $parts[1] ?? '', // تغيير من null إلى ''
-            'grandfather_name'  => $parts[2] ?? '', // تغيير من null إلى ''
-            'family_name'       => $parts[3] ?? '', // تغيير من null إلى ''
+            'first_name'        => $parts[0] ?? '',
+            'father_name'       => $parts[1] ?? '',
+            'grandfather_name'  => $parts[2] ?? '',
+            'family_name'       => $parts[3] ?? '',
         ];
     }
 }

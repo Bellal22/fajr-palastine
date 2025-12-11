@@ -24,15 +24,53 @@ class AuthController extends Controller
         $request->validate([
             'id_num' => 'required|integer',
             'passkey' => 'required|string',
+        ], [
+            'id_num.required' => 'رقم الهوية مطلوب.',
+            'id_num.integer' => 'رقم الهوية يجب أن يكون أرقاماً فقط.',
+            'passkey.required' => 'كلمة المرور مطلوبة.',
         ]);
 
         $person = Person::where('id_num', $request->id_num)->first();
 
-        if (!$person || $person->passkey !== $request->passkey) {
-            return back()->with('error', 'رقم الهوية أو كلمة المرور غير صحيحة.');
+        if (!$person) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'رقم الهوية غير موجود. الرجاء التحقق والمحاولة مجدداً.'
+                ], 404);
+            }
+            return back()->with('error', 'رقم الهوية غير موجود. الرجاء التحقق والمحاولة مجدداً.');
+        }
+
+        // التحقق من أن الشخص ليس فرداً في عائلة (يجب أن يكون relative_id فارغ)
+        if (!is_null($person->relative_id)) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'لا يمكن تسجيل الدخول. رقم الهوية المدخل مُدرج ضمن عائلة. الرجاء استخدام رقم هوية رب الأسرة.'
+                ], 403);
+            }
+            return back()->with('error', 'لا يمكن تسجيل الدخول. رقم الهوية المدخل مُدرج ضمن عائلة. الرجاء استخدام رقم هوية رب الأسرة.');
+        }
+
+        if ($person->passkey !== $request->passkey) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'كلمة المرور غير صحيحة. الرجاء المحاولة مرة أخرى.'
+                ], 401);
+            }
+            return back()->with('error', 'كلمة المرور غير صحيحة. الرجاء المحاولة مرة أخرى.');
         }
 
         session(['person' => $person]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'redirect' => route('profile')
+            ]);
+        }
 
         return redirect()->route('profile');
     }
