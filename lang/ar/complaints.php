@@ -31,6 +31,7 @@ return [
         'restored' => 'تم استعادة الشكوى بنجاح.',
     ],
     'attributes' => [
+        'id'=>'رقم الشكوى',
         'id_num' => 'رقم هوية مقدم الشكوى',
         'complaint_title' => 'عنوان الشكوى',
         'complaint_text' => 'نص الشكوى',

@@ -1371,34 +1371,82 @@
         <table class="complaints-table">
             <thead>
                 <tr>
-                    {{-- <th class="border px-4 py-2">رقم الهوية</th> --}}
+                    <th class="border px-4 py-2">رقم الهوية</th>
                     <th class="border px-4 py-2">عنوان الشكوى</th>
                     <th class="border px-4 py-2">نص الشكوى</th>
                     <th class="border px-4 py-2">حالة الشكوى</th>
+                    <th class="border px-4 py-2">الرد</th>
+                    <th class="border px-4 py-2">الموظف المسؤول</th>
                     <th class="border px-4 py-2">تاريخ الإنشاء</th>
-                    {{-- <th class="border px-4 py-2">الإجراء</th> --}}
                 </tr>
             </thead>
             <tbody>
                 @foreach($complaints as $complaint)
                     <tr>
-                        {{-- <td>{{ $complaint->id_num }}</td> --}}
-                        <td>{{ $complaint->complaint_title }}</td>
-                        <td>{{ $complaint->complaint_text }}</td>
-                        <td>{{ $complaint->status }}</td>
-                        <td>{{ $complaint->created_at->format('d/m/Y') }}</td>
-                        {{-- <td>
-                            <a href="#" class="edit-icon" onclick="editComplaint({{ $complaint->id }})">
-                                <i class="fa fa-edit"></i>
-                            </a>
-                            <a href="#" class="delete-icon" onclick="deleteComplaint({{ $complaint->id }})">
-                                <i class="fa fa-trash"></i>
-                            </a>
-                        </td> --}}
+                        <td class="border px-4 py-2">{{ $complaint->id_num }}</td>
+                        <td class="border px-4 py-2">{{ $complaint->complaint_title }}</td>
+                        <td class="border px-4 py-2">{{ Str::limit($complaint->complaint_text, 50) }}</td>
+                        <td class="border px-4 py-2">
+                            @php
+                                $statusColors = [
+                                    'pending' => '#ffc107',
+                                    'in_progress' => '#17a2b8',
+                                    'resolved' => '#28a745',
+                                    'rejected' => '#dc3545',
+                                ];
+                                $statusLabels = [
+                                    'pending' => 'قيد الانتظار',
+                                    'in_progress' => 'قيد المعالجة',
+                                    'resolved' => 'تم الحل',
+                                    'rejected' => 'مرفوضة',
+                                ];
+                                $status = $complaint->status ?? 'pending';
+                            @endphp
+                            <span style="
+                                background-color: {{ $statusColors[$status] }};
+                                color: white;
+                                padding: 5px 10px;
+                                border-radius: 4px;
+                                font-size: 12px;
+                                font-weight: bold;
+                                display: inline-block;
+                            ">
+                                {{ $statusLabels[$status] }}
+                            </span>
+                        </td>
+
+                        <td class="border px-4 py-2">
+                            @if($complaint->response)
+                                {{ Str::limit($complaint->response, 40) }}
+                                @if($complaint->responded_at)
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ $complaint->responded_at->format('d/m/Y') }}
+                                    </small>
+                                @endif
+                            @else
+                                <span class="text-muted">لم يتم الرد بعد</span>
+                            @endif
+                        </td>
+                        <td class="border px-4 py-2">
+                            @if($complaint->responder)
+                                <span class="font-weight-bold">{{ $complaint->responder->name }}</span>
+                                @if($complaint->responded_at)
+                                    <br>
+                                    <small class="text-muted">{{ $complaint->responded_at->format('d/m/Y H:i') }}</small>
+                                @endif
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td class="border px-4 py-2">
+                            {{ $complaint->created_at ? $complaint->created_at->format('d/m/Y') : '-' }}
+                        </td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
+
     </div>
 
     <script>

@@ -17,7 +17,7 @@ Breadcrumbs::for('dashboard.complaints.create', function ($breadcrumb) {
 
 Breadcrumbs::for('dashboard.complaints.show', function ($breadcrumb, $complaint) {
     $breadcrumb->parent('dashboard.complaints.index');
-    $breadcrumb->push($complaint->name, route('dashboard.complaints.show', $complaint));
+    $breadcrumb->push($complaint->complaint_title, route('dashboard.complaints.show', $complaint));
 });
 
 Breadcrumbs::for('dashboard.complaints.edit', function ($breadcrumb, $complaint) {

@@ -32,6 +32,8 @@ return [
         'people' => base_path('lang/{lang}/people.php'),
         'complaints' => base_path('lang/{lang}/complaints.php'),
         'suppliers' => base_path('lang/{lang}/suppliers.php'),
+        'items' => base_path('lang/{lang}/items.php'),
+        'inbound_shipments' => base_path('lang/{lang}/inbound_shipments.php'),
         /*  The lang of generated crud will set here: Don't remove this line  */
     ],
 

@@ -12,5 +12,7 @@
     "manage.complaints",
     "manage.suppliers",
     "manage.area_responsibles",
-    "manage.blocks"
+    "manage.blocks",
+    "manage.items",
+    "manage.inbound_shipments"
 ]

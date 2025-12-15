@@ -30,5 +30,24 @@ class Complaint extends Model
         'id_num',
         'complaint_title',
         'complaint_text',
+        'response',
+        'responded_at',
+        'responded_by',
+        'status',
     ];
+
+    protected $casts = [
+        'responded_at' => 'datetime',
+    ];
+
+
+    public function person()
+    {
+        return $this->belongsTo(Person::class, 'id_num', 'id_num');
+    }
+
+    public function responder()
+    {
+        return $this->belongsTo(User::class, 'responded_by');
+    }
 }

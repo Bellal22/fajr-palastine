@@ -184,3 +184,6 @@ Route::post('/update-passkey', [PersonController::class, 'updatePasskey']);
 Route::post('/password-reset', [AuthController::class, 'resetPassword'])->name('password.reset');
 
 Route::delete('/person/{id}', [PersonController::class, 'deletePerson']);
+
+Route::post('complaints/{complaint}/respond', [ComplaintController::class, 'respond'])
+    ->name('dashboard.complaints.respond');

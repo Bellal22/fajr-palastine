@@ -210,78 +210,136 @@
 
 {{--        @if(count($complaints) > 0)--}}
 
-                @component('dashboard::components.table-box')
-                    @slot('title')
-                        @lang('complaints.actions.list') ({{ $complaints->total() }})
-                    @endslot
+    @component('dashboard::components.table-box')
+        @slot('title')
+            @lang('complaints.actions.list') ({{ $complaints->total() }})
+        @endslot
 
-                    <thead>
-                    <tr>
-                        <th colspan="100">
-                            <div class="d-flex">
-                                <x-check-all-delete
-                                    type="{{ \App\Models\Complaint::class }}"
-                                    :resource="trans('complaints.plural')"></x-check-all-delete>
+        <thead>
+            <tr>
+                <th colspan="100">
+                    <div class="d-flex">
+                        <x-check-all-delete
+                            type="{{ \App\Models\Complaint::class }}"
+                            :resource="trans('complaints.plural')"></x-check-all-delete>
 
-                                @if (auth()->user()?->isAdmin())
-                                    <div class="ml-2 d-flex justify-content-between flex-grow-1">
-                                        @include('dashboard.complaints.partials.actions.trashed')
-                                    </div>
-                                @endif
+                        @if (auth()->user()?->isAdmin())
+                            <div class="ml-2 d-flex justify-content-between flex-grow-1">
+                                @include('dashboard.complaints.partials.actions.trashed')
                             </div>
-                        </th>
-                    </tr>
-                    <tr>
-                        @if (auth()->user()?->isAdmin())
-                            <th style="width: 30px;" class="text-center">
-                                <x-check-all></x-check-all>
-                            </th>
                         @endif
-                        <th>@lang('complaints.attributes.id_num')</th>
-                        <th>@lang('complaints.attributes.complaint_title')</th>
-                        <th>@lang('complaints.attributes.complaint_text')</th>
-                        @if (auth()->user()?->isAdmin())
-                            <th style="width: 160px">...</th>
-                        @endif
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @forelse($complaints as $complaint)
-                        <tr>
-                            @if (auth()->user()?->isAdmin())
-                                <td class="text-center">
-                                    <x-check-all-item :model="$complaint"></x-check-all-item>
-                                </td>
-                            @endif
-                            <td>
-                                <a href="{{ route('dashboard.complaints.show', $complaint) }}"
-                                   class="text-decoration-none text-ellipsis">
-                                    {{ $complaint->id_num }}
-                                </a>
-                            </td>
-                            <td>{{ $complaint->complaint_title	}}</td>
-                            <td>{{ $complaint->complaint_text }}</td>
-
-                            @if (auth()->user()?->isAdmin())
-                                <td style="width: 160px">
-                                    @include('dashboard.complaints.partials.actions.show')
-                                    @include('dashboard.complaints.partials.actions.edit')
-                                    @include('dashboard.complaints.partials.actions.delete')
-                                </td>
-                            @endif
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="100" class="text-center">@lang('complaints.empty')</td>
-                        </tr>
-                    @endforelse
-
-                    @if($complaints->hasPages())
-                        @slot('footer')
-                            {{ $complaints->links() }}
-                        @endslot
+                    </div>
+                </th>
+            </tr>
+            <tr>
+                @if (auth()->user()?->isAdmin())
+                    <th style="width: 30px;" class="text-center">
+                        <x-check-all></x-check-all>
+                    </th>
+                @endif
+                <th>@lang('complaints.attributes.id_num')</th>
+                <th>اسم مقدم الشكوى</th>
+                <th>رقم الجوال</th>
+                <th>@lang('complaints.attributes.complaint_title')</th>
+                <th>الحالة</th>
+                <th>الرد</th>
+                <th>تاريخ التقديم</th>
+                @if (auth()->user()?->isAdmin())
+                    <th style="width: 160px">...</th>
+                @endif
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($complaints as $complaint)
+                <tr>
+                    @if (auth()->user()?->isAdmin())
+                        <td class="text-center">
+                            <x-check-all-item :model="$complaint"></x-check-all-item>
+                        </td>
                     @endif
-                @endcomponent
+                    <td>
+                        <a href="{{ route('dashboard.complaints.show', $complaint) }}"
+                        class="text-decoration-none text-ellipsis">
+                            {{ $complaint->id_num }}
+                        </a>
+                    </td>
+                    <td>
+                        @if($complaint->person)
+                            {{ $complaint->person->first_name }}
+                            {{ $complaint->person->father_name }}
+                            {{ $complaint->person->family_name }}
+                        @else
+                            <span class="text-muted">غير مسجل</span>
+                        @endif
+                    </td>
+                    <td>
+                        {{ $complaint->person?->phone ?? '-' }}
+                    </td>
+                    <td>
+                        <span class="text-ellipsis" style="max-width: 200px; display: inline-block;" title="{{ $complaint->complaint_title }}">
+                            {{ Str::limit($complaint->complaint_title, 40) }}
+                        </span>
+                    </td>
+                    <td>
+                        @php
+                            $statusColors = [
+                                'pending' => 'warning',
+                                'in_progress' => 'info',
+                                'resolved' => 'success',
+                                'rejected' => 'danger',
+                            ];
+                            $statusLabels = [
+                                'pending' => 'قيد الانتظار',
+                                'in_progress' => 'قيد المعالجة',
+                                'resolved' => 'تم الحل',
+                                'rejected' => 'مرفوضة',
+                            ];
+                        @endphp
+                        <span class="badge badge-{{ $statusColors[$complaint->status ?? 'pending'] }}">
+                            {{ $statusLabels[$complaint->status ?? 'pending'] }}
+                        </span>
+                    </td>
+                    <td>
+                        @if($complaint->response)
+                            <span class="text-ellipsis" style="max-width: 150px; display: inline-block;" title="{{ $complaint->response }}">
+                                {{ Str::limit($complaint->response, 30) }}
+                            </span>
+                            <br>
+                            <small class="text-muted">
+                                <i class="fas fa-clock"></i> {{ $complaint->responded_at?->diffForHumans() }}
+                            </small>
+                        @else
+                            <span class="badge badge-secondary">لم يتم الرد</span>
+                        @endif
+                    </td>
+                    <td>
+                        <small class="text-muted">
+                            {{ $complaint->created_at->format('Y-m-d') }}
+                        </small>
+                    </td>
+
+                    @if (auth()->user()?->isAdmin())
+                        <td style="width: 160px">
+                            @include('dashboard.complaints.partials.actions.show')
+                            @include('dashboard.complaints.partials.actions.edit')
+                            @include('dashboard.complaints.partials.actions.delete')
+                        </td>
+                    @endif
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="100" class="text-center">@lang('complaints.empty')</td>
+                </tr>
+            @endforelse
+        </tbody>
+
+        @if($complaints->hasPages())
+            @slot('footer')
+                {{ $complaints->links() }}
+            @endslot
+        @endif
+    @endcomponent
+
 
 {{--        @endif--}}
     </div>

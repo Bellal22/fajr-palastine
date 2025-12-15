@@ -25,6 +25,7 @@
             <th style="width: 30px;" class="text-center">
               <x-check-all></x-check-all>
             </th>
+            {{-- <th>@lang('complaints.attributes.id')</th> --}}
             <th>@lang('complaints.attributes.id_num')</th>
             <th>@lang('complaints.attributes.complaint_title')</th>
             <th>@lang('complaints.attributes.complaint_text')</th>
@@ -43,6 +44,7 @@
                         {{ $complaint->id_num }}
                     </a>
                 </td>
+                {{-- <td>{{ $complaint->id_num}}</td> --}}
                 <td>{{ $complaint->complaint_title	}}</td>
                 <td>{{ $complaint->complaint_text }}</td>
 

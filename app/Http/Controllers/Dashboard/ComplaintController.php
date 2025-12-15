@@ -7,6 +7,7 @@ use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\ComplaintRequest;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
 
 class ComplaintController extends Controller
 {
@@ -65,6 +66,9 @@ class ComplaintController extends Controller
      */
     public function show(Complaint $complaint)
     {
+        // تحميل العلاقات مع الـ model اللي جاي من الـ Route
+        $complaint->load(['person', 'responder']);
+
         return view('dashboard.complaints.show', compact('complaint'));
     }
 

@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('persons', function (Blueprint $table) {
-            $table->unsignedBigInteger('block_id')->nullable()->after('area_responsible_id');
-            $table->foreign('block_id')->references('id')->on('blocks')->onDelete('set null');
-        });
+//        Schema::table('persons', function (Blueprint $table) {
+//            $table->unsignedBigInteger('block_id')->nullable()->after('area_responsible_id');
+//            $table->foreign('block_id')->references('id')->on('blocks')->onDelete('set null');
+//        });
     }
 
     /**

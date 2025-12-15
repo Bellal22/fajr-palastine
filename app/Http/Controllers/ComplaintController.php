@@ -84,4 +84,27 @@ class ComplaintController extends Controller
     {
         //
     }
+
+    public function respond(Request $request, Complaint $complaint)
+    {
+        $request->validate([
+            'response' => 'required|string|min:10',
+            'status' => 'required|in:pending,in_progress,resolved,rejected',
+        ], [
+            'response.required' => 'الرد على الشكوى مطلوب',
+            'response.min' => 'الرد يجب أن يكون 10 أحرف على الأقل',
+            'status.required' => 'حالة الشكوى مطلوبة',
+        ]);
+
+        $complaint->update([
+            'response' => $request->response,
+            'status' => $request->status,
+            'responded_at' => now(),
+            'responded_by' => auth()->id(),
+        ]);
+
+        flash()->success('تم الرد على الشكوى بنجاح');
+
+        return redirect()->route('dashboard.complaints.show', $complaint);
+    }
 }

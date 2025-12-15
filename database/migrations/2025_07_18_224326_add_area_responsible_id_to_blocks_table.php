@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('blocks', function (Blueprint $table) {
-            $table->foreignId('area_responsible_id')
-                ->nullable()
-                ->constrained('users','id')
-                ->nullOnDelete();
-        });
+//        Schema::table('blocks', function (Blueprint $table) {
+//            $table->foreignId('area_responsible_id')
+//                ->nullable()
+//                ->constrained('users','id')
+//                ->nullOnDelete();
+//        });
     }
 
     /**

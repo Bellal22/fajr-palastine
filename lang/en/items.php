@@ -1,0 +1,60 @@
+<?php
+
+return [
+    'singular' => 'Item',
+    'plural' => 'Items',
+    'empty' => 'There are no items yet.',
+    'count' => 'Items Count.',
+    'search' => 'Search',
+    'select' => 'Select Item',
+    'permission' => 'Manage items',
+    'trashed' => 'Trashed items',
+    'perPage' => 'Results Per Page',
+    'filter' => 'Search for item',
+    'actions' => [
+        'list' => 'List All',
+        'create' => 'Create a new item',
+        'show' => 'Show item',
+        'edit' => 'Edit item',
+        'delete' => 'Delete item',
+        'restore' => 'Restore',
+        'forceDelete' => 'Delete Forever',
+        'options' => 'Options',
+        'save' => 'Save',
+        'filter' => 'Filter',
+    ],
+    'messages' => [
+        'created' => 'The item has been created successfully.',
+        'updated' => 'The item has been updated successfully.',
+        'deleted' => 'The item has been deleted successfully.',
+        'restored' => 'The item has been restored successfully.',
+    ],
+    'attributes' => [
+        'name' => 'Item name',
+        'description' => 'Description',
+        'package' => 'Package',
+        'type' => 'Type',
+        'weight' => 'Weight',
+        'quantity' => 'Quantity',
+    ],
+    'dialogs' => [
+        'delete' => [
+            'title' => 'Warning !',
+            'info' => 'Are you sure you want to delete the item ?',
+            'confirm' => 'Delete',
+            'cancel' => 'Cancel',
+        ],
+        'restore' => [
+            'title' => 'Warning !',
+            'info' => 'Are you sure you want to restore the item ?',
+            'confirm' => 'Restore',
+            'cancel' => 'Cancel',
+        ],
+        'forceDelete' => [
+            'title' => 'Warning !',
+            'info' => 'Are you sure you want to delete the item forever ?',
+            'confirm' => 'Delete Forever',
+            'cancel' => 'Cancel',
+        ],
+    ],
+];

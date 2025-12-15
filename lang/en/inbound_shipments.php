@@ -1,0 +1,62 @@
+<?php
+
+return [
+    'singular' => 'Inbound shipment',
+    'plural' => 'Inbound shipments',
+    'empty' => 'There are no inbound shipments yet.',
+    'count' => 'Inbound shipments Count.',
+    'search' => 'Search',
+    'select' => 'Select Inbound shipment',
+    'permission' => 'Manage inbound shipments',
+    'trashed' => 'Trashed inbound shipments',
+    'perPage' => 'Results Per Page',
+    'filter' => 'Search for inbound shipment',
+    'actions' => [
+        'list' => 'List All',
+        'create' => 'Create a new inbound shipment',
+        'show' => 'Show inbound shipment',
+        'edit' => 'Edit inbound shipment',
+        'delete' => 'Delete inbound shipment',
+        'restore' => 'Restore',
+        'forceDelete' => 'Delete Forever',
+        'options' => 'Options',
+        'save' => 'Save',
+        'filter' => 'Filter',
+    ],
+    'messages' => [
+        'created' => 'The inbound shipment has been created successfully.',
+        'updated' => 'The inbound shipment has been updated successfully.',
+        'deleted' => 'The inbound shipment has been deleted successfully.',
+        'restored' => 'The inbound shipment has been restored successfully.',
+    ],
+    'attributes' => [
+        'supplier_id' => 'Supplier',
+        'name' => 'Inbound shipment name',
+        'description' => 'Description',
+        'type' => 'Type',
+        'weight' => 'Weight',
+        'quantity' => 'Quantity',
+        'created_at' => 'Created at',
+        'updated_at' => 'Updated at',
+    ],
+    'dialogs' => [
+        'delete' => [
+            'title' => 'Warning !',
+            'info' => 'Are you sure you want to delete the inbound shipment ?',
+            'confirm' => 'Delete',
+            'cancel' => 'Cancel',
+        ],
+        'restore' => [
+            'title' => 'Warning !',
+            'info' => 'Are you sure you want to restore the inbound shipment ?',
+            'confirm' => 'Restore',
+            'cancel' => 'Cancel',
+        ],
+        'forceDelete' => [
+            'title' => 'Warning !',
+            'info' => 'Are you sure you want to delete the inbound shipment forever ?',
+            'confirm' => 'Delete Forever',
+            'cancel' => 'Cancel',
+        ],
+    ],
+];
