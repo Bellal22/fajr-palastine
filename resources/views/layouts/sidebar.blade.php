@@ -17,7 +17,6 @@
 @include('dashboard.blocks.partials.actions.sidebar')
 @include('dashboard.suppliers.partials.actions.sidebar')
 @include('dashboard.items.partials.actions.sidebar')
-@include('dashboard.items.partials.actions.sidebar')
 @include('dashboard.inbound_shipments.partials.actions.sidebar')
 {{-- The sidebar of generated crud will set here: Don't remove this line --}}
 @include('dashboard.feedback.partials.actions.sidebar')

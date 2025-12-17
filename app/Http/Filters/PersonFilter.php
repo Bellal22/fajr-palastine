@@ -59,24 +59,44 @@ class PersonFilter extends BaseFilters
                 fn($id) => !empty(trim($id))
             );
 
-            // تحقق مما إذا كانت الهوية موجودة في قاعدة البيانات
+            $familyHeadIds = []; // لتخزين أرقام هويات أرباب الأسر
+
+            // المرور على كل هوية
             foreach ($ids as $id) {
-                if (!Person::where('id_num', trim($id))->exists()) {
-                    $notFoundIds[] = trim($id); // أضف الهوية إلى المصفوفة إذا لم توجد
+                $trimmedId = trim($id);
+
+                // البحث عن الشخص بالهوية
+                $person = Person::where('id_num', $trimmedId)->first();
+
+                if ($person) {
+                    // إذا كان الشخص رب أسرة (relative_id = null)
+                    if (is_null($person->relative_id)) {
+                        $familyHeadIds[] = $trimmedId; // أضف هويته مباشرة
+                    } else {
+                        // إذا كان تابع، أضف هوية رب الأسرة (القيمة الموجودة في relative_id)
+                        $familyHeadIds[] = $person->relative_id;
+                    }
+                } else {
+                    // الهوية غير موجودة
+                    $notFoundIds[] = $trimmedId;
                 }
             }
 
-            // إذا كانت هناك هويات غير موجودة، مررها إلى الـ View
-            session(['notFoundIds' => $notFoundIds]); // تخزين الهويات غير الموجودة في الجلسة
+            // إزالة التكرارات
+            $familyHeadIds = array_unique($familyHeadIds);
+
+            // تخزين الهويات غير الموجودة في الجلسة
+            session(['notFoundIds' => $notFoundIds]);
+
+            // تطبيق الفلتر على أرقام هويات أرباب الأسر
+            if (!empty($familyHeadIds)) {
+                return $this->builder->whereIn($this->getColumnName('id_num'), $familyHeadIds);
+            }
         }
 
-        // تأكد من أن الفلتر لا يعطل الفلاتر الأخرى
-        if (!empty($ids)) {
-            return $this->builder->whereIn($this->getColumnName('id_num'), $ids);
-        }
-
-        return $this->builder; // إذا لم يكن هناك هويات، أعد الـ builder كما هو
+        return $this->builder;
     }
+
 
     public function selectedId($value)
     {

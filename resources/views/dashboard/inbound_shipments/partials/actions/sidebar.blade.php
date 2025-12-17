@@ -3,7 +3,7 @@
     @slot('url', route('dashboard.inbound_shipments.index'))
     @slot('name', trans('inbound_shipments.plural'))
     @slot('active', request()->routeIs('*inbound_shipments*'))
-    @slot('icon', 'fas fa-th')
+    @slot('icon', 'fas fa-truck')
     @slot('tree', [
         [
             'name' => trans('inbound_shipments.actions.list'),

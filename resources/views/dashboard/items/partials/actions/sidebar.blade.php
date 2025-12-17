@@ -3,7 +3,7 @@
     @slot('url', route('dashboard.items.index'))
     @slot('name', trans('items.plural'))
     @slot('active', request()->routeIs('*items*'))
-    @slot('icon', 'fas fa-th')
+    @slot('icon', 'fas fa-tags')
     @slot('tree', [
         [
             'name' => trans('items.actions.list'),
