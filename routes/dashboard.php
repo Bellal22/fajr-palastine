@@ -333,4 +333,26 @@ Route::post('inbound_shipments/{trashed_inbound_shipment}/restore', 'InboundShip
 Route::delete('inbound_shipments/{trashed_inbound_shipment}/forceDelete', 'InboundShipmentController@forceDelete')->name('inbound_shipments.forceDelete');
 Route::resource('inbound_shipments', 'InboundShipmentController');
 
+// Regions Routes.
+Route::get('trashed/regions', 'RegionController@trashed')->name('regions.trashed');
+Route::get('trashed/regions/{trashed_region}', 'RegionController@showTrashed')->name('regions.trashed.show');
+Route::post('regions/{trashed_region}/restore', 'RegionController@restore')->name('regions.restore');
+Route::delete('regions/{trashed_region}/forceDelete', 'RegionController@forceDelete')->name('regions.forceDelete');
+Route::get('regions/by-responsible/{responsible}', 'RegionController@showByResponsible')->name('regions.showByResponsible');
+Route::resource('regions', 'RegionController');
+
+// Locations Routes.
+Route::get('trashed/locations', 'LocationController@trashed')->name('locations.trashed');
+Route::get('trashed/locations/{trashed_location}', 'LocationController@showTrashed')->name('locations.trashed.show');
+Route::post('locations/{trashed_location}/restore', 'LocationController@restore')->name('locations.restore');
+Route::delete('locations/{trashed_location}/forceDelete', 'LocationController@forceDelete')->name('locations.forceDelete');
+Route::resource('locations', 'LocationController');
+
+// Maps Routes.
+Route::get('trashed/maps', 'MapController@trashed')->name('maps.trashed');
+Route::get('trashed/maps/{trashed_map}', 'MapController@showTrashed')->name('maps.trashed.show');
+Route::post('maps/{trashed_map}/restore', 'MapController@restore')->name('maps.restore');
+Route::delete('maps/{trashed_map}/forceDelete', 'MapController@forceDelete')->name('maps.forceDelete');
+Route::resource('maps', 'MapController');
+
 /*  The routes of generated crud will set here: Don't remove this line  */

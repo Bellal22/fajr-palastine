@@ -139,12 +139,19 @@
             <div class="col-md-4 col-sm-6 col-12 mb-3">
                 <div class="info-box shadow-sm">
                     <span class="info-box-icon bg-gradient-primary elevation-1">
-                        <i class="fas fa-map-marker-alt"></i>
+                        {{-- نفترض أن $stat فيه responsible_id --}}
+                        <a href="{{ route('dashboard.regions.showByResponsible', $stat['responsible_id']) }}"
+                        class="text-white d-inline-block"
+                        title="عرض المنطقة">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </a>
                     </span>
 
                     <div class="info-box-content">
                         <span class="info-box-text fw-semibold">{{ $stat['name'] }}</span>
-                        <span class="info-box-number text-primary fw-bold">{{ number_format($stat['total']) }}</span>
+                        <span class="info-box-number text-primary fw-bold">
+                            {{ number_format($stat['total']) }}
+                        </span>
 
                         <div class="row mt-2">
                             <div class="col-6">
@@ -153,7 +160,8 @@
                                     {{ number_format($stat['approved']) }} معتمد
                                 </small>
                                 <div class="progress progress-xs mt-1" style="height: 4px;">
-                                    <div class="progress-bar bg-success" style="width: {{ $stat['approved_percent'] }}%"></div>
+                                    <div class="progress-bar bg-success"
+                                        style="width: {{ $stat['approved_percent'] }}%"></div>
                                 </div>
                             </div>
                             <div class="col-6">
@@ -162,7 +170,8 @@
                                     {{ number_format($stat['synced']) }} مزامن
                                 </small>
                                 <div class="progress progress-xs mt-1" style="height: 4px;">
-                                    <div class="progress-bar bg-info" style="width: {{ $stat['synced_percent'] }}%"></div>
+                                    <div class="progress-bar bg-info"
+                                        style="width: {{ $stat['synced_percent'] }}%"></div>
                                 </div>
                             </div>
                         </div>
@@ -179,6 +188,7 @@
             </div>
         @endforelse
     </div>
+
 
     <div class="row mb-4 g-4">
         {{-- دائرة المعتمدين --}}

@@ -13,6 +13,7 @@ use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\PersonController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Person;
+use App\Models\Region;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
@@ -187,3 +188,10 @@ Route::delete('/person/{id}', [PersonController::class, 'deletePerson']);
 
 Route::post('complaints/{complaint}/respond', [ComplaintController::class, 'respond'])
     ->name('dashboard.complaints.respond');
+
+
+Route::get('/map', function () {
+    $regions = Region::where('is_active', true)->get(['id', 'name', 'color', 'boundaries']);
+
+    return view('map', compact('regions'));
+})->name('public.map');

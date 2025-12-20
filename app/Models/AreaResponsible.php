@@ -106,4 +106,20 @@ class AreaResponsible extends Model
         });
     }
 
+    /**
+     * العلاقة مع المناطق
+     */
+    public function regions()
+    {
+        return $this->hasMany(Region::class, 'area_responsible_id');
+    }
+
+    /**
+     * حساب عدد المناطق المسؤول عنها
+     */
+    public function getRegionsCountAttribute()
+    {
+        return $this->regions()->count();
+    }
+
 }

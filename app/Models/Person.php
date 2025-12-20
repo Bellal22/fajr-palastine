@@ -326,28 +326,30 @@ class Person extends Model
                 ->whereNull('relative_id')
                 ->whereNotNull('area_responsible_id')
                 ->selectRaw('
-                    area_responsible_id,
-                    COUNT(*) as total_persons,
-                    SUM(CASE WHEN block_id IS NOT NULL THEN 1 ELSE 0 END) as approved_persons,
-                    SUM(CASE WHEN api_synced_at IS NOT NULL THEN 1 ELSE 0 END) as synced_persons
-                ')
+                area_responsible_id,
+                COUNT(*) as total_persons,
+                SUM(CASE WHEN block_id IS NOT NULL THEN 1 ELSE 0 END) as approved_persons,
+                SUM(CASE WHEN api_synced_at IS NOT NULL THEN 1 ELSE 0 END) as synced_persons
+            ')
                 ->groupBy('area_responsible_id')
                 ->get();
 
             return $stats->map(function ($item) {
                 $area = \App\Models\AreaResponsible::find($item->area_responsible_id);
+
                 return [
-                    'id' => $item->area_responsible_id,
-                    'name' => $area->name ?? 'غير محدد',
-                    'total' => $item->total_persons,
-                    'approved' => $item->approved_persons,
-                    'synced' => $item->synced_persons,
+                    'id'               => $item->area_responsible_id,
+                    'responsible_id'   => $item->area_responsible_id, // لهذا المفتاح تستخدمه في الراوت
+                    'name'             => $area->name ?? 'غير محدد',
+                    'total'            => $item->total_persons,
+                    'approved'         => $item->approved_persons,
+                    'synced'           => $item->synced_persons,
                     'approved_percent' => $item->total_persons > 0
                         ? round(($item->approved_persons / $item->total_persons) * 100)
                         : 0,
-                    'synced_percent' => $item->total_persons > 0
+                    'synced_percent'   => $item->total_persons > 0
                         ? round(($item->synced_persons / $item->total_persons) * 100)
-                        : 0
+                        : 0,
                 ];
             });
         });
