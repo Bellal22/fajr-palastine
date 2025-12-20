@@ -30,8 +30,12 @@ class PersonFilter extends BaseFilters
         'social_status',
         'current_city',
         'neighborhood',
-        'dob_from',
-        'dob_to',
+        'child_dob_from',
+        'child_dob_to',
+        'child_dob',
+        'child_age_months_from',
+        'child_age_months_to',
+        'child_id_num',
         'family_members_min',
         'family_members_max',
         'has_condition',
@@ -97,7 +101,6 @@ class PersonFilter extends BaseFilters
         return $this->builder;
     }
 
-
     public function selectedId($value)
     {
         if ($value) {
@@ -154,24 +157,80 @@ class PersonFilter extends BaseFilters
         return $this->builder;
     }
 
-    protected function dob($value)
+    /**
+     * فلترة حسب تاريخ ميلاد الطفل (بداية)
+     */
+    protected function childDobFrom($value)
     {
-        if (!is_null($value) && $value !== '') {
-            return $this->builder->where($this->getColumnName('dob'), 'like', $value . '%');
+        if (!empty($value)) {
+            return $this->builder->whereHas('familyMembers', function ($query) use ($value) {
+                $query->whereDate('dob', '>=', $value);
+            });
         }
         return $this->builder;
     }
-    protected function dobFrom($value)
+
+    /**
+     * فلترة حسب تاريخ ميلاد الطفل (نهاية)
+     */
+    protected function childDobTo($value)
     {
-        if (!is_null($value) && $value !== '') {
-            return $this->builder->whereDate($this->getColumnName('dob'), '>=', $value);
+        if (!empty($value)) {
+            return $this->builder->whereHas('familyMembers', function ($query) use ($value) {
+                $query->whereDate('dob', '<=', $value);
+            });
         }
         return $this->builder;
     }
-    protected function dobTo($value)
+
+    /**
+     * فلترة حسب تاريخ ميلاد الطفل (مطابق)
+     */
+    protected function childDob($value)
+    {
+        if (!empty($value)) {
+            return $this->builder->whereHas('familyMembers', function ($query) use ($value) {
+                $query->where('dob', 'like', $value . '%');
+            });
+        }
+        return $this->builder;
+    }
+
+    /**
+     * فلترة حسب عمر الطفل بالأشهر (من)
+     */
+    protected function childAgeMonthsFrom($value)
     {
         if (!is_null($value) && $value !== '') {
-            return $this->builder->whereDate($this->getColumnName('dob'), '<=', $value);
+            return $this->builder->whereHas('familyMembers', function ($query) use ($value) {
+                $query->whereRaw('TIMESTAMPDIFF(MONTH, dob, CURDATE()) >= ?', [$value]);
+            });
+        }
+        return $this->builder;
+    }
+
+    /**
+     * فلترة حسب عمر الطفل بالأشهر (إلى)
+     */
+    protected function childAgeMonthsTo($value)
+    {
+        if (!is_null($value) && $value !== '') {
+            return $this->builder->whereHas('familyMembers', function ($query) use ($value) {
+                $query->whereRaw('TIMESTAMPDIFF(MONTH, dob, CURDATE()) <= ?', [$value]);
+            });
+        }
+        return $this->builder;
+    }
+
+    /**
+     * فلترة حسب رقم هوية الطفل
+     */
+    protected function childIdNum($value)
+    {
+        if (!empty($value)) {
+            return $this->builder->whereHas('familyMembers', function ($query) use ($value) {
+                $query->where('id_num', 'like', "%{$value}%");
+            });
         }
         return $this->builder;
     }

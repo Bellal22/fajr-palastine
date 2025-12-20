@@ -42,18 +42,31 @@
                         </x-check-all-assignBlock>
                     @endif
 
-                <div class="ml-2 d-flex justify-content-between flex-grow-1">
-                    @include('dashboard.people.partials.actions.trashed')
-                    @include('dashboard.people.partials.actions.search')
+                <div class="ml-2 d-flex justify-content-between flex-grow-1 align-items-center">
+                    {{-- قسم البحث --}}
+                    <div class="d-flex align-items-center">
+                        @include('dashboard.people.partials.actions.search')
+                    </div>
+
+                    {{-- قسم الأزرار --}}
                     @if (auth()->user()?->isAdmin())
-                        <a href="{{ route('dashboard.people.export.view', request()->all()) }}" class="btn btn-outline-success btn-sm">
-                            <i class="fa-fw fas fa-file-excel"></i>
-                            @lang('تصدير الكل (تطبق نتائج البحث)')
-                        </a>
-                        {{-- <x-check-all-export
-                            type="{{ \App\Models\Person::class }}"
-                            :resource="trans('people.plural')">
-                        </x-check-all-export> --}}
+                        <div class="btn-group" role="group">
+                            {{-- زر تصدير الكل --}}
+                            <a href="{{ route('dashboard.people.export.view', request()->all()) }}"
+                            class="btn btn-outline-success btn-sm"
+                            title="@lang('تصدير الكل (تطابق نتائج البحث)')">
+                                <i class="fa-fw fas fa-file-excel"></i>
+                                @lang('تصدير الكل')
+                            </a>
+
+                            {{-- زر تصدير الأطفال --}}
+                            <a href="{{ route('dashboard.people.export.exportChildren', request()->all()) }}"
+                            class="btn btn-outline-success btn-sm"
+                            title="@lang('تصدير بيانات الأطفال (تطابق نتائج البحث)')">
+                                <i class="fa-fw fas fa-child"></i>
+                                @lang('تصدير الأطفال')
+                            </a>
+                        </div>
                     @endif
                 </div>
             </div>

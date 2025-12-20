@@ -16,7 +16,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.7/dist/sweetalert2.all.min.js"></script>
 
     <style>
-
         body {
             font-family: 'Cairo', sans-serif;
             direction: rtl;
@@ -234,22 +233,22 @@
         }
 
         .custom-btn {
-            background-color: #FF6F00; /* اللون البرتقالي */
-            color: white; /* النص باللون الأبيض */
-            font-weight: bold; /* خط سميك */
-            border-radius: 8px; /* زوايا دائرية */
-            padding: 12px 24px; /* مسافات حول النص */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* ظل الزر */
-            transition: background-color 0.3s ease; /* تأثير الانتقال */
-            margin-top: 20px !important; /* مسافة بين الزر والجدول */
+            background-color: #FF6F00;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px;
+            padding: 12px 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+            margin-top: 20px !important;
         }
 
         .custom-btn:hover {
-            background-color: #E65100; /* تغيير اللون عند المرور فوق الزر */
+            background-color: #E65100;
         }
 
         .custom-btn:focus {
-            outline: none; /* إزالة الحدود عند التركيز */
+            outline: none;
         }
 
         .error-message {
@@ -258,13 +257,13 @@
 
         .form-row {
             display: flex;
-            gap: 15px; /* مسافة بين الحقول */
-            flex-wrap: wrap; /* السماح بكسر السطر إذا كانت الشاشة صغيرة */
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
         .form-group {
-            flex: 1; /* يجعل كل عنصر يأخذ مساحة متساوية */
-            min-width: 150px; /* يضمن عدم تصغير الحقول أكثر من اللازم */
+            flex: 1;
+            min-width: 150px;
         }
 
         p {
@@ -275,30 +274,29 @@
         }
 
         .action-buttons {
-            display: flex; /* جعل الأزرار في نفس السطر */
-            gap: 10px; /* تحديد المسافة بين الأيقونات */
+            display: flex;
+            gap: 10px;
         }
 
         .edit-btn, .delete-btn {
-            font-size: 18px; /* حجم الأيقونة */
-            padding: 5px; /* padding حول الأيقونة */
-            border: none; /* إزالة الحدود */
-            background: none; /* إزالة الخلفية */
-            cursor: pointer; /* تغيير شكل المؤشر عند المرور فوق الأيقونة */
+            font-size: 18px;
+            padding: 5px;
+            border: none;
+            background: none;
+            cursor: pointer;
         }
 
         .edit-btn i, .delete-btn i {
-            color: #FF6F00; /* لون الأيقونة الخاصة بالتعديل */
+            color: #FF6F00;
         }
 
         .delete-btn i {
-            color: #000000; /* لون الأيقونة الخاصة بالحذف */
+            color: #000000;
         }
 
         .edit-btn:hover i, .delete-btn:hover i {
-            opacity: 0.8; /* تأثير عند المرور فوق الأيقونة */
+            opacity: 0.8;
         }
-
 
         @media screen and (max-width: 768px) {
             h1 {
@@ -330,15 +328,12 @@
                 min-width: 45%;
             }
         }
-
     </style>
-
 </head>
 <body>
     <div id="overlay"></div>
 
     <div class="container">
-
         <div class="logo-container">
             <img src="{{asset('background/image.jpg')}}" alt="جمعية الفجر الشبابي الفلسطيني" class="logo">
         </div>
@@ -352,7 +347,6 @@
                 </ul>
             </div>
         @endif
-        {{-- {{$id_num}} --}}
         <p>
             قم بإدخال عدد أفراد أسرتك ثم قم بالضغط على زر إضافة فرد جديد لتقوم بإدخال بيانات الأفراد كاملة
         </p>
@@ -375,6 +369,7 @@
                     <th>اسم العائلة</th>
                     <th>تاريخ الميلاد</th>
                     <th>صلة القرابة</th>
+                     <th>رقم الجوال</th>
                     <th>هل يعاني من أمراض</th>
                     <th>وصف الحالة</th>
                     <th>إجراءات</th>
@@ -382,6 +377,7 @@
             </thead>
             <tbody>
                 <tr id="default-row" style="display: none;">
+                    <td></td>
                     <td></td>
                     <td></td>
                     <td></td>
@@ -401,7 +397,6 @@
         <div id="loadingModal" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); color: white; font-size: 20px; text-align:center; padding-top: 20%;">
             جاري تسجيل بياناتك...
         </div>
-
     </div>
 
     <div id="form-popup">
@@ -409,20 +404,20 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label for="first_name">الاسم الأول</label>
-                <input type="text" id="first_name" name="first_name" placeholder="الاسم الأول" required>
+                <label for="firstname">الاسم الأول</label>
+                <input type="text" id="firstname" name="firstname" placeholder="الاسم الأول" required>
             </div>
             <div class="form-group">
-                <label for="father_name">اسم الأب</label>
-                <input type="text" id="father_name" name="father_name" placeholder="اسم الأب" required>
+                <label for="fathername">اسم الأب</label>
+                <input type="text" id="fathername" name="fathername" placeholder="اسم الأب" required>
             </div>
             <div class="form-group">
-                <label for="grandfather_name">اسم الجد</label>
-                <input type="text" id="grandfather_name" name="grandfather_name" placeholder="اسم الجد" required>
+                <label for="grandfathername">اسم الجد</label>
+                <input type="text" id="grandfathername" name="grandfathername" placeholder="اسم الجد" required>
             </div>
             <div class="form-group">
-                <label for="family_name">اسم العائلة</label>
-                <input type="text" id="family_name" name="family_name" placeholder="اسم العائلة" required>
+                <label for="familyname">اسم العائلة</label>
+                <input type="text" id="familyname" name="familyname" placeholder="اسم العائلة" required>
             </div>
         </div>
         <div class="form-group">
@@ -434,12 +429,17 @@
                 @endforeach
             </select>
         </div>
+        <div class="form-group" id="phone-group" style="display: none;">
+            <label for="phone">رقم الجوال <span style="color: red;">*</span></label>
+            <input type="tel" id="phone" name="phone" placeholder="مثال: 0599123456" maxlength="10" pattern="[0-9]{10}">
+            <span id="phoneerror" class="error-message" style="display:none; color: #ff0000;">رقم الجوال غير صحيح (يجب أن يكون 10 أرقام)</span>
+        </div>
         <div class="form-row">
             <div class="form-group">
-                <label for="id_num">رقم الهوية:</label>
-                <input type="number" id="id_num" name="id_num" placeholder="أدخل رقم الهوية" required oninput="validateIdOnInput('id_num')"maxlength="9">
-                <span id="id_num_error" class="error-message" style="display:none; color: #ff0000;">رقم الهوية غير صالح.</span>
-                <span id="id_num_success" class="success-message" style="display:none; color: #35b735;">رقم الهوية صحيح.</span>
+                <label for="idnum">رقم الهوية:</label>
+                <input type="number" id="idnum" name="idnum" placeholder="أدخل رقم الهوية" required oninput="validateIdOnInput('idnum')" maxlength="9">
+                <span id="idnum_error" class="error-message" style="display:none; color: #ff0000;">رقم الهوية غير صالح.</span>
+                <span id="idnum_success" class="success-message" style="display:none; color: #35b735;">رقم الهوية صحيح.</span>
             </div>
             <div class="form-group">
                 <label for="dob">تاريخ الميلاد</label>
@@ -448,15 +448,15 @@
             </div>
         </div>
         <div class="form-group">
-            <label for="has_condition">هل يعاني من من مرض أو إعاقة أو إصابة حرب</label>
-            <select id="has_condition" name="has_condition">
-                <option value="لا">لا</option>
-                <option value="نعم">نعم</option>
+            <label for="hascondition">هل يعاني من من مرض أو إعاقة أو إصابة حرب</label>
+            <select id="hascondition" name="hascondition">
+                <option value="0">لا</option>
+                <option value="1">نعم</option>
             </select>
         </div>
         <div class="form-group" id="condition-description-group" style="display: none;">
-            <label for="condition_description">وصف الحالة</label>
-            <textarea id="condition_description" name="condition_description" type="text" placeholder="وصف الحالة"></textarea>
+            <label for="conditiondescription">وصف الحالة</label>
+            <textarea id="conditiondescription" name="conditiondescription" type="text" placeholder="وصف الحالة"></textarea>
         </div>
         <button type="button" id="add-person-btn">إضافة</button>
         <button type="button" id="close-popup-btn">إغلاق</button>
@@ -468,62 +468,65 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label for="first_name">الاسم الأول</label>
-                <input type="text" id="edit_first_name" name="edit_first_name" placeholder="الاسم الأول" required>
+                <label for="editfirstname">الاسم الأول</label>
+                <input type="text" id="editfirstname" name="editfirstname" placeholder="الاسم الأول" required>
             </div>
             <div class="form-group">
-                <label for="father_name">اسم الأب</label>
-                <input type="text" id="edit_father_name" name="edit_father_name" placeholder="اسم الأب" required>
+                <label for="editfathername">اسم الأب</label>
+                <input type="text" id="editfathername" name="editfathername" placeholder="اسم الأب" required>
             </div>
             <div class="form-group">
-                <label for="grandfather_name">اسم الجد</label>
-                <input type="text" id="edit_grandfather_name" name="edit_grandfather_name" placeholder="اسم الجد" required>
+                <label for="editgrandfathername">اسم الجد</label>
+                <input type="text" id="editgrandfathername" name="editgrandfathername" placeholder="اسم الجد" required>
             </div>
             <div class="form-group">
-                <label for="family_name">اسم العائلة</label>
-                <input type="text" id="edit_family_name" name="edit_family_name" placeholder="اسم العائلة" required>
+                <label for="editfamilyname">اسم العائلة</label>
+                <input type="text" id="editfamilyname" name="editfamilyname" placeholder="اسم العائلة" required>
             </div>
         </div>
         <div class="form-group">
-            <label for="relationship">صلة القرابة</label>
-            <select id="edit_relationship" name="edit_relationship" required>
+            <label for="editrelationship">صلة القرابة</label>
+            <select id="editrelationship" name="editrelationship" required>
                 <option value="">اختر صلة القرابة</option>
                 @foreach($relationships as $key => $relationship)
                     <option value="{{$key}}">{{$relationship}}</option>
                 @endforeach
             </select>
         </div>
+        <div class="form-group" id="editphone-group" style="display: none;">
+            <label for="editphone">رقم الجوال <span style="color: red;">*</span></label>
+            <input type="tel" id="editphone" name="editphone" placeholder="مثال: 0599123456" maxlength="10" pattern="[0-9]{10}">
+            <span id="editphoneerror" class="error-message" style="display:none; color: #ff0000;">رقم الجوال غير صحيح (يجب أن يكون 10 أرقام)</span>
+        </div>
         <div class="form-row">
             <div class="form-group">
-                <label for="id_num">رقم الهوية:</label>
-                <input type="number" id="edit_id_num" name="edit_id_num" placeholder="أدخل رقم الهوية" required oninput="validateIdOnInput('edit_id_num')"maxlength="9">
-                <span id="edit_id_num_error" class="error-message" style="display:none; color: #ff0000;">رقم الهوية غير صالح.</span>
-                <span id="edit_id_num_success" class="success-message" style="display:none; color: #35b735;">رقم الهوية صحيح.</span>
+                <label for="editidnum">رقم الهوية:</label>
+                <input type="number" id="editidnum" name="editidnum" placeholder="أدخل رقم الهوية" required oninput="validateIdOnInput('editidnum')" maxlength="9">
+                <span id="editidnum_error" class="error-message" style="display:none; color: #ff0000;">رقم الهوية غير صالح.</span>
+                <span id="editidnum_success" class="success-message" style="display:none; color: #35b735;">رقم الهوية صحيح.</span>
             </div>
             <div class="form-group">
-                <label for="dob">تاريخ الميلاد</label>
-                <input type="date" id="edit_dob" name="edit_dob" required>
-                <span id="edit_dob_error" class="error-message" style="display:none; color:#ff0000;"></span>
+                <label for="editdob">تاريخ الميلاد</label>
+                <input type="date" id="editdob" name="editdob" required>
+                <span id="editdob_error" class="error-message" style="display:none; color:#ff0000;"></span>
             </div>
         </div>
         <div class="form-group">
-            <label for="has_condition">هل يعاني من من مرض أو إعاقة أو إصابة حرب</label>
-            <select id="edit_has_condition" name="edit_has_condition">
-                <option value="لا">لا</option>
-                <option value="نعم">نعم</option>
+            <label for="edithascondition">هل يعاني من من مرض أو إعاقة أو إصابة حرب</label>
+            <select id="edithascondition" name="edithascondition">
+                <option value="0">لا</option>
+                <option value="1">نعم</option>
             </select>
         </div>
-        <div class="form-group" id="condition-description-group" style="display: none;">
-            <label for="condition_description">وصف الحالة</label>
-            <textarea id="edit_condition_description" name="edit_condition_description" type="text" placeholder="وصف الحالة"></textarea>
+        <div class="form-group" id="editcondition-description-group" style="display: none;">
+            <label for="editconditiondescription">وصف الحالة</label>
+            <textarea id="editconditiondescription" name="editconditiondescription" type="text" placeholder="وصف الحالة"></textarea>
         </div>
         <button id="save-edits">حفظ التعديلات</button>
         <button type="button" id="close-edit-popup-btn">إغلاق</button>
-
     </div>
 
     <script>
-
         function calculateAge(dobStr) {
             const dob = new Date(dobStr);
             const today = new Date();
@@ -542,29 +545,96 @@
         const addBtn           = document.getElementById('add-person-btn');
 
         // عناصر التعديل
-        const editRelationship = document.getElementById('edit_relationship');
-        const editDob          = document.getElementById('edit_dob');
-        const editDobError     = document.getElementById('edit_dob_error');
+        const editRelationship = document.getElementById('editrelationship');
+        const editDob          = document.getElementById('editdob');
+        const editDobError     = document.getElementById('editdob_error');
         const saveEditBtn      = document.getElementById('save-edits');
 
         // في البداية تاريخ الميلاد disabled
         dob.disabled = true;
         editDob.disabled = true;
 
+        // دالة لتفعيل حقل تاريخ الميلاد
+        function enableDobField(dobField, errorField) {
+            dobField.disabled = false;
+            errorField.style.display = 'none';
+        }
+
+        // دالة لمعالجة تغيير العلاقة
+        function handleRelationshipChange(selectElement, phoneGroupId, phoneInputId, dobField, errorField) {
+            const phoneGroup = document.getElementById(phoneGroupId);
+            const phoneInput = document.getElementById(phoneInputId);
+
+            enableDobField(dobField, errorField);
+
+            if (selectElement.value === 'wife') {
+                phoneGroup.style.display = 'block';
+                phoneInput.required = true;
+            } else {
+                phoneGroup.style.display = 'none';
+                phoneInput.required = false;
+                phoneInput.value = '';
+            }
+        }
+
         relationship.addEventListener('change', function () {
-            dob.disabled = false;
-            dobError.style.display = 'none';
+            handleRelationshipChange(this, 'phone-group', 'phone', dob, dobError);
         });
 
         editRelationship.addEventListener('change', function () {
-            editDob.disabled = false;
-            editDobError.style.display = 'none';
+            handleRelationshipChange(this, 'editphone-group', 'editphone', editDob, editDobError);
+        });
+
+        function validatePhone(phoneField) {
+            const phoneInput = document.getElementById(phoneField);
+            const phoneValue = phoneInput.value;
+            const phoneError = document.getElementById(phoneField + 'error');
+
+            // التحقق من أن الرقم 10 خانات ويبدأ بـ 05
+            const phonePattern = /^05[0-9]{8}$/;
+
+            if (phoneValue && !phonePattern.test(phoneValue)) {
+                phoneError.style.display = 'inline';
+                phoneInput.style.borderColor = '#ff0000';
+                return false;
+            } else {
+                phoneError.style.display = 'none';
+                phoneInput.style.borderColor = '';
+                return true;
+            }
+        }
+
+        // إضافة Event Listener للتحقق أثناء الكتابة
+        document.getElementById('phone').addEventListener('input', function() {
+            validatePhone('phone');
+        });
+
+        document.getElementById('editphone').addEventListener('input', function() {
+            validatePhone('editphone');
         });
 
         // دالة فحص الزوج/الزوجة
         function isSpouse(rel) {
-            // غيّري القيم حسب الـ key عندك في الـ relationships
             return ['زوج', 'زوجة', 'wife', 'husband'].includes(rel);
+        }
+
+        // دالة للتحقق من العمر
+        function validateSpouseAge(rel, dobValue, errorElement) {
+            if (isSpouse(rel)) {
+                if (!dobValue) {
+                    errorElement.textContent = 'يرجى إدخال تاريخ الميلاد للزوج/الزوجة.';
+                    errorElement.style.display = 'block';
+                    return false;
+                }
+
+                const age = calculateAge(dobValue);
+                if (age < 16) {
+                    errorElement.textContent = 'عمر الزوج/الزوجة يجب أن يكون 16 سنة فأكثر.';
+                    errorElement.style.display = 'block';
+                    return false;
+                }
+            }
+            return true;
         }
 
         // زر إضافة فرد (AJAX)
@@ -575,19 +645,8 @@
             const rel      = relationship.value;
             const dobValue = dob.value;
 
-            if (isSpouse(rel)) {
-                if (!dobValue) {
-                    dobError.textContent = 'يرجى إدخال تاريخ الميلاد للزوج/الزوجة.';
-                    dobError.style.display = 'block';
-                    return; // لا تكمل، لا تستدعي AJAX
-                }
-
-                const age = calculateAge(dobValue);
-                if (age < 16) {
-                    dobError.textContent = 'عمر الزوج/الزوجة يجب أن يكون 16 سنة فأكثر.';
-                    dobError.style.display = 'block';
-                    return; // لا تكمل، لا تستدعي AJAX
-                }
+            if (!validateSpouseAge(rel, dobValue, dobError)) {
+                return; // لا تكمل، لا تستدعي AJAX
             }
 
             // لو كل شيء تمام، هنا استدعي دالة الـ AJAX حقتك
@@ -603,26 +662,15 @@
             const rel      = editRelationship.value;
             const dobValue = editDob.value;
 
-            if (isSpouse(rel)) {
-                if (!dobValue) {
-                    editDobError.textContent = 'يرجى إدخال تاريخ الميلاد للزوج/الزوجة.';
-                    editDobError.style.display = 'block';
-                    return; // لا تكمل AJAX
-                }
-
-                const age = calculateAge(dobValue);
-                if (age < 16) {
-                    editDobError.textContent = 'عمر الزوج/الزوجة يجب أن يكون 16 سنة فأكثر.';
-                    editDobError.style.display = 'block';
-                    return; // لا تكمل AJAX
-                }
+            if (!validateSpouseAge(rel, dobValue, editDobError)) {
+                return; // لا تكمل AJAX
             }
 
             // لو التحقق تمام، استدعي AJAX التعديل
             // مثال:
             // submitEditPersonAjax();
-            // هنا يكمل الحفظ عادي
         });
+
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const relationshipTranslations = {
             'father':'أب',
@@ -648,6 +696,9 @@
                 const translatedRelationship = relationshipTranslations[firstPersonData.relationship] || firstPersonData.relationship;
                 const conditionDescription = firstPersonData.condition_description ? firstPersonData.condition_description : 'لا يوجد';
 
+                // إضافة رقم الجوال إذا كان موجوداً
+                const phoneDisplay = firstPersonData.phone ? firstPersonData.phone : '-';
+
                 const firstPersonRow = `
                     <tr id="first-person-row">
                         <td>${firstPersonData.id_num}</td>
@@ -657,6 +708,7 @@
                         <td>${firstPersonData.family_name}</td>
                         <td>${formattedDob}</td>
                         <td>${translatedRelationship}</td>
+                        <td>${phoneDisplay}</td>
                         <td>${firstPersonData.has_condition == 1 ? 'نعم' : 'لا'}</td>
                         <td>${firstPersonData.condition_description}</td>
                         <td></td>
@@ -665,8 +717,9 @@
             }
             if (peopleList && peopleList.length > 0) {
                 peopleList.forEach((person, index) => {
-                    const formattedDob = person.dob ? new Date(person.dob).toLocaleDateString('ar-EN') : 'غير محدد';
+                    const formattedDob = person.dob ? new Date(person.dob).toLocaleDateString('ar-EN') : '';
                     const translatedRelationship = relationshipTranslations[person.relationship] || person.relationship;
+                    const phoneDisplay = person.relationship === 'wife' && person.phone ? person.phone : '-';
 
                     const row = `
                         <tr>
@@ -677,13 +730,15 @@
                             <td>${person.family_name}</td>
                             <td>${formattedDob}</td>
                             <td>${translatedRelationship}</td>
-                            <td>${person.has_condition == 1 ? 'نعم' : 'لا'}</td>
-                            <td>${person.condition_description ?? 'لا يوجد'}</td>
+                            <td>${phoneDisplay}</td>
+                            <td>${person.has_condition === 1 ? 'نعم' : 'لا'}</td>
+                            <td>${person.condition_description ?? ''}</td>
                             <td class="action-buttons">
                                 <a class="edit-btn" data-index="${index}"><i class="fas fa-edit"></i></a>
                                 <a class="delete-btn" data-index="${index}"><i class="fas fa-trash"></i></a>
                             </td>
-                        </tr>`;
+                        </tr>
+                    `;
                     tableBody.append(row);
                 });
             } else if (!firstPersonData) {
@@ -693,7 +748,7 @@
         }
 
         $(document).ready(function() {
-            renderTable(); // استدعاء renderTable عند تحميل الصفحة
+            renderTable();
             $('#open-form-btn').prop('disabled', !$('#num_of_people').val());
 
             $('#num_of_people').on('input', function() {
@@ -701,35 +756,430 @@
                 $('#open-form-btn').prop('disabled', maxPeople === 0);
             });
 
-            // بقية الكود الخاص بـ $(document).ready() يبقى كما هو
+            $('#open-form-btn').click(function () {
+                if (maxPeople === 0) {
+                    showAlert('يرجى تعبئة عدد الأفراد أولاً!', 'warning');
+                    return;
+                }
+                if (addedPeople >= maxPeople) {
+                    showAlert('لقد تجاوزت عدد أفراد أسرتك!', 'error');
+                    return;
+                }
+                $('#form-popup').fadeIn();
+                $('#overlay').fadeIn();
+            });
+
+            $('#close-popup-btn, #overlay').click(function () {
+                $('#form-popup').fadeOut();
+                $('#overlay').fadeOut();
+            });
+
+            $('#close-edit-popup-btn, #overlay').click(function () {
+                $('#edit-popup').fadeOut();
+                $('#overlay').fadeOut();
+            });
+
+            $('#hascondition').change(function () {
+                $('#condition-description-group').toggle($(this).val() === '1');
+            });
+
+            $('#edithascondition').change(function () {
+                $('#editcondition-description-group').toggle($(this).val() === '1');
+            });
+
+            $(document).on('click', '.edit-btn', function() {
+                let index = $(this).data('index');
+                editPerson(index);
+            });
+
+            $(document).on('click', '.delete-btn', function() {
+                let index = $(this).data('index');
+                deletePerson(index);
+            });
+
+            // دالة لتحديث زر الإضافة
+            $('#add-person-btn').click(function() {
+                // مسح رسائل الخطأ السابقة
+                dobError.style.display = 'none';
+                dobError.textContent = '';
+
+                // التحقق من الحقول المطلوبة
+                if (!validateRequiredFields()) {
+                    return;
+                }
+
+                const idnum = $('#idnum').val();
+                const firstname = $('#firstname').val();
+                const fathername = $('#fathername').val();
+                const grandfathername = $('#grandfathername').val();
+                const familyname = $('#familyname').val();
+                const dobVal = $('#dob').val();
+                const relationshipVal = $('#relationship').val();
+                const hascondition = $('#hascondition').val();
+                const conditiondescription = $('#conditiondescription').val();
+                const phone = $('#phone').val();
+
+                // التحقق من رقم الجوال للزوجة
+                if (relationshipVal === 'wife') {
+                    if (!phone) {
+                        showAlert('يرجى إدخال رقم جوال الزوجة!', 'error');
+                        return;
+                    }
+                    if (!validatePhone('phone')) {
+                        showAlert('رقم الجوال غير صحيح!', 'error');
+                        return;
+                    }
+                }
+
+                // التحقق من العمر للزوجة/الزوج
+                if (!validateSpouseAge(relationshipVal, dobVal, dobError)) {
+                    return;
+                }
+
+                // التحقق من رقم الهوية
+                if (!validateIdNumber('idnum')) {
+                    return;
+                }
+
+                // التحقق من تكرار رقم الهوية
+                const isDuplicate = peopleList.some(person => person.id_num === idnum);
+                if (isDuplicate) {
+                    showAlert('رقم هوية مكرر!', 'error');
+                    return;
+                }
+
+                // إضافة الشخص للقائمة مع تطابق أسماء الحقول مع قاعدة البيانات
+                peopleList.push({
+                    id_num: idnum,
+                    first_name: firstname,
+                    father_name: fathername,
+                    grandfather_name: grandfathername,
+                    family_name: familyname,
+                    dob: dobVal,
+                    relationship: relationshipVal,
+                    has_condition: hascondition === '1' ? 1 : 0,
+                    condition_description: hascondition === '1' ? conditiondescription : null,
+                    phone: relationshipVal === 'wife' ? phone : null
+                });
+
+                addedPeople++;
+                renderTable();
+
+                if (addedPeople >= maxPeople) {
+                    $('#open-form-btn').prop('disabled', true);
+                }
+
+                // مسح الحقول وإغلاق النافذة
+                $('#form-popup input[type="text"], #form-popup input[type="number"], #form-popup input[type="date"], #form-popup input[type="tel"], #form-popup select, #form-popup textarea').val('');
+                $('#phone-group').hide();
+                $('#condition-description-group').hide();
+                $('#form-popup').fadeOut();
+                $('#overlay').fadeOut();
+
+                showAlert('تمت الإضافة بنجاح!', 'success');
+            });
+
+            // تحديث زر حفظ التعديلات
+            $('#save-edits').off('click').on('click', function(e) {
+                e.preventDefault();
+
+                // مسح رسائل الخطأ السابقة
+                editDobError.style.display = 'none';
+                editDobError.textContent = '';
+
+                // التحقق من الحقول المطلوبة
+                if (!validateEditRequiredFields()) {
+                    return;
+                }
+
+                const rel = $('#editrelationship').val();
+                const dobVal = $('#editdob').val();
+                const phone = $('#editphone').val();
+                const currentIndex = $(this).data('index');
+                const idnum = $('#editidnum').val();
+
+                // التحقق من رقم الجوال للزوجة
+                if (rel === 'wife') {
+                    if (!validatePhone('editphone')) {
+                        showAlert('رقم الجوال غير صحيح!', 'error');
+                        return;
+                    }
+                }
+
+                // التحقق من العمر للزوجة/الزوج
+                if (!validateSpouseAge(rel, dobVal, editDobError)) {
+                    return;
+                }
+
+                // التحقق من رقم الهوية
+                if (!validateIdNumber('editidnum')) {
+                    return;
+                }
+
+                // التحقق من تكرار رقم الهوية (باستثناء السجل الحالي)
+                const isDuplicate = peopleList.some((person, idx) =>
+                    person.id_num === idnum && idx !== currentIndex
+                );
+
+                if (isDuplicate) {
+                    showAlert('رقم هوية مكرر!', 'error');
+                    return;
+                }
+
+                // حفظ التعديلات
+                if (currentIndex !== undefined) {
+                    peopleList[currentIndex] = {
+                        ...peopleList[currentIndex],
+                        first_name: $('#editfirstname').val(),
+                        father_name: $('#editfathername').val(),
+                        grandfather_name: $('#editgrandfathername').val(),
+                        family_name: $('#editfamilyname').val(),
+                        id_num: idnum,
+                        dob: dobVal,
+                        relationship: rel,
+                        has_condition: $('#edithascondition').val() ? 1 : 0,
+                        condition_description: $('#editconditiondescription').val(),
+                        phone: rel === 'wife' ? phone : null
+                    };
+
+                    $('#edit-popup').fadeOut();
+                    $('#overlay').fadeOut();
+                    showAlert('تم التعديل بنجاح!', 'success');
+                    renderTable();
+                } else {
+                    console.error('index غير موجود!');
+                }
+            });
+
+            // دالة لإرسال النموذج
+            window.submitForm = function submitForm() {
+                const submitBtn = document.getElementById('send-btn');
+                submitBtn.disabled = true;
+
+                Swal.fire({
+                    title: 'جاري تسجيل بياناتك...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                let person = @json($person);
+
+                // التحقق من صحة العلاقات الزوجية
+                if (['single', 'divorced', 'widowed'].includes(person.social_status)) {
+                    const forbiddenRelationships = ['husband', 'wife'];
+                    const hasForbidden = peopleList.some(p => forbiddenRelationships.includes(p.relationship));
+                    if (hasForbidden) {
+                        Swal.close();
+                        showAlert('لا يمكن تسجيل أفراد الأسرة ذات علاقات زوج/زوجة إذا كانت الحالة الاجتماعية أعزب/ة أو مطلق/ة أرمل/ة.', 'error');
+                        submitBtn.disabled = false;
+                        return;
+                    }
+                }
+
+                // التحقق من وجود بيانات
+                if (peopleList.length === 0 && !(['single', 'divorced', 'widowed'].includes(person.social_status))) {
+                    Swal.close();
+                    showAlert('لا توجد بيانات لإرسالها!', 'warning');
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                // التحقق من عدد الزوجات حسب الحالة الاجتماعية
+                const wivesCount = peopleList.filter(p => p.relationship === 'wife').length;
+                if (person.social_status === 'married' && wivesCount !== 1) {
+                    Swal.close();
+                    showAlert('الشخص المتزوج يجب أن يكون لديه زوجة واحدة فقط في قائمة الأفراد.', 'error');
+                    submitBtn.disabled = false;
+                    return;
+                } else if (person.social_status === 'polygamous' && (wivesCount < 2 || wivesCount > 4)) {
+                    Swal.close();
+                    showAlert('الشخص المتعدد يجب أن يكون لديه من 2 إلى 4 زوجات في قائمة الأفراد.', 'error');
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                // حفظ بيانات الأسرة في الجلسة
+                $.ajax({
+                    url: '/store-people-session',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    contentType: 'application/json',
+                    data: JSON.stringify({ peopleList: peopleList }),
+                    success: function(sessionResponse) {
+                        if (!sessionResponse.success) {
+                            Swal.close();
+                            showAlert(sessionResponse.message || 'حدث خطأ أثناء تجهيز بيانات الأسرة.', 'error');
+                            submitBtn.disabled = false;
+                            return;
+                        }
+
+                        // تسجيل الأسرة نهائياً
+                        $.ajax({
+                            url: sessionResponse.postRedirect || '/store-family',
+                            type: 'POST',
+                            data: { _token: $('meta[name="csrf-token"]').attr('content') },
+                            success: function(storeResponse) {
+                                Swal.close();
+
+                                if (!storeResponse.success) {
+                                    if (storeResponse.rejected_id && storeResponse.reason) {
+                                        showAlert(
+                                            `رقم الهوية المرفوض: <strong>${storeResponse.rejected_id}</strong><br>` +
+                                            `سبب الرفض: <strong>${storeResponse.reason}</strong>`,
+                                            'error'
+                                        );
+                                    } else {
+                                        showAlert(storeResponse.message || 'حدث خطأ أثناء تسجيل البيانات.', 'error');
+                                    }
+                                    submitBtn.disabled = false;
+                                    return;
+                                }
+
+                                // نجح التسجيل
+                                if (storeResponse.redirect) {
+                                    window.location.href = storeResponse.redirect;
+                                } else {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'تم التسجيل بنجاح!',
+                                        text: 'سيتم تحويلك قريباً...',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    }).then(() => {
+                                        window.location.href = '/persons/success';
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.close();
+                                submitBtn.disabled = false;
+
+                                const errorResponse = xhr.responseJSON || {};
+                                if (errorResponse.message) {
+                                    showAlert(errorResponse.message, 'error');
+                                } else if (errorResponse.rejected_id && errorResponse.reason) {
+                                    showAlert(
+                                        `رقم الهوية المرفوض: <strong>${errorResponse.rejected_id}</strong><br>` +
+                                        `سبب الرفض: <strong>${errorResponse.reason}</strong>`,
+                                        'error'
+                                    );
+                                } else {
+                                    showAlert('حدث خطأ غير متوقع أثناء التسجيل.', 'error');
+                                }
+                            }
+                        });
+                    },
+                    error: function(xhr) {
+                        Swal.close();
+                        submitBtn.disabled = false;
+                        const response = xhr.responseJSON || {};
+
+                        if (response.message) {
+                            showAlert(response.message, 'error');
+                        } else {
+                            showAlert('فشل في حفظ بيانات الجلسة. يرجى المحاولة مرة أخرى.', 'error');
+                        }
+                    }
+                });
+            };
+
+            // إضافة CSS للنافذة المنبثقة
+            const style = document.createElement('style');
+            style.textContent = `
+                .rtl-popup {
+                    direction: rtl;
+                    text-align: right;
+                }
+
+                .rtl-content {
+                    text-align: right !important;
+                }
+
+                .swal2-html-container ul {
+                    text-align: right;
+                }
+
+                input.empty-field,
+                select.empty-field,
+                textarea.empty-field {
+                    border-color: #ff0000 !important;
+                    animation: shake 0.3s;
+                }
+
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            // إضافة مؤشر بصري للحقول الفارغة عند التركيز
+            $('#form-popup input, #form-popup select, #form-popup textarea').on('input change', function() {
+                if ($(this).val() && $(this).val().trim() !== '') {
+                    $(this).css('border-color', '#35b735');
+                    setTimeout(() => {
+                        $(this).css('border-color', '');
+                    }, 1000);
+                }
+            });
+
+            $('#edit-popup input, #edit-popup select, #edit-popup textarea').on('input change', function() {
+                if ($(this).val() && $(this).val().trim() !== '') {
+                    $(this).css('border-color', '#35b735');
+                    setTimeout(() => {
+                        $(this).css('border-color', '');
+                    }, 1000);
+                }
+            });
         });
 
         function editPerson(index) {
-            console.log("📌 استدعاء editPerson مع index =", index);
+            console.log('editPerson index =', index);
+
             if (!Array.isArray(peopleList) || peopleList.length === 0) {
-                console.error("❌ خطأ: قائمة الأشخاص غير متوفرة!");
+                console.error('قائمة الأشخاص فارغة!');
                 return;
             }
+
             if (index === undefined || index < 0 || index >= peopleList.length) {
-                console.error("❌ خطأ: `index` غير صالح أو خارج النطاق!");
+                console.error('index غير صحيح!');
                 return;
             }
+
             const person = peopleList[index];
-            console.log("🟢 بيانات الشخص:", person);
-            $('#edit_first_name').val(person.first_name || '');
-            $('#edit_father_name').val(person.father_name || '');
-            $('#edit_grandfather_name').val(person.grandfather_name || '');
-            $('#edit_family_name').val(person.family_name || '');
-            $('#edit_id_num').val(person.id_num || '');
-            $('#edit_dob').val(person.dob || '');
-            $('#edit_relationship').val(person.relationship || '');
-            $('#edit_has_condition').val(person.has_condition ? 'نعم' : 'لا');
-            $('#edit_condition_description').val(person.condition_description || 'لا يوجد');
-            if (person.has_condition) {
-                $('#edit_condition-description-group').show();
+            console.log('تعديل الشخص:', person);
+
+            $('#editfirstname').val(person.first_name);
+            $('#editfathername').val(person.father_name);
+            $('#editgrandfathername').val(person.grandfather_name);
+            $('#editfamilyname').val(person.family_name);
+            $('#editidnum').val(person.id_num);
+            $('#editdob').val(person.dob);
+            $('#editrelationship').val(person.relationship);
+            $('#edithascondition').val(person.has_condition ? '1' : '0');
+            $('#editconditiondescription').val(person.condition_description);
+            $('#editphone').val(person.phone || '');
+
+            // إظهار حقل الجوال إذا كانت زوجة
+            if (person.relationship === 'wife') {
+                $('#editphone-group').show();
+                $('#editphone').prop('required', true);
             } else {
-                $('#edit_condition-description-group').hide();
+                $('#editphone-group').hide();
+                $('#editphone').prop('required', false);
             }
+
+            if (person.has_condition) {
+                $('#editcondition-description-group').show();
+            } else {
+                $('#editcondition-description-group').hide();
+            }
+
             $('#save-edits').data('index', index);
             $('#edit-popup').fadeIn();
         }
@@ -864,409 +1314,191 @@
             return true;
         }
 
-        $(document).ready(function () {
-            $('#open-form-btn').prop('disabled', !$('#num_of_people').val());
-            updateEmptyMessage();
-
-            $('#num_of_people').on('input', function () {
-                maxPeople = parseInt($(this).val()) || 0;
-                $('#open-form-btn').prop('disabled', maxPeople === 0);
-            });
-
-            $('#open-form-btn').click(function () {
-                if (maxPeople === 0) {
-                    showAlert('يرجى تعبئة عدد الأفراد أولاً!', 'warning');
-                    return;
-                }
-                if (addedPeople >= maxPeople) {
-                    showAlert('لقد تجاوزت عدد أفراد أسرتك!', 'error');
-                    return;
-                }
-                $('#form-popup').fadeIn();
-                $('#overlay').fadeIn();
-            });
-
-            $('#close-popup-btn, #overlay').click(function () {
-                $('#form-popup').fadeOut();
-                $('#overlay').fadeOut();
-            });
-
-            $('#close-edit-popup-btn, #overlay').click(function () {
-                $('#edit-popup').fadeOut();
-                $('#overlay').fadeOut();
-            });
-
-            $('#add-person-btn').click(function () {
-                dobError.style.display = 'none';
-                dobError.textContent = '';
-
-                const id_num = $('#id_num').val();
-                const first_name = $('#first_name').val();
-                const father_name = $('#father_name').val();
-                const grandfather_name = $('#grandfather_name').val();
-                const family_name = $('#family_name').val();
-                const dobVal = $('#dob').val();
-                const relationshipVal = $('#relationship').val();
-                const has_condition = $('#has_condition').val();
-                const condition_description = $('#condition_description').val();
-
-                // دالة تساعد على التحقق إذا كانت العلاقة زوج أو زوجة حسب قيم keys
-                function isSpouse(rel) {
-                    return ['زوج', 'زوجة', 'wife', 'husband'].includes(rel);
-                }
-
-                // تحقق من العمر لو كانت الزوج/زوجة
-                if (isSpouse(relationshipVal)) {
-                    if (!dobVal) {
-                        dobError.textContent = 'يرجى إدخال تاريخ الميلاد للزوج/الزوجة.';
-                        dobError.style.display = 'block';
-                        return; // منع الإضافة
-                    }
-                    const age = calculateAge(dobVal);
-                    if (age < 16) {
-                        dobError.textContent = 'عمر الزوج/الزوجة يجب أن يكون 16 سنة فأكثر.';
-                        dobError.style.display = 'block';
-                        return; // منع الإضافة
-                    }
-                }
-
-                // تحقق من الحقول المطلوبة
-                if (!id_num || !first_name || !father_name || !grandfather_name || !family_name || !dobVal || !relationshipVal || !has_condition || (has_condition === 'نعم' && !condition_description)) {
-                    showAlert('يرجى ملء جميع الحقول المطلوبة!', 'error');
-                    return;
-                }
-
-                if (!validateIdNumber('id_num')) {
-                    return;
-                }
-
-                // إضافة البيانات بعد التحقق
-                peopleList.push({
-                    id_num,
-                    first_name,
-                    father_name,
-                    grandfather_name,
-                    family_name,
-                    dob: dobVal,
-                    relationship: relationshipVal,
-                    has_condition: has_condition === 'نعم' ? 1 : 0,
-                    condition_description: has_condition === 'نعم' ? condition_description : null
-                });
-
-                addedPeople++;
-                renderTable();
-
-                if (addedPeople === maxPeople) {
-                    $('#open-form-btn').prop('disabled', true);
-                }
-
-                $('#form-popup input[type="text"], #form-popup input[type="number"], #form-popup input[type="date"], #form-popup select, #form-popup textarea').val('');
-                $('#form-popup').fadeOut();
-                $('#overlay').fadeOut();
-                showAlert('تمت الإضافة بنجاح', 'success');
-            });
-
-            $('#has_condition').change(function () {
-                $('#condition-description-group').toggle($(this).val() === 'نعم');
-            });
-
-            $('#edit_has_condition').change(function () {
-                $('#edit_condition-description-group').toggle($(this).val() === 'نعم');
-            });
-
-            $(document).on('click', '.edit-btn', function() {
-                let index = $(this).data('index');
-                console.log("🖊️ تم النقر على زر التعديل للشخص رقم:", index);
-                editPerson(index);
-            });
-
-            $(document).on('click', '.delete-btn', function() {
-                let index = $(this).data('index');
-                console.log("🗑️ تم النقر على زر الحذف للشخص رقم:", index);
-                deletePerson(index);
-            });
-
-            $('#save-edits').off('click').on('click', function (e) {
-                e.preventDefault(); // منع الإرسال الافتراضي مؤقتاً للتحقق
-
-                editDobError.style.display = 'none';
-                editDobError.textContent = '';
-
-                const rel = $('#edit_relationship').val();
-                const dobVal = $('#edit_dob').val();
-
-                if (isSpouse(rel)) {
-                    if (!dobVal) {
-                        editDobError.textContent = 'يرجى إدخال تاريخ الميلاد للزوج/الزوجة.';
-                        editDobError.style.display = 'block';
-                        return; // توقف عن الحفظ
-                    }
-                    const age = calculateAge(dobVal);
-                    if (age < 16) {
-                        editDobError.textContent = 'عمر الزوج/الزوجة يجب أن يكون 16 سنة فأكثر.';
-                        editDobError.style.display = 'block';
-                        return; // توقف عن الحفظ
-                    }
-                }
-
-                // تحقق من باقي الحقول المطلوبة إذا أردتِ (اختياري)
-
-                // إذا التحقق ناجح، استمري بالحفظ
-                let index = $(this).data('index');
-                if (index !== undefined && peopleList[index]) {
-                    peopleList[index] = {
-                        first_name: $('#edit_first_name').val(),
-                        father_name: $('#edit_father_name').val(),
-                        grandfather_name: $('#edit_grandfather_name').val(),
-                        family_name: $('#edit_family_name').val(),
-                        id_num: $('#edit_id_num').val(),
-                        dob: dobVal,
-                        relationship: rel,
-                        has_condition: $('#edit_has_condition').val() === 'نعم' ? 1 : 0,
-                        condition_description: $('#edit_condition_description').val()
-                    };
-                    $('#edit-popup').fadeOut();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'تم تعديل البيانات بنجاح',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                    renderTable();
-                } else {
-                    console.error("❌ خطأ: لا يمكن تعديل الشخص لأن الفهرس غير صحيح!");
-                }
-            });
-
-         window.submitForm = function submitForm() {
-                const submitBtn = document.getElementById('send-btn');
-                submitBtn.disabled = true;
-
-                Swal.fire({
-                    title: 'جاري تسجيل بياناتك...',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
-                let person = @json($person);
-
-                // التحقق من صحة العلاقات الزوجية
-                if (['single', 'divorced', 'widowed'].includes(person.social_status)) {
-                    const forbiddenRelationships = ['husband', 'wife'];
-                    const hasForbidden = peopleList.some(p => forbiddenRelationships.includes(p.relationship));
-                    if (hasForbidden) {
-                        Swal.close();
-                        showAlert('لا يمكن تسجيل أفراد الأسرة ذات علاقات زوج/زوجة إذا كانت الحالة الاجتماعية أعزب/ة أو مطلق/ة أرمل/ة.', 'error');
-                        submitBtn.disabled = false;
-                        return;
-                    }
-                }
-
-                // التحقق من وجود بيانات
-                if (peopleList.length === 0 && !(['single', 'divorced', 'widowed'].includes(person.social_status))) {
-                    Swal.close();
-                    showAlert('لا توجد بيانات لإرسالها!', 'warning');
-                    submitBtn.disabled = false;
-                    return;
-                }
-
-                // التحقق من عدد الزوجات حسب الحالة الاجتماعية
-                const wivesCount = peopleList.filter(p => p.relationship === 'wife').length;
-                if (person.social_status === 'married' && wivesCount !== 1) {
-                    Swal.close();
-                    showAlert('الشخص المتزوج يجب أن يكون لديه زوجة واحدة فقط في قائمة الأفراد.', 'error');
-                    submitBtn.disabled = false;
-                    return;
-                } else if (person.social_status === 'polygamous' && (wivesCount < 2 || wivesCount > 4)) {
-                    Swal.close();
-                    showAlert('الشخص المتعدد يجب أن يكون لديه من 2 إلى 4 زوجات في قائمة الأفراد.', 'error');
-                    submitBtn.disabled = false;
-                    return;
-                }
-
-                // حفظ بيانات الأسرة في الجلسة
-                $.ajax({
-                    url: '/store-people-session',
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    contentType: 'application/json',
-                    data: JSON.stringify({ peopleList: peopleList }),
-                    success: function(sessionResponse) {
-                        if (!sessionResponse.success) {
-                            Swal.close();
-                            showAlert(sessionResponse.message || 'حدث خطأ أثناء تجهيز بيانات الأسرة.', 'error');
-                            submitBtn.disabled = false;
-                            return;
-                        }
-
-                        // تسجيل الأسرة نهائياً
-                        $.ajax({
-                            url: sessionResponse.postRedirect || '/store-family', // fallback URL
-                            type: 'POST',
-                            data: { _token: $('meta[name="csrf-token"]').attr('content') },
-                            success: function(storeResponse) {
-                                Swal.close();
-
-                                if (!storeResponse.success) {
-                                    // عرض رسائل الرفض المفصلة
-                                    if (storeResponse.rejected_id && storeResponse.reason) {
-                                        showAlert(
-                                            `رقم الهوية المرفوض: <strong>${storeResponse.rejected_id}</strong><br>` +
-                                            `سبب الرفض: <strong>${storeResponse.reason}</strong>`,
-                                            'error'
-                                        );
-                                    } else {
-                                        showAlert(storeResponse.message || 'حدث خطأ أثناء تسجيل البيانات.', 'error');
-                                    }
-                                    submitBtn.disabled = false;
-                                    return;
-                                }
-
-                                // نجح التسجيل
-                                if (storeResponse.redirect) {
-                                    window.location.href = storeResponse.redirect;
-                                } else {
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'تم التسجيل بنجاح!',
-                                        text: 'سيتم تحويلك قريباً...',
-                                        timer: 2000,
-                                        showConfirmButton: false
-                                    }).then(() => {
-                                        window.location.href = '/persons/success'; // fallback
-                                    });
-                                }
-                            },
-                            error: function(xhr) {
-                                Swal.close();
-                                submitBtn.disabled = false;
-
-                                const errorResponse = xhr.responseJSON || {};
-                                if (errorResponse.message) {
-                                    showAlert(errorResponse.message, 'error');
-                                } else if (errorResponse.rejected_id && errorResponse.reason) {
-                                    showAlert(
-                                        `رقم الهوية المرفوض: <strong>${errorResponse.rejected_id}</strong><br>` +
-                                        `سبب الرفض: <strong>${errorResponse.reason}</strong>`,
-                                        'error'
-                                    );
-                                } else {
-                                    showAlert('حدث خطأ غير متوقع أثناء التسجيل.', 'error');
-                                }
-                            }
-                        });
-                    },
-                    error: function(xhr) {
-                        Swal.close();
-                        submitBtn.disabled = false;
-                        const response = xhr.responseJSON || {};
-
-                        if (response.message) {
-                            showAlert(response.message, 'error');
-                        } else {
-                            showAlert('فشل في حفظ بيانات الجلسة. يرجى المحاولة مرة أخرى.', 'error');
-                        }
-                    }
-                });
+        function validateRequiredFields() {
+            const fields = {
+                'idnum': { label: 'رقم الهوية', element: $('#idnum') },
+                'firstname': { label: 'الاسم الأول', element: $('#firstname') },
+                'fathername': { label: 'اسم الأب', element: $('#fathername') },
+                'grandfathername': { label: 'اسم الجد', element: $('#grandfathername') },
+                'familyname': { label: 'اسم العائلة', element: $('#familyname') },
+                'dob': { label: 'تاريخ الميلاد', element: $('#dob') },
+                'relationship': { label: 'صلة القرابة', element: $('#relationship') },
+                'hascondition': { label: 'هل يعاني من أمراض', element: $('#hascondition') }
             };
 
-            // دالة مساعدة موحدة لعرض التنبيهات
-            function showAlert(message, type = 'info') {
-                const config = {
-                    error: { icon: 'error', title: 'خطأ!', confirmButtonColor: '#d33', iconColor: '#d33' },
-                    warning: { icon: 'warning', title: 'تحذير!', confirmButtonColor: '#ffc107' },
-                    success: { icon: 'success', title: 'نجح!', confirmButtonColor: '#28a745' },
-                    info: { icon: 'info', title: 'معلومات', confirmButtonColor: '#17a2b8' }
-                };
+            const missingFields = [];
+            const emptyFields = [];
 
-                Swal.fire({
-                    ...config[type],
-                    html: message, // دعم HTML
-                    confirmButtonText: 'إغلاق'
-                });
-            }
-        });
+            // التحقق من كل حقل
+            Object.entries(fields).forEach(([key, field]) => {
+                const value = field.element.val();
 
-        // تطبيق خوارزمية Luhn للتحقق من صحة الرقم
-        function luhnCheck(num) {
-            const digits = num.toString().split('').map(Number);
-            let checksum = 0;
-            const numDigits = digits.length;
-            const parity = numDigits % 2;
-
-            for (let i = 0; i < numDigits; i++) {
-                let digit = digits[i];
-                if (i % 2 === parity) {
-                    digit *= 2;
-                    if (digit > 9) {
-                        digit -= 9;
-                    }
+                if (!value || value.trim() === '') {
+                    missingFields.push(field.label);
+                    field.element.css('border-color', '#ff0000');
+                    emptyFields.push(field.element);
+                } else {
+                    field.element.css('border-color', '');
                 }
-                checksum += digit;
+            });
+
+            // إذا كانت صلة القرابة "زوجة"، تحقق من رقم الجوال
+            const relationship = $('#relationship').val();
+            if (relationship === 'wife') {
+                const phone = $('#phone').val();
+                if (!phone || phone.trim() === '') {
+                    missingFields.push('رقم الجوال');
+                    $('#phone').css('border-color', '#ff0000');
+                    emptyFields.push($('#phone'));
+                }
             }
 
-            return checksum % 10 === 0;
-        }
-
-        // ✅ التحقق من رقم الهوية أثناء الكتابة بناءً على معرف الحقل (idField)
-        function validateIdOnInput(idField) {
-            const inputField = document.getElementById(idField);
-            const idNum = inputField.value;
-            const errorMessage = document.getElementById(idField + '_error');
-            const successMessage = document.getElementById(idField + '_success');
-
-            // منع المستخدم من إدخال أكثر من 9 أرقام
-            if (idNum.length > 9) {
-                inputField.value = idNum.slice(0, 9);  // اقتصاص الأرقام الزائدة
+            // إذا كانت الحالة الصحية "نعم"، تحقق من وصف الحالة
+            const hasCondition = $('#hascondition').val();
+            if (hasCondition === '1') {
+                const conditionDesc = $('#conditiondescription').val();
+                if (!conditionDesc || conditionDesc.trim() === '') {
+                    missingFields.push('وصف الحالة الصحية');
+                    $('#conditiondescription').css('border-color', '#ff0000');
+                    emptyFields.push($('#conditiondescription'));
+                }
             }
 
-            // التحقق إذا كان الرقم غير صالح أو صحيح باستخدام خوارزمية Luhn
-            if (idNum.length === 9 && !luhnCheck(idNum)) {
-                inputField.style.borderColor = '#ff0000';  // جعل الحافة حمراء
-                inputField.style.outlineColor = '#ff0000';  // تحديد اللون الأحمر للـ outline
-                errorMessage.style.display = 'inline';  // عرض رسالة الخطأ
-                successMessage.style.display = 'none';  // إخفاء رسالة النجاح
-            } else if (idNum.length === 9 && luhnCheck(idNum)) {
-                inputField.style.borderColor = '#35b735';  // جعل الحافة خضراء
-                inputField.style.outlineColor = '#35b735';  // تحديد اللون الأخضر للـ outline
-                errorMessage.style.display = 'none';  // إخفاء رسالة الخطأ
-                successMessage.style.display = 'inline';  // عرض رسالة النجاح
-            } else {
-                inputField.style.borderColor = '';  // إعادة تعيين اللون إذا لم يكتمل الإدخال
-                inputField.style.outlineColor = '';  // إعادة تعيين اللون إذا لم يكتمل الإدخال
-                errorMessage.style.display = 'none';  // إخفاء رسالة الخطأ
-                successMessage.style.display = 'none';  // إخفاء رسالة النجاح
-            }
-        }
+            // إذا كانت هناك حقول فارغة
+            if (missingFields.length > 0) {
+                let message = '<div style="text-align: right;">';
+                message += '<p style="font-size: 18px; margin-bottom: 15px;">⚠️ يرجى ملء الحقول التالية:</p>';
+                message += '<ul style="list-style: none; padding: 0;">';
 
-        // ✅ التحقق من رقم الهوية عند إرسال النموذج بناءً على معرف الحقل (idField)
-        function validateIdNumber(idField) {
-            const inputField = document.getElementById(idField);
-            const idNum = inputField.value;
+                missingFields.forEach(field => {
+                    message += `<li style="padding: 8px; margin: 5px 0; background: #fff3cd; border-right: 4px solid #ff6f00; border-radius: 4px;">
+                        <i class="fas fa-exclamation-circle" style="color: #ff6f00; margin-left: 8px;"></i>
+                        <strong>${field}</strong>
+                    </li>`;
+                });
 
-            // إذا كان الرقم غير صالح
-            if (idNum.length === 9 && !luhnCheck(idNum)) {
+                message += '</ul></div>';
+
                 Swal.fire({
-                    icon: 'error',
-                    title: 'رقم الهوية غير صالح',
-                    text: 'الرجاء التأكد من إدخال رقم هوية صحيح.',
-                    background: '#fff',
-                    confirmButtonColor: '#d33',
-                    iconColor: '#d33',
-                    confirmButtonText: 'إغلاق',  // النص الخاص بالزر
+                    icon: 'warning',
+                    title: 'حقول مطلوبة!',
+                    html: message,
+                    confirmButtonText: 'حسناً',
+                    confirmButtonColor: '#ff6f00',
                     customClass: {
-                        confirmButton: 'swal-button-custom'
+                        popup: 'rtl-popup',
+                        htmlContainer: 'rtl-content'
                     }
                 });
-                return false;  // منع إرسال النموذج
+
+                // التركيز على أول حقل فارغ
+                if (emptyFields.length > 0) {
+                    emptyFields[0].focus();
+                }
+
+                return false;
             }
-            return true;  // السماح بإرسال النموذج إذا كان الرقم صالح
+
+            // إعادة تعيين جميع الحدود
+            Object.values(fields).forEach(field => {
+                field.element.css('border-color', '');
+            });
+
+            return true;
+        }
+
+        function validateEditRequiredFields() {
+            const fields = {
+                'editidnum': { label: 'رقم الهوية', element: $('#editidnum') },
+                'editfirstname': { label: 'الاسم الأول', element: $('#editfirstname') },
+                'editfathername': { label: 'اسم الأب', element: $('#editfathername') },
+                'editgrandfathername': { label: 'اسم الجد', element: $('#editgrandfathername') },
+                'editfamilyname': { label: 'اسم العائلة', element: $('#editfamilyname') },
+                'editdob': { label: 'تاريخ الميلاد', element: $('#editdob') },
+                'editrelationship': { label: 'صلة القرابة', element: $('#editrelationship') },
+                'edithascondition': { label: 'هل يعاني من أمراض', element: $('#edithascondition') }
+            };
+
+            const missingFields = [];
+            const emptyFields = [];
+
+            // التحقق من كل حقل
+            Object.entries(fields).forEach(([key, field]) => {
+                const value = field.element.val();
+
+                if (!value || value.trim() === '') {
+                    missingFields.push(field.label);
+                    field.element.css('border-color', '#ff0000');
+                    emptyFields.push(field.element);
+                } else {
+                    field.element.css('border-color', '');
+                }
+            });
+
+            // إذا كانت صلة القرابة "زوجة"، تحقق من رقم الجوال
+            const relationship = $('#editrelationship').val();
+            if (relationship === 'wife') {
+                const phone = $('#editphone').val();
+                if (!phone || phone.trim() === '') {
+                    missingFields.push('رقم الجوال');
+                    $('#editphone').css('border-color', '#ff0000');
+                    emptyFields.push($('#editphone'));
+                }
+            }
+
+            // إذا كانت الحالة الصحية "نعم"، تحقق من وصف الحالة
+            const hasCondition = $('#edithascondition').val();
+            if (hasCondition === '1') {
+                const conditionDesc = $('#editconditiondescription').val();
+                if (!conditionDesc || conditionDesc.trim() === '') {
+                    missingFields.push('وصف الحالة الصحية');
+                    $('#editconditiondescription').css('border-color', '#ff0000');
+                    emptyFields.push($('#editconditiondescription'));
+                }
+            }
+
+            // إذا كانت هناك حقول فارغة
+            if (missingFields.length > 0) {
+                let message = '<div style="text-align: right;">';
+                message += '<p style="font-size: 18px; margin-bottom: 15px;">⚠️ يرجى ملء الحقول التالية:</p>';
+                message += '<ul style="list-style: none; padding: 0;">';
+
+                missingFields.forEach(field => {
+                    message += `<li style="padding: 8px; margin: 5px 0; background: #fff3cd; border-right: 4px solid #ff6f00; border-radius: 4px;">
+                        <i class="fas fa-exclamation-circle" style="color: #ff6f00; margin-left: 8px;"></i>
+                        <strong>${field}</strong>
+                    </li>`;
+                });
+
+                message += '</ul></div>';
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'حقول مطلوبة!',
+                    html: message,
+                    confirmButtonText: 'حسناً',
+                    confirmButtonColor: '#ff6f00',
+                    customClass: {
+                        popup: 'rtl-popup',
+                        htmlContainer: 'rtl-content'
+                    }
+                });
+
+                // التركيز على أول حقل فارغ
+                if (emptyFields.length > 0) {
+                    emptyFields[0].focus();
+                }
+
+                return false;
+            }
+
+            // إعادة تعيين جميع الحدود
+            Object.values(fields).forEach(field => {
+                field.element.css('border-color', '');
+            });
+
+            return true;
         }
     </script>
-
 </body>
 </html>

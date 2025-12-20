@@ -265,21 +265,58 @@
             </div>
 
             <div class="col-md-3">
-                <label for="dob_from" class="form-label">تاريخ الميلاد - من</label>
-                <input type="date" name="dob_from" id="dob_from"
-                        class="form-control "
-                        max="{{ now()->toDateString() }}"
-                        placeholder="اختر تاريخ الميلاد من"
-                        value="{{ request('dob_from', $person->dob_from ?? '') }}">
+                <label for="child_id_num" class="form-label">رقم هوية الطفل</label>
+                <input type="text" name="child_id_num" id="child_id_num"
+                    class="form-control"
+                    placeholder="رقم الهوية"
+                    value="{{ request('child_id_num', $person->child_id_num ?? '') }}">
             </div>
 
             <div class="col-md-3">
-                <label for="dob_to" class="form-label ">تاريخ الميلاد - إلى</label>
-                <input type="date" name="dob_to" id="dob_to"
-                        class="form-control"
-                        max="{{ now()->toDateString() }}"
-                        placeholder="اختر تاريخ الميلاد إلى"
-                        value="{{ request('dob_to', $person->dob_to ?? '') }}">
+                <label for="child_dob" class="form-label">تاريخ ميلاد الطفل (مطابق)</label>
+                <input type="date" name="child_dob" id="child_dob"
+                    class="form-control"
+                    max="{{ now()->toDateString() }}"
+                    placeholder="اختر تاريخ محدد"
+                    value="{{ request('child_dob', $person->child_dob ?? '') }}">
+            </div>
+
+            <div class="col-md-3">
+                <label for="child_dob_from" class="form-label">تاريخ ميلاد الطفل - من</label>
+                <input type="date" name="child_dob_from" id="child_dob_from"
+                    class="form-control"
+                    max="{{ now()->toDateString() }}"
+                    placeholder="اختر تاريخ الميلاد من"
+                    value="{{ request('child_dob_from', $person->child_dob_from ?? '') }}">
+            </div>
+
+            <div class="col-md-3">
+                <label for="child_dob_to" class="form-label">تاريخ ميلاد الطفل - إلى</label>
+                <input type="date" name="child_dob_to" id="child_dob_to"
+                    class="form-control"
+                    max="{{ now()->toDateString() }}"
+                    placeholder="اختر تاريخ الميلاد إلى"
+                    value="{{ request('child_dob_to', $person->child_dob_to ?? '') }}">
+            </div>
+
+            <div class="col-md-3">
+                <label for="child_age_months_from" class="form-label">عمر الطفل بالأشهر - من</label>
+                <input type="number" name="child_age_months_from" id="child_age_months_from"
+                    class="form-control"
+                    min="0"
+                    max="300"
+                    placeholder="مثال: 6"
+                    value="{{ request('child_age_months_from', $person->child_age_months_from ?? '') }}">
+            </div>
+
+            <div class="col-md-3">
+                <label for="child_age_months_to" class="form-label">عمر الطفل بالأشهر - إلى</label>
+                <input type="number" name="child_age_months_to" id="child_age_months_to"
+                    class="form-control"
+                    min="0"
+                    max="300"
+                    placeholder="مثال: 24"
+                    value="{{ request('child_age_months_to', $person->child_age_months_to ?? '') }}">
             </div>
 
             <div class="col-md-3">

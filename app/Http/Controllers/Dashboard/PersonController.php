@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Exports\FamilyChildrenExport;
 use App\Exports\PeopleExport;
 use App\Models\Block;
 use App\Models\Person;
@@ -535,6 +536,68 @@ class PersonController extends Controller
             return back();
         }
     }
+
+    /**
+     * تصدير بيانات الأسر مع الأطفال الذين تنطبق عليهم الفلاتر.
+     */
+    public function exportChildren(Request $request)
+    {
+        try {
+            $request->validate([
+                'area_responsible_id' => 'nullable|exists:area_responsibles,id',
+                'block_id' => 'nullable|exists:blocks,id',
+                'child_id_num' => 'nullable|string|max:20',
+                'child_gender' => 'nullable|in:ذكر,أنثى',
+                'child_dob_from' => 'nullable|date',
+                'child_dob_to' => 'nullable|date|after_or_equal:child_dob_from',
+                'child_age_months_from' => 'nullable|integer|min:0|max:300',
+                'child_age_months_to' => 'nullable|integer|min:0|max:300|gte:child_age_months_from',
+            ]);
+
+            $request->merge(['export_type' => 'children']);
+
+            logger()->info('بدء تصدير بيانات الأطفال', [
+                'user_id' => auth()->id(),
+                'filters' => $request->except(['_token', '_method']),
+                'timestamp' => now()->toDateTimeString()
+            ]);
+
+            ini_set('memory_limit', '1024M');
+            set_time_limit(0);
+
+            $filename = 'children_data_' . now()->format('Y_m_d_His') . '.xlsx';
+            $export = new FamilyChildrenExport($request);
+
+            logger()->info('تم تصدير بيانات الأطفال بنجاح', [
+                'user_id' => auth()->id(),
+                'filename' => $filename,
+            ]);
+
+            // ✅ إشعار نجاح (يظهر في الصفحة التالية)
+            session()->flash('success', 'تم تصدير بيانات الأطفال بنجاح!');
+
+            return Excel::download($export, $filename);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            logger()->warning('فشل التحقق من البيانات', [
+                'user_id' => auth()->id(),
+                'errors' => $e->errors(),
+            ]);
+
+            flash()->error('يوجد أخطاء في البيانات المدخلة.');
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            logger()->error('خطأ في تصدير بيانات الأطفال', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'user_id' => auth()->id(),
+            ]);
+
+            flash()->error('حدث خطأ أثناء التصدير. يرجى المحاولة مرة أخرى.');
+            return back();
+        }
+    }
+
     public function assignToSupervisor(Person $person)
     {
         $person->update([
@@ -1005,7 +1068,6 @@ class PersonController extends Controller
         }
     }
 
-
     /**
      * Prepare data for API request
      */
@@ -1048,7 +1110,6 @@ class PersonController extends Controller
         ];
     }
 
-
     /**
      * Make API request
      */
@@ -1080,7 +1141,6 @@ class PersonController extends Controller
 
         return $response;
     }
-
 
     /**
      * Update person sync status

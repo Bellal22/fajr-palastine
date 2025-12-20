@@ -9,7 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
@@ -736,7 +736,7 @@
                     <input type="text" id="social_status" value="{{ $person->social_status ? __($person->social_status) : 'غير محدد' }}" disabled>
                 </div>
                 <div class="profile-item">
-                    <label for="gender">الحالة الاجتماعية:</label>
+                    <label for="gender">الجنس:</label>
                     <input type="text" id="gender" value="{{ $person->gender ? __($person->gender) : 'غير محدد' }}" disabled>
                 </div>
                 <div class="profile-item">
@@ -1179,6 +1179,22 @@
                         </div>
                     </div>
 
+                    <div class="form-group">
+                        <label for="relationship">صلة القرابة</label>
+                        <select id="relationshipf" name="relationshipf" required onchange="handleRelationshipChangeForAdd()">
+                            @foreach($relationships as $key => $relationship)
+                                <option value="{{$key}}">{{$relationship}}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- التعديل الجديد: إضافة حقل رقم الجوال للزوجة -->
+                    <div class="form-group" id="phone_group" style="display: none;">
+                        <label for="phone">رقم الجوال <span style="color: red;">*</span></label>
+                        <input type="tel" id="phone" name="phone" placeholder="مثال: 0599123456" maxlength="10" pattern="[0-9]{10}">
+                        <span id="phoneerror" class="error-message" style="display:none; color: #ff0000;">رقم الجوال غير صحيح (يجب أن يكون 10 أرقام)</span>
+                    </div>
+
                     <div class="row">
                         <div class="form-group">
                             <label for="id_num">رقم الهوية:</label>
@@ -1200,15 +1216,6 @@
                                 required>
                             <div class="error-message" id="dobf_error" style="display:none; color: red;"></div>
                         </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="relationship">صلة القرابة</label>
-                        <select id="relationshipf" name="relationshipf" required>
-                            @foreach($relationships as $key => $relationship)
-                                <option value="{{$key}}">{{$relationship}}</option>
-                            @endforeach
-                        </select>
                     </div>
 
                     <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
@@ -1248,6 +1255,8 @@
                     <th class="border px-4 py-2"> اسم العائلة</th>
                     <th class="border px-4 py-2">صلة القرابة</th>
                     <th class="border px-4 py-2">تاريخ الميلاد</th>
+                    <!-- التعديل الجديد: إضافة عمود رقم الجوال -->
+                    <th class="border px-4 py-2">رقم الجوال</th>
                     <th class="border px-4 py-2">حالة الصحية سليم؟</th>
                     <th class="border px-4 py-2">وصف الحالة</th>
                     <th class="border px-4 py-2">العملية</th>
@@ -1263,6 +1272,8 @@
                         <td>{{ $familyMember->family_name }}</td>
                         <td>{{ __($familyMember->relationship) }}</td>
                         <td>{{ $familyMember->dob ? \Carbon\Carbon::parse($familyMember->dob)->format('d/m/Y') : 'غير محدد' }}</td>
+                        <!-- التعديل الجديد: عرض رقم الجوال إذا كان موجوداً -->
+                        <td>{{ $familyMember->phone ?? '-' }}</td>
                         <td>{{ $familyMember->has_condition == 1 ? 'نعم' : 'لا' }}</td>
                         <td>{{ $familyMember->condition_description ?? 'لا يوجد' }}</td>
                         <!-- عمود أيقونة التعديل -->
@@ -1313,19 +1324,6 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="id_num">رقم الهوية:</label>
-                            <input type="number" id="edit_f_id_num" name="id_num" placeholder="أدخل رقم الهوية" required data-original="{{ $person->id_num }}">
-                        </div>
-
-
-                        <div class="form-group">
-                            <label for="dob">تاريخ الميلاد:</label>
-                            <input type="date" id="edit_f_dob" name="dob" required>
-                        </div>
-                    </div>
-
                     <div class="form-group">
                         <label for="relationship">صلة القرابة</label>
                         <select id="edit_f_relationship" name="relationship" required>
@@ -1333,6 +1331,24 @@
                                 <option value="{{$key}}">{{$relationship}}</option>
                             @endforeach
                         </select>
+                    </div>
+
+                    <div class="form-group" id="edit_f_phone_group" style="display: none;">
+                        <label for="edit_f_phone">رقم الجوال</label>
+                        <input type="tel" id="edit_f_phone" name="edit_f_phone" placeholder="مثال: 0599123456" maxlength="10" pattern="[0-9]{10}">
+                        <span id="edit_f_phone_error" class="error-message" style="display:none; color: #ff0000;">رقم الجوال غير صحيح (يجب أن يكون 10 أرقام)</span>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="id_num">رقم الهوية:</label>
+                            <input type="number" id="edit_f_id_num" name="id_num" placeholder="أدخل رقم الهوية" required data-original="{{ $person->id_num }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dob">تاريخ الميلاد:</label>
+                            <input type="date" id="edit_f_dob" name="dob" required>
+                        </div>
                     </div>
 
                     <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
@@ -1450,39 +1466,89 @@
     </div>
 
     <script>
+        // ========================================
+        // منطق الإضافة (Add)
+        // ========================================
 
-        // document.addEventListener('DOMContentLoaded', function () {
-        //     var citySelect = document.getElementById('edit_current_city');
-        //     if (citySelect && citySelect.value) {
-        //         updateNeighborhoods(citySelect.value, '{{ $person->neighborhood }}', null);
+        // التعديل الجديد: دالة لمعالجة تغيير العلاقة في نموذج الإضافة
+        function handleRelationshipChangeForAdd() {
+            const relationshipSelect = document.getElementById('relationshipf');
+            const phoneGroup = document.getElementById('phone_group');
+            const phoneInput = document.getElementById('phone');
 
-        //         const neighborhoodSelect = document.getElementById('edit_neighborhood');
-        //         const areaResponsibleContainer = document.getElementById('edit_areaResponsibleField');
-        //         const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
+            if (relationshipSelect.value === 'wife') {
+                phoneGroup.style.display = 'block';
+                phoneInput.required = true;
+            } else {
+                phoneGroup.style.display = 'none';
+                phoneInput.required = false;
+                phoneInput.value = '';
+            }
+        }
 
-        //         const visibleNeighborhoods = [
-        //             'المواصي',
-        //             'السطر الغربي',
-        //             'السطر الشرقي',
-        //             'المخطة',
-        //             'الكنيبة',
-        //             'البطن السمين',
-        //             'المعسكر',
-        //             'المشروع',
-        //             'مدينة حمد',
-        //             'وسط البلد'
-        //         ];
+        // التعديل الجديد: إضافة Event Listener للتحقق أثناء الكتابة
+        document.addEventListener('DOMContentLoaded', function() {
+            const phoneInput = document.getElementById('phone');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function() {
+                    validatePhone('phone');
+                });
+            }
+        });
 
-        //         const selectedOption = neighborhoodSelect.options[neighborhoodSelect.selectedIndex].text.trim();
+        // ========================================
+        // منطق التعديل (Edit)
+        // ========================================
 
-        //         if (visibleNeighborhoods.includes(selectedOption)) {
-        //             areaResponsibleContainer.style.display = 'block';  // أظهر الحقل
-        //         } else {
-        //             areaResponsibleContainer.style.display = 'none';   // أخفِ الحقل
-        //             areaResponsibleSelect.value = '';                  // إعادة تعيين القيمة
-        //         }
-        //     }
-        // });
+        // التعديل الجديد: دالة لمعالجة تغيير العلاقة في نموذج التعديل
+        function handleEditRelationshipChange() {
+            const relationshipSelect = document.getElementById('edit_f_relationship');
+            const phoneGroup = document.getElementById('edit_f_phone_group');
+            const phoneInput = document.getElementById('edit_f_phone');
+
+            if (relationshipSelect.value === 'wife') {
+                phoneGroup.style.display = 'block';
+                phoneInput.required = true;
+            } else {
+                phoneGroup.style.display = 'none';
+                phoneInput.required = false;
+                phoneInput.value = '';
+            }
+        }
+
+        // التعديل الجديد: إضافة Event Listener للتحقق أثناء الكتابة
+        document.addEventListener('DOMContentLoaded', function() {
+            const editPhoneInput = document.getElementById('edit_f_phone');
+            if (editPhoneInput) {
+                editPhoneInput.addEventListener('input', function() {
+                    validatePhone('edit_f_phone');
+                });
+            }
+        });
+
+        // ========================================
+        // منطق مشترك (Shared)
+        // ========================================
+
+        // التعديل الجديد: دالة للتحقق من صحة رقم الجوال
+        function validatePhone(phoneFieldId) {
+            const phoneInput = document.getElementById(phoneFieldId);
+            const phoneValue = phoneInput.value;
+            const phoneError = document.getElementById(phoneFieldId + '_error');
+
+            // التحقق من أن الرقم 10 خانات ويبدأ بـ 05
+            const phonePattern = /^05[0-9]{8}$/;
+
+            if (phoneValue && !phonePattern.test(phoneValue)) {
+                phoneError.style.display = 'inline';
+                phoneInput.style.borderColor = '#ff0000';
+                return false;
+            } else {
+                phoneError.style.display = 'none';
+                phoneInput.style.borderColor = '';
+                return true;
+            }
+        }
 
         // حفظ نسخة من كافة خيارات مسؤول المنطقة الأصلية عند تحميل الصفحة (بحقل edit_area_responsible_id)
         const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
@@ -1492,8 +1558,13 @@
             text: option.text
         }));
 
+        // متغير لتخزين القيمة الأصلية لمسؤول المنطقة
+        let originalAreaResponsibleValue = areaResponsibleSelect.value;
+
         document.getElementById('edit_neighborhood').addEventListener('change', function() {
             const neighborhood = this.value;
+            // حفظ القيمة الحالية قبل التغيير
+            const currentValue = areaResponsibleSelect.value;
 
             function showOptions(ids, addPlaceholder = false, defaultValue = null) {
                 areaResponsibleSelect.innerHTML = '';
@@ -1513,15 +1584,20 @@
                         const optionElement = document.createElement('option');
                         optionElement.value = opt.value;
                         optionElement.text = opt.text;
-                        // تعيين تحديد القيمة الافتراضية
+                        // تعيين تحديد القيمة الافتراضية أو القيمة المحفوظة
                         if (defaultValue && opt.value === defaultValue.toString()) {
+                            optionElement.selected = true;
+                        } else if (currentValue && opt.value === currentValue.toString()) {
                             optionElement.selected = true;
                         }
                         areaResponsibleSelect.appendChild(optionElement);
                     }
                 });
 
-                if (!addPlaceholder && !defaultValue) {
+                // إذا كانت القيمة المحفوظة موجودة في القائمة الجديدة، استخدمها
+                if (currentValue && ids.includes(parseInt(currentValue))) {
+                    areaResponsibleSelect.value = currentValue;
+                } else if (!addPlaceholder && !defaultValue) {
                     areaResponsibleSelect.value = '';
                 }
             }
@@ -1536,9 +1612,17 @@
                     const optionElement = document.createElement('option');
                     optionElement.value = opt.value;
                     optionElement.text = opt.text;
+                    // الاحتفاظ بالقيمة المحفوظة
+                    if (currentValue && opt.value === currentValue) {
+                        optionElement.selected = true;
+                    }
                     areaResponsibleSelect.appendChild(optionElement);
                 });
-                areaResponsibleSelect.value = '';
+                if (currentValue && filtered.some(o => o.value === currentValue)) {
+                    areaResponsibleSelect.value = currentValue;
+                } else {
+                    areaResponsibleSelect.value = '';
+                }
 
             } else if (neighborhood === 'hamidCity') {
                 areaResponsibleField.style.display = 'flex';
@@ -1563,6 +1647,70 @@
                 document.getElementById('area_responsible_id_error').style.display = 'none';
             }
         });
+
+        function openPopup() {
+            document.getElementById("editPopup").classList.remove("hidden");
+
+            let current_city = "{{ $person->current_city }}"
+            let neighborhood = "{{ $person->neighborhood }}"
+            let areaResponsibleId = "{{ $person->area_responsible_id ?? '' }}"
+
+            // تحديث قائمة الأحياء بناءً على المحافظة وتحديد الحي المخزن
+            updateNeighborhoods(current_city, neighborhood);
+
+            // حفظ القيمة الأصلية لمسؤول المنطقة
+            originalAreaResponsibleValue = areaResponsibleId;
+
+            // تعيين القيمة الأصلية بعد تحميل الخيارات
+            setTimeout(function() {
+                if (areaResponsibleId) {
+                    const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
+                    // التحقق من أن القيمة موجودة في الخيارات المتاحة
+                    const optionExists = Array.from(areaResponsibleSelect.options).some(opt => opt.value === areaResponsibleId);
+                    if (optionExists) {
+                        areaResponsibleSelect.value = areaResponsibleId;
+                    }
+                }
+
+                // تشغيل حدث التغيير للحي لضبط الخيارات المناسبة
+                document.getElementById('edit_neighborhood').dispatchEvent(new Event('change'));
+            }, 100);
+        }
+
+        window.onload = function () {
+            const currentCitySelect = document.getElementById('edit_current_city');
+            const selectedCity = currentCitySelect.value;
+            const selectedNeighborhood = '{{ $person->neighborhood }}';
+            const originalCity = '{{ $person->current_city }}';
+            const areaResponsibleId = '{{ $person->area_responsible_id ?? '' }}';
+
+            updateNeighborhoods(selectedCity, selectedNeighborhood, originalCity);
+
+            // تعيين قيمة مسؤول المنطقة بعد تحميل الخيارات
+            setTimeout(function() {
+                const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
+                if (areaResponsibleId && areaResponsibleSelect) {
+                    const optionExists = Array.from(areaResponsibleSelect.options).some(opt => opt.value === areaResponsibleId);
+                    if (optionExists) {
+                        areaResponsibleSelect.value = areaResponsibleId;
+                        originalAreaResponsibleValue = areaResponsibleId;
+                    }
+                }
+
+                // تشغيل حدث التغيير للحي لضبط العرض الصحيح
+                const editNeighborhood = document.getElementById('edit_neighborhood');
+                if (editNeighborhood) {
+                    editNeighborhood.dispatchEvent(new Event('change'));
+                }
+            }, 100);
+
+            currentCitySelect.onchange = function () {
+                const cityValue = this.value;
+                const neighborhoodValue = '{{ $person->neighborhood }}';
+                const originalCityValue = '{{ $person->current_city }}';
+                updateNeighborhoods(cityValue, neighborhoodValue, originalCityValue);
+            };
+        };
 
         $(document).ready(function() {
             console.log("$(document).ready() تم التنفيذ (الكتلة الرئيسية - مُعدلة 2)");
@@ -1708,10 +1856,25 @@
                 const has_condition = $('#has_conditionf').val();
                 const condition_description = has_condition == '1' ? $('#condition_descriptionf').val().trim() : null;
 
+                // التعديل الجديد: إضافة رقم الجوال
+                const phone = relationship === 'wife' ? $('#phone').val().trim() : null;
+
                 // التحقق من الحقول المطلوبة
                 if (!id_num || !first_name || !father_name || !grandfather_name || !family_name || !dob || !relationship) {
                     showAlert('يرجى ملء جميع الحقول المطلوبة!', 'error');
                     return;
+                }
+
+                // التعديل الجديد: التحقق من رقم الجوال للزوجة
+                if (relationship === 'wife') {
+                    if (!phone) {
+                        showAlert('يرجى إدخال رقم جوال للزوجة!', 'error');
+                        return;
+                    }
+                    if (!validatePhone('phone')) {
+                        showAlert('يرجى إدخال رقم جوال صحيح للزوجة!', 'error');
+                        return;
+                    }
                 }
 
                 // إرسال البيانات إلى السيرفر مع دعم عرض الأخطاء المفصلة
@@ -1731,7 +1894,9 @@
                         dob: dob,
                         relationship: relationship,
                         has_condition: has_condition,
-                        condition_description: condition_description
+                        condition_description: condition_description,
+                        // التعديل الجديد: إضافة رقم الجوال
+                        phone: phone
                     },
                     success: function(response) {
                         if (response.success) {
@@ -1867,7 +2032,7 @@
             }
         });
 
-       // تطبيق خوارزمية Luhn للتحقق من صحة الرقم
+        // تطبيق خوارزمية Luhn للتحقق من صحة الرقم
         function luhnCheckid(num) {
             const digits = num.split('').map(Number);
             let checksum = 0;
@@ -2283,7 +2448,9 @@
                 dob: document.getElementById('edit_f_dob')?.value.trim() || "",
                 relationship: document.getElementById('edit_f_relationship')?.value.trim() || "",
                 has_condition: hasConditionElement?.value.trim() || "",
-                condition_description: conditionDescriptionElement?.value.trim() || ""
+                condition_description: conditionDescriptionElement?.value.trim() || "",
+                // التعديل الجديد: إضافة رقم الجوال
+                phone: document.getElementById('edit_f_phone')?.value.trim() || ""
             };
 
             // أرسل old_id_num فقط إذا اختلف عن الرقم الجديد وباي قيمة صالحة
@@ -2297,6 +2464,18 @@
                 formData.condition_description = null;
                 if (conditionDescriptionElement) {
                     conditionDescriptionElement.value = "";
+                }
+            }
+
+            // التعديل الجديد: التحقق من صحة رقم الجوال إذا كانت العلاقة "زوجة"
+            if (formData.relationship === 'wife') {
+                if (!formData.phone) {
+                    showAlert('يرجى إدخال رقم جوال للزوجة', 'error');
+                    return;
+                }
+                if (!validatePhone('edit_f_phone')) {
+                    showAlert('يرجى إدخال رقم جوال صحيح للزوجة', 'error');
+                    return;
                 }
             }
 
@@ -2806,27 +2985,6 @@
             }
         }
 
-        // document.addEventListener("DOMContentLoaded", function () {
-        //     console.log("DOMContentLoaded event fired");
-
-        //     const currentCitySelect = document.getElementById("edit_current_city");
-        //     const neighborhoodSelect = document.getElementById("edit_neighborhood");
-        //     const storedNeighborhood = "{{ $person->neighborhood }}";
-        //     const storedCity = "{{ $person->current_city }}";
-        //     const originalCity = "{{ $person->current_city }}"; // احفظ المحافظة الأصلية
-        //     console.log("Original City (بعد التعريف):", originalCity);
-
-        //     console.log("Stored City:", storedCity);
-        //     console.log("Stored Neighborhood:", storedNeighborhood);
-
-        //     updateNeighborhoods(storedCity, storedNeighborhood, originalCity); // مرر المحافظة الأصلية
-
-        //     currentCitySelect.addEventListener("change", function () {
-        //         console.log("City changed to:", this.value);
-        //         updateNeighborhoods(this.value, null, originalCity); // مرر المحافظة الأصلية
-        //     });
-        // });
-
         function populateNeighborhoodSelect(neighborhoods, neighborhoodSelect) {
             neighborhoods.forEach(neighborhood => {
                 const option = document.createElement("option");
@@ -3033,46 +3191,6 @@
             }
         }
 
-        // document.addEventListener('DOMContentLoaded', function () {
-        //     const editNeighborhoodSelect = document.getElementById('edit_neighborhood');
-        //     const areaResponsibleField = document.getElementById('areaResponsibleField');
-        //     const editAreaResponsibleSelect = document.getElementById('edit_area_responsible_id');
-        //     const editAreaResponsibleError = document.getElementById('edit_area_responsible_id_error');
-
-        //     function updateAreaResponsibleVisibility() {
-        //         if (editNeighborhoodSelect && areaResponsibleField) {
-        //             const visibleNeighborhoods = [
-        //                 'alMawasi',
-        //                 'westernLine',
-        //                 'alMahatta',
-        //                 'alKatiba',
-        //                 'alBatanAlSameen',
-        //                 'alMaskar',
-        //                 'alMashroo',
-        //                 'hamidCity',
-        //                 'downtown'
-        //             ];
-        //             if (visibleNeighborhoods.includes(editNeighborhoodSelect.value)) {
-        //                 areaResponsibleField.style.display = 'flex';  // أظهر الحقل
-        //             } else {
-        //                 areaResponsibleField.style.display = 'none';  // أخفِ الحقل
-        //                 if (editAreaResponsibleSelect) {
-        //                     editAreaResponsibleSelect.value = '';
-        //                 }
-        //                 if (editAreaResponsibleError) {
-        //                     editAreaResponsibleError.style.display = 'none';
-        //                 }
-        //             }
-        //         }
-        //     }
-
-        //     // تشغيل الدالة عند تحميل الصفحة
-        //     if (editNeighborhoodSelect) {
-        //         updateAreaResponsibleVisibility();
-        //         editNeighborhoodSelect.addEventListener('change', updateAreaResponsibleVisibility);
-        //     }
-        // });
-
         function validateAreaResponsible() {
             const select = document.getElementById('edit_area_responsible_id');
             const errorDiv = document.getElementById('edit_area_responsible_id_error');
@@ -3275,6 +3393,30 @@
             }
         });
 
+        // التعديل الجديد: دالة لمعالجة تغيير العلاقة في نموذج التعديل
+        function handleEditRelationshipChange() {
+            const relationshipSelect = document.getElementById('edit_f_relationship');
+            const phoneGroup = document.getElementById('edit_f_phone_group');
+            const phoneInput = document.getElementById('edit_f_phone');
+
+            if (relationshipSelect.value === 'wife') {
+                phoneGroup.style.display = 'block';
+                phoneInput.required = true;
+            } else {
+                phoneGroup.style.display = 'none';
+                phoneInput.required = false;
+                phoneInput.value = '';
+            }
+        }
+
+        // التعديل الجديد: إضافة Event Listener للتحقق أثناء الكتابة
+        document.getElementById('edit_f_phone').addEventListener('input', function() {
+            validatePhone('edit_f_phone');
+        });
+
+        // التعديل الجديد: إضافة Event Listener لتغيير العلاقة
+        document.getElementById('edit_f_relationship').addEventListener('change', handleEditRelationshipChange);
+
         function editFamilyMember(familyMemberId) {
             // إرسال طلب AJAX إلى الخادم للحصول على بيانات العضو
             fetch(`/get-family-member-data/${familyMemberId}`)
@@ -3314,6 +3456,12 @@
                     document.getElementById('edit_f_has_condition').value = hasConditionValue === 1 || hasConditionValue === '1' || hasConditionValue === true ? '1' : '0';
 
                     document.getElementById('edit_f_condition_description').value = familyMemberData.data.condition_description || familyMemberData.condition_description || '';
+
+                    // التعديل الجديد: إضافة رقم الجوال إذا كان موجوداً
+                    document.getElementById('edit_f_phone').value = familyMemberData.data.phone || familyMemberData.phone || '';
+
+                    // التعديل الجديد: استدعاء دالة معالجة تغيير العلاقة لتحديد ما إذا كان يجب إظهار حقل الجوال
+                    handleEditRelationshipChange();
 
                     // فتح الفورم المنبثق
                     document.getElementById('editFamilyMemberModal').classList.remove('hidden');
@@ -3410,7 +3558,6 @@
                 }
             });
         }
-
     </script>
 
 </body>

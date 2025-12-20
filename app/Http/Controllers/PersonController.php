@@ -84,7 +84,12 @@ class PersonController extends Controller
 
             $data = $request->validated();
             $data['id_num']   = $id_num;
-            $data['phone']    = Str::of($data['phone'])->replace('-', '')->toInteger();
+
+            // تنظيف رقم الجوال وإزالة الأحرف غير الرقمية
+            if (isset($data['phone'])) {
+                $data['phone'] = Str::of($data['phone'])->replace('-', '')->toInteger();
+            }
+
             $data['relationship'] = 'رب الأسرة نفسه';
 
             $request->session()->put('person', array_merge(
@@ -105,6 +110,7 @@ class PersonController extends Controller
                 'relationship'          => $data['relationship'],
                 'has_condition'         => $data['has_condition'],
                 'condition_description' => $data['condition_description'],
+                'phone'                 => $data['phone'] ?? null, // إضافة رقم الجوال
             ];
 
             $request->session()->put('first_person_data', $firstPersonData);
@@ -210,6 +216,7 @@ class PersonController extends Controller
                     $p['area_responsible_id'] = null;
                 }
 
+                // تنظيف رقم الجوال للزوجة
                 if (isset($p['phone'])) {
                     $cleanPhone = str_replace('-', '', $p['phone']);
                     $cleanPhone = ltrim($cleanPhone, '0');
@@ -273,7 +280,8 @@ class PersonController extends Controller
                 'dob'                   => 'required|date',
                 'relationship'          => 'required|string',
                 'has_condition'         => 'required|in:0,1',
-                'condition_description' => 'nullable|string|max:500'
+                'condition_description' => 'nullable|string|max:500',
+                'phone'                 => 'nullable|string|max:10' // إضافة التحقق من رقم الجوال
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -314,6 +322,13 @@ class PersonController extends Controller
         }
 
         $validatedData['relative_id'] = $relative_id;
+
+        // تنظيف رقم الجوال إذا كان موجوداً
+        if (isset($validatedData['phone'])) {
+            $cleanPhone = str_replace('-', '', $validatedData['phone']);
+            $cleanPhone = ltrim($cleanPhone, '0');
+            $validatedData['phone'] = $cleanPhone;
+        }
 
         try {
             // إنشاء السجل الجديد
