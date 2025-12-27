@@ -30,21 +30,19 @@ class Location extends Model
         'name',
         'description',
         'region_id',
+        'block_id',
         'latitude',
         'longitude',
         'type',
         'icon_color',
         'address',
         'phone',
-        'people_count',
-        'person_id',
         'is_active'
     ];
 
     protected $casts = [
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
-        'people_count' => 'integer',
         'is_active' => 'boolean'
     ];
 
@@ -57,11 +55,11 @@ class Location extends Model
     }
 
     /**
-     * العلاقة مع الشخص (اختياري)
+     * العلاقة مع البلوك/المندوب
      */
-    public function person()
+    public function block()
     {
-        return $this->belongsTo(Person::class);
+        return $this->belongsTo(Block::class);
     }
 
     /**
@@ -73,5 +71,20 @@ class Location extends Model
             'lat' => (float) $this->latitude,
             'lng' => (float) $this->longitude
         ];
+    }
+
+    /**
+     * الحصول على اسم نوع اللوكيشن بالعربي
+     */
+    public function getTypeNameAttribute()
+    {
+        $types = [
+            'house' => 'منزل',
+            'shelter' => 'ملجأ',
+            'center' => 'مركز',
+            'other' => 'أخرى'
+        ];
+
+        return $types[$this->type] ?? 'أخرى';
     }
 }

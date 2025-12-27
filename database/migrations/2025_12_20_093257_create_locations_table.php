@@ -23,6 +23,11 @@ class CreateLocationsTable extends Migration
                 ->constrained('regions')
                 ->onDelete('cascade');
 
+            // ربط بالبلوك/المندوب
+            $table->foreignId('block_id')
+                ->constrained('blocks')
+                ->onDelete('cascade');
+
             // الإحداثيات
             $table->decimal('latitude', 10, 8); // خط العرض
             $table->decimal('longitude', 11, 8); // خط الطول
@@ -37,13 +42,6 @@ class CreateLocationsTable extends Migration
             // معلومات إضافية
             $table->string('address')->nullable(); // العنوان
             $table->string('phone')->nullable(); // رقم هاتف
-            // $table->integer('people_count')->default(0); // عدد الأشخاص
-
-            // // ربط بشخص معين (اختياري)
-            // $table->foreignId('person_id')
-            //     ->nullable()
-            //     ->constrained('persons')
-            //     ->onDelete('set null');
 
             $table->boolean('is_active')->default(true);
             $table->timestamps();

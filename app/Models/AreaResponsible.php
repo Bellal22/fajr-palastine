@@ -122,4 +122,11 @@ class AreaResponsible extends Model
         return $this->regions()->count();
     }
 
+    /**
+     * حساب عدد الـ Blocks المسؤول عنها
+     */
+    public function getBlocksCountAttribute()
+    {
+        return $this->blocks()->count();
+    }
 }

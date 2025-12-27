@@ -3,7 +3,7 @@
     @slot('url', route('dashboard.regions.index'))
     @slot('name', trans('regions.plural'))
     @slot('active', request()->routeIs('*regions*'))
-    @slot('icon', 'fas fa-th')
+    @slot('icon', 'fas fa-map-marked-alt')
     @slot('tree', [
         [
             'name' => trans('regions.actions.list'),

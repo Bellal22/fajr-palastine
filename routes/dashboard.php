@@ -345,7 +345,11 @@ Route::resource('regions', 'RegionController');
 Route::get('trashed/locations', 'LocationController@trashed')->name('locations.trashed');
 Route::get('trashed/locations/{trashed_location}', 'LocationController@showTrashed')->name('locations.trashed.show');
 Route::post('locations/{trashed_location}/restore', 'LocationController@restore')->name('locations.restore');
-Route::delete('locations/{trashed_location}/forceDelete', 'LocationController@forceDelete')->name('locations.forceDelete');
+Route::get('locations/area-responsible-by-region', 'LocationController@getAreaResponsibleByRegion')->name('locations.area-responsible-by-region');
+Route::get('locations/blocks-by-area-responsible', 'LocationController@getBlocksByAreaResponsible')->name('locations.blocks-by-area-responsible');
+Route::get('locations/region-boundaries', 'LocationController@getRegionWithBoundaries')->name('locations.region-boundaries');
+Route::get('locations/map-data', 'LocationController@getMapData')->name('locations.map-data');
+Route::get('locations/regions-data', 'LocationController@getRegionsData')->name('locations.regions-data');  // ✅ الجديد المفقود!
 Route::resource('locations', 'LocationController');
 
 // Maps Routes.

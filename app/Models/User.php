@@ -340,4 +340,20 @@ class User extends Authenticatable implements HasMedia, NotificationTarget
 
         return route('dashboard.customers.show', $parameters);
     }
+
+    /**
+     * هل يملك هذا المستخدم صلاحية دخول لوحة التحكم؟
+     */
+    public function canAccessDashboard(): bool
+    {
+        if ($this->isAdmin() || $this->isSupervisor()) {
+            return true;
+        }
+
+        return $this->hasAnyPermission([
+            'manage.people',
+            'manage.families',
+            'manage.supervisors',
+        ]);
+    }
 }

@@ -31,6 +31,17 @@ return [
     ],
     'attributes' => [
         'name' => 'اسم الموقع',
+        'description' => 'الوصف',
+        'region_id' => 'المنطقة',
+        'block_id' => 'البلوك',
+        'latitude' => 'خط العرض',
+        'longitude' => 'خط الطول',
+        'type' => 'النوع',
+        'icon_color' => 'لون الأيقونة',
+        'address' => 'العنوان',
+        'phone' => 'رقم الهاتف',
+        'is_active' => 'نشط',
+
     ],
     'dialogs' => [
         'delete' => [

@@ -111,7 +111,7 @@
                     maxZoom: 19
                 }).addTo(map);
 
-                const group = L.featureGroup().addTo(map); // تجميع المضلعات لضبط fitBounds [web:134]
+                const group = L.featureGroup().addTo(map);
 
                 regions.forEach(function (region) {
                     if (!region.boundaries || !region.boundaries.length) {

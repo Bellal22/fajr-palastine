@@ -3,7 +3,7 @@
     @slot('url', route('dashboard.locations.index'))
     @slot('name', trans('locations.plural'))
     @slot('active', request()->routeIs('*locations*'))
-    @slot('icon', 'fas fa-th')
+    @slot('icon', 'fas fa-map-pin')
     @slot('tree', [
         [
             'name' => trans('locations.actions.list'),

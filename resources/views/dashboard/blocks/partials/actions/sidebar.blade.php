@@ -3,7 +3,7 @@
     @slot('url', route('dashboard.blocks.index'))
     @slot('name', trans('blocks.plural'))
     @slot('active', request()->routeIs('*blocks*'))
-    @slot('icon', 'fas fa-user-cog')
+    @slot('icon', 'fas fa-walking')
     @slot('tree', array_filter([
         [
             'name' => trans('blocks.actions.list'),

@@ -3,7 +3,7 @@
     @slot('url', route('dashboard.maps.index'))
     @slot('name', trans('maps.plural'))
     @slot('active', request()->routeIs('*maps*'))
-    @slot('icon', 'fas fa-th')
+    @slot('icon', 'fas fa-map')
     @slot('tree', [
         [
             'name' => trans('maps.actions.list'),

@@ -14,5 +14,8 @@
     "manage.area_responsibles",
     "manage.blocks",
     "manage.items",
-    "manage.inbound_shipments"
+    "manage.inbound_shipments",
+    "manage.regions",
+    "manage.locations",
+    "manage.maps"
 ]

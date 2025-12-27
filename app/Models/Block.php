@@ -184,4 +184,23 @@ class Block extends Model
             ]);
         }
     }
+
+    /**
+     * العلاقة مع اللوكيشنات
+     */
+    public function locations()
+    {
+        return $this->hasMany(Location::class);
+    }
+
+    /**
+     * الحصول على الإحداثيات
+     */
+    public function getCoordinatesAttribute()
+    {
+        return [
+            'lat' => (float) $this->lat,
+            'lng' => (float) $this->lan
+        ];
+    }
 }

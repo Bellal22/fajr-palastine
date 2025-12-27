@@ -11,6 +11,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <style>
         body {
@@ -138,14 +140,11 @@
 
         <!-- وصف عن الخريطة -->
         <p>
-            تعرض هذه الخريطة التفاعلية جميع المناطق المسجلة في نظام الجمعية، مع حدود كل منطقة كما حددها فريق العمل،
-            مما يساعد في متابعة نطاق التغطية الإغاثية وتوزيع الخدمات بشكل بصري واضح.
-        </p>
-        <p class="styled-text">
-            يمكنكم تحريك الخريطة والتقريب لعرض تفاصيل كل منطقة، والضغط على أي مضلع لمعرفة اسم المنطقة المرتبطة به.
+            تعرض هذه الخريطة التفاعلية جميع المناطق المسجلة في نظام الجمعية مع حدودها،
+            إضافة إلى مواقع اللوكيشنات الميدانية كنقاط (دبابيس).
         </p>
 
-        <!-- خريطة المناطق -->
+        <!-- الخريطة -->
         <div id="map"></div>
 
         <!-- روابط مساعدة -->
@@ -160,7 +159,6 @@
     </div>
 
     @php
-        // تجهيز بيانات المناطق للخريطة
         $regionsForMap = $regions->map(function ($r) {
             return [
                 'id'         => $r->id,
@@ -169,13 +167,30 @@
                 'boundaries' => $r->boundaries ?? [],
             ];
         })->values();
+
+        $locationsForMap = $locations->map(function ($l) {
+            return [
+                'id'          => $l->id,
+                'name'        => $l->name,
+                'lat'         => (float) $l->latitude,
+                'lng'         => (float) $l->longitude,
+                'icon_color'  => $l->icon_color ?? '#e74c3c',
+                'address'     => $l->address ?? null,
+                'phone'       => $l->phone ?? null,
+                'region_name' => optional($l->region)->name,
+            ];
+        })->values();
     @endphp
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const regions = @json($regionsForMap);
+            const regions   = @json($regionsForMap);
+            const locations = @json($locationsForMap);
 
             const map = L.map('map').setView([31.3461, 34.3064], 11);
 
@@ -185,11 +200,11 @@
             }).addTo(map);
 
             const group = L.featureGroup().addTo(map);
+            const regionPolygons = [];
 
+            // رسم المناطق
             regions.forEach(function (region) {
-                if (!region.boundaries || !region.boundaries.length) {
-                    return;
-                }
+                if (!region.boundaries || !region.boundaries.length) return;
 
                 const latlngs = region.boundaries.map(function (p) {
                     return [parseFloat(p.lat), parseFloat(p.lng)];
@@ -201,13 +216,167 @@
                     fillOpacity: 0.3
                 }).addTo(group);
 
-                polygon.bindPopup(region.name);
+                polygon.bindPopup(`<strong>${region.name}</strong>`);
+
+                regionPolygons.push({
+                    id: region.id,
+                    name: region.name,
+                    polygon: polygon
+                });
+            });
+
+            // رسم اللوكيشنات كدبابيس عادية بلون من الداتابيز (glow)
+            locations.forEach(function (loc) {
+                if (!loc.lat || !loc.lng) return;
+
+                const color = loc.icon_color || '#e74c3c';
+
+                const pinIcon = L.icon({
+                    iconUrl: "{{ asset('icons/person-marker.png') }}",
+                    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                    iconSize:     [40, 40],
+                    iconAnchor:   [12, 41],
+                    popupAnchor:  [1, -34],
+                    shadowSize:   [41, 41],
+                });
+
+                const marker = L.marker([loc.lat, loc.lng], { icon: pinIcon }).addTo(group);
+
+                marker.on('add', () => {
+                    if (marker._icon) {
+                        marker._icon.style.filter =
+                            `drop-shadow(0 0 0 ${color}) drop-shadow(0 0 5px ${color})`;
+                    }
+                });
+
+                const popupHtml = `
+                    <div style="min-width: 220px; font-size: 13px;">
+                        <h6 style="color: ${color}; margin-bottom: 6px;">
+                            <i class="fas fa-map-marker-alt ms-1"></i> ${loc.name}
+                        </h6>
+                        ${loc.region_name ? `<div class="small mb-1">المنطقة: ${loc.region_name}</div>` : ''}
+                        ${loc.address ? `<div class="small mb-1"><i class="fas fa-map-pin ms-1"></i>${loc.address}</div>` : ''}
+                        ${loc.phone ? `<div class="small mb-1"><i class="fas fa-phone ms-1"></i>${loc.phone}</div>` : ''}
+                    </div>
+                `;
+                marker.bindPopup(popupHtml);
             });
 
             if (group.getLayers().length) {
                 map.fitBounds(group.getBounds());
             }
+
+            // تحديد موقع المستخدم مباشرة
+            autoLocateUser(map, regionPolygons);
         });
+
+        function autoLocateUser(map, regionPolygons) {
+            if (!navigator.geolocation) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'تنبيه',
+                    text: 'المتصفح لا يدعم تحديد الموقع الجغرافي.',
+                });
+                return;
+            }
+
+            console.log('سيتم طلب إذن تحديد الموقع من المتصفح الآن.');
+
+            navigator.geolocation.getCurrentPosition(
+                function (pos) {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+
+                    // أيقونة الشخص: ضع ملف PNG في public/icons/person-marker.png
+                    const userIcon = L.icon({
+                        iconUrl: "{{ asset('icons/marker-p.png') }}",
+                        iconSize:     [40, 40],  // عدّل حسب أبعاد الصورة
+                        iconAnchor:   [20, 40],  // أسفل منتصف الأيقونة
+                        popupAnchor:  [0, -40],
+                        shadowUrl:    'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                        shadowSize:   [41, 41],
+                        shadowAnchor: [12, 41],
+                    });
+
+                    L.marker([lat, lng], { icon: userIcon })
+                        .addTo(map)
+                        .bindPopup('هذا هو موقعك الحالي تقريباً')
+                        .openPopup();
+
+                    map.setView([lat, lng], 14);
+
+                    const point = L.latLng(lat, lng);
+                    let foundRegion = null;
+
+                    regionPolygons.forEach(r => {
+                        if (!foundRegion && r.polygon.getBounds().contains(point)) {
+                            if (pointInPolygon(point, r.polygon)) {
+                                foundRegion = r;
+                            }
+                        }
+                    });
+
+                    if (foundRegion) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'تم تحديد موقعك',
+                            html: `أنت حالياً ضمن منطقة: <b>${foundRegion.name}</b>`,
+                            confirmButtonText: 'حسناً'
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'خارج نطاق التغطية',
+                            text: 'موقعك الحالي لا يقع داخل أي منطقة مسجلة في نظام الجمعية.',
+                            confirmButtonText: 'فهمت'
+                        });
+                    }
+                },
+                function (err) {
+                    console.warn('Geolocation error:', err);
+                    let msg = 'تعذر الحصول على موقعك.';
+                    if (err.code === 1) {
+                        msg = 'رفضت إذن تحديد الموقع من المتصفح. الرجاء السماح للموقع باستخدام الموقع الجغرافي ثم إعادة تحميل الصفحة.';
+                    } else if (err.code === 2) {
+                        msg = 'تعذر الحصول على موقعك. تأكد من تفعيل خدمة الموقع (GPS) أو الاتصال بالإنترنت.';
+                    } else if (err.code === 3) {
+                        msg = 'انتهت مهلة طلب الموقع. حاول إعادة تحميل الصفحة.';
+                    } else if (err.message) {
+                        msg = err.message;
+                    }
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطأ في تحديد الموقع',
+                        text: msg,
+                        confirmButtonText: 'حسناً'
+                    });
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        // فحص إذا كانت النقطة داخل البوليجون
+        function pointInPolygon(point, polygon) {
+            const x = point.lng;
+            const y = point.lat;
+            const vs = polygon.getLatLngs()[0];
+
+            let inside = false;
+            for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+                const xi = vs[i].lng, yi = vs[i].lat;
+                const xj = vs[j].lng, yj = vs[j].lat;
+
+                const intersect = ((yi > y) !== (yj > y)) &&
+                    (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-10) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
     </script>
 </body>
 </html>

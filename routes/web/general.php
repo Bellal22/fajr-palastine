@@ -12,6 +12,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\PersonController;
 use App\Http\Controllers\ProfileController;
+use App\Models\Location;
 use App\Models\Person;
 use App\Models\Region;
 use Illuminate\Http\Request;
@@ -191,7 +192,14 @@ Route::post('complaints/{complaint}/respond', [ComplaintController::class, 'resp
 
 
 Route::get('/map', function () {
-    $regions = Region::where('is_active', true)->get(['id', 'name', 'color', 'boundaries']);
+    // المناطق النشطة مع الحقول التي تحتاجها للخريطة
+    $regions = Region::where('is_active', true)
+        ->get(['id', 'name', 'color', 'boundaries']);
 
-    return view('map', compact('regions'));
+    // اللوكيشينات النشطة مع علاقتها بالمنطقة
+    $locations = Location::with('region')
+        ->where('is_active', true)
+        ->get(['id', 'name', 'latitude', 'longitude', 'icon_color', 'address', 'phone', 'region_id']);
+
+    return view('map', compact('regions', 'locations'));
 })->name('public.map');
