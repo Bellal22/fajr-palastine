@@ -31,6 +31,9 @@ return [
     ],
     'attributes' => [
         'supplier_id' => 'Supplier',
+        'shipment_number' => 'Shipment Number',
+        'inbound_type' => 'Inbound Type',
+        'notes' => 'Notes',
         'name' => 'Inbound shipment name',
         'description' => 'Description',
         'type' => 'Type',
@@ -38,6 +41,36 @@ return [
         'quantity' => 'Quantity',
         'created_at' => 'Created at',
         'updated_at' => 'Updated at',
+        'item_name' => 'Item Name',
+        'weight_kg' => 'Weight (KG)',
+        'package_name' => 'Package Name',
+    ],
+    'placeholders' => [
+        'supplier' => '-- Select Donor --',
+        'inbound_type' => '-- Select Inbound Type --',
+        'item_name' => 'Item Name',
+        'description' => 'Description',
+        'quantity' => 'Quantity',
+        'weight' => 'Weight',
+        'package_name' => 'Package Name',
+    ],
+    'types' => [
+        'single_item' => 'Single Item',
+        'ready_package' => 'Ready Package',
+    ],
+    'sections' => [
+        'single_items' => 'Single Items Details',
+        'ready_packages' => 'Ready Packages Details',
+    ],
+    'buttons' => [
+        'remove' => 'Remove',
+        'add_item' => 'Add Item',
+        'add_package' => 'Add Package',
+        'export_pdf' => 'Export PDF',
+    ],
+    'alerts' => [
+        'min_item' => 'There must be at least one item',
+        'min_package' => 'There must be at least one package',
     ],
     'dialogs' => [
         'delete' => [

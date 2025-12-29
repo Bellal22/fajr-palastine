@@ -30,12 +30,19 @@ class InboundShipment extends Model
      */
     protected $fillable = [
         'supplier_id',
-        'name',
-        'description',
-        'type',
-        'weight',
-        'quantity',
+        'shipment_number',
+        'inbound_type',
+        'notes',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (empty($model->shipment_number)) {
+                $model->shipment_number = 'IS-' . date('YmdHis') . '-' . rand(1000, 9999);
+            }
+        });
+    }
 
     /**
      * The attributes that should be cast.
@@ -43,20 +50,40 @@ class InboundShipment extends Model
      * @var array
      */
     protected $casts = [
-        'type' => 'boolean',
-        'weight' => 'float',
-        'quantity' => 'integer',
+        'created_at' => 'datetime',
     ];
 
-    /**
-     * Items relation (many-to-many).
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
-     */
+    // العلاقات
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+    // إذا كان النوع "صنف مفرد"
     public function items()
     {
-        return $this->belongsToMany(Item::class, 'inbound_shipment_item')
-            ->using(InboundShipmentItem::class)
-            ->withTimestamps();
+        return $this->hasMany(Item::class);
+    }
+    // إذا كان النوع "طرد جاهز"
+    public function readyPackages()
+    {
+        return $this->hasMany(ReadyPackage::class);
+    }
+    // Accessor للتحقق من النوع
+    public function isReadyPackage()
+    {
+        return $this->inbound_type === 'ready_package';
+    }
+    public function isSingleItem()
+    {
+        return $this->inbound_type === 'single_item';
+    }
+    // Scope لتصفية المدخلات حسب النوع
+    public function scopeByType($query, $type)
+    {
+        if ($type == 'single_item') {
+            return $query->where('inbound_type', '=', 'single_item');
+        } elseif ($type == 'ready_package') {
+            return $query->where('inbound_type', '=', 'ready_package');
+        }
     }
 }

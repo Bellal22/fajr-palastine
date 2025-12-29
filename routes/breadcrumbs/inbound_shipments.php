@@ -17,7 +17,7 @@ Breadcrumbs::for('dashboard.inbound_shipments.create', function ($breadcrumb) {
 
 Breadcrumbs::for('dashboard.inbound_shipments.show', function ($breadcrumb, $inbound_shipment) {
     $breadcrumb->parent('dashboard.inbound_shipments.index');
-    $breadcrumb->push($inbound_shipment->name, route('dashboard.inbound_shipments.show', $inbound_shipment));
+    $breadcrumb->push($inbound_shipment->shipment_number, route('dashboard.inbound_shipments.show', $inbound_shipment));
 });
 
 Breadcrumbs::for('dashboard.inbound_shipments.edit', function ($breadcrumb, $inbound_shipment) {

@@ -43,6 +43,7 @@ class Supplier extends Model implements HasMedia
     protected $fillable = [
         'name',
         'description',
+        'type',
     ];
 
     /**
@@ -61,5 +62,11 @@ class Supplier extends Model implements HasMedia
             ->addMediaCollection('document')
             ->singleFile();
 
+    }
+
+    // اختياري: accessor للترجمة
+    public function getTypeNameAttribute()
+    {
+        return $this->type === 'donor' ? 'جهة مانحة' : 'جهة مشغلة';
     }
 }

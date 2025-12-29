@@ -84,3 +84,23 @@ if (! function_exists('count_formatted')) {
         return $num;
     }
 }
+
+if (! function_exists('shape_arabic')) {
+    /**
+     * Shape Arabic text for PDF rendering.
+     *
+     * @param string $text
+     * @return string
+     */
+    function shape_arabic($text)
+    {
+        if (! $text) return $text;
+        
+        static $arabic;
+        if (! $arabic) {
+            $arabic = new \App\Support\Arabic();
+        }
+        
+        return $arabic->utf8Glyphs($text);
+    }
+}

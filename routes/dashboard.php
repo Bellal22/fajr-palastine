@@ -331,6 +331,7 @@ Route::get('trashed/inbound_shipments', 'InboundShipmentController@trashed')->na
 Route::get('trashed/inbound_shipments/{trashed_inbound_shipment}', 'InboundShipmentController@showTrashed')->name('inbound_shipments.trashed.show');
 Route::post('inbound_shipments/{trashed_inbound_shipment}/restore', 'InboundShipmentController@restore')->name('inbound_shipments.restore');
 Route::delete('inbound_shipments/{trashed_inbound_shipment}/forceDelete', 'InboundShipmentController@forceDelete')->name('inbound_shipments.forceDelete');
+Route::get('inbound_shipments/{inbound_shipment}/pdf', 'InboundShipmentController@exportPdf')->name('inbound_shipments.exportPdf');
 Route::resource('inbound_shipments', 'InboundShipmentController');
 
 // Regions Routes.
@@ -358,5 +359,69 @@ Route::get('trashed/maps/{trashed_map}', 'MapController@showTrashed')->name('map
 Route::post('maps/{trashed_map}/restore', 'MapController@restore')->name('maps.restore');
 Route::delete('maps/{trashed_map}/forceDelete', 'MapController@forceDelete')->name('maps.forceDelete');
 Route::resource('maps', 'MapController');
+
+// ReadyPackages Routes.
+Route::get('trashed/ready_packages', 'ReadyPackageController@trashed')->name('ready_packages.trashed');
+Route::get('trashed/ready_packages/{trashed_ready_package}', 'ReadyPackageController@showTrashed')->name('ready_packages.trashed.show');
+Route::post('ready_packages/{trashed_ready_package}/restore', 'ReadyPackageController@restore')->name('ready_packages.restore');
+Route::delete('ready_packages/{trashed_ready_package}/forceDelete', 'ReadyPackageController@forceDelete')->name('ready_packages.forceDelete');
+Route::resource('ready_packages', 'ReadyPackageController');
+
+// InternalPackages Routes.
+Route::get('trashed/internal_packages', 'InternalPackageController@trashed')->name('internal_packages.trashed');
+Route::get('trashed/internal_packages/{trashed_internal_package}', 'InternalPackageController@showTrashed')->name('internal_packages.trashed.show');
+Route::post('internal_packages/{trashed_internal_package}/restore', 'InternalPackageController@restore')->name('internal_packages.restore');
+Route::delete('internal_packages/{trashed_internal_package}/forceDelete', 'InternalPackageController@forceDelete')->name('internal_packages.forceDelete');
+Route::resource('internal_packages', 'InternalPackageController');
+
+// PackageContents Routes.
+Route::get('trashed/package_contents', 'PackageContentController@trashed')->name('package_contents.trashed');
+Route::get('trashed/package_contents/{trashed_package_content}', 'PackageContentController@showTrashed')->name('package_contents.trashed.show');
+Route::post('package_contents/{trashed_package_content}/restore', 'PackageContentController@restore')->name('package_contents.restore');
+Route::delete('package_contents/{trashed_package_content}/forceDelete', 'PackageContentController@forceDelete')->name('package_contents.forceDelete');
+Route::resource('package_contents', 'PackageContentController');
+
+// Projects Routes.
+Route::get('trashed/projects', 'ProjectController@trashed')->name('projects.trashed');
+Route::get('trashed/projects/{trashed_project}', 'ProjectController@showTrashed')->name('projects.trashed.show');
+Route::post('projects/{trashed_project}/restore', 'ProjectController@restore')->name('projects.restore');
+Route::delete('projects/{trashed_project}/forceDelete', 'ProjectController@forceDelete')->name('projects.forceDelete');
+Route::resource('projects', 'ProjectController');
+
+// SubWarehouses Routes.
+Route::get('trashed/sub_warehouses', 'SubWarehouseController@trashed')->name('sub_warehouses.trashed');
+Route::get('trashed/sub_warehouses/{trashed_sub_warehouse}', 'SubWarehouseController@showTrashed')->name('sub_warehouses.trashed.show');
+Route::post('sub_warehouses/{trashed_sub_warehouse}/restore', 'SubWarehouseController@restore')->name('sub_warehouses.restore');
+Route::delete('sub_warehouses/{trashed_sub_warehouse}/forceDelete', 'SubWarehouseController@forceDelete')->name('sub_warehouses.forceDelete');
+Route::resource('sub_warehouses', 'SubWarehouseController');
+
+// OutboundShipments Routes.
+Route::get('trashed/outbound_shipments', 'OutboundShipmentController@trashed')->name('outbound_shipments.trashed');
+Route::get('trashed/outbound_shipments/{trashed_outbound_shipment}', 'OutboundShipmentController@showTrashed')->name('outbound_shipments.trashed.show');
+Route::post('outbound_shipments/{trashed_outbound_shipment}/restore', 'OutboundShipmentController@restore')->name('outbound_shipments.restore');
+Route::delete('outbound_shipments/{trashed_outbound_shipment}/forceDelete', 'OutboundShipmentController@forceDelete')->name('outbound_shipments.forceDelete');
+Route::get('outbound_shipments/{outbound_shipment}/pdf', 'OutboundShipmentController@exportPdf')->name('dashboard.outbound_shipments.exportPdf');
+Route::resource('outbound_shipments', 'OutboundShipmentController');
+
+// OutboundShipmentItems Routes.
+Route::get('trashed/outbound_shipment_items', 'OutboundShipmentItemController@trashed')->name('outbound_shipment_items.trashed');
+Route::get('trashed/outbound_shipment_items/{trashed_outbound_shipment_item}', 'OutboundShipmentItemController@showTrashed')->name('outbound_shipment_items.trashed.show');
+Route::post('outbound_shipment_items/{trashed_outbound_shipment_item}/restore', 'OutboundShipmentItemController@restore')->name('outbound_shipment_items.restore');
+Route::delete('outbound_shipment_items/{trashed_outbound_shipment_item}/forceDelete', 'OutboundShipmentItemController@forceDelete')->name('outbound_shipment_items.forceDelete');
+Route::resource('outbound_shipment_items', 'OutboundShipmentItemController');
+
+// CouponTypes Routes.
+Route::get('trashed/coupon_types', 'CouponTypeController@trashed')->name('coupon_types.trashed');
+Route::get('trashed/coupon_types/{trashed_coupon_type}', 'CouponTypeController@showTrashed')->name('coupon_types.trashed.show');
+Route::post('coupon_types/{trashed_coupon_type}/restore', 'CouponTypeController@restore')->name('coupon_types.restore');
+Route::delete('coupon_types/{trashed_coupon_type}/forceDelete', 'CouponTypeController@forceDelete')->name('coupon_types.forceDelete');
+Route::resource('coupon_types', 'CouponTypeController');
+
+// CouponTypes Routes.
+Route::get('trashed/coupon_types', 'CouponTypeController@trashed')->name('coupon_types.trashed');
+Route::get('trashed/coupon_types/{trashed_coupon_type}', 'CouponTypeController@showTrashed')->name('coupon_types.trashed.show');
+Route::post('coupon_types/{trashed_coupon_type}/restore', 'CouponTypeController@restore')->name('coupon_types.restore');
+Route::delete('coupon_types/{trashed_coupon_type}/forceDelete', 'CouponTypeController@forceDelete')->name('coupon_types.forceDelete');
+Route::resource('coupon_types', 'CouponTypeController');
 
 /*  The routes of generated crud will set here: Don't remove this line  */

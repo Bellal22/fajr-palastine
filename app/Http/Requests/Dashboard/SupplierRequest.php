@@ -26,11 +26,16 @@ class SupplierRequest extends FormRequest
         return [
             'name'         => ['required', 'string', 'max:255'],
             'description'  => ['required', 'string', 'max:1024'],
-            'image'        => ['nullable', 'image'],
-            'document'     => ['nullable', 'file', 'mimes:pdf,doc,docx'],
+            'image'        => ['nullable', 'image', 'max:5120'],
+            'document'     => [
+                'nullable',
+                'file',
+                'mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'max:10240'
+            ],
+            'type' => 'required|in:donor,operator',
         ];
     }
-
 
     /**
      * Get custom attributes for validator errors.
@@ -40,5 +45,19 @@ class SupplierRequest extends FormRequest
     public function attributes()
     {
         return trans('suppliers.attributes');
+    }
+
+    /**
+     * Get custom error messages.
+     *
+     * @return array
+     */
+    public function messages()
+    {
+        return [
+            'document.mimetypes' => 'يجب أن يكون الملف من نوع: PDF أو Word (doc, docx)',
+            'document.file' => 'يجب أن يكون ملفاً صالحاً',
+            'document.max' => 'يجب ألا يتجاوز حجم الملف 10 ميجابايت',
+        ];
     }
 }

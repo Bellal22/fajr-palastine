@@ -25,7 +25,7 @@
             <th style="width: 30px;" class="text-center">
               <x-check-all></x-check-all>
             </th>
-            <th>@lang('inbound_shipments.attributes.name')</th>
+            <th>@lang('inbound_shipments.attributes.shipment_number')</th>
             <th style="width: 160px">...</th>
         </tr>
         </thead>
@@ -38,7 +38,7 @@
                 <td>
                     <a href="{{ route('dashboard.inbound_shipments.show', $inbound_shipment) }}"
                        class="text-decoration-none text-ellipsis">
-                        {{ $inbound_shipment->name }}
+                        {{ $inbound_shipment->shipment_number }}
                     </a>
                 </td>
 

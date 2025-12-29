@@ -91,4 +91,36 @@ Route::get('/select/locations', 'LocationController@select')->name('locations.se
 Route::apiResource('maps', 'MapController');
 Route::get('/select/maps', 'MapController@select')->name('maps.select');
 
+// ReadyPackages Routes.
+Route::apiResource('ready_packages', 'ReadyPackageController');
+Route::get('/select/ready_packages', 'ReadyPackageController@select')->name('ready_packages.select');
+
+// InternalPackages Routes.
+Route::apiResource('internal_packages', 'InternalPackageController');
+Route::get('/select/internal_packages', 'InternalPackageController@select')->name('internal_packages.select');
+
+// PackageContents Routes.
+Route::apiResource('package_contents', 'PackageContentController');
+Route::get('/select/package_contents', 'PackageContentController@select')->name('package_contents.select');
+
+// Projects Routes.
+Route::apiResource('projects', 'ProjectController');
+Route::get('/select/projects', 'ProjectController@select')->name('projects.select');
+
+// SubWarehouses Routes.
+Route::apiResource('sub_warehouses', 'SubWarehouseController');
+Route::get('/select/sub_warehouses', 'SubWarehouseController@select')->name('sub_warehouses.select');
+
+// OutboundShipments Routes.
+Route::apiResource('outbound_shipments', 'OutboundShipmentController');
+Route::get('/select/outbound_shipments', 'OutboundShipmentController@select')->name('outbound_shipments.select');
+
+// OutboundShipmentItems Routes.
+Route::apiResource('outbound_shipment_items', 'OutboundShipmentItemController');
+Route::get('/select/outbound_shipment_items', 'OutboundShipmentItemController@select')->name('outbound_shipment_items.select');
+
+// CouponTypes Routes.
+Route::apiResource('coupon_types', 'CouponTypeController');
+Route::get('/select/coupon_types', 'CouponTypeController@select')->name('coupon_types.select');
+
 /*  The routes of generated crud will set here: Don't remove this line  */

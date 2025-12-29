@@ -1,0 +1,35 @@
+@can('forceDelete', $package_content)
+    <a href="#package_content-{{ $package_content->id }}-force-delete-model"
+       class="btn btn-outline-danger btn-sm"
+       data-toggle="modal">
+        <i class="fas fa fa-fw fa-trash"></i>
+    </a>
+
+    <!-- Modal -->
+    <div class="modal fade" id="package_content-{{ $package_content->id }}-force-delete-model" tabindex="-1" role="dialog"
+         aria-labelledby="modal-title-{{ $package_content->id }}" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-title-{{ $package_content->id }}">@lang('package_contents.dialogs.forceDelete.title')</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @lang('package_contents.dialogs.forceDelete.info')
+                </div>
+                <div class="modal-footer">
+                    {{ BsForm::delete(route('dashboard.package_contents.forceDelete', $package_content)) }}
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        @lang('package_contents.dialogs.forceDelete.cancel')
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        @lang('package_contents.dialogs.forceDelete.confirm')
+                    </button>
+                    {{ BsForm::close() }}
+                </div>
+            </div>
+        </div>
+    </div>
+@endcan

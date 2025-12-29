@@ -29,10 +29,9 @@ class Item extends Model
      * @var array
      */
     protected $fillable = [
+        'inbound_shipment_id',
         'name',
         'description',
-        'package',
-        'type',
         'weight',
         'quantity',
     ];
@@ -43,8 +42,6 @@ class Item extends Model
      * @var array
      */
     protected $casts = [
-        'package' => 'boolean',
-        'type' => 'integer',
         'weight' => 'float',
         'quantity' => 'integer',
     ];
@@ -54,9 +51,14 @@ class Item extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
-    public function inboundShipments()
+    // العلاقات
+    public function inboundShipment()
     {
-        return $this->belongsToMany(InboundShipment::class, 'inbound_shipment_item')
-            ->withTimestamps();
+        return $this->belongsTo(InboundShipment::class);
+    }
+    // الأصناف المستخدمة في الطرود
+    public function packageContents()
+    {
+        return $this->hasMany(PackageContent::class);
     }
 }

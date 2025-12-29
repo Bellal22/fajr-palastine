@@ -13,9 +13,18 @@
     "manage.suppliers",
     "manage.area_responsibles",
     "manage.blocks",
-    "manage.items",
-    "manage.inbound_shipments",
     "manage.regions",
     "manage.locations",
-    "manage.maps"
+    "manage.maps",
+    "manage.inbound_shipments",
+    "manage.items",
+    "manage.ready_packages",
+    "manage.internal_packages",
+    "manage.package_contents",
+    "manage.sub_warehouses",
+    "manage.outbound_shipments",
+    "manage.outbound_shipment_items",
+    "manage.coupon_types",
+    "manage.projects"
+
 ]

@@ -32,6 +32,14 @@ class DummyDataSeeder extends Seeder
         $this->call(RegionSeeder::class);
         $this->call(LocationSeeder::class);
         $this->call(MapSeeder::class);
+        $this->call(ReadyPackageSeeder::class);
+        $this->call(InternalPackageSeeder::class);
+        $this->call(PackageContentSeeder::class);
+        $this->call(ProjectSeeder::class);
+        $this->call(SubWarehouseSeeder::class);
+        $this->call(OutboundShipmentSeeder::class);
+        $this->call(OutboundShipmentItemSeeder::class);
+        $this->call(CouponTypeSeeder::class);
         /*  The seeders of generated crud will set here: Don't remove this line  */
     }
 }

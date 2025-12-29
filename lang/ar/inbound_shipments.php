@@ -31,6 +31,9 @@ return [
     ],
     'attributes' => [
         'supplier_id' => 'المورد',
+        'shipment_number' => 'رقم الإرسالية',
+        'inbound_type' => 'نوع الوارد',
+        'notes' => 'ملاحظات',
         'name' => 'اسم إرسالية الوارد',
         'description' => 'الوصف',
         'type' => 'النوع',
@@ -38,6 +41,36 @@ return [
         'quantity' => 'الكمية',
         'created_at' => 'تاريخ الإنشاء',
         'updated_at' => 'تاريخ التعديل',
+        'item_name' => 'اسم الصنف',
+        'weight_kg' => 'الوزن (كجم)',
+        'package_name' => 'اسم الطرد',
+    ],
+    'placeholders' => [
+        'supplier' => '-- اختر الجهة المانحة --',
+        'inbound_type' => '-- اختر نوع الوارد --',
+        'item_name' => 'اسم الصنف',
+        'description' => 'الوصف',
+        'quantity' => 'الكمية',
+        'weight' => 'الوزن',
+        'package_name' => 'اسم الطرد',
+    ],
+    'types' => [
+        'single_item' => 'صنف مفرد',
+        'ready_package' => 'طرد جاهز',
+    ],
+    'sections' => [
+        'single_items' => 'تفاصيل الأصناف المفردة',
+        'ready_packages' => 'تفاصيل الطرود الجاهزة',
+    ],
+    'buttons' => [
+        'add_item' => 'إضافة صنف',
+        'remove' => 'حذف',
+        'add_package' => 'إضافة طرد',
+        'export_pdf' => 'تصدير PDF',
+    ],
+    'alerts' => [
+        'min_item' => 'يجب أن يكون هناك صنف واحد على الأقل',
+        'min_package' => 'يجب أن يكون هناك طرد واحد على الأقل',
     ],
     'dialogs' => [
         'delete' => [
