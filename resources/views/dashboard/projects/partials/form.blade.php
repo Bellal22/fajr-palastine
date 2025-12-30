@@ -17,18 +17,16 @@
 
 <div class="row">
     <div class="col-md-4">
-        {{ BsForm::text('start_date')
-            ->label(trans('projects.attributes.start_date'))
-            ->attribute('class', 'form-control datepicker')
-            ->attribute('autocomplete', 'off')
-        }}
+        <div class="form-group">
+            <label for="start_date">{{ trans('projects.attributes.start_date') }}</label>
+            <input type="text" name="start_date" id="start_date" class="form-control datepicker" value="{{ old('start_date', $project->start_date ?? '') }}" autocomplete="off">
+        </div>
     </div>
     <div class="col-md-4">
-        {{ BsForm::text('end_date')
-            ->label(trans('projects.attributes.end_date'))
-            ->attribute('class', 'form-control datepicker')
-            ->attribute('autocomplete', 'off')
-        }}
+        <div class="form-group">
+            <label for="end_date">{{ trans('projects.attributes.end_date') }}</label>
+            <input type="text" name="end_date" id="end_date" class="form-control datepicker" value="{{ old('end_date', $project->end_date ?? '') }}" autocomplete="off">
+        </div>
     </div>
     <div class="col-md-4">
         {{ BsForm::select('status')
@@ -38,7 +36,7 @@
                 'suspended' => 'معلق'
             ])
             ->label(trans('projects.attributes.status'))
-            ->value('active')
+            ->value(old('status', $project->status ?? 'active'))
         }}
     </div>
 </div>
@@ -144,13 +142,11 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
 @endpush
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
     let typeIndex = {{ isset($project) ? $project->couponTypes->count() : 1 }};
@@ -188,20 +184,22 @@
     }
 
     $(document).ready(function() {
-        // Datepicker
+        // Initialize Flatpickr
         flatpickr('.datepicker', {
             locale: 'ar',
             dateFormat: 'Y-m-d',
-            allowInput: true
+            allowInput: true,
+            altInput: true,
+            altFormat: 'F j, Y'
         });
 
-        // Select2
+        // Initialize Select2
         if ($.fn.select2) {
             $('.select2').select2({
                 placeholder: "-- اختر --",
                 allowClear: true,
                 width: '100%',
-                language: 'ar'
+                dir: 'rtl'
             });
         }
     });
