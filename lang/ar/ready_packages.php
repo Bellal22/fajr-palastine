@@ -32,9 +32,11 @@ return [
     'attributes' => [
         'name' => 'اسم الطرد',
         'description' => 'الوصف',
-        'weight' => 'الوزن (كجم)',
+        'inbound_shipment_id' => 'رقم الإرسالية',
         'quantity' => 'الكمية',
-        'inbound_shipment_id' => 'إرسالية الوارد',
+        'weight' => 'الوزن (كجم)',
+        'created_at' => 'تاريخ الإضافة',
+        'updated_at' => 'تاريخ التحديث',
     ],
     'dialogs' => [
         'delete' => [

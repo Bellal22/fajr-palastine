@@ -48,7 +48,7 @@
     <div class="col-md-6">
         {{ BsForm::select('granting_entities[]')
             ->label('الجهات المانحة')
-            ->options(App\Models\Supplier::where('type', 'organization')->pluck('name', 'id'))
+            ->options(App\Models\Supplier::where('type', 'donor')->pluck('name', 'id')->toArray())
             ->multiple()
             ->attribute('class', 'form-control select2')
             ->value(isset($project) ? $project->grantingEntities->pluck('id')->toArray() : [])
@@ -58,7 +58,7 @@
     <div class="col-md-6">
         {{ BsForm::select('executing_entities[]')
             ->label('الجهات المنفذة')
-            ->options(App\Models\Supplier::where('type', 'organization')->pluck('name', 'id'))
+            ->options(App\Models\Supplier::where('type', 'operator')->pluck('name', 'id')->toArray())
             ->multiple()
             ->attribute('class', 'form-control select2')
             ->value(isset($project) ? $project->executingEntities->pluck('id')->toArray() : [])

@@ -30,10 +30,13 @@ return [
         'restored' => 'تم استعادة الطرد الداخلي بنجاح.',
     ],
     'attributes' => [
-        'name' => 'اسم الطرد',
+        'name' => 'اسم الطرد الداخلي',
         'description' => 'الوصف',
-        'weight' => 'الوزن (كجم)',
+        'created_by' => 'تم الإنشاء بواسطة',
         'quantity' => 'الكمية',
+        'weight' => 'الوزن (كجم)',
+        'created_at' => 'تاريخ الإضافة',
+        'updated_at' => 'تاريخ التحديث',
     ],
     'dialogs' => [
         'delete' => [

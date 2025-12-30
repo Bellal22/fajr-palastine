@@ -1,200 +1,341 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ shape_arabic('إرسالية وارد - ' . $inbound_shipment->shipment_number) }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>إرسالية وارد - {{ $inbound_shipment->shipment_number }}</title>
     <style>
         @page {
-            margin: 2cm;
+            margin: 1.5cm;
         }
+
         body {
             font-family: 'DejaVu Sans', sans-serif;
+            direction: rtl;
             text-align: right;
-            font-size: 12px;
+            font-size: 11px;
             line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
         }
+
         .header {
             text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #333;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #FF6F00;
             padding-bottom: 15px;
         }
+
         .header h1 {
-            margin: 0 0 10px 0;
+            margin: 0 0 15px 0;
             font-size: 24px;
-            color: #333;
+            color: #FF6F00;
+            font-weight: bold;
         }
-        .header p {
-            margin: 5px 0;
-            font-size: 14px;
-            /* Ensure values and labels flow correctly with text-align right */
-            direction: ltr;
+
+        .top-info {
+            margin-top: 10px;
         }
+
+        .top-info table {
+            width: 100%;
+            border: none;
+            margin: 0;
+            box-shadow: none;
+        }
+
+        .top-info td {
+            border: none;
+            padding: 5px;
+            font-size: 12px;
+        }
+
+        .top-info .right {
+            text-align: right;
+            width: 50%;
+        }
+
+        .top-info .left {
+            text-align: left;
+            width: 50%;
+        }
+
         .info {
             margin: 20px 0;
-            background-color: #f5f5f5;
-            padding: 15px;
-            border-radius: 5px;
-            direction: ltr;
+            background: linear-gradient(to left, #fff3e6, #ffffff);
+            padding: 15px 20px;
+            border-right: 4px solid #FF6F00;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
         .info p {
             margin: 8px 0;
-            font-size: 13px;
+            font-size: 12px;
+            line-height: 1.8;
         }
+
         h3 {
-            margin-top: 30px;
-            margin-bottom: 15px;
-            color: #333;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
+            margin: 30px 0 15px 0;
+            color: #FF6F00;
+            border-bottom: 2px solid #FFE0B2;
+            padding-bottom: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            direction: ltr; /* Ensure columns flow Left-to-Right in code, but we reverse content */
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
         }
+
         th, td {
-            border: 1px solid #333;
-            padding: 10px;
+            border: 1px solid #E0E0E0;
+            padding: 10px 8px;
             text-align: center;
         }
+
         th {
-            background-color: #e9ecef;
+            background: linear-gradient(to bottom, #FF8F00, #FF6F00);
+            color: white;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
+
+        tbody tr:nth-child(odd) {
+            background-color: #FFFBF5;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #ffffff;
+        }
+
         td {
+            font-size: 11px;
+            color: #555;
+        }
+
+        tfoot {
+            background: linear-gradient(to bottom, #FFE0B2, #FFECB3);
+        }
+
+        tfoot th {
+            background: none;
+            color: #333;
+            font-weight: bold;
             font-size: 12px;
         }
-        .signature-section {
-            margin-top: 60px;
-            display: table;
-            width: 100%;
-            direction: ltr;
-        }
-        .signature-box {
-            display: table-cell;
-            width: 48%;
-            text-align: center;
-            vertical-align: top;
-            padding: 20px;
-            border: 1px solid #ddd;
-        }
-        .signature-box p {
-            margin: 5px 0;
-        }
+
         .notes {
-            margin-top: 30px;
+            margin-top: 25px;
             padding: 15px;
-            border: 1px dashed #999;
+            border: 2px dashed #FF6F00;
+            border-radius: 8px;
             min-height: 80px;
-            direction: ltr;
+            background: linear-gradient(135deg, #fffbf5 0%, #fff3e6 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
         }
+
         .notes-title {
             font-weight: bold;
             margin-bottom: 10px;
-            text-align: right;
+            font-size: 13px;
+            color: #FF6F00;
         }
-        /* Align content to the right */
-        p, div, table {
-            text-align: right;
+
+        .notes p {
+            font-size: 11px;
+            line-height: 1.8;
+            color: #555;
+        }
+
+        .signature-table {
+            width: 100%;
+            margin-top: 50px;
+            border-collapse: collapse;
+            page-break-inside: avoid;
+        }
+
+        .signature-table td {
+            width: 50%;
+            padding: 20px;
+            text-align: center;
+            vertical-align: top;
+            border: 2px solid #E0E0E0;
+            background-color: #FAFAFA;
+        }
+
+        .signature-table .signature-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #FF6F00;
+            margin-bottom: 10px;
+        }
+
+        .signature-table .signature-space {
+            height: 60px;
+            margin-bottom: 10px;
+        }
+
+        .signature-table .signature-line {
+            border-top: 2px solid #333;
+            width: 70%;
+            margin: 0 auto;
+        }
+
+        strong {
+            color: #222;
+            font-weight: bold;
+        }
+
+        .empty-row {
+            color: #999;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>{{ shape_arabic('إرسالية وارد') }}</h1>
-        <!-- Swapped Order: Value then Label -->
-        <p>{{ $inbound_shipment->shipment_number }} <strong>{{ shape_arabic('رقم الإرسالية:') }}</strong></p>
-        <p>{{ $inbound_shipment->created_at->format('Y-m-d h:i A') }} <strong>{{ shape_arabic('التاريخ:') }}</strong></p>
+        <h1>إرسالية وارد</h1>
+        <div class="top-info">
+            <table>
+                <tr>
+                    <td class="right"><strong>رقم الإرسالية:</strong> {{ $inbound_shipment->shipment_number }}</td>
+                    <td class="left"><strong>التاريخ:</strong> {{ $inbound_shipment->created_at->format('Y-m-d h:i A') }}</td>
+                </tr>
+            </table>
+        </div>
     </div>
 
     <div class="info">
-        <!-- Swapped Order: Value then Label -->
-        <p>{{ shape_arabic($inbound_shipment->supplier->name ?? 'غير محدد') }} <strong>{{ shape_arabic('المورد:') }}</strong></p>
-        <p>{{ shape_arabic(trans('inbound_shipments.types.' . $inbound_shipment->inbound_type)) }} <strong>{{ shape_arabic('نوع الإرسالية:') }}</strong></p>
+        <p><strong>المورد (الجهة المانحة):</strong> {{ $inbound_shipment->supplier->name ?? 'غير محدد' }}</p>
+        <p><strong>نوع الإرسالية:</strong> {{ trans('inbound_shipments.inbound_types.' . $inbound_shipment->inbound_type) }}</p>
     </div>
 
-    @if($inbound_shipment->isSingleItem())
-        <h3>{{ shape_arabic('بيان الأصناف:') }}</h3>
+    @if($inbound_shipment->inbound_type === 'single_item')
+        <h3>بيان الأصناف</h3>
         <table>
             <thead>
                 <tr>
-                    <!-- Reversed Columns: Weight, Quantity, Name, # -->
-                    <th style="width: 25%;">{{ shape_arabic(trans('inbound_shipments.attributes.weight_kg')) }}</th>
-                    <th style="width: 25%;">{{ shape_arabic(trans('inbound_shipments.attributes.quantity')) }}</th>
-                    <th style="width: 40%;">{{ shape_arabic(trans('inbound_shipments.attributes.item_name')) }}</th>
-                    <th style="width: 10%;">#</th>
+                    <th style="width: 6%;">#</th>
+                    <th style="width: 28%;">اسم الصنف</th>
+                    <th style="width: 30%;">الوصف</th>
+                    <th style="width: 10%;">الكمية</th>
+                    <th style="width: 13%;">وزن الوحدة (كجم)</th>
+                    <th style="width: 13%;">الوزن الإجمالي (كجم)</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($inbound_shipment->items as $index => $item)
+                @php
+                    $totalQuantity = 0;
+                    $totalWeight = 0;
+                @endphp
+                @forelse($inbound_shipment->items as $index => $item)
+                    @php
+                        $itemTotalWeight = $item->quantity * ($item->weight ?? 0);
+                        $totalQuantity += $item->quantity;
+                        $totalWeight += $itemTotalWeight;
+                    @endphp
                 <tr>
-                    <td>{{ $item->weight }}</td>
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ $item->name }}</td>
+                    <td>{{ $item->description ?? '-' }}</td>
                     <td>{{ $item->quantity }}</td>
-                    <td>{{ shape_arabic($item->name) }}</td>
-                    <td>{{ $index + 1 }}</td>
+                    <td>{{ $item->weight ? number_format($item->weight, 2) : '-' }}</td>
+                    <td><strong>{{ number_format($itemTotalWeight, 2) }}</strong></td>
                 </tr>
-                @endforeach
+                @empty
+                <tr>
+                    <td colspan="6" class="empty-row">لا توجد أصناف</td>
+                </tr>
+                @endforelse
             </tbody>
+            @if($inbound_shipment->items->count() > 0)
+            <tfoot>
+                <tr>
+                    <th colspan="3" style="text-align: right;">الإجمالي</th>
+                    <th>{{ $totalQuantity }}</th>
+                    <th>-</th>
+                    <th><strong>{{ number_format($totalWeight, 2) }}</strong></th>
+                </tr>
+            </tfoot>
+            @endif
         </table>
-    @elseif($inbound_shipment->isReadyPackage())
-        <h3>{{ shape_arabic('بيان الطرود:') }}</h3>
+    @elseif($inbound_shipment->inbound_type === 'ready_package')
+        <h3>بيان الطرود الجاهزة</h3>
         <table>
             <thead>
                 <tr>
-                    <!-- Reversed Columns: Weight, Quantity, Description, Name, # -->
-                    <th style="width: 15%;">{{ shape_arabic(trans('inbound_shipments.attributes.weight_kg')) }}</th>
-                    <th style="width: 15%;">{{ shape_arabic(trans('inbound_shipments.attributes.quantity')) }}</th>
-                    <th style="width: 30%;">{{ shape_arabic(trans('inbound_shipments.attributes.description')) }}</th>
-                    <th style="width: 30%;">{{ shape_arabic(trans('inbound_shipments.attributes.package_name')) }}</th>
-                    <th style="width: 10%;">#</th>
+                    <th style="width: 6%;">#</th>
+                    <th style="width: 26%;">اسم الطرد</th>
+                    <th style="width: 32%;">الوصف</th>
+                    <th style="width: 10%;">الكمية</th>
+                    <th style="width: 13%;">وزن الوحدة (كجم)</th>
+                    <th style="width: 13%;">الوزن الإجمالي (كجم)</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($inbound_shipment->readyPackages as $index => $package)
+                @php
+                    $totalQuantity = 0;
+                    $totalWeight = 0;
+                @endphp
+                @forelse($inbound_shipment->readyPackages as $index => $package)
+                    @php
+                        $packageTotalWeight = $package->quantity * ($package->weight ?? 0);
+                        $totalQuantity += $package->quantity;
+                        $totalWeight += $packageTotalWeight;
+                    @endphp
                 <tr>
-                    <td>{{ $package->weight }}</td>
-                    <td>{{ $package->quantity }}</td>
-                    <td>{{ shape_arabic($package->description) }}</td>
-                    <td>{{ shape_arabic($package->name) }}</td>
                     <td>{{ $index + 1 }}</td>
+                    <td>{{ $package->name }}</td>
+                    <td>{{ $package->description ?? '-' }}</td>
+                    <td>{{ $package->quantity }}</td>
+                    <td>{{ $package->weight ? number_format($package->weight, 2) : '-' }}</td>
+                    <td><strong>{{ number_format($packageTotalWeight, 2) }}</strong></td>
                 </tr>
-                @endforeach
+                @empty
+                <tr>
+                    <td colspan="6" class="empty-row">لا توجد طرود</td>
+                </tr>
+                @endforelse
             </tbody>
+            @if($inbound_shipment->readyPackages->count() > 0)
+            <tfoot>
+                <tr>
+                    <th colspan="3" style="text-align: right;">الإجمالي</th>
+                    <th>{{ $totalQuantity }}</th>
+                    <th>-</th>
+                    <th><strong>{{ number_format($totalWeight, 2) }}</strong></th>
+                </tr>
+            </tfoot>
+            @endif
         </table>
     @endif
 
     @if($inbound_shipment->notes)
     <div class="notes">
-        <div class="notes-title">{{ shape_arabic('ملاحظات:') }}</div>
-        <!-- Notes are usually long text. Mixing RTL/LTR block flow is hard.
-             If we assume mostly Arabic, reshaping it works.
-             But if it wraps, line 1 will be at top, line 2 below.
-             Standard reshaping handles characters within a string.
-             Word wrapping in LTR container works left-to-right.
-             This is the one limitation. For short notes, it is fine. -->
-        <p>{{ shape_arabic($inbound_shipment->notes) }}</p>
+        <div class="notes-title">ملاحظات:</div>
+        <p>{{ $inbound_shipment->notes }}</p>
     </div>
     @endif
 
-    <div class="signature-section">
-        <!-- Layout: Left Cell, Right Cell.
-             We want StoreKeeper on Right, Receiver on Left.
-             So First Cell = Receiver, Second Cell = Storekeeper.
-             (Since LTR fills Left then Right) -->
-        <div class="signature-box">
-            <p><strong>{{ shape_arabic('توقيع المستلم') }}</strong></p>
-            <br><br>
-            <p>.............................</p>
-        </div>
-        <div class="signature-box">
-            <p><strong>{{ shape_arabic('توقيع أمين المخزن') }}</strong></p>
-            <br><br>
-            <p>.............................</p>
-        </div>
-    </div>
+    <table class="signature-table">
+        <tr>
+            <td>
+                <div class="signature-title">توقيع أمين المخزن</div>
+                <div class="signature-space"></div>
+                <div class="signature-line"></div>
+            </td>
+            <td>
+                <div class="signature-title">توقيع المستلم</div>
+                <div class="signature-space"></div>
+                <div class="signature-line"></div>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

@@ -17,10 +17,15 @@ Breadcrumbs::for('dashboard.outbound_shipments.create', function ($breadcrumb) {
 
 Breadcrumbs::for('dashboard.outbound_shipments.show', function ($breadcrumb, $outbound_shipment) {
     $breadcrumb->parent('dashboard.outbound_shipments.index');
-    $breadcrumb->push($outbound_shipment->name, route('dashboard.outbound_shipments.show', $outbound_shipment));
+    $breadcrumb->push($outbound_shipment->shipment_number ?? '#' . $outbound_shipment->id, route('dashboard.outbound_shipments.show', $outbound_shipment));
 });
 
 Breadcrumbs::for('dashboard.outbound_shipments.edit', function ($breadcrumb, $outbound_shipment) {
     $breadcrumb->parent('dashboard.outbound_shipments.show', $outbound_shipment);
     $breadcrumb->push(trans('outbound_shipments.actions.edit'), route('dashboard.outbound_shipments.edit', $outbound_shipment));
+});
+
+Breadcrumbs::for('dashboard.outbound_shipments.trashed.show', function ($breadcrumb, $outbound_shipment) {
+    $breadcrumb->parent('dashboard.outbound_shipments.trashed');
+    $breadcrumb->push($outbound_shipment->shipment_number ?? '#' . $outbound_shipment->id, route('dashboard.outbound_shipments.trashed.show', $outbound_shipment));
 });

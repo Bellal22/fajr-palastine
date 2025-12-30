@@ -26,6 +26,7 @@
               <x-check-all></x-check-all>
             </th>
             <th>@lang('coupon_types.attributes.name')</th>
+            <th style="width: 150px;">@lang('coupon_types.attributes.created_at')</th>
             <th style="width: 160px">...</th>
         </tr>
         </thead>
@@ -38,8 +39,13 @@
                 <td>
                     <a href="{{ route('dashboard.coupon_types.show', $coupon_type) }}"
                        class="text-decoration-none text-ellipsis">
-                        {{ $coupon_type->name }}
+                        <strong>{{ $coupon_type->name }}</strong>
                     </a>
+                </td>
+                <td>
+                    <span class="text-muted">
+                        <i class="fas fa-calendar text-info"></i> {{ $coupon_type->created_at->format('Y-m-d') }}
+                    </span>
                 </td>
 
                 <td style="width: 160px">

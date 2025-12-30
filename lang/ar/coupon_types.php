@@ -30,8 +30,9 @@ return [
         'restored' => 'تم استعادة نوع الكوبون بنجاح.',
     ],
     'attributes' => [
-        'name' => 'اسم النوع',
-        'description' => 'الوصف',
+        'name' => 'اسم نوع الكوبون',
+        'created_at' => 'تاريخ الإنشاء',
+        'updated_at' => 'تاريخ التحديث',
     ],
     'dialogs' => [
         'delete' => [

@@ -2,14 +2,23 @@
     <div class="row">
         <div class="col-md-6">
             @component('dashboard::components.box')
+                @slot('title', 'معلومات نوع الكوبون')
                 @slot('class', 'p-0')
                 @slot('bodyClass', 'p-0')
 
-                <table class="table table-striped table-middle">
+                <table class="table table-striped table-middle mb-0">
                     <tbody>
                     <tr>
                         <th width="200">@lang('coupon_types.attributes.name')</th>
-                        <td>{{ $coupon_type->name }}</td>
+                        <td><strong>{{ $coupon_type->name }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>@lang('coupon_types.attributes.created_at')</th>
+                        <td>{{ $coupon_type->created_at->format('Y-m-d h:i A') }}</td>
+                    </tr>
+                    <tr>
+                        <th>@lang('coupon_types.attributes.updated_at')</th>
+                        <td>{{ $coupon_type->updated_at->format('Y-m-d h:i A') }}</td>
                     </tr>
                     </tbody>
                 </table>

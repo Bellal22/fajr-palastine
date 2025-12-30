@@ -11,6 +11,7 @@ use App\Http\Requests\Dashboard\OutboundShipmentRequest;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Mpdf\Mpdf;
 
 class OutboundShipmentController extends Controller
 {
@@ -65,10 +66,10 @@ class OutboundShipmentController extends Controller
         // إضافة بنود الإرسالية
         if ($request->has('shipment_items')) {
             foreach ($request->shipment_items as $item) {
-                $shippableType = $item['type'] === 'ready_package' 
-                    ? ReadyPackage::class 
+                $shippableType = $item['type'] === 'ready_package'
+                    ? ReadyPackage::class
                     : InternalPackage::class;
-                
+
                 $outbound_shipment->items()->create([
                     'shippable_type' => $shippableType,
                     'shippable_id' => $item['package_id'],
@@ -124,13 +125,13 @@ class OutboundShipmentController extends Controller
 
         // حذف البنود القديمة وإضافة الجديدة
         $outbound_shipment->items()->delete();
-        
+
         if ($request->has('shipment_items')) {
             foreach ($request->shipment_items as $item) {
-                $shippableType = $item['type'] === 'ready_package' 
-                    ? ReadyPackage::class 
+                $shippableType = $item['type'] === 'ready_package'
+                    ? ReadyPackage::class
                     : InternalPackage::class;
-                
+
                 $outbound_shipment->items()->create([
                     'shippable_type' => $shippableType,
                     'shippable_id' => $item['package_id'],
@@ -232,11 +233,27 @@ class OutboundShipmentController extends Controller
     public function exportPdf(OutboundShipment $outbound_shipment)
     {
         $this->authorize('view', $outbound_shipment);
-        
+
         $outbound_shipment->load(['project', 'subWarehouse', 'items.shippable']);
-        
-        $pdf = Pdf::loadView('dashboard.outbound_shipments.pdf', compact('outbound_shipment'));
-        
-        return $pdf->download('outbound-shipment-' . $outbound_shipment->shipment_number . '.pdf');
+
+        $html = view('dashboard.outbound_shipments.pdf', compact('outbound_shipment'))->render();
+
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'orientation' => 'P',
+            'margin_left' => 20,
+            'margin_right' => 20,
+            'margin_top' => 20,
+            'margin_bottom' => 20,
+            'default_font' => 'dejavusans'
+        ]);
+
+        $mpdf->autoScriptToLang = true;
+        $mpdf->autoLangToFont = true;
+
+        $mpdf->WriteHTML($html);
+
+        return $mpdf->Output('outbound-shipment-' . $outbound_shipment->shipment_number . '.pdf', 'D');
     }
 }

@@ -26,22 +26,42 @@
               <x-check-all></x-check-all>
             </th>
             <th>@lang('internal_packages.attributes.name')</th>
-            <th style="width: 160px">...</th>
+            <th>@lang('internal_packages.attributes.description')</th>
+            <th>@lang('internal_packages.attributes.created_by')</th>
+            <th style="width: 100px;">@lang('internal_packages.attributes.quantity')</th>
+            <th style="width: 100px;">@lang('internal_packages.attributes.weight')</th>
+            <th style="width: 120px;">الوزن الإجمالي (كجم)</th>
+            <th style="width: 160px">الإجراءات</th>
         </tr>
         </thead>
         <tbody>
         @forelse($internal_packages as $internal_package)
+            @php
+                $totalWeight = $internal_package->quantity * ($internal_package->weight ?? 0);
+            @endphp
             <tr>
                 <td class="text-center">
                   <x-check-all-item :model="$internal_package"></x-check-all-item>
                 </td>
                 <td>
                     <a href="{{ route('dashboard.internal_packages.show', $internal_package) }}"
-                       class="text-decoration-none text-ellipsis">
-                        {{ $internal_package->name }}
+                       class="text-decoration-none">
+                        <strong>{{ $internal_package->name }}</strong>
                     </a>
                 </td>
-
+                <td>
+                    {{ Str::limit($internal_package->description ?? '-', 50) }}
+                </td>
+                <td>
+                    @if($internal_package->creator)
+                        <span class="badge badge-secondary">{{ $internal_package->creator->name }}</span>
+                    @else
+                        <span class="text-muted">-</span>
+                    @endif
+                </td>
+                <td class="text-center">{{ $internal_package->quantity }}</td>
+                <td class="text-center">{{ $internal_package->weight ? number_format($internal_package->weight, 2) : '-' }}</td>
+                <td class="text-center"><strong>{{ number_format($totalWeight, 2) }}</strong></td>
                 <td style="width: 160px">
                     @include('dashboard.internal_packages.partials.actions.show')
                     @include('dashboard.internal_packages.partials.actions.edit')

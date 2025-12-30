@@ -26,7 +26,10 @@
               <x-check-all></x-check-all>
             </th>
             <th>@lang('inbound_shipments.attributes.shipment_number')</th>
-            <th style="width: 160px">...</th>
+            <th>@lang('inbound_shipments.attributes.supplier_id')</th>
+            <th>@lang('inbound_shipments.attributes.inbound_type')</th>
+            <th>تاريخ الإنشاء</th>
+            <th style="width: 160px">الإجراءات</th>
         </tr>
         </thead>
         <tbody>
@@ -38,10 +41,22 @@
                 <td>
                     <a href="{{ route('dashboard.inbound_shipments.show', $inbound_shipment) }}"
                        class="text-decoration-none text-ellipsis">
-                        {{ $inbound_shipment->shipment_number }}
+                        <strong>{{ $inbound_shipment->shipment_number }}</strong>
                     </a>
                 </td>
-
+                <td>
+                    {{ $inbound_shipment->supplier->name ?? '-' }}
+                </td>
+                <td>
+                    @if($inbound_shipment->inbound_type === 'ready_package')
+                        <span class="badge badge-success">طرد جاهز</span>
+                    @else
+                        <span class="badge badge-info">صنف مفرد</span>
+                    @endif
+                </td>
+                <td>
+                    <small class="text-muted">{{ $inbound_shipment->created_at->format('Y-m-d') }}</small>
+                </td>
                 <td style="width: 160px">
                     @include('dashboard.inbound_shipments.partials.actions.show')
                     @include('dashboard.inbound_shipments.partials.actions.edit')

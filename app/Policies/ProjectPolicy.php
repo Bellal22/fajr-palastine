@@ -18,9 +18,12 @@ class ProjectPolicy
      * @param \App\Models\User|null $user
      * @return mixed
      */
-    public function viewAny(User $user)
+    public function viewAny(?User $user)
     {
-        return $user->isAdmin() || $user->hasPermissionTo('manage.projects');
+        if (!$user) {
+            return false;
+        }
+        return $user->isAdmin() || $user->hasPermission('manage.projects');
     }
 
     /**
@@ -30,9 +33,12 @@ class ProjectPolicy
      * @param \App\Models\Project $project
      * @return mixed
      */
-    public function view(User $user, Project $project)
+    public function view(?User $user, Project $project)
     {
-        return $user->isAdmin() || $user->hasPermissionTo('manage.projects');
+        if (!$user) {
+            return false;
+        }
+        return $user->isAdmin() || $user->hasPermission('manage.projects');
     }
 
     /**
@@ -43,7 +49,7 @@ class ProjectPolicy
      */
     public function create(User $user)
     {
-        return $user->isAdmin() || $user->hasPermissionTo('manage.projects');
+        return $user->isAdmin() || $user->hasPermission('manage.projects');
     }
 
     /**
@@ -55,7 +61,7 @@ class ProjectPolicy
      */
     public function update(User $user, Project $project)
     {
-        return ($user->isAdmin() || $user->hasPermissionTo('manage.projects'))
+        return ($user->isAdmin() || $user->hasPermission('manage.projects'))
             && ! $this->trashed($project);
     }
 
@@ -68,7 +74,7 @@ class ProjectPolicy
      */
     public function delete(User $user, Project $project)
     {
-        return ($user->isAdmin() || $user->hasPermissionTo('manage.projects'))
+        return ($user->isAdmin() || $user->hasPermission('manage.projects'))
             && ! $this->trashed($project);
     }
 
@@ -80,7 +86,7 @@ class ProjectPolicy
      */
     public function viewAnyTrash(User $user)
     {
-        return ($user->isAdmin() || $user->hasPermissionTo('manage.projects'))
+        return ($user->isAdmin() || $user->hasPermission('manage.projects'))
             && $this->hasSoftDeletes();
     }
 
@@ -91,8 +97,11 @@ class ProjectPolicy
      * @param \App\Models\Project $project
      * @return mixed
      */
-    public function viewTrash(User $user, Project $project)
+    public function viewTrash(?User $user, Project $project)
     {
+        if (!$user) {
+            return false;
+        }
         return $this->view($user, $project)
             && $project->trashed();
     }
@@ -106,7 +115,7 @@ class ProjectPolicy
      */
     public function restore(User $user, Project $project)
     {
-        return ($user->isAdmin() || $user->hasPermissionTo('manage.projects'))
+        return ($user->isAdmin() || $user->hasPermission('manage.projects'))
             && $this->trashed($project);
     }
 
@@ -119,7 +128,7 @@ class ProjectPolicy
      */
     public function forceDelete(User $user, Project $project)
     {
-        return ($user->isAdmin() || $user->hasPermissionTo('manage.projects'))
+        return ($user->isAdmin() || $user->hasPermission('manage.projects'))
             && $this->trashed($project)
             && Settings::get('delete_forever');
     }

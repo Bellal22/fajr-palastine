@@ -8,6 +8,7 @@ use App\Http\Requests\Dashboard\InboundShipmentRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Mpdf\Mpdf;
 
 class InboundShipmentController extends Controller
 {
@@ -221,8 +222,24 @@ class InboundShipmentController extends Controller
 
         $inbound_shipment->load(['supplier', 'items', 'readyPackages']);
 
-        $pdf =Pdf::loadView('dashboard.inbound_shipments.pdf', compact('inbound_shipment'));
+        $html = view('dashboard.inbound_shipments.pdf', compact('inbound_shipment'))->render();
 
-        return $pdf->download('inbound-shipment-' . $inbound_shipment->shipment_number . '.pdf');
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'orientation' => 'P',
+            'margin_left' => 20,
+            'margin_right' => 20,
+            'margin_top' => 20,
+            'margin_bottom' => 20,
+            'default_font' => 'dejavusans'
+        ]);
+
+        $mpdf->autoScriptToLang = true;
+        $mpdf->autoLangToFont = true;
+
+        $mpdf->WriteHTML($html);
+
+        return $mpdf->Output('inbound-shipment-' . $inbound_shipment->shipment_number . '.pdf', 'D');
     }
 }

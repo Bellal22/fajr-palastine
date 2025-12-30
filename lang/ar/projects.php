@@ -30,13 +30,19 @@ return [
         'restored' => 'تم استعادة الكوبون بنجاح.',
     ],
     'attributes' => [
-        'name' => 'اسم الكوبون',
+        'name' => 'اسم المشروع',
         'description' => 'الوصف',
-        'start_date' => 'تاريخ البداية',
-        'end_date' => 'تاريخ النهاية',
+        'start_date' => 'تاريخ البدء',
+        'end_date' => 'تاريخ الانتهاء',
         'status' => 'الحالة',
-        'executing_entity_id' => 'الجهة المشغلة',
-        'granting_entity_id' => 'الجهة المانحة',
+        'created_at' => 'تاريخ الإنشاء',
+        'updated_at' => 'تاريخ التحديث',
+    ],
+
+    'status' => [
+        'active' => 'نشط',
+        'completed' => 'مكتمل',
+        'suspended' => 'متوقف',
     ],
     'dialogs' => [
         'delete' => [

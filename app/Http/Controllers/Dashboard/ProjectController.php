@@ -67,6 +67,53 @@ class ProjectController extends Controller
         return redirect()->route('dashboard.projects.show', $project);
     }
 
+    /**
+     * Display the specified resource.
+     *
+     * @param \App\Models\Project $project
+     * @return \Illuminate\Http\Response
+     */
+    public function show(Project $project)
+    {
+        $project->load([
+            'grantingEntities',
+            'executingEntities',
+            'couponTypes',
+            'readyPackages',
+            'internalPackages',
+            // 'outboundShipments',
+            // 'inboundShipments'
+        ]);
+
+        return view('dashboard.projects.show', compact('project'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param \App\Models\Project $project
+     * @return \Illuminate\Http\Response
+     */
+    public function edit(Project $project)
+    {
+        $project->load([
+            'grantingEntities',
+            'executingEntities',
+            'couponTypes',
+            'readyPackages',
+            'internalPackages'
+        ]);
+
+        return view('dashboard.projects.edit', compact('project'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param \App\Http\Requests\Dashboard\ProjectRequest $request
+     * @param \App\Models\Project $project
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function update(ProjectRequest $request, Project $project)
     {
         $project->update($request->only([
@@ -83,6 +130,13 @@ class ProjectController extends Controller
         return redirect()->route('dashboard.projects.show', $project);
     }
 
+    /**
+     * Sync all relations.
+     *
+     * @param \App\Models\Project $project
+     * @param \App\Http\Requests\Dashboard\ProjectRequest $request
+     * @return void
+     */
     private function syncRelations(Project $project, ProjectRequest $request)
     {
         // 1. Sync Partners
@@ -123,15 +177,15 @@ class ProjectController extends Controller
         }
         $project->couponTypes()->sync($couponTypesData);
 
-        // 3. Sync Packages
+        // 3. Sync Packages (Polymorphic)
         DB::table('project_packages')->where('project_id', $project->id)->delete();
 
         if ($request->filled('ready_packages')) {
             foreach ($request->ready_packages as $id) {
                 DB::table('project_packages')->insert([
                     'project_id' => $project->id,
-                    'package_id' => $id,
-                    'package_type' => 'App\Models\ReadyPackage',
+                    'packageable_id' => $id,
+                    'packageable_type' => 'App\Models\ReadyPackage',
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
@@ -142,8 +196,8 @@ class ProjectController extends Controller
             foreach ($request->internal_packages as $id) {
                 DB::table('project_packages')->insert([
                     'project_id' => $project->id,
-                    'package_id' => $id,
-                    'package_type' => 'App\Models\InternalPackage',
+                    'packageable_id' => $id,
+                    'packageable_type' => 'App\Models\InternalPackage',
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);

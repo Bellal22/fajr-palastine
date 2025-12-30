@@ -54,9 +54,9 @@ return [
         'weight' => 'الوزن',
         'package_name' => 'اسم الطرد',
     ],
-    'types' => [
-        'single_item' => 'صنف مفرد',
+    'inbound_types' => [
         'ready_package' => 'طرد جاهز',
+        'single_item' => 'صنف مفرد',
     ],
     'sections' => [
         'single_items' => 'تفاصيل الأصناف المفردة',

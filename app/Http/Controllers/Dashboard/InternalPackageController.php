@@ -83,6 +83,8 @@ class InternalPackageController extends Controller
      */
     public function show(InternalPackage $internal_package)
     {
+        $internal_package->load(['creator', 'contents.item']);
+
         return view('dashboard.internal_packages.show', compact('internal_package'));
     }
 
@@ -115,7 +117,7 @@ class InternalPackageController extends Controller
 
         // حذف المحتويات القديمة وإضافة الجديدة
         $internal_package->contents()->delete();
-        
+
         if ($request->has('contents')) {
             foreach ($request->contents as $content) {
                 if (!empty($content['item_id'])) {

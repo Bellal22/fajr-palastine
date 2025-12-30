@@ -396,11 +396,12 @@ Route::delete('sub_warehouses/{trashed_sub_warehouse}/forceDelete', 'SubWarehous
 Route::resource('sub_warehouses', 'SubWarehouseController');
 
 // OutboundShipments Routes.
+// OutboundShipments Routes.
 Route::get('trashed/outbound_shipments', 'OutboundShipmentController@trashed')->name('outbound_shipments.trashed');
 Route::get('trashed/outbound_shipments/{trashed_outbound_shipment}', 'OutboundShipmentController@showTrashed')->name('outbound_shipments.trashed.show');
 Route::post('outbound_shipments/{trashed_outbound_shipment}/restore', 'OutboundShipmentController@restore')->name('outbound_shipments.restore');
 Route::delete('outbound_shipments/{trashed_outbound_shipment}/forceDelete', 'OutboundShipmentController@forceDelete')->name('outbound_shipments.forceDelete');
-Route::get('outbound_shipments/{outbound_shipment}/pdf', 'OutboundShipmentController@exportPdf')->name('dashboard.outbound_shipments.exportPdf');
+Route::get('outbound_shipments/{outbound_shipment}/pdf', 'OutboundShipmentController@exportPdf')->name('outbound_shipments.exportPdf');
 Route::resource('outbound_shipments', 'OutboundShipmentController');
 
 // OutboundShipmentItems Routes.

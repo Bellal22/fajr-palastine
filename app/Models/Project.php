@@ -6,6 +6,7 @@ use App\Http\Filters\Filterable;
 use App\Support\Traits\Selectable;
 use App\Http\Filters\ProjectFilter;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Project extends Model
@@ -13,6 +14,7 @@ class Project extends Model
     use HasFactory;
     use Filterable;
     use Selectable;
+    use SoftDeletes;
 
     /**
      * The query parameter's filter of the model.
@@ -50,8 +52,9 @@ class Project extends Model
     public function executingEntities()
     {
         return $this->belongsToMany(Supplier::class, 'project_partners')
-                    ->wherePivot('type', 'executing')
-                    ->withTimestamps();
+            ->wherePivot('type', 'executing')
+            ->withPivot('type')
+            ->withTimestamps();
     }
 
     /**
@@ -60,8 +63,19 @@ class Project extends Model
     public function grantingEntities()
     {
         return $this->belongsToMany(Supplier::class, 'project_partners')
-                    ->wherePivot('type', 'granting')
-                    ->withTimestamps();
+            ->wherePivot('type', 'granting')
+            ->withPivot('type')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get all partners (both granting and executing).
+     */
+    public function partners()
+    {
+        return $this->belongsToMany(Supplier::class, 'project_partners')
+            ->withPivot('type')
+            ->withTimestamps();
     }
 
     /**
@@ -70,8 +84,8 @@ class Project extends Model
     public function couponTypes()
     {
         return $this->belongsToMany(CouponType::class, 'project_coupon_types')
-                    ->withPivot('quantity')
-                    ->withTimestamps();
+            ->withPivot('quantity')
+            ->withTimestamps();
     }
 
     /**
@@ -80,7 +94,7 @@ class Project extends Model
     public function readyPackages()
     {
         return $this->morphedByMany(ReadyPackage::class, 'packageable', 'project_packages')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     /**
@@ -89,15 +103,62 @@ class Project extends Model
     public function internalPackages()
     {
         return $this->morphedByMany(InternalPackage::class, 'packageable', 'project_packages')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
-    
+
+    /**
+     * Get all packages (both ready and internal).
+     */
+    public function allPackages()
+    {
+        return $this->readyPackages->merge($this->internalPackages);
+    }
+
+    /**
+     * Get the outbound shipments for the project.
+     */
     public function outboundShipments()
     {
         return $this->hasMany(OutboundShipment::class);
     }
+
+    /**
+     * Get the inbound shipments for the project.
+     */
     public function inboundShipments()
     {
         return $this->hasMany(InboundShipment::class);
+    }
+
+    /**
+     * Scope to filter by status.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    /**
+     * Scope to filter by status.
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    /**
+     * Check if project is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    /**
+     * Check if project is completed.
+     */
+    public function isCompleted(): bool
+    {
+        return $this->status === 'completed';
     }
 }

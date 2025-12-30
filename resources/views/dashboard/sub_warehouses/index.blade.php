@@ -26,6 +26,9 @@
               <x-check-all></x-check-all>
             </th>
             <th>@lang('sub_warehouses.attributes.name')</th>
+            <th>@lang('sub_warehouses.attributes.address')</th>
+            <th>@lang('sub_warehouses.attributes.contact_person')</th>
+            <th>@lang('sub_warehouses.attributes.phone')</th>
             <th style="width: 160px">...</th>
         </tr>
         </thead>
@@ -38,8 +41,26 @@
                 <td>
                     <a href="{{ route('dashboard.sub_warehouses.show', $sub_warehouse) }}"
                        class="text-decoration-none text-ellipsis">
-                        {{ $sub_warehouse->name }}
+                        <strong>{{ $sub_warehouse->name }}</strong>
                     </a>
+                </td>
+                <td>
+                    <span class="text-muted">{{ $sub_warehouse->address ?? '-' }}</span>
+                </td>
+                <td>
+                    @if($sub_warehouse->contact_person)
+                        <i class="fas fa-user text-secondary"></i> {{ $sub_warehouse->contact_person }}
+                    @else
+                        <span class="text-muted">-</span>
+                    @endif
+                </td>
+                <td>
+                    @if($sub_warehouse->phone)
+                        <i class="fas fa-phone text-success"></i>
+                        <a href="tel:{{ $sub_warehouse->phone }}" class="text-decoration-none">{{ $sub_warehouse->phone }}</a>
+                    @else
+                        <span class="text-muted">-</span>
+                    @endif
                 </td>
 
                 <td style="width: 160px">

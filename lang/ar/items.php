@@ -32,10 +32,10 @@ return [
     'attributes' => [
         'name' => 'اسم الصنف',
         'description' => 'الوصف',
-        'package' => 'حزمة',
-        'type' => 'النوع',
-        'weight' => 'الوزن',
+        'inbound_shipment_id' => 'رقم الإرسالية',
         'quantity' => 'الكمية',
+        'weight' => 'الوزن (كجم)',
+        'created_at' => 'تاريخ الإضافة',
     ],
     'dialogs' => [
         'delete' => [

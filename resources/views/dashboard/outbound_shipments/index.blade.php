@@ -25,8 +25,12 @@
             <th style="width: 30px;" class="text-center">
               <x-check-all></x-check-all>
             </th>
-            <th>@lang('outbound_shipments.attributes.name')</th>
-            <th style="width: 160px">...</th>
+            <th>@lang('outbound_shipments.attributes.shipment_number')</th>
+            <th>@lang('outbound_shipments.attributes.project_id')</th>
+            <th>@lang('outbound_shipments.attributes.sub_warehouse_id')</th>
+            <th>@lang('outbound_shipments.attributes.driver_name')</th>
+            <th>تاريخ الإنشاء</th>
+            <th style="width: 160px">الإجراءات</th>
         </tr>
         </thead>
         <tbody>
@@ -38,10 +42,21 @@
                 <td>
                     <a href="{{ route('dashboard.outbound_shipments.show', $outbound_shipment) }}"
                        class="text-decoration-none text-ellipsis">
-                        {{ $outbound_shipment->name }}
+                        <strong>{{ $outbound_shipment->shipment_number }}</strong>
                     </a>
                 </td>
-
+                <td>
+                    {{ $outbound_shipment->project->name ?? '-' }}
+                </td>
+                <td>
+                    {{ $outbound_shipment->subWarehouse->name ?? '-' }}
+                </td>
+                <td>
+                    {{ $outbound_shipment->driver_name ?? '-' }}
+                </td>
+                <td>
+                    <small class="text-muted">{{ $outbound_shipment->created_at->format('Y-m-d') }}</small>
+                </td>
                 <td style="width: 160px">
                     @include('dashboard.outbound_shipments.partials.actions.show')
                     @include('dashboard.outbound_shipments.partials.actions.edit')

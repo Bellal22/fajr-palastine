@@ -26,22 +26,45 @@
               <x-check-all></x-check-all>
             </th>
             <th>@lang('items.attributes.name')</th>
-            <th style="width: 160px">...</th>
+            <th>@lang('items.attributes.description')</th>
+            <th>@lang('items.attributes.inbound_shipment_id')</th>
+            <th style="width: 100px;">@lang('items.attributes.quantity')</th>
+            <th style="width: 100px;">@lang('items.attributes.weight')</th>
+            <th style="width: 120px;">الوزن الإجمالي (كجم)</th>
+            <th style="width: 160px">الإجراءات</th>
         </tr>
         </thead>
         <tbody>
         @forelse($items as $item)
+            @php
+                $totalWeight = $item->quantity * ($item->weight ?? 0);
+            @endphp
             <tr>
                 <td class="text-center">
                   <x-check-all-item :model="$item"></x-check-all-item>
                 </td>
                 <td>
                     <a href="{{ route('dashboard.items.show', $item) }}"
-                       class="text-decoration-none text-ellipsis">
-                        {{ $item->name }}
+                       class="text-decoration-none">
+                        <strong>{{ $item->name }}</strong>
                     </a>
                 </td>
-
+                <td>
+                    {{ Str::limit($item->description ?? '-', 50) }}
+                </td>
+                <td>
+                    @if($item->inboundShipment)
+                        <a href="{{ route('dashboard.inbound_shipments.show', $item->inboundShipment) }}"
+                           class="badge badge-info">
+                            {{ $item->inboundShipment->shipment_number }}
+                        </a>
+                    @else
+                        <span class="badge badge-secondary">-</span>
+                    @endif
+                </td>
+                <td class="text-center">{{ $item->quantity }}</td>
+                <td class="text-center">{{ $item->weight ? number_format($item->weight, 2) : '-' }}</td>
+                <td class="text-center"><strong>{{ number_format($totalWeight, 2) }}</strong></td>
                 <td style="width: 160px">
                     @include('dashboard.items.partials.actions.show')
                     @include('dashboard.items.partials.actions.edit')
