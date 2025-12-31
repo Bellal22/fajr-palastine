@@ -47,6 +47,31 @@ class Project extends Model
     ];
 
     /**
+     * Check if project is expired.
+     */
+    public function isExpired(): bool
+    {
+        return $this->end_date && $this->end_date->isPast();
+    }
+
+    /**
+     * Check if project can accept beneficiaries.
+     */
+    public function canAcceptBeneficiaries(): bool
+    {
+        return !$this->isCompleted() && !$this->isExpired();
+    }
+
+    /**
+     * Auto-update status if expired.
+     */
+    public function checkAndUpdateStatus()
+    {
+        if ($this->isExpired() && !$this->isCompleted()) {
+            $this->update(['status' => 'completed']);
+        }
+    }
+    /**
      * Get the executing entities (Suppliers).
      */
     public function executingEntities()
@@ -160,5 +185,12 @@ class Project extends Model
     public function isCompleted(): bool
     {
         return $this->status === 'completed';
+    }
+
+    public function beneficiaries()
+    {
+        return $this->belongsToMany(Person::class, 'project_beneficiaries')
+            ->withPivot('status', 'notes', 'delivery_date', 'quantity')
+            ->withTimestamps();
     }
 }

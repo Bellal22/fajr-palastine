@@ -23,6 +23,9 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('cache:prune-stale-tags')->hourly();
 
+        // تشغيل يومياً في منتصف الليل
+        $schedule->command('projects:update-expired')->daily();
+
         // $schedule->command('inspire')
         //          ->hourly();
     }

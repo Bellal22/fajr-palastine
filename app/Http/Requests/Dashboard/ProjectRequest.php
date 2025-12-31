@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Dashboard;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ProjectRequest extends FormRequest
 {
@@ -23,13 +24,21 @@ class ProjectRequest extends FormRequest
      */
     public function rules()
     {
+        // الحصول على ID المشروع في حالة التعديل
+        $projectId = $this->route('project') ? $this->route('project')->id : null;
+
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('projects', 'name')->ignore($projectId)->whereNull('deleted_at')
+            ],
             'description' => ['nullable', 'string'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'status' => ['nullable', 'in:active,completed,suspended'],
-            
+
             // الشركاء (متعدد)
             'granting_entities' => ['required', 'array', 'min:1'],
             'granting_entities.*' => ['exists:suppliers,id'],
@@ -42,7 +51,6 @@ class ProjectRequest extends FormRequest
             'coupon_types.*.quantity' => ['required', 'integer', 'min:1'],
 
             // الطرود (متعدد - جاهز وداخلي)
-            // بما أن العميل قال "ممكن اختار اكتر من طرد"، سنفترض قائمة ID للجاهز وقائمة ID للداخلي لتسهيل الـ Validation
             'ready_packages' => ['nullable', 'array'],
             'ready_packages.*' => ['exists:ready_packages,id'],
             'internal_packages' => ['nullable', 'array'],
@@ -58,5 +66,24 @@ class ProjectRequest extends FormRequest
     public function attributes()
     {
         return trans('projects.attributes');
+    }
+
+    /**
+     * Get custom error messages.
+     *
+     * @return array
+     */
+    public function messages()
+    {
+        return [
+            'name.required' => 'اسم المشروع مطلوب',
+            'name.unique' => 'يوجد مشروع بنفس الاسم مسبقاً! الرجاء اختيار اسم آخر.',
+            'name.max' => 'اسم المشروع يجب ألا يتجاوز 255 حرف',
+            'end_date.after_or_equal' => 'تاريخ الانتهاء يجب أن يكون بعد أو يساوي تاريخ البدء',
+            'granting_entities.required' => 'يجب اختيار جهة مانحة واحدة على الأقل',
+            'granting_entities.min' => 'يجب اختيار جهة مانحة واحدة على الأقل',
+            'executing_entities.required' => 'يجب اختيار جهة منفذة واحدة على الأقل',
+            'executing_entities.min' => 'يجب اختيار جهة منفذة واحدة على الأقل',
+        ];
     }
 }

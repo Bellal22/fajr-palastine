@@ -65,6 +65,30 @@
         </div>
     </div>
 
+    {{-- قسم المستفيدين --}}
+    <div class="row">
+        <div class="col-md-12">
+            @component('dashboard::components.box')
+                @slot('title', 'المستفيدين من المشروع')
+
+                <div class="text-center py-3">
+                    <p class="mb-3">
+                        <i class="fas fa-users fa-2x text-primary"></i>
+                    </p>
+                    <h5 class="mb-3">عدد المستفيدين: <span class="badge badge-primary badge-lg">{{ $project->beneficiaries()->count() }}</span></h5>
+                    <div>
+                        <a href="{{ route('dashboard.projects.beneficiaries', $project) }}" class="btn btn-primary">
+                            <i class="fas fa-list"></i> عرض المستفيدين
+                        </a>
+                        <a href="{{ route('dashboard.projects.beneficiaries.import', $project) }}" class="btn btn-success">
+                            <i class="fas fa-file-import"></i> استيراد مستفيدين
+                        </a>
+                    </div>
+                </div>
+            @endcomponent
+        </div>
+    </div>
+
     <div class="row">
         {{-- الجهات المانحة --}}
         <div class="col-md-6">

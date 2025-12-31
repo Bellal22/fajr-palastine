@@ -11,6 +11,12 @@ return [
     'trashed' => 'المندوبين المحذوفة',
     'perPage' => 'عدد النتائج بالصفحة',
     'filter' => 'ابحث عن مندوب',
+    'name' => 'الاسم',
+    'area_responsible' => 'المسؤول عن المنطقة',
+    'block_id' => 'رقم المربع',
+    'search_by_name' => 'ابحث بالاسم...',
+    'select_area_responsible' => 'اختر المسؤول',
+    'enter_block_id' => 'أدخل رقم المربع',
     'actions' => [
         'list' => 'عرض الكل',
         'create' => 'اضافة مندوب',
@@ -21,8 +27,9 @@ return [
         'forceDelete' => 'حذف نهائي',
         'options' => 'خيارات',
         'save' => 'حفظ',
-        'filter' => 'بحث',
-        'list_for_area_responsible'=>'عرض المندوبين الفرعيين ل'
+        'filter' => 'تصفية',
+        'reset' => 'إعادة تعيين',
+        'list_for_area_responsible' => 'عرض المندوبين الفرعيين ل'
     ],
     'messages' => [
         'created' => 'تم اضافة المندوب بنجاح.',
@@ -31,12 +38,12 @@ return [
         'restored' => 'تم استعادة المندوب بنجاح.',
     ],
     'attributes' => [
-        'id'=>'الرقم التعريفي',
+        'id' => 'الرقم التعريفي',
         'name' => 'اسم المندوب',
         'area_responsible' => ' مسؤول المنطقة ',
         'title' => ' العنوان ',
         'phone' => ' رقم الهاتف ',
-        'people_count'=>'عدد الأفراد',
+        'people_count' => 'عدد الأفراد',
         'lan' => ' خط الطول ',
         'lat' => ' خط العرض ',
         'note' => ' ملاحظات ',

@@ -381,11 +381,22 @@ Route::post('package_contents/{trashed_package_content}/restore', 'PackageConten
 Route::delete('package_contents/{trashed_package_content}/forceDelete', 'PackageContentController@forceDelete')->name('package_contents.forceDelete');
 Route::resource('package_contents', 'PackageContentController');
 
-// Projects Routes.
+// Trashed Projects (قبل الـ Resource)
 Route::get('trashed/projects', 'ProjectController@trashed')->name('projects.trashed');
 Route::get('trashed/projects/{trashed_project}', 'ProjectController@showTrashed')->name('projects.trashed.show');
 Route::post('projects/{trashed_project}/restore', 'ProjectController@restore')->name('projects.restore');
 Route::delete('projects/{trashed_project}/forceDelete', 'ProjectController@forceDelete')->name('projects.forceDelete');
+
+// Project Beneficiaries (قبل الـ Resource)
+Route::get('projects/{project}/beneficiaries', 'ProjectController@beneficiaries')->name('projects.beneficiaries');
+Route::get('projects/{project}/beneficiaries/import', 'ProjectController@importForm')->name('projects.beneficiaries.import');
+Route::post('projects/{project}/beneficiaries/import', 'ProjectController@importBeneficiaries')->name('projects.beneficiaries.import.store');
+Route::delete('projects/{project}/beneficiaries/{person}', 'ProjectController@removeBeneficiary')->name('projects.beneficiaries.destroy');
+Route::post('projects/{project}/beneficiaries/{person}/status', 'ProjectController@updateBeneficiaryStatus')->name('projects.beneficiaries.update-status');
+Route::get('projects/{project}/beneficiaries/filter-areas', 'ProjectController@filterByAreasForm')->name('projects.beneficiaries.filter-areas');
+Route::post('projects/{project}/beneficiaries/add-by-areas', 'ProjectController@addBeneficiariesByAreas')->name('projects.beneficiaries.add-by-areas');
+
+// Project Resource (في الآخر)
 Route::resource('projects', 'ProjectController');
 
 // SubWarehouses Routes.
@@ -395,7 +406,6 @@ Route::post('sub_warehouses/{trashed_sub_warehouse}/restore', 'SubWarehouseContr
 Route::delete('sub_warehouses/{trashed_sub_warehouse}/forceDelete', 'SubWarehouseController@forceDelete')->name('sub_warehouses.forceDelete');
 Route::resource('sub_warehouses', 'SubWarehouseController');
 
-// OutboundShipments Routes.
 // OutboundShipments Routes.
 Route::get('trashed/outbound_shipments', 'OutboundShipmentController@trashed')->name('outbound_shipments.trashed');
 Route::get('trashed/outbound_shipments/{trashed_outbound_shipment}', 'OutboundShipmentController@showTrashed')->name('outbound_shipments.trashed.show');

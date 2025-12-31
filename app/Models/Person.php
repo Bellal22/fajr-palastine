@@ -60,6 +60,13 @@ class Person extends Model
             ->where('relationship', 'wife');
     }
 
+    public function projects()
+    {
+        return $this->belongsToMany(Project::class, 'project_beneficiaries')
+            ->withPivot('status', 'notes', 'delivery_date')
+            ->withTimestamps();
+    }
+
     // --- Accessors & Helpers ---
 
     public function getWifeId()
