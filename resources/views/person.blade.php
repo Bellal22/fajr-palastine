@@ -4,194 +4,571 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <title>نموذج تسجيل المواطنين - جمعية الفجر الشبابي الفلسطيني</title>
 
-    <!-- استيراد خط من Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Import Font Awesome library for icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <!-- Import TailwindCSS library for styling -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-
     <style>
-        /* تنسيق عام */
-        body {
-            font-family: 'Cairo', sans-serif;
-            direction: rtl;
-            text-align: center;
+        * {
             margin: 0;
             padding: 0;
-            color: #333;
-            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgb(238, 178, 129)),
-                        url({{asset('background/image.jpg')}}) center center no-repeat;
-            background-size: cover;
-            background-attachment: fixed;
-            min-height: 100vh;
-            overflow: auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 2rem;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 1200px;
-            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
-            overflow: auto;
-            position: relative;
-        }
-
-        h1 {
-            color: #FF6F00;
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        /* تنسيق الشعار */
-        .logo-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .logo {
-            width: 120px;
-            height: auto;
-        }
-
-        /* تنسيق النموذج */
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 10px;
-        }
-
-        .form-group label {
-            font-weight: bold;
-            font-size: 1rem;
-            margin-bottom: 5px;
-        }
-
-        input, select, textarea {
-            font-size: 1rem;
-            padding: 8px;
-            width: 100%;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
             box-sizing: border-box;
         }
 
-        /* ترتيب الحقول في صفوف متجاوبة */
-        .row {
+        body {
+            font-family: 'Cairo', sans-serif;
+            direction: rtl;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #ffffff 0%, #fff3e0 100%);
+        }
+
+        /* الخلفية المتحركة - فقاعات */
+        .bubbles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -150px;
+            border-radius: 50%;
+            animation: rise 15s infinite ease-in;
+            box-shadow: 0 0 20px rgba(255, 111, 0, 0.3);
+        }
+
+        .bubble:nth-child(1) { width: 90px; height: 90px; left: 5%; animation-duration: 8s; animation-delay: 0s; background: radial-gradient(circle at 30% 30%, rgba(255, 111, 0, 0.35), rgba(255, 111, 0, 0.15)); }
+        .bubble:nth-child(2) { width: 70px; height: 70px; left: 15%; animation-duration: 9s; animation-delay: 1s; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.2)); }
+        .bubble:nth-child(3) { width: 110px; height: 110px; left: 25%; animation-duration: 7s; animation-delay: 0.5s; background: radial-gradient(circle at 30% 30%, rgba(230, 81, 0, 0.32), rgba(230, 81, 0, 0.12)); }
+        .bubble:nth-child(4) { width: 80px; height: 80px; left: 35%; animation-duration: 8.5s; animation-delay: 1.5s; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.18)); }
+        .bubble:nth-child(5) { width: 100px; height: 100px; left: 45%; animation-duration: 7.5s; animation-delay: 0.3s; background: radial-gradient(circle at 30% 30%, rgba(255, 111, 0, 0.38), rgba(255, 111, 0, 0.16)); }
+        .bubble:nth-child(6) { width: 85px; height: 85px; left: 55%; animation-duration: 8.2s; animation-delay: 0.8s; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.22)); }
+        .bubble:nth-child(7) { width: 65px; height: 65px; left: 65%; animation-duration: 9.5s; animation-delay: 1.2s; background: radial-gradient(circle at 30% 30%, rgba(255, 111, 0, 0.4), rgba(255, 111, 0, 0.18)); }
+        .bubble:nth-child(8) { width: 95px; height: 95px; left: 75%; animation-duration: 7.8s; animation-delay: 0.2s; background: radial-gradient(circle at 30% 30%, rgba(230, 81, 0, 0.34), rgba(230, 81, 0, 0.14)); }
+        .bubble:nth-child(9) { width: 75px; height: 75px; left: 85%; animation-duration: 8.8s; animation-delay: 1.8s; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.24)); }
+        .bubble:nth-child(10) { width: 105px; height: 105px; left: 95%; animation-duration: 7.3s; animation-delay: 0.6s; background: radial-gradient(circle at 30% 30%, rgba(255, 111, 0, 0.36), rgba(255, 111, 0, 0.14)); }
+        .bubble:nth-child(11) { width: 88px; height: 88px; left: 10%; animation-duration: 8.7s; animation-delay: 2s; background: radial-gradient(circle at 30% 30%, rgba(255, 111, 0, 0.33), rgba(255, 111, 0, 0.13)); }
+        .bubble:nth-child(12) { width: 72px; height: 72px; left: 20%; animation-duration: 9.2s; animation-delay: 2.5s; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.2)); }
+        .bubble:nth-child(13) { width: 98px; height: 98px; left: 30%; animation-duration: 7.6s; animation-delay: 2.2s; background: radial-gradient(circle at 30% 30%, rgba(230, 81, 0, 0.31), rgba(230, 81, 0, 0.11)); }
+        .bubble:nth-child(14) { width: 82px; height: 82px; left: 40%; animation-duration: 8.4s; animation-delay: 2.8s; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.59), rgba(255, 255, 255, 0.21)); }
+        .bubble:nth-child(15) { width: 92px; height: 92px; left: 50%; animation-duration: 7.9s; animation-delay: 2.3s; background: radial-gradient(circle at 30% 30%, rgba(255, 111, 0, 0.37), rgba(255, 111, 0, 0.15)); }
+
+        @keyframes rise {
+            0% { bottom: -150px; transform: translateX(0) rotate(0deg) scale(0.8); opacity: 0; }
+            5% { opacity: 1; }
+            95% { opacity: 1; }
+            100% { bottom: 110%; transform: translateX(120px) rotate(720deg) scale(1.2); opacity: 0; }
+        }
+
+        /* موجات متحركة */
+        .wave-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 250px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+        }
+
+        .wave:nth-child(1) {
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,50 Q300,0 600,50 T1200,50 L1200,120 L0,120 Z" fill="rgba(255,111,0,0.18)"/></svg>');
+            background-size: 50% 100%;
+            animation: wave 15s linear infinite;
+        }
+
+        .wave:nth-child(2) {
+            bottom: 15px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,70 Q300,20 600,70 T1200,70 L1200,120 L0,120 Z" fill="rgba(255,255,255,0.4)"/></svg>');
+            background-size: 50% 100%;
+            animation: wave 12s linear infinite reverse;
+        }
+
+        .wave:nth-child(3) {
+            bottom: 30px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,40 Q300,10 600,40 T1200,40 L1200,120 L0,120 Z" fill="rgba(230,81,0,0.15)"/></svg>');
+            background-size: 50% 100%;
+            animation: wave 18s linear infinite;
+        }
+
+        .wave:nth-child(4) {
+            bottom: 45px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,60 Q300,15 600,60 T1200,60 L1200,120 L0,120 Z" fill="rgba(255,255,255,0.35)"/></svg>');
+            background-size: 50% 100%;
+            animation: wave 14s linear infinite reverse;
+        }
+
+        @keyframes wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* دوائر متحركة كبيرة */
+        .floating-circles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .floating-circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float-rotate 20s infinite ease-in-out;
+        }
+
+        .floating-circle:nth-child(1) { width: 350px; height: 350px; background: radial-gradient(circle, rgba(255, 111, 0, 0.25) 0%, transparent 70%); top: -100px; right: -100px; animation-duration: 12s; }
+        .floating-circle:nth-child(2) { width: 300px; height: 300px; background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%); bottom: -80px; left: -80px; animation-duration: 15s; animation-delay: 2s; }
+        .floating-circle:nth-child(3) { width: 280px; height: 280px; background: radial-gradient(circle, rgba(230, 81, 0, 0.22) 0%, transparent 70%); top: 40%; left: -50px; animation-duration: 18s; animation-delay: 1s; }
+        .floating-circle:nth-child(4) { width: 320px; height: 320px; background: radial-gradient(circle, rgba(255, 111, 0, 0.28) 0%, transparent 70%); bottom: 20%; right: -60px; animation-duration: 16s; animation-delay: 3s; }
+
+        @keyframes float-rotate {
+            0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            25% { transform: translate(50px, -50px) rotate(90deg) scale(1.15); }
+            50% { transform: translate(-30px, 60px) rotate(180deg) scale(0.9); }
+            75% { transform: translate(60px, 30px) rotate(270deg) scale(1.1); }
+        }
+
+        /* جزيئات صغيرة سريعة */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: particle-float 8s infinite ease-in-out;
+        }
+
+        .particle:nth-child(1) { background: #FF6F00; left: 8%; animation-delay: 0s; animation-duration: 7s; }
+        .particle:nth-child(2) { background: rgba(255, 255, 255, 0.8); left: 18%; animation-delay: 1s; animation-duration: 8s; }
+        .particle:nth-child(3) { background: #E65100; left: 28%; animation-delay: 2s; animation-duration: 6.5s; }
+        .particle:nth-child(4) { background: #FF6F00; left: 38%; animation-delay: 0.5s; animation-duration: 7.5s; }
+        .particle:nth-child(5) { background: rgba(255, 255, 255, 0.8); left: 48%; animation-delay: 1.5s; animation-duration: 8.5s; }
+        .particle:nth-child(6) { background: #E65100; left: 58%; animation-delay: 2.5s; animation-duration: 7s; }
+        .particle:nth-child(7) { background: #FF6F00; left: 68%; animation-delay: 0.8s; animation-duration: 6.8s; }
+        .particle:nth-child(8) { background: rgba(255, 255, 255, 0.8); left: 78%; animation-delay: 1.8s; animation-duration: 8.2s; }
+        .particle:nth-child(9) { background: #E65100; left: 88%; animation-delay: 2.8s; animation-duration: 7.3s; }
+        .particle:nth-child(10) { background: #FF6F00; left: 12%; animation-delay: 3s; animation-duration: 6.7s; }
+
+        @keyframes particle-float {
+            0% { bottom: -10px; opacity: 0; transform: translateX(0) scale(0.5); }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { bottom: 110%; opacity: 0; transform: translateX(80px) scale(1.5); }
+        }
+
+        .page-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* الهيدر العلوي */
+        .top-bar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(255, 111, 0, 0.15);
+            margin-bottom: 25px;
             display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            border-top: 4px solid #FF6F00;
         }
 
-        .row .form-group {
-            flex: 1;
-            min-width: 250px;
+        .logo-small {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid #FF6F00;
+            box-shadow: 0 4px 15px rgba(255, 111, 0, 0.3);
+            transition: transform 0.3s ease;
         }
 
-        .row .form-group label {
+        .logo-small:hover {
+            transform: rotate(360deg) scale(1.1);
+        }
+
+        .top-bar h1 {
+            color: #333;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .top-bar span {
+            color: #FF6F00;
+        }
+
+        /* الصف الرئيسي */
+        .main-row {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 25px;
+        }
+
+        /* القسم الجانبي */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 35px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(255, 111, 0, 0.12);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar h2 {
+            color: #333;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #FF6F00;
+        }
+
+        .info-item {
+            margin-bottom: 20px;
+            padding: 18px;
+            background: linear-gradient(135deg, rgba(255, 111, 0, 0.08), rgba(230, 81, 0, 0.05));
+            border-radius: 12px;
+            border-right: 4px solid #FF6F00;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(255, 111, 0, 0.1);
+            cursor: pointer;
+        }
+
+        .info-item:hover {
+            transform: translateX(-8px) translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 111, 0, 0.25);
+            background: linear-gradient(135deg, rgba(255, 111, 0, 0.12), rgba(230, 81, 0, 0.08));
+        }
+
+        .info-item.active {
+            background: linear-gradient(135deg, rgba(255, 111, 0, 0.15), rgba(230, 81, 0, 0.1));
+            border-right: 6px solid #FF6F00;
+        }
+
+        .info-item h3 {
+            color: #E65100;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .info-item h3 i {
+            margin-left: 8px;
+            color: #FF6F00;
+        }
+
+        .info-item p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.7;
             text-align: right;
         }
 
-        #condition_description {
-            resize: vertical;
-            transition: border-color 0.3s ease;
+        /* القسم الرئيسي */
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(255, 111, 0, 0.12);
         }
 
-        /* تنسيق الأزرار */
-        button, .link-btn {
-            background-color: #FF6F00;
+        .welcome-box {
+            background: linear-gradient(135deg, #FF6F00 0%, #E65100 100%);
+            padding: 35px;
+            border-radius: 15px;
+            text-align: center;
             color: white;
-            padding: 12px 0;
-            font-size: 1rem;
-            border-radius: 8px;
-            text-decoration: none;
-            cursor: pointer;
+            margin-bottom: 35px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(255, 111, 0, 0.4);
+        }
+
+        .welcome-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 15px,
+                rgba(255, 255, 255, 0.1) 15px,
+                rgba(255, 255, 255, 0.1) 30px
+            );
+            animation: slide 25s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .welcome-box h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .welcome-box p {
+            font-size: 16px;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* أقسام النموذج */
+        .form-section {
+            scroll-margin-top: 80px;
+            padding: 25px;
+            margin-bottom: 25px;
+            background: rgba(255, 111, 0, 0.02);
+            border-radius: 12px;
+            border-right: 3px solid #FF6F00;
+        }
+
+        .form-section h3 {
+            color: #FF6F00;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(255, 111, 0, 0.2);
+        }
+
+        .form-section h3 i {
+            margin-left: 8px;
+        }
+
+        /* النموذج */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+
+        .form-group label {
+            display: block;
+            color: #555;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #FF6F00;
+            font-size: 18px;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 16px 55px 16px 18px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #FF6F00;
+            box-shadow: 0 0 0 5px rgba(255, 111, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .error-message {
+            margin-top: 5px;
+            font-size: 0.9rem;
+            color: #d32f2f;
+            text-align: right;
+            display: none;
+        }
+
+        /* عرض رسائل الخطأ من Laravel */
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            text-align: right;
+        }
+
+        .alert-danger {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 2px solid #ef5350;
+            border-right: 4px solid #c62828;
+        }
+
+        .alert-danger ul {
+            margin: 10px 0 0 0;
+            padding: 0 20px;
+            list-style-position: inside;
+        }
+
+        .alert-danger li {
+            margin: 5px 0;
+        }
+
+        /* الزر */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 600;
             border: none;
-            transition: background-color 0.3s ease;
-            width: 48%;
-            min-width: 120px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #FF6F00, #E65100);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 111, 0, 0.4);
+            margin-top: 20px;
         }
 
-        button:hover {
-            background-color: #E65100;
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
         }
 
-        /* تنسيق أزرار التحكم */
+        .submit-btn:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 111, 0, 0.5);
+        }
+
+        .submit-btn i {
+            margin-left: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .submit-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
         .buttons-container {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 15px;
+            margin-top: 25px;
         }
 
-        .back-btn {
-            font-size: 1rem;
-            padding: 10px 20px;
-            background-color: #FF6F00;
-            color: white;
+        .link-btn {
+            flex: 1;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 600;
+            border: 2px solid #FF6F00;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s;
+            background: white;
+            color: #FF6F00;
             text-decoration: none;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
+            text-align: center;
             display: inline-flex;
             align-items: center;
             justify-content: center;
         }
 
-        .back-btn i {
-            margin-left: 5px;
-        }
-
-        .back-btn:hover {
-            background-color: #E65100;
-        }
-
-        /* رسائل الخطأ */
-        .error-message {
-            margin-top: 5px;
-            font-size: 0.9rem;
-            color: red;
-            text-align: right;
+        .link-btn:hover {
+            background: #FF6F00;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 111, 0, 0.3);
         }
 
         .area-responsible-container {
             display: flex;
-            flex-direction: column; /* ترتيب العناصر عموديًا */
+            flex-direction: column;
         }
 
-        .area-responsible-container label.form-label {
-            order: 1;
-            margin-bottom: 0.5rem; /* مساحة بين الـ label والـ select */
-        }
-
-        .area-responsible-container select.form-control {
-            order: 2;
-        }
-
-        .area-responsible-container .error-message {
-            order: 3; /* خلي رسالة الخطأ تالت عنصر (تحت الـ select) */
-            margin-top: 0.5rem; /* مساحة بين الـ select ورسالة الخطأ */
-        }
-
-        /* عند إخفاء الحقل، حافظ على ظهور رسالة الخطأ في مكانها (لكنها هتكون مخفية) */
         #areaResponsibleField[style*="display:none"] .error-message {
             display: block !important;
             visibility: hidden;
@@ -202,385 +579,535 @@
             display: none !important;
         }
 
-        /* تحسين الاستجابة للأجهزة الصغيرة */
-        @media (max-width: 768px) {
-            .container {
-                width: 95%;
-                padding: 20px;
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-row {
+                grid-template-columns: 1fr;
             }
 
-            h1 {
+            .sidebar {
+                order: 2;
+                position: relative;
+                top: 0;
+            }
+
+            .main-content {
+                order: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .top-bar {
+                padding: 18px 20px;
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .top-bar h1 {
                 font-size: 20px;
             }
 
-            .row {
-                flex-direction: column;
-                align-items: center;
+            .sidebar {
+                padding: 25px;
             }
 
-            .row .form-group {
-                width: 100%;
-                min-width: unset;
+            .main-content {
+                padding: 30px 25px;
+            }
+
+            .welcome-box {
+                padding: 28px;
+            }
+
+            .welcome-box h2 {
+                font-size: 22px;
+            }
+
+            .row {
+                grid-template-columns: 1fr;
             }
 
             input, select, textarea {
-                font-size: 14px;
-                padding: 8px;
-            }
-
-            .buttons-container {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .buttons-container button,
-            .buttons-container a {
-                width: 100%;
+                padding: 14px 50px 14px 16px;
+                font-size: 15px;
             }
         }
 
         @media (max-width: 480px) {
-            .container {
+            .top-bar {
                 padding: 15px;
             }
 
-            h1 {
+            .logo-small {
+                width: 50px;
+                height: 50px;
+            }
+
+            .top-bar h1 {
                 font-size: 18px;
             }
 
-            input, select, textarea {
-                font-size: 13px;
-                padding: 8px;
+            .sidebar {
+                padding: 20px;
             }
 
-            .buttons-container button,
-            .buttons-container a {
-                font-size: 14px;
-                padding: 10px;
+            .main-content {
+                padding: 25px 20px;
+            }
+
+            .welcome-box {
+                padding: 22px;
+            }
+
+            .welcome-box h2 {
+                font-size: 20px;
+            }
+
+            .welcome-box p {
+                font-size: 15px;
+            }
+
+            .submit-btn,
+            .link-btn {
+                padding: 15px;
+                font-size: 16px;
+            }
+
+            .buttons-container {
+                flex-direction: column;
             }
         }
-
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- الشعار -->
-        <div class="logo-container">
-            <img src="{{asset('background/image.jpg')}}" alt="جمعية الفجر الشبابي الفلسطيني" class="logo">
+    <!-- الفقاعات المتحركة -->
+    <div class="bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <!-- الموجات -->
+    <div class="wave-container">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+
+    <!-- الدوائر الكبيرة -->
+    <div class="floating-circles">
+        <div class="floating-circle"></div>
+        <div class="floating-circle"></div>
+        <div class="floating-circle"></div>
+        <div class="floating-circle"></div>
+    </div>
+
+    <!-- الجزيئات الصغيرة -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="page-container">
+        <!-- الهيدر العلوي -->
+        <div class="top-bar">
+            <img src="{{asset('background/image.jpg')}}" alt="الشعار" class="logo-small">
+            <h1>جمعية <span>الفجر الشبابي الفلسطيني</span></h1>
         </div>
 
-        <!-- العنوان الرئيسي -->
-        <h1>جمعية الفجر الشبابي الفلسطيني</h1>
-        {{-- @if ($errors->any())
-            <div class="alert alert-danger text-start">
-                <ul>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
+        <!-- الصف الرئيسي -->
+        <div class="main-row">
+            <!-- المحتوى الرئيسي -->
+            <div class="main-content">
+                <!-- صندوق الترحيب -->
+                <div class="welcome-box">
+                    <h2>نموذج تسجيل المواطنين</h2>
+                    <p>يرجى ملء البيانات بدقة وبشكل كامل</p>
+                </div>
+
+                <!-- عرض رسائل الخطأ من Laravel -->
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <strong>يرجى تصحيح الأخطاء التالية:</strong>
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <!-- النموذج -->
+                <form action="{{ route('persons.store') }}" method="POST" id="form">
+                    @csrf
+
+                    <!-- قسم البيانات الشخصية -->
+                    <div class="form-section" id="personal-info">
+                        <h3><i class="fas fa-user"></i> البيانات الشخصية</h3>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="first_name">الاسم الأول</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user input-icon"></i>
+                                    <input type="text" id="first_name" name="first_name" placeholder="الاسم الأول" value="{{ old('first_name') }}" oninput="validateArabicInput('first_name')" onfocus="resetBorderAndError('first_name')" required>
+                                </div>
+                                <div class="error-message" id="first_name_error"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="father_name">اسم الأب</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user input-icon"></i>
+                                    <input type="text" id="father_name" name="father_name" placeholder="اسم الأب" value="{{ old('father_name') }}" oninput="validateArabicInput('father_name')" onfocus="resetBorderAndError('father_name')" required>
+                                </div>
+                                <div class="error-message" id="father_name_error"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="grandfather_name">اسم الجد</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user input-icon"></i>
+                                    <input type="text" id="grandfather_name" name="grandfather_name" placeholder="اسم الجد" value="{{ old('grandfather_name') }}" oninput="validateArabicInput('grandfather_name')" onfocus="resetBorderAndError('grandfather_name')" required>
+                                </div>
+                                <div class="error-message" id="grandfather_name_error"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="family_name">اسم العائلة</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-users input-icon"></i>
+                                    <input type="text" id="family_name" name="family_name" placeholder="اسم العائلة" value="{{ old('family_name') }}" oninput="validateArabicInput('family_name')" onfocus="resetBorderAndError('family_name')" required>
+                                </div>
+                                <div class="error-message" id="family_name_error"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="id_num">رقم الهوية</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-id-card input-icon"></i>
+                                    <input type="number" disabled id="id_num" name="id_num" value="{{ $id_num }}" readonly>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="gender">الجنس</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-venus-mars input-icon"></i>
+                                    <select id="gender" name="gender" required oninput="validateGender()" onfocus="resetBorderAndError('gender')">
+                                        <option value="">اختر الجنس</option>
+                                        @foreach(['ذكر' => 'ذكر', 'أنثى' => 'أنثى'] as $key => $gender)
+                                            <option {{ old('gender') == $key ? 'selected' : '' }} value="{{ $key }}">{{ $gender }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="error-message" id="gender_error"></div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="dob">تاريخ الميلاد</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-calendar input-icon"></i>
+                                    <input type="date" id="dob" name="dob" value="{{ old('dob') }}" oninput="validatedob()" onfocus="resetBorderAndError('dob')" required>
+                                </div>
+                                <div class="error-message" id="dob_error"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">رقم الجوال المعتمد</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-phone input-icon"></i>
+                                    <input type="text" dir="ltr" placeholder="059-123-1234" id="phone" name="phone" value="{{ old('phone') }}" oninput="validatePhoneInput()" onfocus="resetPhoneError()" required>
+                                </div>
+                                <div class="error-message" id="phone_error"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- قسم الحالة الاجتماعية والوظيفية -->
+                    <div class="form-section" id="social-info">
+                        <h3><i class="fas fa-briefcase"></i> الحالة الاجتماعية والوظيفية</h3>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="social_status">الحالة الاجتماعية</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-heart input-icon"></i>
+                                    <select id="social_status" name="social_status" required oninput="validateSocialStatus()" onfocus="resetBorderAndError('social_status')">
+                                        <option value="">اختر الحالة</option>
+                                        @foreach($social_statuses as $key => $status)
+                                            <option {{ old('social_status') == $key ? 'selected' : '' }} value="{{ $key }}">{{ $status }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="error-message" id="social_status_error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="employment_status">حالة العمل</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-briefcase input-icon"></i>
+                                    <select id="employment_status" name="employment_status" required oninput="validateEmploymentStatus()" onfocus="resetBorderAndError('employment_status')">
+                                        <option value="لا يعمل" {{ old('employment_status') == 'لا يعمل' ? 'selected' : '' }}>لا يعمل</option>
+                                        <option value="موظف" {{ old('employment_status') == 'موظف' ? 'selected' : '' }}>موظف</option>
+                                        <option value="عامل" {{ old('employment_status') == 'عامل' ? 'selected' : '' }}>عامل</option>
+                                    </select>
+                                </div>
+                                <div class="error-message" id="employment_status_error"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- قسم الحالة الصحية -->
+                    <div class="form-section" id="health-info">
+                        <h3><i class="fas fa-heartbeat"></i> الحالة الصحية</h3>
+                        <div class="form-group">
+                            <label for="has_condition">هل لديك حالة صحية مرض مزمن حالة خالصة إصابة حرب ؟</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-notes-medical input-icon"></i>
+                                <select id="has_condition" name="has_condition" onchange="toggleConditionDescription()">
+                                    <option value="0" {{ old('has_condition') == '0' ? 'selected' : '' }}>لا</option>
+                                    <option value="1" {{ old('has_condition') == '1' ? 'selected' : '' }}>نعم</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="condition_description_group" style="display: none;">
+                            <label for="condition_description">وصف الحالة الصحية</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-comment-medical input-icon"></i>
+                                <textarea id="condition_description" name="condition_description" rows="4" placeholder="اكتب وصف الحالة الصحية..." oninput="validateConditionText()" onfocus="resetBorderAndError('condition_description')">{{ old('condition_description') }}</textarea>
+                            </div>
+                            <div class="error-message" id="condition_description_error"></div>
+                        </div>
+                    </div>
+
+                    <!-- قسم معلومات السكن -->
+                    <div class="form-section" id="housing-info">
+                        <h3><i class="fas fa-home"></i> معلومات السكن</h3>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="city">المحافظة الأصلية</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-map-marker-alt input-icon"></i>
+                                    <select id="city" name="city" required oninput="validateCity()" onfocus="resetBorderAndError('city')">
+                                        <option value="">اختر المحافظة الأصلية</option>
+                                        @foreach($cities as $key => $city)
+                                            <option {{ old('city') == $key ? 'selected' : '' }} value="{{ $key }}">{{ $city }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="error-message" id="city_error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="housing_damage_status">حالة السكن السابق</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-house-damage input-icon"></i>
+                                    <select id="housing_damage_status" name="housing_damage_status" required oninput="validateHousingDamageStatus()" onfocus="resetBorderAndError('housing_damage_status')">
+                                        <option value="">اختر حالة السكن السابق</option>
+                                        @foreach($housing_damage_statuses as $key => $status)
+                                            <option value="{{ $key }}" {{ old('housing_damage_status') == $key ? 'selected' : '' }}>{{ $status }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="error-message" id="housing_damage_status_error"></div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="current_city">المحافظة التي تسكن فيها حالياً</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-map-marked-alt input-icon"></i>
+                                    <select id="current_city" name="current_city" required oninput="validateCurrentCity()" onfocus="resetBorderAndError('current_city')">
+                                        <option value="">اختر المحافظة التي تسكن فيها حالياً</option>
+                                        @foreach($current_cities as $key => $city)
+                                            <option value="{{ $key }}" {{ old('current_city') == $key ? 'selected' : '' }}>{{ $city }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="error-message" id="current_city_error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="housing_type">نوع السكن الذي تعيش فيه حالياً</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-building input-icon"></i>
+                                    <select id="housing_type" name="housing_type" required oninput="validateHousingType()" onfocus="resetBorderAndError('housing_type')">
+                                        <option value="">اختر نوع السكن الذي تعيش فيه حالياً</option>
+                                        @foreach($housing_types as $key => $type)
+                                            <option value="{{ $key }}" {{ old('housing_type') == $key ? 'selected' : '' }}>{{ $type }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="error-message" id="housing_type_error"></div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="neighborhood">الحي السكني الذي تتواجد فيه حالياً</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-map-signs input-icon"></i>
+                                    <select id="neighborhood" name="neighborhood" required oninput="validateNeighborhood()" onfocus="resetBorderAndError('neighborhood')">
+                                        <option value="">اختر الحي السكني الذي تتواجد فيه حالياً</option>
+                                    </select>
+                                </div>
+                                <div class="error-message" id="neighborhood_error"></div>
+                            </div>
+
+                            <div class="form-group area-responsible-container" id="areaResponsibleField" style="display:none;">
+                                <label for="area_responsible_id" class="form-label">مسؤول المنطقة</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user-tie input-icon"></i>
+                                    <select id="area_responsible_id" name="area_responsible_id" oninput="validateAreaResponsible()" onfocus="resetBorderAndError('area_responsible_id')">
+                                        <option value="">اختر المسؤول</option>
+                                        @foreach (\App\Models\AreaResponsible::all() as $responsible)
+                                            <option value="{{ $responsible->id }}" {{ old('area_responsible_id') == $responsible->id ? 'selected' : '' }}>
+                                                {{ $responsible->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="error-message" id="area_responsible_id_error"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="landmark">أقرب معلم</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-map-pin input-icon"></i>
+                                <input type="text" id="landmark" name="landmark" placeholder="أقرب معلم" value="{{ old('landmark') }}" oninput="validateArabicInput('landmark')" onfocus="resetBorderAndError('landmark')">
+                            </div>
+                            <div class="error-message" id="landmark_error"></div>
+                        </div>
+                    </div>
+
+                    <!-- زر الإرسال -->
+                    <div class="buttons-container">
+                        <a href="{{ route('persons.intro') }}" class="link-btn">
+                            <i class="fas fa-arrow-left"></i> العودة
+                        </a>
+                        <button type="submit" class="submit-btn">
+                            <span>
+                                <i class="fas fa-paper-plane"></i>
+                                تسجيل بيانات أفراد الأسرة
+                            </span>
+                        </button>
+                    </div>
+                </form>
             </div>
-        @endif --}}
-        <!-- النموذج -->
-        <form action="{{ route('persons.store') }}" method="POST" id="form">
-            @csrf
-            <div class="row">
-                <div class="form-group">
-                    <label for="first_name">الاسم الأول</label>
-                    <input
-                        type="text"
-                        id="first_name"
-                        name="first_name"
-                        placeholder="الاسم الأول"
-                        value="{{ old('first_name') }}"
-                        oninput="validateArabicInput('first_name')"
-                        onfocus="resetBorderAndError('first_name')"
-                        onblur="validateArabicInput('first_name')"
-                        required>
-                    <div class="error-message" id="first_name_error" style="display:none; color: red;"></div>
+
+            <!-- القسم الجانبي -->
+            <div class="sidebar">
+                <h2>أقسام النموذج</h2>
+
+                <div class="info-item" onclick="scrollToSection('personal-info')">
+                    <h3><i class="fas fa-user"></i> البيانات الشخصية</h3>
+                    <p>الاسم، الهوية، الجنس، تاريخ الميلاد، رقم الجوال</p>
                 </div>
-                <div class="form-group">
-                    <label for="father_name">اسم الأب</label>
-                    <input
-                        type="text"
-                        id="father_name"
-                        name="father_name"
-                        value="{{ old('father_name') }}"
-                        placeholder="اسم الأب"
-                        oninput="validateArabicInput('father_name')"
-                        onfocus="resetBorderAndError('father_name')"
-                        onblur="validateArabicInput('father_name')"
-                        required>
-                    <div class="error-message" id="father_name_error" style="display:none; color: red;"></div>
+
+                <div class="info-item" onclick="scrollToSection('social-info')">
+                    <h3><i class="fas fa-briefcase"></i> الحالة الاجتماعية</h3>
+                    <p>الحالة الاجتماعية وحالة العمل</p>
                 </div>
-                <div class="form-group">
-                    <label for="grandfather_name">اسم الجد</label>
-                    <input
-                        type="text"
-                        id="grandfather_name"
-                        name="grandfather_name"
-                        value="{{ old('grandfather_name') }}"
-                        placeholder="اسم الجد"
-                        oninput="validateArabicInput('grandfather_name')"
-                        onfocus="resetBorderAndError('grandfather_name')"
-                        onblur="validateArabicInput('grandfather_name')"
-                        required>
-                    <div class="error-message" id="grandfather_name_error" style="display:none; color: red;"></div>
+
+                <div class="info-item" onclick="scrollToSection('health-info')">
+                    <h3><i class="fas fa-heartbeat"></i> الحالة الصحية</h3>
+                    <p>معلومات عن الحالة الصحية والأمراض المزمنة</p>
                 </div>
-                <div class="form-group">
-                    <label for="family_name">اسم العائلة</label>
-                    <input
-                        type="text"
-                        id="family_name"
-                        name="family_name"
-                        value="{{ old('family_name') }}"
-                        placeholder="اسم العائلة"
-                        oninput="validateArabicInput('family_name')"
-                        onfocus="resetBorderAndError('family_name')"
-                        onblur="validateArabicInput('family_name')"
-                        required>
-                    <div class="error-message" id="family_name_error" style="display:none; color: red;"></div>
+
+                <div class="info-item" onclick="scrollToSection('housing-info')">
+                    <h3><i class="fas fa-home"></i> معلومات السكن</h3>
+                    <p>المحافظة، نوع السكن، الحي السكني، أقرب معلم</p>
                 </div>
             </div>
-
-            <div class="row">
-                <div class="form-group">
-                    <label for="id_num">رقم الهوية</label>
-                    <input type="number" disabled id="id_num" name="id_num" value="{{ $id_num }}" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label for="gender">الجنس</label>
-                    <select id="gender" name="gender" required oninput="validateGender()" onfocus="resetBorderAndError('gender')" onblur="validateGender()">
-                        <option value="">اختر الجنس</option>
-                        @foreach(['ذكر' => 'ذكر', 'أنثى' => 'أنثى'] as $key => $gender)
-                            <option {{ old('gender') == $key ? 'selected' : '' }} value="{{ $key }}">{{ $gender }}</option>
-                        @endforeach
-                    </select>
-                    <div class="error-message" id="gender_error" style="color: red;"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="dob">تاريخ الميلاد</label>
-                    <input
-                        type="date"
-                        id="dob"
-                        name="dob"
-                        value="{{ old('dob') }}"
-                        oninput="validatedob()"
-                        onfocus="resetBorderAndError('dob')"
-                        onblur="validatedob()"
-                        required>
-                    <div class="error-message" id="dob_error" style="display:none; color: red;"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="phone">رقم الجوال المعتمد</label>
-                    <input
-                        type="text"
-                        class="text-left"
-                        dir="ltr"
-                        placeholder="059-123-1234 or 056-123-1234"
-                        id="phone"
-                        name="phone"
-                        value="{{ old('phone') }}"
-                        oninput="validatePhoneInput()"
-                        onfocus="resetPhoneError()"
-                        onblur="validatePhoneInput()"
-                        required>
-                    <div class="error-message" id="phone_error" style="display: none; color: red;"></div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="form-group">
-                    <label for="social_status">الحالة الاجتماعية</label>
-                    <select id="social_status" name="social_status" required oninput="validateSocialStatus()" onfocus="resetBorderAndError('social_status')" onblur="validateSocialStatus()">
-                        <option value="">اختر الحالة</option>
-                        @foreach($social_statuses as $key => $status)
-                            <option {{ old('social_status') == $key ? 'selected' : '' }} value="{{ $key }}">{{ $status }}</option>
-                        @endforeach
-                    </select>
-                    <div class="error-message" id="social_status_error" style="color: red;"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="employment_status">حالة العمل</label>
-                    <select id="employment_status" name="employment_status" required oninput="validateEmploymentStatus()" onfocus="resetBorderAndError('employment_status')" onblur="validateEmploymentStatus()">
-                        <option value="لا يعمل" {{ old('employment_status') == 'لا يعمل' ? 'selected' : '' }}>لا يعمل</option>
-                        <option value="موظف" {{ old('employment_status') == 'موظف' ? 'selected' : '' }}>موظف</option>
-                        <option value="عامل" {{ old('employment_status') == 'عامل' ? 'selected' : '' }}>عامل</option>
-                    </select>
-                    <div class="error-message" id="employment_status_error" style="display: none; color: red;"></div>
-                </div>
-            </div>
-
-            <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                <label for="has_condition">هل لديك حالة صحية مرض مزمن حالة خالصة إصابة حرب ؟</label>
-                <select id="has_condition" name="has_condition" onchange="toggleConditionDescription()">
-                    <option value="0" {{ old('has_condition') == '0' ? 'selected' : '' }}>لا</option>
-                    <option value="1" {{ old('has_condition') == '1' ? 'selected' : '' }}>نعم</option>
-                </select>
-            </div>
-
-            <div class="form-group" id="condition_description_group" style="display: none;">
-                <label for="condition_description">وصف الحالة الصحية</label>
-                <textarea
-                    id="condition_description"
-                    name="condition_description"
-                    rows="4"
-                    cols="50"
-                    value="{{ old('condition_description') }}"
-                    oninput="validateConditionText()"
-                    onfocus="resetBorderAndError('condition_description')"
-                    onblur="validateConditionText()"></textarea>
-                <div class="error-message" id="condition_description_error" style="display: none; color: red;"></div>
-            </div>
-
-            <div class="row">
-                <div class="form-group">
-                    <label for="city">المحافظة الأصلية</label>
-                    <select id="city" name="city" required
-                    oninput="validateCity()"
-                    onfocus="resetBorderAndError('city')"
-                    onblur="validateCity()">
-                        <option value="">اختر المحافظةالأصلية</option>
-                        @foreach($cities as $key => $city)
-                            <option {{ old('city') == $key ? 'selected' : '' }} value="{{ $key }}">{{ $city }}</option>
-                        @endforeach
-                    </select>
-                    <div class="error-message" id="city_error" style="color: red;"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="housing_damage_status">حالة السكن السابق</label>
-                    <select id="housing_damage_status" name="housing_damage_status" required
-                    oninput="validateHousingDamageStatus()"
-                    onfocus="resetBorderAndError('housing_damage_status')"
-                    onblur="validateHousingDamageStatus()">
-                        <option value="">اختر حالة السكن السابق</option>
-                        @foreach($housing_damage_statuses as $key => $status)
-                            <option value="{{ $key }}" {{ old('housing_damage_status') == $key ? 'selected' : '' }}>{{ $status }}</option>
-                        @endforeach
-                    </select>
-                    <div class="error-message" id="housing_damage_status_error" style="color: red;"></div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 form-group">
-                    <label for="current_city">المحافظة التي تسكن فيها حالياً</label>
-                    <select id="current_city" name="current_city" required
-                    oninput="validateCurrentCity()"
-                    onfocus="resetBorderAndError('current_city')"
-                    onblur="validateCurrentCity()" class="form-control">
-                        <option value="">اختر المحافظة التي تسكن فيها حالياً</option>
-                        @foreach($current_cities as $key => $city)
-                            <option value="{{ $key }}" {{ old('current_city') == $key ? 'selected' : '' }}>{{ $city }}</option>
-                        @endforeach
-                    </select>
-                    <div class="error-message" id="current_city_error" style="color: red;"></div>
-                </div>
-
-                <div class="col-md-6 form-group">
-                    <label for="housing_type">نوع السكن الذي تعيش فيه حالياً</label>
-                    <select id="housing_type" name="housing_type" required
-                    oninput="validateHousingType()"
-                    onfocus="resetBorderAndError('housing_type')"
-                    onblur="validateHousingType()" class="form-control">
-                        <option value="">اختر نوع السكن الذي تعيش فيه حالياً</option>
-                        @foreach($housing_types as $key => $type)
-                            <option value="{{ $key }}" {{ old('housing_type') == $key ? 'selected' : '' }}>{{ $type }}</option>
-                        @endforeach
-                    </select>
-                    <div class="error-message" id="housing_type_error" style="color: red;"></div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4 form-group">
-                    <label for="neighborhood">الحي السكني الذي تتواجد فيه حالياً</label>
-                    <select id="neighborhood" name="neighborhood" required
-                    oninput="validateNeighborhood()"
-                    onfocus="resetBorderAndError('neighborhood')"
-                    onblur="validateNeighborhood()" class="form-control">
-                        <option value="">اختر الحي السكني الذي تتواجد فيه حالياً </option>
-                        </select>
-                    <div class="error-message" id="neighborhood_error" style="color: red;"></div>
-                </div>
-
-                <div class="col-md-4 form-group area-responsible-container" id="areaResponsibleField" style="display:none;">
-                    <label for="area_responsible_id" class="form-label custom-label-style">مسؤول المنطقة </label>
-                    <select class="form-control"
-                            id="area_responsible_id"
-                            name="area_responsible_id"
-                            oninput="validateAreaResponsible()"
-                            onfocus="resetBorderAndError('area_responsible_id')"
-                            onblur="validateAreaResponsible()">
-                        <option value="">اختر المسؤول</option>
-                        @foreach (\App\Models\AreaResponsible::all() as $responsible)
-                            <option value="{{ $responsible->id }}" {{ old('area_responsible_id') == $responsible->id ? 'selected' : '' }}>
-                                {{ $responsible->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <div class="error-message" id="area_responsible_id_error" style="color: red; display: none;"></div>
-                </div>
-
-                <div class="col-md-4 form-group">
-                    <label for="landmark">أقرب معلم</label>
-                    <input
-                        type="text"
-                        id="landmark"
-                        name="landmark"
-                        placeholder="أقرب معلم"
-                        value="{{ old('landmark') }}"
-                        oninput="validateArabicInput('landmark')"
-                        onfocus="resetBorderAndError('landmark')"
-                        onblur="validateArabicInput('landmark')"
-                        class="form-control">
-                    <div class="error-message" id="landmark_error" style="display:none; color: red;"></div>
-                </div>
-            </div>
-
-            <!-- زر الإرسال -->
-            <div class="buttons-container">
-                <a href="{{ route('persons.intro') }}" class="link-btn">
-                    <i class="fas fa-arrow-left"></i> العودة
-                </a>
-                <button type="submit" id="submit-button">تسجيل بيانات أفراد الأسرة</button>
-            </div>
-        </form>
+        </div>
     </div>
 
     <script>
+        // دالة التنقل للأقسام
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                section.style.background = 'rgba(255, 111, 0, 0.08)';
+                setTimeout(() => {
+                    section.style.background = 'rgba(255, 111, 0, 0.02)';
+                }, 1000);
+                document.querySelectorAll('.info-item').forEach(item => item.classList.remove('active'));
+                event.currentTarget.classList.add('active');
+            }
+        }
+
+        // تتبع القسم النشط عند التمرير
+        window.addEventListener('scroll', function() {
+            const sections = document.querySelectorAll('.form-section');
+            const sidebarItems = document.querySelectorAll('.info-item');
+
+            let current = '';
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (window.pageYOffset >= (sectionTop - 100)) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            sidebarItems.forEach((item, index) => {
+                item.classList.remove('active');
+                const sectionIds = ['personal-info', 'social-info', 'health-info', 'housing-info'];
+                if (current === sectionIds[index]) {
+                    item.classList.add('active');
+                }
+            });
+        });
 
         function validateArabicInput(inputId) {
             const inputField = document.getElementById(inputId);
             const errorMessage = document.getElementById(`${inputId}_error`);
-            const value = inputField.value.trim(); // إزالة المسافات الزائدة
-            const arabicRegex = /^[\u0621-\u064A\s]+$/; // تطابق الحروف العربية فقط مع المسافات
-            // console.log(value); //
+            const value = inputField.value.trim();
+            const arabicRegex = /^[\u0621-\u064A\s]+$/;
 
             if (value === '') {
-                // إذا كان الحقل فارغًا
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 inputField.style.borderColor = 'red';
             } else if (/[\d!@#$%^&*(),.?":{}|<>0-9]/.test(value)) {
-                // إذا أدخل المستخدم أرقامًا أو رموزًا
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'غير مسموح بإدخال الأرقام والرموز.';
                 inputField.style.borderColor = 'red';
             } else if (!arabicRegex.test(value)) {
-                // إذا أدخل المستخدم نصًا بلغة غير العربية
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'لغة الكتابة المسموح بها العربية فقط.';
                 inputField.style.borderColor = 'red';
             } else {
-                // إذا كان النص صحيحًا
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
-                inputField.style.borderColor = ''; // إزالة لون الإطار
+                inputField.style.borderColor = '';
                 return true;
             }
         }
@@ -589,10 +1116,8 @@
             const inputField = document.getElementById("dob");
             const errorMessage = document.getElementById("dob_error");
             const value = inputField.value.trim();
-            // console.log(value);
 
             if (!value) {
-                // إذا كان الحقل فارغًا
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 inputField.style.borderColor = 'red';
@@ -601,19 +1126,15 @@
 
             const birthDate = new Date(value);
             const today = new Date();
-            const minDate = new Date();
-            minDate.setFullYear(today.getFullYear() - 100); // الحد الأدنى للعمر: 100 سنة
 
             if (birthDate > today) {
-                // إذا كان تاريخ الميلاد في المستقبل
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'تاريخ الميلاد لا يمكن أن يكون في المستقبل.';
                 inputField.style.borderColor = 'red';
-            }else {
-                // إذا كان تاريخ الميلاد صحيحًا
+            } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
-                inputField.style.borderColor = ''; // إزالة لون الإطار
+                inputField.style.borderColor = '';
                 return true;
             }
         }
@@ -624,66 +1145,53 @@
             const value = inputField.value;
 
             if (!value) {
-                // إذا كان الحقل فارغًا
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'يرجى اختيار الجنس.';
                 inputField.style.borderColor = 'red';
-            }
-
-            else if (value === "غير محدد") {
-                // إذا اختار "غير محدد"
+            } else if (value === "غير محدد") {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'لا يمكنك اختيار "غير محدد".';
                 inputField.style.borderColor = 'red';
-            }
-
-            else {
-            // إذا كان الاختيار صحيحًا
-            errorMessage.style.display = 'none';
-            errorMessage.textContent = '';
-            inputField.style.borderColor = ''; // إزالة لون الإطار
-            return true;
+            } else {
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+                inputField.style.borderColor = '';
+                return true;
             }
         }
 
         function resetBorderAndError(id) {
             document.getElementById(id).style.border = "";
-            document.getElementById(id + "_error").textContent = "";
+            const errorEl = document.getElementById(id + "_error");
+            if (errorEl) {
+                errorEl.textContent = "";
+                errorEl.style.display = "none";
+            }
         }
 
         function validatePhoneInput() {
             const phoneInput = document.getElementById('phone');
             const errorMessage = document.getElementById('phone_error');
             let value = phoneInput.value.trim();
-            console.log(value);
 
-            // إزالة العلامات "-" من الرقم
             const cleanValue = value.replace(/-/g, '');
-
-            // نمط التحقق: يجب أن يبدأ بـ 059 أو 056 ويحتوي على 10 أرقام
             const phoneRegex = /^(059|056)\d{7}$/;
 
-            // إذا كان الحقل فارغًا
             if (cleanValue === '') {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 phoneInput.style.borderColor = 'red';
-            }
-            // إذا كان الرقم غير صالح
-            else if (!phoneRegex.test(cleanValue)) {
+            } else if (!phoneRegex.test(cleanValue)) {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'الرجاء إدخال رقم جوال صحيح يبدأ بـ 059 أو 056 ويتكون من 10 أرقام.';
                 phoneInput.style.borderColor = 'red';
-            }
-            // إذا كان الرقم صالحًا
-            else {
+            } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
-                phoneInput.style.borderColor = ''; // إزالة لون الإطار
+                phoneInput.style.borderColor = '';
                 return true;
             }
 
-            // تنسيق الرقم إلى الشكل 059-123-1234 أثناء الكتابة
             let formattedValue = cleanValue;
             if (cleanValue.length > 3) {
                 formattedValue = cleanValue.slice(0, 3) + '-' + cleanValue.slice(3);
@@ -691,8 +1199,6 @@
             if (cleanValue.length > 7) {
                 formattedValue = formattedValue.slice(0, 7) + '-' + formattedValue.slice(7);
             }
-
-            // تحديد الحد الأقصى لطول الرقم (12 حرفًا مع الشرطات)
             if (formattedValue.length > 12) {
                 formattedValue = formattedValue.slice(0, 12);
             }
@@ -701,28 +1207,21 @@
         }
 
         function resetPhoneError() {
-            // إعادة تعيين رسائل الخطأ وإزالة لون الإطار عند التركيز على الحقل
             const phoneInput = document.getElementById('phone');
             const errorMessage = document.getElementById('phone_error');
-
-            phoneInput.style.borderColor = ''; // إزالة لون الإطار
-            errorMessage.style.display = 'none'; // إخفاء رسالة الخطأ
-            errorMessage.textContent = ''; // مسح نص رسالة الخطأ
+            phoneInput.style.borderColor = '';
+            errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
         }
-
 
         document.getElementById('form').addEventListener('submit', function (e) {
             e.preventDefault();
+            const phoneInput = document.getElementById('phone');
+            const phoneRegex = /^[0-9]{10,15}$/;
+            const sanitizedPhone = phoneInput.value.replace(/[^0-9]/g, '');
 
-            const phoneInput = document.getElementById('phone'); // إدخال رقم الجوال
-
-            const phoneRegex = /^[0-9]{10,15}$/; // مثال للتحقق من رقم الجوال
-
-            const sanitizedPhone = phoneInput.value.replace(/[^0-9]/g, ''); // إزالة أي حرف غير رقمي
-
-            // إعادة تحقق من الرقم بعد تنسيقه
             if (!phoneRegex.test(sanitizedPhone)) {
-                    Swal.fire({
+                Swal.fire({
                     icon: 'error',
                     title: 'خطأ في الإدخال',
                     text: 'الرجاء إدخال رقم جوال صحيح',
@@ -731,10 +1230,7 @@
                 return;
             }
 
-            // إزالة "-" من رقم الجوال
             phoneInput.value = phoneInput.value.replace(/-/g, '');
-
-            console.log('Form submitted');
             this.submit();
         });
 
@@ -742,28 +1238,21 @@
             const socialStatusInput = document.getElementById('social_status');
             const errorMessage = document.getElementById('social_status_error');
             const value = socialStatusInput.value.trim();
-            console.log(value);
 
-            // نمط التحقق: التأكد من اختيار قيمة من القيم المعتمدة
-            const validValues = @json(\App\Enums\Person\PersonSocialStatus::toValues()); // جلب القيم المسموحة من الخادم
+            const validValues = @json(\App\Enums\Person\PersonSocialStatus::toValues());
 
-            // إذا كان الحقل فارغًا
             if (value === '') {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 socialStatusInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة غير صالحة
-            else if (!validValues.includes(value)) {
+            } else if (!validValues.includes(value)) {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'القيمة المدخلة غير صالحة.';
                 socialStatusInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة صالحة
-            else {
+            } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
-                socialStatusInput.style.borderColor = ''; // إزالة لون الإطار
+                socialStatusInput.style.borderColor = '';
                 return true;
             }
         }
@@ -772,28 +1261,21 @@
             const employmentStatusInput = document.getElementById('employment_status');
             const errorMessage = document.getElementById('employment_status_error');
             const value = employmentStatusInput.value.trim();
-            console.log(value);
 
-            // القيم المسموحة لحالة العمل
             const validValues = ['موظف', 'عامل', 'لا يعمل'];
 
-            // إذا كان الحقل فارغًا
             if (value === '') {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 employmentStatusInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة غير صالحة
-            else if (!validValues.includes(value)) {
+            } else if (!validValues.includes(value)) {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'القيمة المدخلة غير صالحة.';
                 employmentStatusInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة صالحة
-            else {
+            } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
-                employmentStatusInput.style.borderColor = ''; // إزالة لون الإطار
+                employmentStatusInput.style.borderColor = '';
                 return true;
             }
         }
@@ -801,13 +1283,12 @@
         function toggleConditionDescription() {
             const hasCondition = document.getElementById("has_condition").value;
             const conditionDescriptionGroup = document.getElementById("condition_description_group");
-            console.log(hasCondition);
 
             if (hasCondition === "1") {
                 conditionDescriptionGroup.style.display = "block";
             } else {
                 conditionDescriptionGroup.style.display = "none";
-                document.getElementById("condition_description").value = ""; // تفريغ الحقل إذا تم إخفاؤه
+                document.getElementById("condition_description").value = "";
                 resetBorderAndError('condition_description');
             }
         }
@@ -817,7 +1298,6 @@
             const errorMessage = document.getElementById("condition_description_error");
             const value = inputField.value.trim();
             const hasCondition = document.getElementById("has_condition").value;
-            console.log(value);
 
             if (hasCondition === "1" && value === '') {
                 errorMessage.style.display = 'block';
@@ -835,28 +1315,107 @@
             const cityInput = document.getElementById('city');
             const errorMessage = document.getElementById('city_error');
             const value = cityInput.value.trim();
-            console.log(value);
 
-            // جلب القيم المسموحة من الخادم
             const validValues = @json(\App\Enums\Person\PersonCity::toValues());
 
-            // إذا كان الحقل فارغًا
             if (value === '') {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 cityInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة غير صالحة
-            else if (!validValues.includes(value)) {
+            } else if (!validValues.includes(value)) {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'القيمة المدخلة غير صالحة.';
                 cityInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة صالحة
-            else {
+            } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
-                cityInput.style.borderColor = ''; // إزالة لون الإطار
+                cityInput.style.borderColor = '';
+                return true;
+            }
+        }
+
+        function validateHousingDamageStatus() {
+            const input = document.getElementById('housing_damage_status');
+            const errorMessage = document.getElementById('housing_damage_status_error');
+            const value = input.value.trim();
+
+            if (value === '') {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'هذا الحقل مطلوب.';
+                input.style.borderColor = 'red';
+            } else {
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+                input.style.borderColor = '';
+                return true;
+            }
+        }
+
+        function validateCurrentCity() {
+            const input = document.getElementById('current_city');
+            const errorMessage = document.getElementById('current_city_error');
+            const value = input.value.trim();
+
+            if (value === '') {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'هذا الحقل مطلوب.';
+                input.style.borderColor = 'red';
+            } else {
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+                input.style.borderColor = '';
+                return true;
+            }
+        }
+
+        function validateHousingType() {
+            const input = document.getElementById('housing_type');
+            const errorMessage = document.getElementById('housing_type_error');
+            const value = input.value.trim();
+
+            if (value === '') {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'هذا الحقل مطلوب.';
+                input.style.borderColor = 'red';
+            } else {
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+                input.style.borderColor = '';
+                return true;
+            }
+        }
+
+        function validateNeighborhood() {
+            const input = document.getElementById('neighborhood');
+            const errorMessage = document.getElementById('neighborhood_error');
+            const value = input.value.trim();
+
+            if (value === '') {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'هذا الحقل مطلوب.';
+                input.style.borderColor = 'red';
+            } else {
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+                input.style.borderColor = '';
+                return true;
+            }
+        }
+
+        function validateAreaResponsible() {
+            const input = document.getElementById('area_responsible_id');
+            const errorMessage = document.getElementById('area_responsible_id_error');
+            const value = input.value.trim();
+            const neighborhood = document.getElementById('neighborhood').value;
+
+            if (neighborhood === 'alMawasi' && value === '') {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'هذا الحقل مطلوب.';
+                input.style.borderColor = 'red';
+            } else {
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+                input.style.borderColor = '';
                 return true;
             }
         }
@@ -865,11 +1424,9 @@
             const selectedCity = this.value;
             const neighborhoodSelect = document.getElementById('neighborhood');
 
-            // مسح الخيارات السابقة
             neighborhoodSelect.innerHTML = '<option value="">اختر الحي السكني</option>';
 
             if (selectedCity === 'rafah') {
-                // أحياء رفح
                 const rafahNeighborhoods = [
                     { value: 'masbah', label: 'مصبح' },
                     { value: 'khirbetAlAdas', label: 'خربة العدس' },
@@ -890,7 +1447,6 @@
                 });
 
             } else if (selectedCity === 'khanYounis') {
-                // أحياء خانيونس
                 const khanYounisNeighborhoods = [
                     { value: 'qizanAlNajjar', label: 'قيزان النجار' },
                     { value: 'qizanAbuRashwan', label: 'قيزان أبو رشوان' },
@@ -916,7 +1472,6 @@
                     { value: 'alQalaaSouth', label: 'القلعة وجنوبها' },
                     { value: 'northJalalStreet', label: 'شمال شارع جلال' }
                 ];
-
                 khanYounisNeighborhoods.forEach(n => {
                     const option = document.createElement('option');
                     option.value = n.value;
@@ -925,13 +1480,11 @@
                 });
 
             } else if (selectedCity === 'northGaza') {
-                // أحياء شمال غزة
                 const northGazaNeighborhoods = [
                     { value: 'jabalia', label: 'جباليا' },
                     { value: 'beitLahia', label: 'بيت لاهيا' },
                     { value: 'beitHanoun', label: 'بيت حانون' },
-                    { value: 'omAlNasr', label: 'أم النصر' },
-                    { value: 'nazla', label: 'النزلة' }
+                    { value: 'other', label: 'أخرى' }
                 ];
                 northGazaNeighborhoods.forEach(n => {
                     const option = document.createElement('option');
@@ -939,44 +1492,34 @@
                     option.textContent = n.label;
                     neighborhoodSelect.appendChild(option);
                 });
-
-            } else if (selectedCity === 'alwsta') {
-                // أحياء المحافظة الوسطى
-                const centralGazaNeighborhoods = [
-                    { value: 'alZahra', label: 'الزهراء' },
-                    { value: 'alMughraqa', label: 'المغراقة' },
+            } else if (selectedCity === 'gazaCity') {
+                const gazaCityNeighborhoods = [
+                    { value: 'alRimal', label: 'الرمال' },
+                    { value: 'alNasr', label: 'النصر' },
+                    { value: 'alShati', label: 'الشاطئ' },
+                    { value: 'alZaitoun', label: 'الزيتون' },
+                    { value: 'alSabra', label: 'الصبرة' },
+                    { value: 'talAlHawa', label: 'تل الهوى' },
+                    { value: 'alDaraj', label: 'الدرج' },
+                    { value: 'alShujaia', label: 'الشجاعية' },
+                    { value: 'other', label: 'أخرى' }
+                ];
+                gazaCityNeighborhoods.forEach(n => {
+                    const option = document.createElement('option');
+                    option.value = n.value;
+                    option.textContent = n.label;
+                    neighborhoodSelect.appendChild(option);
+                });
+            } else if (selectedCity === 'deirAlBalah') {
+                const deirAlBalahNeighborhoods = [
+                    { value: 'alMaghazi', label: 'المغازي' },
                     { value: 'alBureij', label: 'البريج' },
                     { value: 'alNuseirat', label: 'النصيرات' },
-                    { value: 'alMaghazi', label: 'المغازي' },
-                    { value: 'alZawaida', label: 'الزوايدة' },
-                    { value: 'deirAlBalah', label: 'دير البلح' }
+                    { value: 'deirAlBalah', label: 'دير البلح' },
+                    { value: 'alZawayda', label: 'الزوايدة' },
+                    { value: 'other', label: 'أخرى' }
                 ];
-                centralGazaNeighborhoods.forEach(n => {
-                    const option = document.createElement('option');
-                    option.value = n.value;
-                    option.textContent = n.label;
-                    neighborhoodSelect.appendChild(option);
-                });
-
-            } else if (selectedCity === 'gaza') {
-                // أحياء مدينة غزة
-                const gazaNeighborhoods = [
-                    { value: 'shujaiya', label: 'الشجاعية' },
-                    { value: 'alDaraj', label: 'الدرج' },
-                    { value: 'alTuffah', label: 'التفاح' },
-                    { value: 'alRimal', label: 'الرمال' },
-                    { value: 'alZaytoun', label: 'الزيتون' },
-                    { value: 'alNasr', label: 'النصر' },
-                    { value: 'sheikhRadwan', label: 'الشيخ رضوان' },
-                    { value: 'telAlHawa', label: 'تل الهوا' },
-                    { value: 'sheikhAjleen', label: 'الشيخ عجلين' },
-                    { value: 'alSabra', label: 'الصبرة' },
-                    { value: 'alKaramah', label: 'الكرامة' },
-                    { value: 'birAlNajah', label: 'بير النعجة' },
-                    { value: 'juhrAlDeek', label: 'جحر الديك' },
-                    { value: 'shatiCamp', label: 'مخيم الشاطئ' }
-                ];
-                gazaNeighborhoods.forEach(n => {
+                deirAlBalahNeighborhoods.forEach(n => {
                     const option = document.createElement('option');
                     option.value = n.value;
                     option.textContent = n.label;
@@ -984,401 +1527,16 @@
                 });
             }
         });
-
-
-        function validateCurrentCity() {
-            const currentCityInput = document.getElementById('current_city');
-            const errorMessage = document.getElementById('current_city_error');
-            const value = currentCityInput.value.trim();
-            console.log(value);
-
-            // جلب القيم المسموحة من الخادم
-            const validValues = @json(\App\Enums\Person\PersonCurrentCity::toValues());
-
-            // إذا كان الحقل فارغًا
-            if (value === '') {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'هذا الحقل مطلوب.';
-                currentCityInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة غير صالحة
-            else if (!validValues.includes(value)) {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'القيمة المدخلة غير صالحة.';
-                currentCityInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة صالحة
-            else {
-                errorMessage.style.display = 'none';
-                errorMessage.textContent = '';
-                currentCityInput.style.borderColor = ''; // إزالة لون الإطار
-                return true;
-            }
-        }
-
-        function validateNeighborhood() {
-            const neighborhoodInput = document.getElementById('neighborhood');
-            const errorMessage = document.getElementById('neighborhood_error');
-            const value = neighborhoodInput.value.trim();
-            console.log(value);
-
-            // جلب القيم المسموحة من الخادم
-            const validValues = @json(\App\Enums\Person\PersonNeighborhood::toValues());
-
-            // إذا كان الحقل فارغًا
-            if (value === '') {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'هذا الحقل مطلوب.';
-                neighborhoodInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة غير صالحة
-            else if (!validValues.includes(value)) {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'القيمة المدخلة غير صالحة.';
-                neighborhoodInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة صالحة
-            else {
-                errorMessage.style.display = 'none';
-                errorMessage.textContent = '';
-                neighborhoodInput.style.borderColor = ''; // إزالة لون الإطار
-                return true;
-            }
-        }
-
-        // حفظ نسخة من الخيارات الأصلية عند تحميل الصفحة
-        const areaResponsibleSelect = document.getElementById('area_responsible_id');
-        const areaResponsibleField = document.getElementById('areaResponsibleField');
-        const allOptions = Array.from(areaResponsibleSelect.options).map(option => ({
-            value: option.value,
-            text: option.text
-        }));
 
         document.getElementById('neighborhood').addEventListener('change', function() {
-            const neighborhood = this.value;
-
-            function showOptions(ids, addPlaceholder = false, defaultValue = null) {
-                areaResponsibleSelect.innerHTML = '';
-
-                if (addPlaceholder) {
-                    const placeholderOption = document.createElement('option');
-                    placeholderOption.value = '';
-                    placeholderOption.text = 'اختر مسؤول المنطقة';
-                    placeholderOption.disabled = true;
-                    placeholderOption.selected = true;
-                    areaResponsibleSelect.appendChild(placeholderOption);
-                }
-
-                ids.forEach(id => {
-                    const opt = allOptions.find(o => o.value === id.toString());
-                    if (opt) {
-                        const optionElement = document.createElement('option');
-                        optionElement.value = opt.value;
-                        optionElement.text = opt.text;
-                        // تعيين إذا كانت هذه هي القيمة الافتراضية
-                        if (defaultValue && opt.value === defaultValue.toString()) {
-                            optionElement.selected = true;
-                        }
-                        areaResponsibleSelect.appendChild(optionElement);
-                    }
-                });
-
-                if (!addPlaceholder && !defaultValue) {
-                    areaResponsibleSelect.value = '';
-                }
-            }
-
-            if (neighborhood === 'alMawasi') {
-                areaResponsibleField.style.display = 'flex';
-                let excluded = ['29', '30', '31', '32', '33', '34','35'];
-                const filtered = allOptions.filter(o => !excluded.includes(o.value));
-                areaResponsibleSelect.innerHTML = '';
-                filtered.forEach(opt => {
-                    const optionElement = document.createElement('option');
-                    optionElement.value = opt.value;
-                    optionElement.text = opt.text;
-                    areaResponsibleSelect.appendChild(optionElement);
-                });
-                areaResponsibleSelect.value = '';
-
-            } else if (neighborhood === 'hamidCity') {
-                areaResponsibleField.style.display = 'flex';
-                showOptions(['29'], false, '29');
-
-            } else if (['downtown', 'alQalaaSouth', 'alBatanAlSameen', 'qizanAbuRashwan'].includes(neighborhood)) {
-                areaResponsibleField.style.display = 'flex';
-                showOptions(['31', '32', '30'], true, null); // خيار "اختر مسؤول المنطقة" ظاهر، بدون اختيار تلقائي
-
-            } else if (['westernLine', 'easternLine', 'alMahatta', 'alKatiba', 'northJalalStreet'].includes(neighborhood)) {
-                areaResponsibleField.style.display = 'flex';
-                showOptions(['34'], false, '34');
-
-            } else if (['alMaskar', 'alMashroo'].includes(neighborhood)) {
-                areaResponsibleField.style.display = 'flex';
-                showOptions(['33'], false, '33');
-
+            const areaResponsibleField = document.getElementById('areaResponsibleField');
+            if (this.value === 'alMawasi') {
+                areaResponsibleField.style.display = 'block';
             } else {
                 areaResponsibleField.style.display = 'none';
-                areaResponsibleSelect.innerHTML = '';
-                areaResponsibleSelect.value = '';
-                document.getElementById('area_responsible_id_error').style.display = 'none';
+                document.getElementById('area_responsible_id').value = '';
             }
         });
-
-        function validateAreaResponsible() {
-            const areaResponsibleInput = document.getElementById('area_responsible_id');
-            const errorMessage = document.getElementById('area_responsible_id_error');
-            const value = areaResponsibleInput.value.trim();
-            const isVisible = (document.getElementById('areaResponsibleField').style.display === 'block' || document.getElementById('areaResponsibleField').style.display === 'flex');
-
-            if (isVisible) {
-                if (value === '') {
-                    errorMessage.style.display = 'block';
-                    errorMessage.textContent = 'يرجى اختيار مسؤول المنطقة.';
-                    areaResponsibleInput.style.borderColor = 'red';
-                    return false;
-                } else {
-                    errorMessage.style.display = 'none';
-                    errorMessage.textContent = '';
-                    areaResponsibleInput.style.borderColor = '';
-                    return true;
-                }
-            } else {
-                errorMessage.style.display = 'none';
-                errorMessage.textContent = '';
-                areaResponsibleInput.style.borderColor = '';
-                return true;
-            }
-        }
-
-        function validateHousingType() {
-            const housingTypeInput = document.getElementById('housing_type');
-            const errorMessage = document.getElementById('housing_type_error');
-            const value = housingTypeInput.value.trim();
-            console.log(value);
-
-            // جلب القيم المسموحة من الخادم
-            const validHousingTypes = @json(\App\Enums\Person\PersonHousingType::toValues());
-
-            // إذا كان الحقل فارغًا
-            if (value === '') {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'هذا الحقل مطلوب.';
-                housingTypeInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة غير صالحة
-            else if (!validHousingTypes.includes(value)) {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'القيمة المدخلة غير صالحة.';
-                housingTypeInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة صالحة
-            else {
-                errorMessage.style.display = 'none';
-                errorMessage.textContent = '';
-                housingTypeInput.style.borderColor = ''; // إزالة لون الإطار
-                return true;
-            }
-        }
-
-        function validateHousingDamageStatus() {
-            const housingDamageStatusInput = document.getElementById('housing_damage_status');
-            const errorMessage = document.getElementById('housing_damage_status_error');
-            const value = housingDamageStatusInput.value.trim();
-            console.log(value);
-
-            // جلب القيم المسموحة من الخادم
-            const validHousingDamageStatuses = @json(\App\Enums\Person\PersonDamageHousingStatus::toValues());
-
-            // إذا كان الحقل فارغًا
-            if (value === '') {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'هذا الحقل مطلوب.';
-                housingDamageStatusInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة غير صالحة
-            else if (!validHousingDamageStatuses.includes(value)) {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'القيمة المدخلة غير صالحة.';
-                housingDamageStatusInput.style.borderColor = 'red';
-            }
-            // إذا كانت القيمة صالحة
-            else {
-                errorMessage.style.display = 'none';
-                errorMessage.textContent = '';
-                housingDamageStatusInput.style.borderColor = ''; // إزالة لون الإطار
-                return true;
-            }
-        }
-
-        function resetBorderAndError(inputId) {
-            // إعادة تعيين لون الإطار ورسائل الخطأ عند التركيز على الحقل
-            const input = document.getElementById(inputId);
-            const errorMessage = document.getElementById(`${inputId}_error`);
-
-            input.style.borderColor = ''; // إزالة لون الإطار
-            errorMessage.style.display = 'none'; // إخفاء رسالة الخطأ
-            errorMessage.textContent = ''; // مسح نص رسالة الخطأ
-        }
-
-        // تحديد الزر و النموذج
-        const submitButton = document.getElementById('submit-button');
-        const form = document.getElementById('form');  // تأكد أن النموذج له ID "form"
-
-        let errorMessages = []; // Move errorMessages outside of validateForm function
-
-        function validateForm() {
-            let isValid = true;
-            errorMessages = []; // Clear the error messages at the start of validation
-
-            // clearErrors();
-            // تحقق من صحة جميع الحقول
-            console.log(validateArabicInput('first_name'));
-            if (!validateArabicInput('first_name')) {
-                isValid = false;
-                errorMessages.push({ field: 'first_name', message: 'الرجاء إدخال الاسم الأول.' });
-            }
-            console.log(validateArabicInput('father_name'));
-            if (!validateArabicInput('father_name')) {
-                isValid = false;
-                errorMessages.push({ field: 'father_name', message: 'الرجاء إدخال اسم الأب.' });
-            }
-            console.log(validateArabicInput('grandfather_name'));
-            if (!validateArabicInput('grandfather_name')) {
-                isValid = false;
-                errorMessages.push({ field: 'grandfather_name', message: 'الرجاء إدخال اسم الجد.' });
-            }
-            console.log(validateArabicInput('family_name'));
-            if (!validateArabicInput('family_name')) {
-                isValid = false;
-                errorMessages.push({ field: 'family_name', message: 'الرجاء إدخال اسم العائلة.' });
-            }
-            console.log(validateGender());
-            if (!validateGender()) {
-                isValid = false;
-                errorMessages.push({ field: 'gender', message: 'الرجاء إدخال الجنس.' });
-            }
-            console.log(validatedob());
-            if (!validatedob()) {
-                isValid = false;
-                errorMessages.push({ field: 'dob', message: 'الرجاء إدخال تاريخ الميلاد.' });
-            }
-            console.log(validatePhoneInput());
-            if (!validatePhoneInput()) {
-                isValid = false;
-                errorMessages.push({ field: 'phone', message: 'الرجاء إدخال رقم الهاتف.' });
-            }
-            console.log(validateSocialStatus());
-            if (!validateSocialStatus()) {
-                isValid = false;
-                errorMessages.push({ field: 'social_status', message: 'الرجاء تحديد الحالة الاجتماعية.' });
-            }
-            console.log(validateEmploymentStatus());
-            if (!validateEmploymentStatus()) {
-                isValid = false;
-                errorMessages.push({ field: 'employment_status', message: 'الرجاء تحديد حالة العمل.' });
-            }
-            console.log(validateConditionText());
-            if (!validateConditionText()) {
-                isValid = false;
-                errorMessages.push({ field: 'condition_description', message: 'الرجاء وصف الحالة الصحية التي تعاني منها.' });
-            }
-            console.log(validateCity());
-            if (!validateCity()) {
-                isValid = false;
-                errorMessages.push({ field: 'city', message: 'الرجاء إدخال المدينة.' });
-            }
-            console.log(validateCurrentCity());
-            if (!validateCurrentCity()) {
-                isValid = false;
-                errorMessages.push({ field: 'current_city', message: 'الرجاء إدخال المدينة الحالية.' });
-            }
-            console.log(validateNeighborhood());
-            if (!validateNeighborhood()) {
-                isValid = false;
-                errorMessages.push({ field: 'neighborhood', message: 'الرجاء إدخال الحي.' });
-            }
-            console.log(validateAreaResponsible());
-            if (!validateAreaResponsible()) {
-                isValid = false;
-                errorMessages.push({ field: 'area_responsible_id', message: 'الرجاء إدخال الحي.' });
-            }
-            console.log(validateArabicInput('landmark'));
-            if (!validateArabicInput('landmark')) {
-                isValid = false;
-                errorMessages.push({ field: 'landmark', message: 'الرجاء إدخال المعلم.' });
-            }
-            console.log(validateHousingType());
-            if (!validateHousingType()) {
-                isValid = false;
-                errorMessages.push({ field: 'housing_type', message: 'الرجاء تحديد نوع السكن.' });
-            }
-            console.log(validateHousingDamageStatus());
-            if (!validateHousingDamageStatus()) {
-                isValid = false;
-                errorMessages.push({ field: 'housing_damage_status', message: 'الرجاء تحديد حالة السكن.' });
-            }
-            const genderInput = document.getElementById('gender'); // إدخال الجنس
-            const socialStatusInput = document.getElementById('social_status');
-
-            if (genderInput.value === "أنثى" && (socialStatusInput.value === "married" || socialStatusInput.value === "polygamous")) {
-                isValid = false;
-                errorMessages.push({ field: 'social_status', message: 'يرجى التسجيل ببيانات الزوج حتى لو كان الزوج متزوج أكثر من زوجة.' });
-            }
-
-            // الشرط المضاف لمنع التسجيل للذكر غير المتزوج
-            if (genderInput.value === "ذكر" && socialStatusInput.value === "single") {
-                isValid = false;
-                errorMessages.push({ field: 'social_status', message: 'ممنوع التسجيل للذكر الغير متزوج.' });
-            }
-
-            // تحقق من الأخطاء في الرسائل
-            if (errorMessages.length > 0) {
-                isValid = false;
-                displayErrors(); // Call function to display errors next to each field
-            }
-
-            return isValid;
-        }
-
-        if (errorMessages.length > 0) {
-            isValid = false;
-
-            // عرض جميع الأخطاء في SweetAlert
-            Swal.fire({
-                icon: 'error',
-                title: 'يوجد أخطاء في الإدخال',
-                html: errorMessages.map(e => `<div>${e.message}</div>`).join(''),
-                confirmButtonText: 'حسناً'
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // تحقق إذا كان هناك أخطاء في الإرسال من backend عبر Laravel
-            @if ($errors->any())
-                let errorsHtml = `
-                    <ul style="text-align: right; direction: rtl; padding-right: 20px;">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                `;
-                Swal.fire({
-                    icon: 'error',
-                    title: 'يوجد أخطاء في الإدخال',
-                    html: `<div style="text-align: center;">
-                        <ul style="list-style:none; padding:0; margin:0;">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>`,
-                    confirmButtonText: 'حسناً',
-                    confirmButtonColor: '#d33'
-                });
-            @endif
-        });
-
     </script>
 </body>
 </html>

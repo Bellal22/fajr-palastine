@@ -17,385 +17,759 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.7/dist/sweetalert2.all.min.js"></script>
 
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Cairo', sans-serif;
             direction: rtl;
-            text-align: center;
-            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgb(238, 178, 129)),
-                        url({{asset('background/image.jpg')}}) center center no-repeat;
-            background-size: cover;
-            display: flex;
-            padding: 20px;
-            align-items: center;
-            justify-content: center;
             min-height: 100vh;
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 1200px;
-            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
-            overflow: auto;
+            padding: 20px;
             position: relative;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #ffffff 0%, #fff3e0 100%);
         }
 
-        h1 {
-            color: #FF6F00;
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-top: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .logo-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .logo {
-            width: 15rem;
-            height: auto;
-        }
-
-        .profile-container {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .profile-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .profile-item {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        label {
-            font-weight: bold;
-        }
-
-        input {
+        /* الخلفية المتحركة - فقاعات */
+        .bubbles {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: #f9f9f9;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
         }
 
-        .welcome-message {
-            text-align: center;
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-        }
-
-        .family-table {
-            width: 100%;
-            margin-top: 2rem;
-            border-collapse: collapse;
-        }
-
-        .family-table th, .family-table td {
-            padding: 1rem;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-
-        .family-table th {
-            background-color: #FF6F00;
-            color: white;
-            font-size: 1rem;
-        }
-
-        .family-table td {
-            background-color: #f9f9f9;
-            font-size: 1rem;
-        }
-
-        .complaints-table {
-            width: 100%;
-            margin-top: 2rem;
-            border-collapse: collapse;
-        }
-
-        .complaints-table th, .complaints-table td {
-            padding: 1rem;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-
-        .complaints-table th {
-            background-color: #FF6F00;
-            color: white;
-            font-size: 1rem;
-        }
-
-        .complaints-table td {
-            background-color: #f9f9f9;
-            font-size: 1rem;
-        }
-
-        .logout-btn-container {
+        .bubble {
             position: absolute;
-            top: 1rem;
-            left: 1rem;
+            bottom: -150px;
+            border-radius: 50%;
+            animation: rise 15s infinite ease-in;
+            box-shadow: 0 0 20px rgba(255, 111, 0, 0.3);
         }
 
-        .logout-btn {
+        .bubble:nth-child(1) { width: 90px; height: 90px; left: 5%; animation-duration: 8s; animation-delay: 0s; background: radial-gradient(circle at 30% 30%, rgba(255, 111, 0, 0.35), rgba(255, 111, 0, 0.15)); }
+        .bubble:nth-child(2) { width: 70px; height: 70px; left: 15%; animation-duration: 9s; animation-delay: 1s; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.2)); }
+        .bubble:nth-child(3) { width: 110px; height: 110px; left: 25%; animation-duration: 7s; animation-delay: 0.5s; background: radial-gradient(circle at 30% 30%, rgba(230, 81, 0, 0.32), rgba(230, 81, 0, 0.12)); }
+        .bubble:nth-child(4) { width: 80px; height: 80px; left: 35%; animation-duration: 8.5s; animation-delay: 1.5s; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.18)); }
+        .bubble:nth-child(5) { width: 100px; height: 100px; left: 45%; animation-duration: 7.5s; animation-delay: 0.3s; background: radial-gradient(circle at 30% 30%, rgba(255, 111, 0, 0.38), rgba(255, 111, 0, 0.16)); }
+        .bubble:nth-child(6) { width: 85px; height: 85px; left: 55%; animation-duration: 8.2s; animation-delay: 0.8s; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.22)); }
+        .bubble:nth-child(7) { width: 65px; height: 65px; left: 65%; animation-duration: 9.5s; animation-delay: 1.2s; background: radial-gradient(circle at 30% 30%, rgba(255, 111, 0, 0.4), rgba(255, 111, 0, 0.18)); }
+        .bubble:nth-child(8) { width: 95px; height: 95px; left: 75%; animation-duration: 7.8s; animation-delay: 0.2s; background: radial-gradient(circle at 30% 30%, rgba(230, 81, 0, 0.34), rgba(230, 81, 0, 0.14)); }
+        .bubble:nth-child(9) { width: 75px; height: 75px; left: 85%; animation-duration: 8.8s; animation-delay: 1.8s; background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.24)); }
+        .bubble:nth-child(10) { width: 105px; height: 105px; left: 95%; animation-duration: 7.3s; animation-delay: 0.6s; background: radial-gradient(circle at 30% 30%, rgba(255, 111, 0, 0.36), rgba(255, 111, 0, 0.14)); }
+
+        @keyframes rise {
+            0% { bottom: -150px; transform: translateX(0) rotate(0deg) scale(0.8); opacity: 0; }
+            5% { opacity: 1; }
+            95% { opacity: 1; }
+            100% { bottom: 110%; transform: translateX(120px) rotate(720deg) scale(1.2); opacity: 0; }
+        }
+
+        /* موجات متحركة */
+        .wave-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 250px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+        }
+
+        .wave:nth-child(1) {
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,50 Q300,0 600,50 T1200,50 L1200,120 L0,120 Z" fill="rgba(255,111,0,0.18)"/></svg>');
+            background-size: 50% 100%;
+            animation: wave 15s linear infinite;
+        }
+
+        .wave:nth-child(2) {
+            bottom: 15px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,70 Q300,20 600,70 T1200,70 L1200,120 L0,120 Z" fill="rgba(255,255,255,0.4)"/></svg>');
+            background-size: 50% 100%;
+            animation: wave 12s linear infinite reverse;
+        }
+
+        .wave:nth-child(3) {
+            bottom: 30px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,40 Q300,10 600,40 T1200,40 L1200,120 L0,120 Z" fill="rgba(230,81,0,0.15)"/></svg>');
+            background-size: 50% 100%;
+            animation: wave 18s linear infinite;
+        }
+
+        @keyframes wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* دوائر متحركة كبيرة */
+        .floating-circles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .floating-circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float-rotate 20s infinite ease-in-out;
+        }
+
+        .floating-circle:nth-child(1) { width: 350px; height: 350px; background: radial-gradient(circle, rgba(255, 111, 0, 0.25) 0%, transparent 70%); top: -100px; right: -100px; animation-duration: 12s; }
+        .floating-circle:nth-child(2) { width: 300px; height: 300px; background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%); bottom: -80px; left: -80px; animation-duration: 15s; animation-delay: 2s; }
+        .floating-circle:nth-child(3) { width: 280px; height: 280px; background: radial-gradient(circle, rgba(230, 81, 0, 0.22) 0%, transparent 70%); top: 40%; left: -50px; animation-duration: 18s; animation-delay: 1s; }
+
+        @keyframes float-rotate {
+            0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            25% { transform: translate(50px, -50px) rotate(90deg) scale(1.15); }
+            50% { transform: translate(-30px, 60px) rotate(180deg) scale(0.9); }
+            75% { transform: translate(60px, 30px) rotate(270deg) scale(1.1); }
+        }
+
+        /* جزيئات صغيرة سريعة */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: particle-float 8s infinite ease-in-out;
+        }
+
+        .particle:nth-child(1) { background: #FF6F00; left: 8%; animation-delay: 0s; animation-duration: 7s; }
+        .particle:nth-child(2) { background: rgba(255, 255, 255, 0.8); left: 18%; animation-delay: 1s; animation-duration: 8s; }
+        .particle:nth-child(3) { background: #E65100; left: 28%; animation-delay: 2s; animation-duration: 6.5s; }
+        .particle:nth-child(4) { background: #FF6F00; left: 38%; animation-delay: 0.5s; animation-duration: 7.5s; }
+        .particle:nth-child(5) { background: rgba(255, 255, 255, 0.8); left: 48%; animation-delay: 1.5s; animation-duration: 8.5s; }
+        .particle:nth-child(6) { background: #E65100; left: 58%; animation-delay: 2.5s; animation-duration: 7s; }
+        .particle:nth-child(7) { background: #FF6F00; left: 68%; animation-delay: 0.8s; animation-duration: 6.8s; }
+
+        @keyframes particle-float {
+            0% { bottom: -10px; opacity: 0; transform: translateX(0) scale(0.5); }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { bottom: 110%; opacity: 0; transform: translateX(80px) scale(1.5); }
+        }
+
+        .page-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* الهيدر العلوي */
+        .top-bar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(255, 111, 0, 0.15);
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
-            background-color: #f44336;
+            justify-content: space-between;
+            gap: 20px;
+            border-top: 4px solid #FF6F00;
+        }
+
+        .logo-small {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid #FF6F00;
+            box-shadow: 0 4px 15px rgba(255, 111, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .logo-small:hover {
+            transform: rotate(360deg) scale(1.1);
+        }
+
+        .top-bar h1 {
+            color: #333;
+            font-size: 22px;
+            font-weight: 700;
+            flex: 1;
+            margin: 0;
+        }
+
+        .top-bar span {
+            color: #FF6F00;
+        }
+
+        /* الصف الرئيسي */
+        .main-row {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 25px;
+            direction: rtl;
+        }
+
+        /* القسم الجانبي - Sidebar */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(255, 111, 0, 0.12);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+            order: 2;
+        }
+
+        .sidebar h2 {
+            color: #333;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #FF6F00;
+        }
+
+        .nav-item {
+            margin-bottom: 10px;
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(255, 111, 0, 0.08), rgba(230, 81, 0, 0.05));
+            border-radius: 12px;
+            border-right: 4px solid #FF6F00;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(255, 111, 0, 0.1);
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 5px 20px rgba(255, 111, 0, 0.2);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(255, 111, 0, 0.15), rgba(230, 81, 0, 0.1));
+            border-right: 6px solid #FF6F00;
+        }
+
+        .nav-item h3 {
+            color: #E65100;
+            font-size: 15px;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item i {
+            color: #FF6F00;
+            font-size: 16px;
+        }
+
+        .sub-nav {
+            margin-top: 10px;
+            padding-right: 20px;
+            display: none;
+        }
+
+        .sub-nav.active {
+            display: block;
+        }
+
+        .sub-nav-item {
+            padding: 10px 15px;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .nav-description {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+            display: block;
+            font-weight: normal;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        .nav-item.active .nav-description,
+        .sub-nav-item.active .nav-description {
+            color: #E65100;
+        }
+        .sub-nav-item:hover {
+            background: rgba(255, 111, 0, 0.1);
+            color: #FF6F00;
+        }
+
+        .sub-nav-item.active {
+            background: rgba(255, 111, 0, 0.15);
+            color: #FF6F00;
+            font-weight: 600;
+        }
+
+        /* القسم الرئيسي */
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(255, 111, 0, 0.12);
+            order: 1;
+        }
+
+        .welcome-box {
+            background: linear-gradient(135deg, #FF6F00 0%, #E65100 100%);
+            padding: 35px;
+            border-radius: 15px;
+            text-align: center;
             color: white;
-            padding: 0.6rem 1rem;
-            border-radius: 5px;
+            margin-bottom: 35px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(255, 111, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .welcome-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 15px,
+                rgba(255, 255, 255, 0.1) 15px,
+                rgba(255, 255, 255, 0.1) 30px
+            );
+            animation: slide 25s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .welcome-box h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-box p {
+            font-size: 15px;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            margin: 0;
+        }
+
+        /* أقسام المحتوى */
+        .content-section {
+            display: block; /* جعل الأقسام ظاهرة دائماً */
+            margin-bottom: 50px; /* مسافة بين الأقسام */
+            scroll-margin-top: 100px; /* مسافة من الأعلى عند التمرير */
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 111, 0, 0.2);
+        }
+
+        .section-header h3 {
+            color: #FF6F00;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+        }
+
+        .edit-btn, .add-btn {
+            background: linear-gradient(135deg, #FF6F00, #E65100);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             text-decoration: none;
-            font-weight: bold;
         }
 
-        .logout-btn i {
-            margin-right: 0.5rem;
+        .edit-btn:hover, .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 111, 0, 0.4);
         }
 
-        .logout-btn:hover {
-            background-color: #d32f2f;
+        /* معلومات البروفايل */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
         }
 
-        p {
-            text-align: right;
-            font-size: 1.1rem;
-            line-height: 1.8;
-            margin-bottom: 2rem;
+        .info-item-display {
+            background: rgba(255, 111, 0, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            border-right: 3px solid #FF6F00;
         }
 
-        .styled-text {
-            font-weight: bold;
-            font-size: 2rem;
+        .info-item-display label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .info-item-display label i {
             color: #FF6F00;
-            text-align: right;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            padding: 1rem;
+            font-size: 14px;
         }
 
-        .edit-icon {
-            margin-left: 1rem;
-            font-size: 1rem;
+        .info-item-display .value {
+            color: #333;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        /* الجداول */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .data-table thead {
+            background: linear-gradient(135deg, #FF6F00, #E65100);
+        }
+
+        .data-table th {
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .data-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(255, 111, 0, 0.05);
+        }
+
+        .action-icon {
             color: #FF6F00;
-            text-decoration: none;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .edit-icon:hover {
-            color: #FF6F00;
+        .action-icon:hover {
+            transform: scale(1.2);
+            color: #E65100;
         }
 
-        .add-icon {
-            margin-left: 1rem;
-            font-size: 1rem;
-            color: #FF6F00;
-            text-decoration: none;
+        .delete-icon {
+            color: #d32f2f;
         }
 
-        .add-icon:hover {
-            color: #FF6F00;
+        .delete-icon:hover {
+            color: #b71c1c;
         }
 
+        /* البوب أبز */
         .popup {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
             display: flex;
             justify-content: center;
             align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease-out;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .popup.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
         }
 
         .popup-content {
             position: relative;
             width: 90%;
             max-width: 1000px;
-            max-height: 80vh;
+            max-height: 90vh;
             overflow-y: auto;
             background-color: #fff;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            transform: scale(1);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 1rem;
-            width: 100%;
+        .popup.hidden .popup-content {
+            transform: scale(0.9);
         }
 
-        .form-group label {
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        input, select {
-            font-size: 1rem;
-            padding: 0.8rem;
-            width: 100%;
-            margin-bottom: 1rem;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-        }
-
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2rem;
-            justify-content: space-between;
-        }
-
-        .row .form-group {
-            flex: 1;
-            min-width: 20%;
-        }
-
-        .row .form-group:nth-child(-n+3) {
-            flex: 1;
-            min-width: 20%;
-        }
-
-        .row .form-group label {
-            text-align: right;
-        }
-
-        #condition_description {
-            width: 100%;
-            padding: 1rem;
-            font-size: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-            resize: vertical;
-            transition: border-color 0.3s ease;
-        }
-
-        .hidden {
-            display: none;
+        .popup-content h1 {
+            color: #FF6F00;
+            font-size: 22px;
+            margin-bottom: 25px;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 111, 0, 0.2);
         }
 
         .close {
             position: absolute;
-            top: 1rem;
-            right: 1.5rem;
-            font-size: 1.2rem;
+            top: 15px;
+            left: 20px;
+            font-size: 28px;
             cursor: pointer;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .close:hover {
+            color: #FF6F00;
+            transform: rotate(90deg);
+        }
+
+        /* أقسام الفورم داخل البوب أب */
+        .popup-form-section {
+            background: #fdfdfd;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .popup-form-section h3 {
+            color: #FF6F00;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid rgba(255, 111, 0, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .popup-form-section h3 i {
+            background: rgba(255, 111, 0, 0.1);
+            padding: 8px;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* الفورمز */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #555;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .form-group label i {
+            color: #FF6F00;
+            font-size: 16px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #FF6F00;
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        input[type="date"],
+        input[type="tel"],
+        input[type="password"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 14px 45px 14px 15px;
+            font-size: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        input:disabled, select:disabled, textarea:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            padding-top: 12px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #FF6F00;
+            box-shadow: 0 0 0 4px rgba(255, 111, 0, 0.1);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .name-row {
+            grid-template-columns: repeat(4, 1fr) !important;
+        }
+
+        @media (max-width: 768px) {
+            .name-row {
+                grid-template-columns: 1fr !important;
+            }
         }
 
         .save-btn {
-            background-color: #FF6F00;
-            color: white;
-            padding: 1rem;
+            width: 100%;
+            padding: 15px;
+            font-size: 17px;
+            font-weight: 600;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
             cursor: pointer;
-            margin-top: 1rem;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #FF6F00, #E65100);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 111, 0, 0.3);
+            margin-top: 20px;
         }
 
         .save-btn:hover {
-            background-color: #e65c00;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(255, 111, 0, 0.4);
         }
 
         .error-message {
-            color: #ff0000;
-            font-size: 12px;
-            margin-top: 0.5rem;
+            color: #d32f2f;
+            font-size: 13px;
+            margin-top: 5px;
         }
 
         .success-message {
-            color: #22b722;
-            font-size: 12px;
-            margin-top: 0.5rem;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 0.9rem;
-        }
-
-        .settings-icon-container {
-            background: none;
-            border: none;
-            color: #FF6F00;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .settings-icon-container:hover {
-            color: #e65c00;
-        }
-
-        #settings-dropdown {
-            display: none;
-            position: absolute;
-            top: 1rem;
-            right: -8rem;
-            background-color: white;
-            color: orange;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            width: 15rem;
-            z-index: 300;
-        }
-
-        .settings-menu-btn {
-            background: white;
-            border: 1px solid #FF6F00;
-            color: #FF6F00;
-            font-size: 1rem;
-            font-weight: bold;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.3s ease;
-        }
-
-        .settings-menu-btn i {
-            margin-bottom: 0.5rem;
-        }
-
-        .settings-menu-btn:hover {
-            background-color: #FF6F00;
-            color: white;
+            color: #2e7d32;
+            font-size: 13px;
+            margin-top: 5px;
         }
 
         .password-requirements {
-            font-size: 0.9rem;
-            color: #000;
-            margin-top: 0.2rem;
-            line-height: 1.2;
+            font-size: 13px;
+            color: #666;
+            margin-top: 8px;
+            line-height: 1.6;
             display: flex;
             flex-direction: column;
-            gap: 0.2rem;
+            gap: 3px;
         }
 
         .password-requirements span {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 8px;
         }
 
         .password-requirements span i {
@@ -403,73 +777,49 @@
         }
 
         .password-requirements span.valid {
-            color: #17b517;
+            color: #2e7d32;
         }
 
         .password-requirements span.valid i {
             display: inline;
-            color: #17b517;
+            color: #2e7d32;
         }
 
         .password-requirements span.invalid {
-            color: red;
+            color: #d32f2f;
         }
 
         .password-requirements span.invalid i {
             display: inline;
-            color: red;
+            color: #d32f2f;
         }
 
         .toggle-password {
             position: absolute;
-            left: 1rem;
+            left: 15px;
             top: 50%;
+            transform: translateY(-50%);
             cursor: pointer;
-            color: #555;
-            font-size: 1rem;
+            color: #666;
+            font-size: 16px;
         }
 
-        .error-message {
-            color: #ff0000;
+        .area-responsible-container {
+            display: flex;
+            flex-direction: column;
         }
 
-        .success-message {
-            color: #35b735;
+        #areaResponsibleField[style*="display:none"] .error-message,
+        #edit_areaResponsibleField[style*="display:none"] .error-message {
+            display: block !important;
+            visibility: hidden;
         }
 
-        #open-form {
-            margin-left: 1rem;
-            font-size: 1.3rem;
-            color: #FF6F00;
-            text-decoration: none;
-        }
-
-        #close-popup {
-             margin-left: 1rem;
-            font-size: 1.3rem;
-            color: #000000;
-            text-decoration: none;
-        }
-
-        #form-popup {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #fff;
-            border-radius: 10px;
-            padding: 20px;
-            width: 90%;
-            max-width: 1000px;
-            max-height: 80vh;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            overflow-y: auto;
-        }
-
-        .hidden {
-            display: none;
+        #areaResponsibleField[style*="display:none"] label,
+        #areaResponsibleField[style*="display:none"] select,
+        #edit_areaResponsibleField[style*="display:none"] label,
+        #edit_areaResponsibleField[style*="display:none"] select {
+            display: none !important;
         }
 
         .overlay-class {
@@ -478,627 +828,780 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); /* خلفية معتمة */
-            z-index: 1000; /* تأكد من أنه فوق العناصر الأخرى */
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .hidden {
+            display: none;
         }
 
         button {
-            padding: 8px 15px;
-            font-size: 1rem;
-            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
         }
 
-        #close-popup-btn {
-            background-color: #E65100;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-        }
 
-        #close-popup-btn:hover {
-            background-color: #C41C00;
-        }
-
-        #add-person-btn {
-            background-color: #FF6F00;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        #add-person-btn:hover {
-            background-color: #E65100;
-        }
-
-        .area-responsible-container {
-            display: flex;
-            flex-direction: column; /* ترتيب العناصر عموديًا */
-        }
-
-        .area-responsible-container label.form-label {
-            order: 1;
-            margin-bottom: 0.5rem; /* مساحة بين الـ label والـ select */
-        }
-
-        .area-responsible-container select.form-control {
-            order: 2;
-        }
-
-        .area-responsible-container .error-message {
-            order: 3; /* خلي رسالة الخطأ تالت عنصر (تحت الـ select) */
-            margin-top: 0.5rem; /* مساحة بين الـ select ورسالة الخطأ */
-        }
-
-        /* عند إخفاء الحقل، حافظ على ظهور رسالة الخطأ في مكانها (لكنها هتكون مخفية) */
-        #areaResponsibleField[style*="display:none"] .error-message {
-            display: block !important;
-            visibility: hidden;
-        }
-
-        #areaResponsibleField[style*="display:none"] label.form-label,
-        #areaResponsibleField[style*="display:none"] select.form-control {
-            display: none !important;
-        }
-
-        /* Media Queries */
-        @media screen and (max-width: 768px) {
-            h1 {
-                font-size: 1.2rem;
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-row {
+                grid-template-columns: 1fr;
             }
 
-            .container {
-                padding: 1rem;
+            .sidebar {
+                order: 2;
+                position: relative;
+                top: 0;
             }
 
-            .logo {
-                width: 10rem;
+            .main-content {
+                order: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
             }
 
-            .profile-item {
-                min-width: 100%;
+            .top-bar {
+                padding: 15px;
+                flex-direction: column;
+                text-align: center;
             }
 
-            .family-table th, .family-table td {
-                font-size: 0.9rem;
+            .top-bar h1 {
+                font-size: 18px;
+            }
+
+            .logo-small {
+                width: 50px;
+                height: 50px;
+            }
+
+            .sidebar {
+                padding: 20px;
+            }
+
+            .main-content {
+                padding: 25px 20px;
+            }
+
+            .welcome-box {
+                padding: 20px;
+            }
+
+            .welcome-box h2 {
+                font-size: 18px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .row {
+                grid-template-columns: 1fr;
             }
 
             .popup-content {
-                width: 90%;
-                padding: 1rem;
+                padding: 20px;
+                max-height: 90vh;
             }
 
-            .row .form-group {
-                flex: 1;
-                min-width: 45%;
+            .data-table {
+                font-size: 12px;
             }
 
-            .row .form-group:nth-child(-n+3) {
-                flex: 1;
-                min-width: 45%;
-            }
-
-            .settings-menu-btn {
-                font-size: 0.9rem;
+            .data-table th,
+            .data-table td {
+                padding: 8px 5px;
             }
         }
-
     </style>
 </head>
 <body>
+    <!-- الفقاعات المتحركة -->
+    <div class="bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
 
-    <div class="container">
+    <!-- الموجات -->
+    <div class="wave-container">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
 
-        <div class="logo-container">
-            <img src="{{asset('background/image.jpg')}}" alt="جمعية الفجر الشبابي الفلسطيني" class="logo">
+    <!-- الدوائر الكبيرة -->
+    <div class="floating-circles">
+        <div class="floating-circle"></div>
+        <div class="floating-circle"></div>
+        <div class="floating-circle"></div>
+    </div>
+
+    <!-- الجزيئات الصغيرة -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="page-container">
+        <!-- الهيدر العلوي -->
+        <div class="top-bar">
+            <img src="{{asset('background/image.jpg')}}" alt="الشعار" class="logo-small">
+            <h1>جمعية الفجر الشبابي الفلسطيني</h1>
         </div>
 
-        <h1>
-            مرحباً، {{ $person->first_name }} {{ $person->family_name }} 👋🏼!
+        <!-- الصف الرئيسي -->
+        <div class="main-row">
+            <!-- السايد بار -->
+            <div class="sidebar">
+                <h2>القائمة</h2>
 
-            <div class="relative inline-block text-right">
-                <button id="settings-toggle" class="settings-icon-container">
-                    <i class="fa fa-cog text-2xl" id="settings-icon"></i>
-                </button>
+                <!-- معلومات رب الأسرة -->
+                <div class="nav-item active" onclick="toggleNav(this, 'family-head-nav')">
+                    <h3><i class="fas fa-user-tie"></i> معلومات رب الأسرة</h3>
+                    <span class="nav-description">البيانات الأساسية وتفاصيل السكن والعمل</span>
+                    <div class="sub-nav active" id="family-head-nav">
+                        <div class="sub-nav-item active" onclick="showSection('personal-info', event)">
+                            البيانات الشخصية
+                            <span class="nav-description">الاسم ورقم الهوية ومعلومات التواصل</span>
+                        </div>
+                        <div class="sub-nav-item" onclick="showSection('social-work-info', event)">
+                            البيانات الاجتماعية والعمل
+                            <span class="nav-description">الحالة الاجتماعية وتفاصيل الوظيفة</span>
+                        </div>
+                        <div class="sub-nav-item" onclick="showSection('health-info', event)">
+                            الحالة الصحية
+                            <span class="nav-description">الأمراض المزمنة والحالة الطبية</span>
+                        </div>
+                        <div class="sub-nav-item" onclick="showSection('housing-info', event)">
+                            بيانات السكن
+                            <span class="nav-description">العنوان الحالي وتفاصيل المنطقة</span>
+                        </div>
+                    </div>
+                </div>
 
-                <!-- قائمة الإعدادات التي تظهر عند الضغط -->
-                <div id="settings-dropdown" class="hidden absolute mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200">
-                    <ul class="flex flex-col text-center space-y-2 p-3">
-                        <li>
-                            <button id="change-password-btn" class="settings-menu-btn">
-                                <div class="flex items-center gap-2">
-                                    <i class="fa fa-lock" style="font-size: 16px;"></i>
-                                    <span style="font-size: 16px;">تعديل كلمة المرور</span>
-                                </div>
-                            </button>
-                        </li>
-                        <li>
-                            <a href="{{ route('logout') }}" class="settings-menu-btn">
-                                <div class="flex items-center gap-2">
-                                    <i class="fa fa-sign-out-alt text-2xl mb-1" style="font-size: 16px;"></i>
-                                    <span class="text-lg" style="font-size: 16px;">تسجيل الخروج</span>
-                                </div>
+                <!-- معلومات أفراد الأسرة -->
+                <div class="nav-item" onclick="toggleNav(this); showSection('family-members', event)">
+                    <h3><i class="fas fa-users"></i> معلومات أفراد الأسرة</h3>
+                    <span class="nav-description">إدارة بيانات الزوجة والأبناء</span>
+                </div>
+
+                <!-- الشكاوي -->
+                <div class="nav-item" onclick="toggleNav(this); showSection('complaints', event)">
+                    <h3><i class="fas fa-comments"></i> الشكاوي</h3>
+                    <span class="nav-description">إرسال ومتابعة الشكاوي والاقتراحات</span>
+                </div>
+
+                <!-- الإعدادات -->
+                <div class="nav-item" onclick="toggleNav(this, 'settings-nav')">
+                    <h3><i class="fas fa-cog"></i> الإعدادات</h3>
+                    <span class="nav-description">تغيير كلمة المرور وإدارة الحساب</span>
+                    <div class="sub-nav" id="settings-nav">
+                        <div class="sub-nav-item" onclick="openPasswordPopup(event)">
+                            تغيير كلمة المرور
+                            <span class="nav-description">تحديث بيانات الدخول الخاصة بك</span>
+                        </div>
+                        <div class="sub-nav-item">
+                            <a href="{{ route('logout') }}" style="color: inherit; text-decoration: none;">
+                                تسجيل الخروج
+                                <span class="nav-description">إنهاء الجلسة الحالية بشكل آمن</span>
                             </a>
-                        </li>
-                    </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </h1>
 
-        <!-- بوب أب تعديل كلمة المرور -->
-        <div class="popup hidden" id="password-popup">
-            <div class="popup-content">
-                <span class="close" onclick="closepasswordpopup()">&times;</span>
-                <h1>تعديل كلمة المرور</h1>
-                <meta name="csrf-token" content="{{ csrf_token() }}">
-                <!-- كلمة المرور القديمة -->
-                <div class="form-group">
-                    <div class="form-group" style="position: relative; display: inline-block; width: 100%;">
-                        <label for="old-password">كلمة المرور القديمة</label>
-                        <input type="password" id="old-password" name="passkey" required
-                            style="width: 100%; padding: 10px; padding-left: 40px; font-size: 16px; box-sizing: border-box;">
-                        <i class="fa fa-eye toggle-password" data-target="old-password"
-                            style="position: absolute; left: 10px; top: 50%; bottom: 50%; transform: translateY(-50%); cursor: pointer; color: #555; font-size: 16px;">
-                        </i>
+            <!-- المحتوى الرئيسي -->
+            <div class="main-content">
+                <!-- صندوق الترحيب -->
+                <div class="welcome-box">
+                    <h2>مرحباً، {{ $person->first_name }} {{ $person->family_name }}</h2>
+                </div>
+
+                <!-- البيانات الشخصية -->
+                <div class="content-section active" id="personal-info">
+                    <div class="section-header">
+                        <h3><i class="fas fa-user"></i> البيانات الشخصية</h3>
+                        <button class="edit-btn" onclick="openPopup()">
+                            <i class="fas fa-edit"></i> تعديل
+                        </button>
+                    </div>
+
+                    <div class="info-grid">
+                        <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;" class="name-display-row">
+                            <div class="info-item-display">
+                                <label><i class="fas fa-user"></i> الاسم الأول</label>
+                                <div class="value">{{ $person->first_name }}</div>
+                            </div>
+                            <div class="info-item-display">
+                                <label><i class="fas fa-user"></i> اسم الأب</label>
+                                <div class="value">{{ $person->father_name }}</div>
+                            </div>
+                            <div class="info-item-display">
+                                <label><i class="fas fa-user"></i> اسم الجد</label>
+                                <div class="value">{{ $person->grandfather_name }}</div>
+                            </div>
+                            <div class="info-item-display">
+                                <label><i class="fas fa-users"></i> اسم العائلة</label>
+                                <div class="value">{{ $person->family_name }}</div>
+                            </div>
+                        </div>
+                        <div class="info-item-display">
+                            <label><i class="fas fa-id-card"></i> رقم الهوية</label>
+                            <div class="value">{{ $person->id_num }}</div>
+                        </div>
+                        <div class="info-item-display">
+                            <label><i class="fas fa-calendar"></i> تاريخ الميلاد</label>
+                            <div class="value">{{ $person->dob ? $person->dob->format('d/m/Y') : 'غير محدد' }}</div>
+                        </div>
+                        <div class="info-item-display">
+                            <label><i class="fas fa-phone"></i> رقم الجوال</label>
+                            <div class="value">{{ $person->phone }}</div>
+                        </div>
+                        <div class="info-item-display">
+                            <label><i class="fas fa-venus-mars"></i> الجنس</label>
+                            <div class="value">{{ $person->gender ? __($person->gender) : 'غير محدد' }}</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- كلمة المرور الجديدة -->
-                <div class="form-group">
-                    <div class="form-group" style="position: relative; display: inline-block; width: 100%;">
-                        <label for="new-password">كلمة المرور الجديدة</label>
-                        <input type="password" id="new-password" name="new_passkey" required
-                            style="width: 100%; padding: 10px; padding-left: 40px; font-size: 16px; box-sizing: border-box;">
-                        <i class="fa fa-eye toggle-password" data-target="new-password"
-                            style="position: absolute; left: 10px; top: 50%; bottom: 50%; transform: translateY(-50%); cursor: pointer; color: #555; font-size: 16px;">
-                        </i>
+                <!-- البيانات الاجتماعية والعمل -->
+                <div class="content-section" id="social-work-info">
+                    <div class="section-header">
+                        <h3><i class="fas fa-briefcase"></i> البيانات الاجتماعية والعمل</h3>
+                        <button class="edit-btn" onclick="openPopup()">
+                            <i class="fas fa-edit"></i> تعديل
+                        </button>
                     </div>
-                    <div class="password-requirements">
-                        <span id="length-check">9-15 حرفًا <i>✔</i></span>
-                        <span id="uppercase-check">حرف كبير A-Z <i>✔</i></span>
-                        <span id="lowercase-check">حرف صغير a-z <i>✔</i></span>
-                        <span id="number-check">رقم واحد على الأقل <i>✔</i></span>
-                        <span id="symbol-check">رمز خاص (!@#$%^&*) <i>✔</i></span>
+
+                    <div class="info-grid">
+                        <div class="info-item-display">
+                            <label><i class="fas fa-heart"></i> الحالة الاجتماعية</label>
+                            <div class="value">{{ $person->social_status ? __($person->social_status) : 'غير محدد' }}</div>
+                        </div>
+                        <div class="info-item-display">
+                            <label><i class="fas fa-users"></i> عدد أفراد الأسرة</label>
+                            <div class="value">{{ $person->relatives_count }}</div>
+                        </div>
+                        <div class="info-item-display">
+                            <label><i class="fas fa-briefcase"></i> حالة العمل</label>
+                            <div class="value">{{ $person->employment_status }}</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- تأكيد كلمة المرور الجديدة -->
-                <div class="form-group">
-                    <div class="form-group" style="position: relative; display: inline-block; width: 100%;">
-                        <label for="confirm-password">تأكيد كلمة المرور الجديدة</label>
-                        <input type="password" id="confirm-password" name="confirm_passkey" required
-                            style="width: 100%; padding: 10px; padding-left: 40px; font-size: 16px; box-sizing: border-box;">
-                        <i class="fa fa-eye toggle-password" data-target="confirm-password"
-                            style="position: absolute; left: 10px; top: 50%; bottom: 50%; transform: translateY(-50%); cursor: pointer; color: #555; font-size: 16px;">
-                        </i>
+                <!-- الحالة الصحية -->
+                <div class="content-section" id="health-info">
+                    <div class="section-header">
+                        <h3><i class="fas fa-heartbeat"></i> الحالة الصحية</h3>
+                        <button class="edit-btn" onclick="openPopup()">
+                            <i class="fas fa-edit"></i> تعديل
+                        </button>
                     </div>
-                    <div class="password-requirements">
-                        <span id="match-check">تطابق كلمة المرور <i>✔</i></span>
+
+                    <div class="info-grid">
+                        <div class="info-item-display">
+                            <label><i class="fas fa-notes-medical"></i> هل يعاني من حالة صحية؟</label>
+                            <div class="value">{{ $person->has_condition ? 'نعم' : 'لا' }}</div>
+                        </div>
+                        @if ($person->has_condition)
+                        <div class="info-item-display" style="grid-column: 1 / -1;">
+                            <label><i class="fas fa-comment-medical"></i> وصف الحالة الصحية</label>
+                            <div class="value">{{ $person->condition_description }}</div>
+                        </div>
+                        @endif
                     </div>
                 </div>
 
-                <button class="save-btn" onclick="saveChangesPassword()">حفظ التغييرات</button>
-                <div class="error-message hidden" id="password-error"></div>
+                <!-- بيانات السكن -->
+                <div class="content-section" id="housing-info">
+                    <div class="section-header">
+                        <h3><i class="fas fa-home"></i> بيانات السكن</h3>
+                        <button class="edit-btn" onclick="openPopup()">
+                            <i class="fas fa-edit"></i> تعديل
+                        </button>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-item-display">
+                            <label><i class="fas fa-map-marker-alt"></i> المحافظة الأصلية</label>
+                            <div class="value">{{ $person->city ? __($person->city) : 'غير محدد' }}</div>
+                        </div>
+                        <div class="info-item-display">
+                            <label><i class="fas fa-house-damage"></i> حالة السكن السابق</label>
+                            <div class="value">{{ $person->housing_damage_status ? __($person->housing_damage_status) : 'غير محدد' }}</div>
+                        </div>
+                        <div class="info-item-display">
+                            <label><i class="fas fa-map-marked-alt"></i> المحافظة الحالية</label>
+                            <div class="value">{{ $person->current_city ? __($person->current_city) : 'غير محدد' }}</div>
+                        </div>
+                        <div class="info-item-display">
+                            <label><i class="fas fa-building"></i> نوع السكن الحالي</label>
+                            <div class="value">{{ $person->housing_type ? __($person->housing_type) : 'غير محدد' }}</div>
+                        </div>
+                        <div class="info-item-display">
+                            <label><i class="fas fa-map-signs"></i> الحي السكني الحالي</label>
+                            <div class="value">{{ $person->neighborhood ? __($person->neighborhood) : 'غير محدد' }}</div>
+                        </div>
+                        @if($person->areaResponsible)
+                        <div class="info-item-display">
+                            <label><i class="fas fa-user-tie"></i> مسؤول المنطقة</label>
+                            <div class="value">{{ $person->areaResponsible->name }}</div>
+                        </div>
+                        @endif
+                        <div class="info-item-display">
+                            <label><i class="fas fa-landmark"></i> أقرب معلم</label>
+                            <div class="value">{{ $person->landmark ?? 'غير محدد' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- بيانات أفراد الأسرة -->
+                <div class="content-section" id="family-members">
+                    <div class="section-header">
+                        <h3><i class="fas fa-users"></i> بيانات أفراد الأسرة</h3>
+                        <button class="add-btn" id="open-form">
+                            <i class="fas fa-plus"></i> إضافة فرد  جديد
+                        </button>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>رقم الهوية</th>
+                                <th>الاسم الأول</th>
+                                <th>اسم الأب</th>
+                                <th>اسم الجد</th>
+                                <th>اسم العائلة</th>
+                                <th>صلة القرابة</th>
+                                <th>تاريخ الميلاد</th>
+                                <th>رقم الجوال</th>
+                                <th>حالة صحية</th>
+                                <th>وصف الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($person->familyMembers as $familyMember)
+                            <tr>
+                                <td>{{ $familyMember->id_num }}</td>
+                                <td>{{ $familyMember->first_name }}</td>
+                                <td>{{ $familyMember->father_name }}</td>
+                                <td>{{ $familyMember->grandfather_name }}</td>
+                                <td>{{ $familyMember->family_name }}</td>
+                                <td>{{ __($familyMember->relationship) }}</td>
+                                <td>{{ $familyMember->dob ? \Carbon\Carbon::parse($familyMember->dob)->format('d/m/Y') : 'غير محدد' }}</td>
+                                <td>{{ $familyMember->phone ?? '-' }}</td>
+                                <td>{{ $familyMember->has_condition == 1 ? 'نعم' : 'لا' }}</td>
+                                <td>{{ $familyMember->condition_description ?? 'لا يوجد' }}</td>
+                                <td>
+                                    <a href="#" class="action-icon" onclick="editFamilyMember({{ $familyMember->id }})">
+                                        <i class="fa fa-edit"></i>
+                                    </a>
+                                    <a href="#" class="action-icon delete-icon" onclick="deletePerson({{ $familyMember->id }})">
+                                        <i class="fa fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- الشكاوي -->
+                <div class="content-section" id="complaints">
+                    <div class="section-header">
+                        <h3><i class="fas fa-comments"></i> قائمة الشكاوى</h3>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>رقم الهوية</th>
+                                <th>عنوان الشكوى</th>
+                                <th>نص الشكوى</th>
+                                <th>حالة الشكوى</th>
+                                <th>الرد</th>
+                                <th>الموظف المسؤول</th>
+                                <th>تاريخ الإنشاء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($complaints as $complaint)
+                            <tr>
+                                <td>{{ $complaint->id_num }}</td>
+                                <td>{{ $complaint->complaint_title }}</td>
+                                <td>{{ Str::limit($complaint->complaint_text, 50) }}</td>
+                                <td>
+                                    @php
+                                        $statusColors = [
+                                            'pending' => '#ffc107',
+                                            'in_progress' => '#17a2b8',
+                                            'resolved' => '#28a745',
+                                            'rejected' => '#dc3545',
+                                        ];
+                                        $statusLabels = [
+                                            'pending' => 'قيد الانتظار',
+                                            'in_progress' => 'قيد المعالجة',
+                                            'resolved' => 'تم الحل',
+                                            'rejected' => 'مرفوضة',
+                                        ];
+                                        $status = $complaint->status ?? 'pending';
+                                    @endphp
+                                    <span style="
+                                        background-color: {{ $statusColors[$status] }};
+                                        color: white;
+                                        padding: 5px 10px;
+                                        border-radius: 4px;
+                                        font-size: 12px;
+                                        font-weight: bold;
+                                        display: inline-block;
+                                    ">
+                                        {{ $statusLabels[$status] }}
+                                    </span>
+                                </td>
+                                <td>
+                                    @if($complaint->response)
+                                        {{ Str::limit($complaint->response, 40) }}
+                                        @if($complaint->responded_at)
+                                            <br>
+                                            <small style="color: #999;">
+                                                {{ $complaint->responded_at->format('d/m/Y') }}
+                                            </small>
+                                        @endif
+                                    @else
+                                        <span style="color: #999;">لم يتم الرد بعد</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($complaint->responder)
+                                        <strong>{{ $complaint->responder->name }}</strong>
+                                        @if($complaint->responded_at)
+                                            <br>
+                                            <small style="color: #999;">{{ $complaint->responded_at->format('d/m/Y H:i') }}</small>
+                                        @endif
+                                    @else
+                                        <span style="color: #999;">-</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    {{ $complaint->created_at ? $complaint->created_at->format('d/m/Y') : '-' }}
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
+    </div>
 
-        <h1 style="text-align: right">
-            البيانات الشخصية:
-            <a href="#" class="edit-icon" onclick="openPopup()">
-                <i class="fas fa-edit"></i>
-            </a>
-        </h1>
+    <!-- بوب أب تعديل كلمة المرور -->
+    <div class="popup hidden" id="password-popup">
+        <div class="popup-content">
+            <span class="close" onclick="closepasswordpopup()">&times;</span>
+            <h1>تعديل كلمة المرور</h1>
+            <meta name="csrf-token" content="{{ csrf_token() }}">
+            <input type="hidden" id="id_num" value="{{ $person->id_num }}">
 
-
-        <div class="profile-container">
-            <!-- الاسم الأول، الأب، الجد، العائلة -->
-            <div class="profile-row">
-                <div class="profile-item">
-                    <label for="first_name">الاسم الأول:</label>
-                    <input type="text" id="first_name" value="{{ $person->first_name }}" disabled>
-                </div>
-                <div class="profile-item">
-                    <label for="father_name">اسم الأب:</label>
-                    <input type="text" id="father_name" value="{{ $person->father_name }}" disabled>
-                </div>
-                <div class="profile-item">
-                    <label for="grandfather_name">اسم الجد:</label>
-                    <input type="text" id="grandfather_name" value="{{ $person->grandfather_name }}" disabled>
-                </div>
-                <div class="profile-item">
-                    <label for="family_name">اسم العائلة:</label>
-                    <input type="text" id="family_name" value="{{ $person->family_name }}" disabled>
+            <!-- كلمة المرور القديمة -->
+            <div class="form-group">
+                <label for="old-password"><i class="fas fa-lock"></i> كلمة المرور القديمة</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="old-password" name="passkey" required>
+                    <i class="fa fa-eye toggle-password" data-target="old-password"></i>
                 </div>
             </div>
 
-            <!-- رقم الهوية، تاريخ الميلاد، رقم الجوال -->
-            <div class="profile-row">
-                <div class="profile-item">
-                    <label for="id_num">رقم الهوية:</label>
-                    <input type="text" id="id_num" value="{{ $person->id_num }}" disabled>
+            <!-- كلمة المرور الجديدة -->
+            <div class="form-group">
+                <label for="new-password"><i class="fas fa-key"></i> كلمة المرور الجديدة</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-key input-icon"></i>
+                    <input type="password" id="new-password" name="new_passkey" required>
+                    <i class="fa fa-eye toggle-password" data-target="new-password"></i>
                 </div>
-                <div class="profile-item">
-                    <label for="dob">تاريخ الميلاد:</label>
-                    <input type="text" id="dob" value="{{ $person->dob ? $person->dob->format('d/m/Y') : 'غير محدد' }}" disabled>
-                </div>
-                <div class="profile-item">
-                    <label for="phone">رقم الجوال:</label>
-                    <input type="text" id="phone" value="{{ $person->phone }}" disabled>
-                </div>
-            </div>
-
-            <!-- الحالة الاجتماعية، عدد أفراد الأسرة، حالة العمل-->
-            <div class="profile-row">
-                <div class="profile-item">
-                    <label for="social_status">الحالة الاجتماعية:</label>
-                    <input type="text" id="social_status" value="{{ $person->social_status ? __($person->social_status) : 'غير محدد' }}" disabled>
-                </div>
-                <div class="profile-item">
-                    <label for="gender">الجنس:</label>
-                    <input type="text" id="gender" value="{{ $person->gender ? __($person->gender) : 'غير محدد' }}" disabled>
-                </div>
-                <div class="profile-item">
-                    <label for="family_members">عدد أفراد الأسرة:</label>
-                    <input type="text" id="family_members" value="{{ $person->relatives_count}}" disabled>
-                </div>
-                <div class="profile-item">
-                    <label for="employment_status"> حالة العمل:</label>
-                    <input type="text" id="employment_status" value="{{ $person->employment_status}}" disabled>
+                <div class="password-requirements">
+                    <span id="length-check">9-15 حرفًا <i>✔</i></span>
+                    <span id="uppercase-check">حرف كبير A-Z <i>✔</i></span>
+                    <span id="lowercase-check">حرف صغير a-z <i>✔</i></span>
+                    <span id="number-check">رقم واحد على الأقل <i>✔</i></span>
+                    <span id="symbol-check">رمز خاص (!@#$%^&*) <i>✔</i></span>
                 </div>
             </div>
 
-            <!-- الحالة الصحية -->
-            <div class="profile-row">
-                <div class="profile-item">
-                    <label for="has_condition">هل يعاني من حالة صحية؟</label>
-                    <input type="text" id="has_condition"
-                        value="{{ $person->has_condition ? 'نعم' : 'لا' }}"
-                        disabled>
+            <!-- تأكيد كلمة المرور الجديدة -->
+            <div class="form-group">
+                <label for="confirm-password"><i class="fas fa-check-circle"></i> تأكيد كلمة المرور الجديدة</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-check-circle input-icon"></i>
+                    <input type="password" id="confirm-password" name="confirm_passkey" required>
+                    <i class="fa fa-eye toggle-password" data-target="confirm-password"></i>
+                </div>
+                <div class="password-requirements">
+                    <span id="match-check">تطابق كلمة المرور <i>✔</i></span>
                 </div>
             </div>
 
-            @if ($person->has_condition)
-                <div class="profile-row">
-                    <div class="profile-item">
-                        <label for="condition_description">وصف الحالة الصحية:</label>
-                        <textarea id="condition_description" disabled>{{ $person->condition_description }}</textarea>
-                    </div>
-                </div>
-            @endif
-
-            <!-- المحافظة الأصلية، حالة المسكن السابق -->
-            <div class="profile-row">
-                <div class="profile-item">
-                    <label for="city">المحافظة الأصلية:</label>
-                    <input type="text" id="city" value="{{ $person->city ? __($person->city) : 'غير محدد' }}" disabled>
-                </div>
-                <div class="profile-item">
-                    <label for="housing_damage_status">حالة السكن السابق:</label>
-                    <input type="text" id="housing_damage_status" value="{{ $person->housing_damage_status ? __($person->housing_damage_status) : 'غير محدد' }}" disabled>
-                </div>
-            </div>
-
-            <!-- المحافظة الحالية، نوع السكن الحالي، الحي السكني الحالي، أقرب معلم -->
-            <div class="profile-row">
-                <div class="profile-item">
-                    <label for="current_city">المحافظة الحالية:</label>
-                    <input type="text" id="current_city" value="{{ $person->current_city ? __($person->current_city) : 'غير محدد' }}" disabled>
-                </div>
-                <div class="profile-item">
-                    <label for="housing_type">نوع السكن الحالي:</label>
-                    <input type="text" id="housing_type" value="{{ $person->housing_type ? __($person->housing_type) : 'غير محدد' }}" disabled>
-                </div>
-            </div>
-
-            <div class="profile-row">
-                <div class="profile-item">
-                    <label for="neighborhood">الحي السكني الحالي:</label>
-                    <input type="text" id="neighborhood" value="{{ $person->neighborhood ? __($person->neighborhood) : 'غير محدد' }}" disabled>
-                </div>
-                @if($person->areaResponsible)
-                    <div class="profile-item">
-                        <label for="area_responsible_id">مسؤول المنطقة في المواصي:</label>
-                        <input type="text" id="area_responsible_id" value="{{ $person->areaResponsible ? $person->areaResponsible->name : 'غير محدد' }}" disabled>
-                    </div>
-                @endif
-                <div class="profile-item">
-                    <label for="landmark">أقرب معلم:</label>
-                    <input type="text" id="landmark" value="{{ $person->landmark ?? 'غير محدد' }}" disabled>
-                </div>
-            </div>
+            <button class="save-btn" onclick="saveChangesPassword()">حفظ التغييرات</button>
+            <div class="error-message hidden" id="password-error"></div>
         </div>
+    </div>
 
         <!-- تعديل البيانات الشخصية -->
         <div id="editPopup" class="popup hidden">
             <div class="popup-content">
                 <span class="close" onclick="closePopup()">&times;</span>
-                <h1 style="text-align: center">تعديل البيانات الشخصية</h1>
+                <div class="popup-form-section">
+                    <h3><i class="fas fa-user"></i> البيانات الشخصية</h3>
+                    <div class="row name-row">
+                        <div class="form-group">
+                            <label for="edit_first_name">الاسم الأول</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="edit_first_name" name="first_name" placeholder="الاسم الأول" value="{{ $person->first_name }}" oninput="validateArabicInput('edit_first_name')" onfocus="resetBorderAndError('edit_first_name')" required>
+                            </div>
+                            <div class="error-message" id="edit_first_name_error"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_father_name">اسم الأب</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="edit_father_name" name="father_name" value="{{ $person->father_name }}" placeholder="اسم الأب" oninput="validateArabicInput('edit_father_name')" onfocus="resetBorderAndError('edit_father_name')" required>
+                            </div>
+                            <div class="error-message" id="edit_father_name_error"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_grandfather_name">اسم الجد</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="edit_grandfather_name" name="grandfather_name" value="{{ $person->grandfather_name }}" placeholder="اسم الجد" oninput="validateArabicInput('edit_grandfather_name')" onfocus="resetBorderAndError('grandfather_name')" required>
+                            </div>
+                            <div class="error-message" id="edit_grandfather_name_error"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_family_name">اسم العائلة</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-users input-icon"></i>
+                                <input type="text" id="edit_family_name" name="family_name" value="{{ $person->family_name }}" placeholder="اسم العائلة" oninput="validateArabicInput('edit_family_name')" onfocus="resetBorderAndError('edit_family_name')" required>
+                            </div>
+                            <div class="error-message" id="edit_family_name_error"></div>
+                        </div>
 
-                <div class="row">
-                    <div class="form-group">
-                        <label for="first_name">الاسم الأول</label>
-                        <input
-                            type="text"
-                            id="edit_first_name"
-                            name="first_name"
-                            placeholder="الاسم الأول"
-                            value="{{ $person->first_name }}"
-                            oninput="validateArabicInput('edit_first_name')"
-                            onfocus="resetBorderAndError('edit_first_name')"
-                            onblur="validateArabicInput('edit_first_name')"
-                            required>
-                        <div class="error-message" id="edit_first_name_error" style="display:none; color: red;"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="father_name">اسم الأب</label>
-                        <input
-                            type="text"
-                            id="edit_father_name"
-                            name="father_name"
-                            value="{{ $person->father_name }}"
-                            placeholder="اسم الأب"
-                            oninput="validateArabicInput('edit_father_name')"
-                            onfocus="resetBorderAndError('edit_father_name')"
-                            onblur="validateArabicInput('edit_father_name')"
-                            required>
-                        <div class="error-message" id="edit_father_name_error" style="display:none; color: red;"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="grandfather_name">اسم الجد</label>
-                        <input
-                            type="text"
-                            id="edit_grandfather_name"
-                            name="grandfather_name"
-                            value="{{ $person->grandfather_name }}"
-                            placeholder="اسم الجد"
-                            oninput="validateArabicInput('edit_grandfather_name')"
-                            onfocus="resetBorderAndError('grandfather_name')"
-                            onblur="validateArabicInput('edit_grandfather_name')"
-                            required>
-                        <div class="error-message" id="edit_grandfather_name_error" style="display:none; color: red;"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="family_name">اسم العائلة</label>
-                        <input
-                            type="text"
-                            id="edit_family_name"
-                            name="family_name"
-                            value="{{ $person->family_name }}"
-                            placeholder="اسم العائلة"
-                            oninput="validateArabicInput('edit_family_name')"
-                            onfocus="resetBorderAndError('edit_family_name')"
-                            onblur="validateArabicInput('edit_family_name')"
-                            required>
-                        <div class="error-message" id="edit_family_name_error" style="display:none; color: red;"></div>
+                        <div class="form-group">
+                            <label for="edit_id_num">رقم الهوية <small>(405240862)</small></label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-id-card input-icon"></i>
+                                <input type="number" id="edit_id_num" name="id_num" value="{{ $person->id_num }}" data-original="{{ $person->id_num }}" required oninput="validateIdOnInput()" maxlength="9">
+                            </div>
+                            <span id="edit_id_num_error" class="error-message">رقم الهوية غير صالح.</span>
+                            <span id="edit_id_num_success" class="success-message" style="display:none;">رقم الهوية صحيح.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit_gender">الجنس</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-venus-mars input-icon"></i>
+                                <select id="edit_gender" name="gender" required oninput="validateEditGender()" onfocus="resetBorderAndError('edit_gender')">
+                                    <option value="">اختر الجنس</option>
+                                    @foreach(['ذكر' => 'ذكر', 'أنثى' => 'أنثى', 'غير محدد' => 'غير محدد'] as $key => $gender)
+                                        <option value="{{ $key }}" {{ $person->gender == $key ? 'selected' : '' }}>{{ $gender }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="error-message" id="edit_gender_error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit_dob">تاريخ الميلاد <small>(dd/mm/yyyy)</small></label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-calendar input-icon"></i>
+                                <input type="date" id="edit_dob" name="dob" value="{{ $person->dob ? \Carbon\Carbon::parse($person->dob)->format('Y-m-d') : '' }}" oninput="validatedob()" onfocus="resetBorderAndError('edit_dob')" required>
+                            </div>
+                            <div class="error-message" id="edit_dob_error"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit_phone">رقم الجوال المعتمد</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input type="text" class="text-left" dir="ltr" placeholder="059-123-1234" id="edit_phone" name="phone" value="{{ $person->phone }}" oninput="validatePhoneInput()" onfocus="resetBorderAndError('edit_phone')" required>
+                            </div>
+                            <div class="error-message" id="edit_phone_error"></div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="form-group">
-                        <label for="id_num">رقم الهوية</label>
-                        <input type="number" id="edit_id_num" name="id_num" value="{{ $person->id_num }}" data-original="{{ $person->id_num }}" required oninput="validateIdOnInput()" maxlength="9">
-                        <span id="edit_id_num_error" class="error-message" style="display:none;">رقم الهوية غير صالح.</span>
-                        <span id="edit_id_num_success" class="success-message" style="display:none;">رقم الهوية صحيح.</span>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="edit_gender">الجنس</label>
-                        <select id="edit_gender" name="gender" required
-                                oninput="validateEditGender()"
-                                onfocus="resetBorderAndError('edit_gender')"
-                                onblur="validateEditGender()">
-                            <option value="">اختر الجنس</option>
-                            @foreach(['ذكر' => 'ذكر', 'أنثى' => 'أنثى', 'غير محدد' => 'غير محدد'] as $key => $gender)
-                                <option value="{{ $key }}" {{ $person->gender == $key ? 'selected' : '' }}>{{ $gender }}</option>
-                            @endforeach
-                        </select>
-                        <div class="error-message" id="edit_gender_error" style="color: red;"></div>
-                    </div>
+                <div class="popup-form-section">
+                    <h3><i class="fas fa-briefcase"></i> الحالة الاجتماعية والوظيفية</h3>
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="edit_social_status">الحالة الاجتماعية</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-heart input-icon"></i>
+                                <select id="edit_social_status" name="social_status" required oninput="validateSocialStatus()" onfocus="resetBorderAndError('edit_social_status')">
+                                    <option value="">اختر الحالة</option>
+                                    @foreach($social_statuses as $key => $status)
+                                        <option value="{{ $key }}" {{ $person->social_status == $key ? 'selected' : '' }}>{{ $status }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="error-message" id="edit_social_status_error"></div>
+                        </div>
 
-                    <div class="form-group">
-                        <label for="dob">تاريخ الميلاد</label>
-                        <input
-                            type="date"
-                            id="edit_dob"
-                            name="dob"
-                            value="{{ $person->dob ? \Carbon\Carbon::parse($person->dob)->format('Y-m-d') : '' }}"
-                            oninput="validatedob()"
-                            onfocus="resetBorderAndError('edit_dob')"
-                            onblur="validatedob()"
-                            required>
-                        <div class="error-message" id="edit_dob_error" style="display:none; color: red;"></div>
-                    </div>
+                        <div class="form-group">
+                            <label for="edit_relatives_count">عدد أفراد الأسرة</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-users input-icon"></i>
+                                <input type="number" id="edit_relatives_count" name="relatives_count" value="{{ $person->relatives_count }}" placeholder="عدد أفراد الأسرة" min="0" required onfocus="resetBorderAndError('edit_relatives_count')">
+                            </div>
+                            <div class="error-message" id="edit_relatives_count_error"></div>
+                        </div>
 
-                    <div class="form-group">
-                        <label for="phone">رقم الجوال</label>
-                        <input
-                            type="text"
-                            class="text-left"
-                            dir="ltr"
-                            placeholder="059-123-1234 or 056-123-1234"
-                            id="edit_phone"
-                            name="phone"
-                            value="{{ $person->phone }}"
-                            oninput="validatePhoneInput()"
-                            onfocus="resetBorderAndError('edit_phone')"
-                            onblur="validatePhoneInput()"
-                            required>
-                        <div class="error-message" id="edit_phone_error" style="display: none; color: red;"></div>
+                        <div class="form-group">
+                            <label for="edit_employment_status">حالة العمل</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-briefcase input-icon"></i>
+                                <select id="edit_employment_status" name="employment_status" required oninput="validateEmploymentStatus()" onfocus="resetBorderAndError('edit_employment_status')">
+                                    <option value="لا يعمل" {{ old('employment_status', $person->employment_status) == 'لا يعمل' ? 'selected' : '' }}>لا يعمل</option>
+                                    <option value="موظف" {{ old('employment_status', $person->employment_status) == 'موظف' ? 'selected' : '' }}>موظف</option>
+                                    <option value="عامل" {{ old('employment_status', $person->employment_status) == 'عامل' ? 'selected' : '' }}>عامل</option>
+                                </select>
+                            </div>
+                            <div class="error-message" id="edit_employment_status_error"></div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="form-group">
-                        <label for="social_status">الحالة الاجتماعية</label>
-                        <select id="edit_social_status" name="social_status" required oninput="validateSocialStatus()" onfocus="resetBorderAndError('edit_social_status')" onblur="validateSocialStatus()">
-                            <option value="">اختر الحالة</option>
-                            @foreach($social_statuses as $key => $status)
-                                <option value="{{ $key }}" {{ $person->social_status == $key ? 'selected' : '' }}>{{ $status }}</option>
-                            @endforeach
-                        </select>
-                        <div class="error-message" id="edit_social_status_error" style="color: red;"></div>
+                <div class="popup-form-section">
+                    <h3><i class="fas fa-heartbeat"></i> الحالة الصحية</h3>
+                    <div class="row">
+                        <div class="form-group" style="display: flex; flex-direction: column; gap: 10px;">
+                            <label for="edit_has_condition">هل لديك حالة صحية مرض مزمن حالة خالصة إصابة حرب ؟</label>
+                            <select id="edit_has_condition" name="has_condition" onchange="toggleConditionDescription()">
+                                <option value="0" {{ old('has_condition', $person->has_condition) == '0' ? 'selected' : '' }}>لا</option>
+                                <option value="1" {{ old('has_condition', $person->has_condition) == '1' ? 'selected' : '' }}>نعم</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="relatives_count">عدد أفراد الأسرة</label>
-                        <input
-                            type="text"
-                            id="edit_relatives_count"
-                            name="relatives_count"
-                            placeholder="عدد أفراد الأسرة"
-                            value="{{ $person->relatives_count }}"
-                            oninput="validaterelatives_countInput('edit_relatives_count')"
-                            onfocus="resetBorderAndError('edit_relatives_count')"
-                            onblur="validaterelativesCountInput('edit_relatives_count')"
-                            required>
-                        <div class="error-message" id="edit_relatives_count_error" style="display:none; color: red;"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="employment_status">حالة العمل</label>
-                        <select id="edit_employment_status" name="employment_status" required
-                            oninput="validateEmploymentStatus()"
-                            onfocus="resetBorderAndError('edit_employment_status')"
-                            onblur="validateEmploymentStatus()">
-                                <option value="لا يعمل" {{ old('employment_status') == 'لا يعمل' ? 'selected' : '' }}>لا يعمل</option>
-                                <option value="موظف" {{ old('employment_status') == 'موظف' ? 'selected' : '' }}>موظف</option>
-                                <option value="عامل" {{ old('employment_status') == 'عامل' ? 'selected' : '' }}>عامل</option>
-                        </select>
-                        <div class="error-message" id="edit_employment_status_error" style="display: none; color: red;"></div>
+                    <div class="form-group" id="edit_condition_description_group" style="display: none;">
+                        <label for="edit_condition_description">وصف الحالة الصحية</label>
+                        <textarea id="edit_condition_description" name="condition_description" rows="4" oninput="validateConditionText()" onfocus="resetBorderAndError('edit_condition_description')">{{ $person->condition_description }}</textarea>
+                        <div class="error-message" id="edit_condition_description_error"></div>
                     </div>
                 </div>
 
-                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                    <label for="has_condition">هل لديك حالة صحية؟</label>
-                    <select id="edit_has_condition" name="has_condition"
-                        onchange="toggleConditionDescription()">
-                            <option value="0" {{ old('has_condition') == '0' ? 'selected' : '' }}>لا</option>
-                            <option value="1" {{ old('has_condition') == '1' ? 'selected' : '' }}>نعم</option>
-                    </select>
-                </div>
+                <div class="popup-form-section">
+                    <h3><i class="fas fa-home"></i> معلومات السكن</h3>
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="edit_city">المحافظة الأصلية</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-map-marker-alt input-icon"></i>
+                                <select id="edit_city" name="city" required oninput="validateCity()" onfocus="resetBorderAndError('edit_city')">
+                                    <option value="">اختر المحافظة الأصلية</option>
+                                    @foreach($cities as $key => $city)
+                                        <option value="{{ $key }}" {{ $person->city == $key ? 'selected' : '' }}>{{ $city }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="error-message" id="edit_city_error"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit_housing_damage_status">حالة السكن السابق</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-house-damage input-icon"></i>
+                                <select id="edit_housing_damage_status" name="housing_damage_status" required oninput="validateHousingDamageStatus()" onfocus="resetBorderAndError('edit_housing_damage_status')">
+                                    <option value="">اختر حالة السكن السابق</option>
+                                    @foreach($housing_damage_statuses as $key => $status)
+                                        <option value="{{ $key }}" {{ $person->housing_damage_status == $key ? 'selected' : '' }}>{{ $status }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="error-message" id="edit_housing_damage_status_error"></div>
+                        </div>
 
-                <div class="form-group" id="edit_condition_description_group" style="display: none;">
-                    <label for="condition_description">وصف الحالة الصحية</label>
-                    <textarea
-                        id="edit_condition_description"
-                        name="condition_description"
-                        rows="4"
-                        cols="50"
-                        value="{{ $person->condition_description }}"
-                        oninput="validateConditionText()"
-                        onfocus="resetBorderAndError('edit_condition_description')"
-                        onblur="validateConditionText()"></textarea>
-                    <div class="error-message" id="edit_condition_description_error" style="display: none; color: red;"></div>
-                </div>
+                        <div class="form-group">
+                            <label for="edit_current_city">المحافظة التي تسكن فيها حالياً</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-map-marked-alt input-icon"></i>
+                                <select id="edit_current_city" name="current_city" required oninput="validateCurrentCity()" onfocus="resetBorderAndError('edit_current_city')" onchange="updateNeighborhoods(this.value, '{{ $person->neighborhood }}')">
+                                    <option value="">خان يونس</option> {{-- افتراض القيمة الأولى كما طلب، لكن سأبقي القائمة --}}
+                                    @foreach($current_cities as $key => $city)
+                                        <option value="{{ $key }}" {{ $person->current_city == $key ? 'selected' : '' }}>{{ $city }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="error-message" id="edit_current_city_error"></div>
+                        </div>
 
-                <div class="row">
-                    <div class="form-group">
-                        <label for="city">المحافظة الأصلية</label>
-                        <select id="edit_city" name="city" required
-                            oninput="validateCity()"
-                            onfocus="resetBorderAndError('edit_city')"
-                            onblur="validateCity()">
-                                <option value="">اختر المحافظةالأصلية</option>
-                                @foreach($cities as $key => $city)
-                                    <option value="{{ $key }}" {{ $person->city == $key ? 'selected' : '' }}>{{ $city }}</option>
-                                @endforeach
-                        </select>
-                        <div class="error-message" id="edit_city_error" style="color: red;"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="housing_damage_status">حالة السكن السابق</label>
-                        <select id="edit_housing_damage_status" name="housing_damage_status" required
-                            oninput="validateHousingDamageStatus()"
-                            onfocus="resetBorderAndError('edit_housing_damage_status')"
-                            onblur="validateHousingDamageStatus()">
-                                <option value="">اختر حالة السكن السابق</option>
-                                @foreach($housing_damage_statuses as $key => $status)
-                                    <option value="{{ $key }}" {{ $person->housing_damage_status == $key ? 'selected' : '' }}>{{ $status }}</option>
-                                @endforeach
-                        </select>
-                        <div class="error-message" id="edit_housing_damage_status_error" style="color: red;"></div>
-                    </div>
-                </div>
+                        <div class="form-group">
+                            <label for="edit_housing_type">نوع السكن الذي تعيش فيه حالياً</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-building input-icon"></i>
+                                <select id="edit_housing_type" name="housing_type" required oninput="validateHousingType()" onfocus="resetBorderAndError('edit_housing_type')">
+                                    <option value="">اختر نوع السكن الذي تعيش فيه حالياً</option>
+                                    @foreach($housing_types as $key => $type)
+                                        <option value="{{ $key }}" {{ $person->housing_type == $key ? 'selected' : '' }}>{{ $type }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="error-message" id="edit_housing_type_error"></div>
+                        </div>
 
-                <div class="row">
-                    <div class="form-group">
-                        <label for="current_city">المحافظة الحالية</label>
-                        <select id="edit_current_city" name="current_city" required
-                            oninput="validateCurrentCity()"
-                            onfocus="resetBorderAndError('edit_current_city')"
-                            onblur="validateCurrentCity()"
-                            onchange="updateNeighborhoods(this.value, '{{ $person->neighborhood }}')">
-                            <option value="">اختر المحافظة الحالية</option>
-                            @foreach($current_cities as $key => $city)
-                                <option value="{{ $key }}" {{ $person->current_city == $key ? 'selected' : '' }}>
-                                    {{ $city }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <div class="error-message" id="edit_current_city_error" style="color: red;"></div>
-                    </div>
+                        <div class="form-group">
+                            <label for="edit_neighborhood">الحي السكني الذي تتواجد فيه حالياً</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-map-signs input-icon"></i>
+                                <select id="edit_neighborhood" name="neighborhood" required oninput="validateNeighborhood()" onfocus="resetBorderAndError('edit_neighborhood')">
+                                    <option value="">اختر الحي</option>
+                                    @foreach($neighborhoods as $key => $neighborhood)
+                                        <option value="{{ $key }}" {{ $person->neighborhood == $key ? 'selected' : '' }}>{{ $neighborhood }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="error-message" id="edit_neighborhood_error"></div>
+                        </div>
 
-                    <div class="form-group">
-                        <label for="housing_type">نوع السكن الحالي</label>
-                        <select id="edit_housing_type" name="housing_type" required
-                        oninput="validateHousingType()"
-                        onfocus="resetBorderAndError('edit_housing_type')"
-                        onblur="validateHousingType()">
-                            <option value="">اختر نوع السكن الحالي</option>
-                            @foreach($housing_types as $key => $type)
-                                <option value="{{ $key }}" {{ $person->housing_type == $key ? 'selected' : '' }}>{{ $type }}</option>
-                            @endforeach
-                        </select>
-                        <div class="error-message" id="edit_housing_type_error" style="color: red;"></div>
-                    </div>
-                </div>
+                        <div class="form-group area-responsible-container" id="edit_areaResponsibleField" style="display:none;">
+                            <label for="edit_area_responsible_id">مسؤول المنطقة</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user-tie input-icon"></i>
+                                <select class="form-control" name="area_responsible_id" id="edit_area_responsible_id" oninput="validateAreaResponsible()" onfocus="resetBorderAndError('edit_area_responsible_id')">
+                                    <option value="">اختر المسؤول</option>
+                                    @foreach (\App\Models\AreaResponsible::all() as $responsible)
+                                        <option value="{{ $responsible->id }}" {{ $person->area_responsible_id == $responsible->id ? 'selected' : '' }}>{{ $responsible->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="error-message" id="edit_area_responsible_id_error"></div>
+                        </div>
 
-                <div class="row">
-                    <div class="form-group">
-                        <label for="edit_neighborhood">الحي السكني الحالي</label>
-                        <select id="edit_neighborhood" name="neighborhood" required
-                                oninput="validateNeighborhood()"
-                                onfocus="resetBorderAndError('edit_neighborhood')"
-                                onblur="validateNeighborhood()">
-                            <option value="">اختر الحي السكني الحالي</option>
-                            @foreach($neighborhoods as $key => $neighborhood)
-                                <option value="{{ $key }}" {{ $person->neighborhood == $key ? 'selected' : '' }}>{{ $neighborhood }}</option>
-                            @endforeach
-                        </select>
-                        <div class="error-message" id="edit_neighborhood_error" style="display:none; color: red;"></div>
-                    </div>
-
-                    <div class="form-group area-responsible-container" id="edit_areaResponsibleField" style="display:none;">
-                        <label for="edit_area_responsible_id">مسؤول المنطقة في المواصي</label>
-                        <select class="form-control"
-                                name="area_responsible_id"
-                                id="edit_area_responsible_id"
-                                oninput="validateAreaResponsible()"
-                                onfocus="resetBorderAndError('edit_area_responsible_id')"
-                                onblur="validateAreaResponsible()">
-                            <option value="">اختر المسؤول</option>
-                            @foreach (\App\Models\AreaResponsible::all() as $responsible)
-                                <option value="{{ $responsible->id }}" {{ $person->area_responsible_id == $responsible->id ? 'selected' : '' }}>
-                                    {{ $responsible->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <div class="error-message" id="edit_area_responsible_id_error" style="color: red; display: none;"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="landmark">أقرب معلم</label>
-                        <input
-                            type="text"
-                            id="edit_landmark"
-                            name="landmark"
-                            placeholder="أقرب معلم"
-                            value="{{ $person->landmark }}"
-                            oninput="validateArabicInput('edit_landmark')"
-                            onfocus="resetBorderAndError('edit_landmark')"
-                            onblur="validateArabicInput('edit_landmark')">
-                        <div class="error-message" id="edit_landmark_error" style="display:none; color: red;"></div>
+                        <div class="form-group">
+                            <label for="edit_landmark">أقرب معلم</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-landmark input-icon"></i>
+                                <input type="text" id="edit_landmark" name="landmark" placeholder="أقرب معلم" value="{{ $person->landmark }}" oninput="validateArabicInput('edit_landmark')" onfocus="resetBorderAndError('edit_landmark')">
+                            </div>
+                            <div class="error-message" id="edit_landmark_error"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -1111,116 +1614,107 @@
 
         <!-- بيانات أفراد الأسرة -->
         {{--هاد الفورم لإضافة فرد جديد على العائلة مفروض يضيف على الداتا بيز --}}
-        <h1 style="text-align: right">بيانات أفراد الأسرة:
+        {{-- <h1 style="text-align: right">بيانات أفراد الأسرة:
             <a href="#" id="open-form" class="add-icon">
                 <i class="fas fa-plus"></i>
             </a>
-        </h1>
+        </h1> --}}
 
-        <div id="form-popup" class="hidden">
-            <div>
+        <!-- إضافة فرد جديد -->
+        <div id="form-popup" class="popup hidden">
+            <div class="popup-content">
                 <span class="close" id="closse-popup">&times;</span>
                 <div id="overlay" class="overlay-class hidden"></div>
                 <h1>إضافة بيانات فرد</h1>
+                <input type="hidden" id="familyMemberId" name="id">
 
-                    <input type="hidden" id="familyMemberId" name="id">
-
-                    <div class="row">
+                <div class="popup-form-section">
+                    <h3><i class="fas fa-user"></i> البيانات الشخصية</h3>
+                    <div class="row name-row">
                         <div class="form-group">
-                            <label for="first_name">الاسم الأول:</label>
-                            <input
-                                type="text"
-                                id="first_namef"
-                                name="first_namef"
-                                oninput="validateArabicInput('first_namef')"
-                                onfocus="resetBorderAndError('first_namef')"
-                                onblur="validateArabicInput('first_namef')"
-                                required>
-                            <div class="error-message" id="first_namef_error" style="display:none; color: red;"></div>
+                            <label for="first_namef">الاسم الأول <span style="color: red;">*</span></label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="first_namef" name="first_namef" placeholder="الاسم الأول" oninput="validateArabicInput('first_namef')" onfocus="resetBorderAndError('first_namef')" required>
+                            </div>
+                            <div class="error-message" id="first_namef_error"></div>
                         </div>
-
                         <div class="form-group">
-                            <label for="father_name">اسم الأب:</label>
-                            <input
-                                type="text"
-                                id="father_namef"
-                                name="father_namef"
-                                oninput="validateArabicInput('father_namef')"
-                                onfocus="resetBorderAndError('father_namef')"
-                                onblur="validateArabicInput('father_namef')"
-                                required>
-                            <div class="error-message" id="father_namef_error" style="display:none; color: red;"></div>
+                            <label for="father_namef">اسم الأب <span style="color: red;">*</span></label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="father_namef" name="father_namef" placeholder="اسم الأب" oninput="validateArabicInput('father_namef')" onfocus="resetBorderAndError('father_namef')" required>
+                            </div>
+                            <div class="error-message" id="father_namef_error"></div>
                         </div>
-
                         <div class="form-group">
-                            <label for="grandfather_name">اسم الجد:</label>
-                            <input
-                                type="text"
-                                id="grandfather_namef"
-                                name="grandfather_namef"
-                                oninput="validateArabicInput('grandfather_namef')"
-                                onfocus="resetBorderAndError('grandfather_namef')"
-                                onblur="validateArabicInput('grandfather_namef')"
-                                required>
-                            <div class="error-message" id="grandfather_namef_error" style="display:none; color: red;"></div>
+                            <label for="grandfather_namef">اسم الجد <span style="color: red;">*</span></label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input type="text" id="grandfather_namef" name="grandfather_namef" placeholder="اسم الجد" oninput="validateArabicInput('grandfather_namef')" onfocus="resetBorderAndError('grandfather_namef')" required>
+                            </div>
+                            <div class="error-message" id="grandfather_namef_error"></div>
                         </div>
-
                         <div class="form-group">
-                            <label for="family_name">اسم العائلة:</label>
-                            <input
-                                type="text"
-                                id="family_namef"
-                                name="family_namef"
-                                oninput="validateArabicInput('family_namef')"
-                                onfocus="resetBorderAndError('family_namef')"
-                                onblur="validateArabicInput('family_namef')"
-                                required>
-                            <div class="error-message" id="family_namef_error" style="display:none; color: red;"></div>
+                            <label for="family_namef">اسم العائلة <span style="color: red;">*</span></label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-users input-icon"></i>
+                                <input type="text" id="family_namef" name="family_namef" placeholder="اسم العائلة" oninput="validateArabicInput('family_namef')" onfocus="resetBorderAndError('family_namef')" required>
+                            </div>
+                            <div class="error-message" id="family_namef_error"></div>
                         </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="relationship">صلة القرابة</label>
-                        <select id="relationshipf" name="relationshipf" required onchange="handleRelationshipChangeForAdd()">
-                            @foreach($relationships as $key => $relationship)
-                                <option value="{{$key}}">{{$relationship}}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <!-- التعديل الجديد: إضافة حقل رقم الجوال للزوجة -->
-                    <div class="form-group" id="phone_group" style="display: none;">
-                        <label for="phone">رقم الجوال <span style="color: red;">*</span></label>
-                        <input type="tel" id="phone" name="phone" placeholder="مثال: 0599123456" maxlength="10" pattern="[0-9]{10}">
-                        <span id="phoneerror" class="error-message" style="display:none; color: #ff0000;">رقم الجوال غير صحيح (يجب أن يكون 10 أرقام)</span>
                     </div>
 
                     <div class="row">
+                         <div class="form-group">
+                            <label for="relationshipf">صلة القرابة <span style="color: red;">*</span></label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user-friends input-icon"></i>
+                                <select id="relationshipf" name="relationshipf" required onchange="handleRelationshipChangeForAdd()">
+                                    @foreach($relationships as $key => $relationship)
+                                        <option value="{{$key}}">{{$relationship}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="form-group">
-                            <label for="id_num">رقم الهوية:</label>
-                            <input type="number" id="id_numf" name="id_numf" placeholder="أدخل رقم الهوية" required
-                                oninput="validateIdOnInputid()" onfocus="resetBorderAndError('id_numf')" maxlength="9" pattern="\d{9}">
+                            <label for="id_numf">رقم الهوية</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-id-card input-icon"></i>
+                                <input type="number" id="id_numf" name="id_numf" placeholder="أدخل رقم الهوية" required oninput="validateIdOnInputid()" maxlength="9">
+                            </div>
                             <span id="id_numf_error" class="error-message" style="display:none; color: #ff0000;">رقم الهوية غير صالح.</span>
                             <span id="id_numf_success" class="success-message" style="display:none; color: #35b735;">رقم الهوية صحيح.</span>
                         </div>
 
                         <div class="form-group">
-                            <label for="dob">تاريخ الميلاد:</label>
-                            <input
-                                type="date"
-                                id="dobf"
-                                name="dobf"
-                                oninput="validatedob()"
-                                onfocus="resetBorderAndError('dobf')"
-                                onblur="validatedob()"
-                                required>
-                            <div class="error-message" id="dobf_error" style="display:none; color: red;"></div>
+                            <label for="dobf">تاريخ الميلاد</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-calendar input-icon"></i>
+                                <input type="date" id="dobf" name="dobf" oninput="validatedob()" onfocus="resetBorderAndError('dobf')" required>
+                            </div>
+                            <div class="error-message" id="dobf_error"></div>
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="form-group" id="phone_group" style="display: none;">
+                            <label for="phone">رقم الجوال <span style="color: red;">*</span></label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-phone input-icon"></i>
+                                <input type="tel" id="phone" name="phone" placeholder="مثال: 0599123456" maxlength="10" pattern="[0-9]{10}">
+                            </div>
+                            <span id="phoneerror" class="error-message" style="display:none; color: #ff0000;">رقم الجوال غير صحيح</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="popup-form-section">
+                    <h3><i class="fas fa-heartbeat"></i> الحالة الصحية</h3>
                     <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
                         <label for="has_condition">هل لديك حالة صحية؟</label>
-                        <select id="has_conditionf" name="has_conditionf" onchange="toggleConditionText()">
+                        <select id="has_conditionf" name="has_conditionf" onchange="toggleConditionText()" style="width: auto; min-width: 100px;">
                             <option value="0" {{ old('has_condition') == '0' ? 'selected' : '' }}>لا</option>
                             <option value="1" {{ old('has_condition') == '1' ? 'selected' : '' }}>نعم</option>
                         </select>
@@ -1228,24 +1722,17 @@
 
                     <div class="form-group" id="condition_description_group" style="display: none;">
                         <label for="condition_description">وصف الحالة الصحية</label>
-                        <textarea
-                            id="condition_descriptionf"
-                            name="condition_descriptionf"
-                            rows="4"
-                            cols="50"
-                            value=""
-                            oninput="validateConditionText()"
-                            onfocus="resetBorderAndError('condition_descriptionf')"
-                            onblur="validateConditionText()"></textarea>
-                        <div class="error-message" id="condition_descriptionf_error" style="display: none; color: red;"></div>
+                        <textarea id="condition_descriptionf" name="condition_descriptionf" rows="4" oninput="validateConditionText()" onfocus="resetBorderAndError('condition_descriptionf')"></textarea>
+                        <div class="error-message" id="condition_descriptionf_error"></div>
                     </div>
+                </div>
 
                 <button class="save-btn" type="button" id="add-person-btn">حفظ التغييرات</button>
             </div>
         </div>
 
         <!-- جدول بيانات أفراد الأسرة -->
-        <table class="family-table">
+        {{-- <table class="family-table">
             <thead>
                 <tr>
                     <th class="border px-4 py-2">رقم الهوية</th>
@@ -1292,99 +1779,125 @@
                     </tr>
                 @endforeach
             </tbody>
-        </table>
+        </table> --}}
 
-        <!-- تعديل بيانات أفراد الأسرة -->
+        <!-- تعديل بيانات فرد الأسرة -->
         <div id="editFamilyMemberModal" class="popup hidden">
             <div class="popup-content">
-                <span class="close" onclick="closeFamilyPopup()">&times;</span>
-                <h1>تعديل بيانات فرد من العائلة</h1>
-
+                <span class="close" onclick="closeModal1()">&times;</span>
+                <h1>تعديل بيانات فرد الأسرة</h1>
+                <form id="editFamilyMemberForm">
                     <input type="hidden" id="familyMemberId" name="id">
 
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="first_name">الاسم الأول:</label>
-                            <input type="text" id="edit_f_first_name" name="first_name" required>
+                    <div class="popup-form-section">
+                        <h3><i class="fas fa-user"></i> البيانات الشخصية</h3>
+                        <div class="row name-row">
+                            <div class="form-group">
+                                <label for="edit_f_first_name">الاسم الأول <span style="color: red;">*</span></label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user input-icon"></i>
+                                    <input type="text" id="edit_f_first_name" name="first_name" placeholder="الاسم الأول" required oninput="validateArabicInput('edit_f_first_name')" onfocus="resetBorderAndError('edit_f_first_name')">
+                                </div>
+                                <div class="error-message" id="edit_f_first_name_error"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_f_father_name">اسم الأب <span style="color: red;">*</span></label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user input-icon"></i>
+                                    <input type="text" id="edit_f_father_name" name="father_name" placeholder="اسم الأب" required oninput="validateArabicInput('edit_f_father_name')" onfocus="resetBorderAndError('edit_f_father_name')">
+                                </div>
+                                <div class="error-message" id="edit_f_father_name_error"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_f_grandfather_name">اسم الجد <span style="color: red;">*</span></label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user input-icon"></i>
+                                    <input type="text" id="edit_f_grandfather_name" name="grandfather_name" placeholder="اسم الجد" required oninput="validateArabicInput('edit_f_grandfather_name')" onfocus="resetBorderAndError('edit_f_grandfather_name')">
+                                </div>
+                                <div class="error-message" id="edit_f_grandfather_name_error"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_f_family_name">اسم العائلة <span style="color: red;">*</span></label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-users input-icon"></i>
+                                    <input type="text" id="edit_f_family_name" name="family_name" placeholder="اسم العائلة" required oninput="validateArabicInput('edit_f_family_name')" onfocus="resetBorderAndError('edit_f_family_name')">
+                                </div>
+                                <div class="error-message" id="edit_f_family_name_error"></div>
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="father_name">اسم الأب:</label>
-                            <input type="text" id="edit_f_father_name" name="father_name" required>
-                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="edit_f_relationship">صلة القرابة <span style="color: red;">*</span></label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user-friends input-icon"></i>
+                                    <select id="edit_f_relationship" name="relationship" required onchange="handleEditRelationshipChange()">
+                                        @foreach($relationships as $key => $relationship)
+                                            <option value="{{$key}}">{{$relationship}}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="grandfather_name">اسم الجد:</label>
-                            <input type="text" id="edit_f_grandfather_name" name="grandfather_name" required>
-                        </div>
+                            <div class="form-group">
+                                <label for="edit_f_id_num">رقم الهوية</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-id-card input-icon"></i>
+                                    <input type="number" id="edit_f_id_num" name="id_num" required oninput="validateIdOnInputid()" maxlength="9">
+                                </div>
+                                <span id="edit_f_id_num_error" class="error-message" style="display:none; color: #ff0000;">رقم الهوية غير صالح.</span>
+                                <span id="edit_f_id_num_success" class="success-message" style="display:none; color: #35b735;">رقم الهوية صحيح.</span>
+                            </div>
 
-                        <div class="form-group">
-                            <label for="family_name">اسم العائلة:</label>
-                            <input type="text" id="edit_f_family_name" name="family_name" required>
+                            <div class="form-group">
+                                <label for="edit_f_dob">تاريخ الميلاد</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-calendar input-icon"></i>
+                                    <input type="date" id="edit_f_dob" name="dob" required>
+                                </div>
+                                <div class="error-message" id="edit_f_dob_error"></div>
+                            </div>
+
+                            <div class="form-group" id="edit_f_phone_group" style="display: none;">
+                                <label for="edit_f_phone">رقم الجوال <span style="color: red;">*</span></label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-phone input-icon"></i>
+                                    <input type="tel" id="edit_f_phone" name="phone" placeholder="مثال: 0599123456" maxlength="10" pattern="[0-9]{10}">
+                                </div>
+                                <span id="edit_f_phone_error" class="error-message" style="display:none; color: #ff0000;">رقم الجوال غير صحيح</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="relationship">صلة القرابة</label>
-                        <select id="edit_f_relationship" name="relationship" required>
-                            @foreach($relationships as $key => $relationship)
-                                <option value="{{$key}}">{{$relationship}}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="form-group" id="edit_f_phone_group" style="display: none;">
-                        <label for="edit_f_phone">رقم الجوال</label>
-                        <input type="tel" id="edit_f_phone" name="edit_f_phone" placeholder="مثال: 0599123456" maxlength="10" pattern="[0-9]{10}">
-                        <span id="edit_f_phone_error" class="error-message" style="display:none; color: #ff0000;">رقم الجوال غير صحيح (يجب أن يكون 10 أرقام)</span>
-                    </div>
-
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="id_num">رقم الهوية:</label>
-                            <input type="number" id="edit_f_id_num" name="id_num" placeholder="أدخل رقم الهوية" required data-original="{{ $person->id_num }}">
+                    <div class="popup-form-section">
+                        <h3><i class="fas fa-heartbeat"></i> الحالة الصحية</h3>
+                        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                            <label for="edit_f_has_condition">هل لديك حالة صحية؟</label>
+                            <select id="edit_f_has_condition" name="has_condition" onchange="toggleConditionText1()" style="width: auto; min-width: 100px;">
+                                <option value="0">لا</option>
+                                <option value="1">نعم</option>
+                            </select>
                         </div>
 
-                        <div class="form-group">
-                            <label for="dob">تاريخ الميلاد:</label>
-                            <input type="date" id="edit_f_dob" name="dob" required>
+                        <div class="form-group" id="edit_f_condition_description_group" style="display: none;">
+                            <label for="edit_f_condition_description">وصف الحالة الصحية</label>
+                            <textarea id="edit_f_condition_description" name="condition_description" rows="4"></textarea>
+                            <div class="error-message" id="edit_f_condition_description_error"></div>
                         </div>
                     </div>
 
-                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                        <label for="has_condition">هل لديك حالة صحية؟</label>
-                        <select id="edit_f_has_condition" name="has_condition" onchange="toggleConditionText()">
-                            <option value="0" {{ old('has_condition') == '0' ? 'selected' : '' }}>لا</option>
-                            <option value="1" {{ old('has_condition') == '1' ? 'selected' : '' }}>نعم</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group" id="edit_f_condition_description_group" style="display: none;">
-                        <label for="condition_description">وصف الحالة الصحية</label>
-                        <textarea
-                            id="edit_f_condition_description"
-                            name="condition_description"
-                            rows="4"
-                            cols="50"
-                            value="{{ $person->condition_description }}"
-                            oninput="validateConditionText()"
-                            onfocus="resetBorderAndError('edit_condition_description')"
-                            onblur="validateConditionText()"></textarea>
-                        <div class="error-message" id="edit_condition_description_error" style="display: none; color: red;"></div>
-                    </div>
-                <meta name="csrf-token" content="{{ csrf_token() }}">
-
-                <button class="save-btn" onclick="saveChangesChild()">حفظ التغييرات</button>
+                    <button class="save-btn" type="button" onclick="saveChangesChild()">حفظ التعديلات</button>
+                </form>
             </div>
         </div>
 
-        <h1 style="text-align: right">قائمة الشكاوى:
+        {{-- <h1 style="text-align: right">قائمة الشكاوى: --}}
             {{-- <a href="{{ route('complaints.create') }}" id="open-complaint-form" class="add-icon">
                 <i class="fas fa-plus"></i>
             </a> --}}
-        </h1>
+        {{-- </h1> --}}
 
-        <table class="complaints-table">
+        {{-- <table class="complaints-table">
             <thead>
                 <tr>
                     <th class="border px-4 py-2">رقم الهوية</th>
@@ -1461,93 +1974,89 @@
                     </tr>
                 @endforeach
             </tbody>
-        </table>
+        </table> --}}
 
     </div>
 
     <script>
         // ========================================
-        // منطق الإضافة (Add)
+        // وظائف مساعدة (Helpers)
         // ========================================
 
-        // التعديل الجديد: دالة لمعالجة تغيير العلاقة في نموذج الإضافة
-        function handleRelationshipChangeForAdd() {
-            const relationshipSelect = document.getElementById('relationshipf');
-            const phoneGroup = document.getElementById('phone_group');
-            const phoneInput = document.getElementById('phone');
+        // دالة موحدة للتحقق مما إذا كانت صلة القرابة تتطلب رقم جوال
+        function isWife(val) {
+            if (!val) return false;
+            const normalized = val.toString().trim().toLowerCase();
+            const wifeValues = ['wife', 'spouse', 'زوجة', 'الزوجة'];
+            const res = wifeValues.includes(normalized);
+            console.log("🕵️ التحقق من صلة القرابة:", normalized, "النتيجة:", res);
+            return res;
+        }
 
-            if (relationshipSelect.value === 'wife') {
+        // دالة موحدة للتحكم في ظهور حقل الجوال بناءً على صلة القرابة
+        function togglePhoneVisibility(relationshipSelectId, phoneGroupId, phoneInputId, phoneErrorId) {
+            const relationshipSelect = document.getElementById(relationshipSelectId);
+            const phoneGroup = document.getElementById(phoneGroupId);
+            const phoneInput = document.getElementById(phoneInputId);
+            const phoneError = document.getElementById(phoneErrorId);
+
+            if (!relationshipSelect || !phoneGroup || !phoneInput) return;
+
+            if (isWife(relationshipSelect.value)) {
                 phoneGroup.style.display = 'block';
                 phoneInput.required = true;
             } else {
                 phoneGroup.style.display = 'none';
                 phoneInput.required = false;
                 phoneInput.value = '';
+                if (phoneError) {
+                    phoneError.style.display = 'none';
+                    phoneInput.style.borderColor = '';
+                }
+            }
+
+            // تفعيل التحقق إذا كان الحقل معروضاً وبه قيمة
+            if (phoneInput.required && phoneInput.value) {
+                validatePhone(phoneInputId);
             }
         }
 
-        // التعديل الجديد: إضافة Event Listener للتحقق أثناء الكتابة
-        document.addEventListener('DOMContentLoaded', function() {
-            const phoneInput = document.getElementById('phone');
-            if (phoneInput) {
-                phoneInput.addEventListener('input', function() {
-                    validatePhone('phone');
-                });
-            }
-        });
-
-        // ========================================
-        // منطق التعديل (Edit)
-        // ========================================
-
-        // التعديل الجديد: دالة لمعالجة تغيير العلاقة في نموذج التعديل
-        function handleEditRelationshipChange() {
-            const relationshipSelect = document.getElementById('edit_f_relationship');
-            const phoneGroup = document.getElementById('edit_f_phone_group');
-            const phoneInput = document.getElementById('edit_f_phone');
-
-            if (relationshipSelect.value === 'wife') {
-                phoneGroup.style.display = 'block';
-                phoneInput.required = true;
-            } else {
-                phoneGroup.style.display = 'none';
-                phoneInput.required = false;
-                phoneInput.value = '';
-            }
-        }
-
-        // التعديل الجديد: إضافة Event Listener للتحقق أثناء الكتابة
-        document.addEventListener('DOMContentLoaded', function() {
-            const editPhoneInput = document.getElementById('edit_f_phone');
-            if (editPhoneInput) {
-                editPhoneInput.addEventListener('input', function() {
-                    validatePhone('edit_f_phone');
-                });
-            }
-        });
-
-        // ========================================
-        // منطق مشترك (Shared)
-        // ========================================
-
-        // التعديل الجديد: دالة للتحقق من صحة رقم الجوال
+        // دالة للتحقق من صحة رقم الجوال
         function validatePhone(phoneFieldId) {
             const phoneInput = document.getElementById(phoneFieldId);
             const phoneValue = phoneInput.value;
             const phoneError = document.getElementById(phoneFieldId + '_error');
 
+            if (!phoneInput) return true;
+
             // التحقق من أن الرقم 10 خانات ويبدأ بـ 05
             const phonePattern = /^05[0-9]{8}$/;
 
             if (phoneValue && !phonePattern.test(phoneValue)) {
-                phoneError.style.display = 'inline';
+                if (phoneError) phoneError.style.display = 'inline';
                 phoneInput.style.borderColor = '#ff0000';
                 return false;
             } else {
-                phoneError.style.display = 'none';
+                if (phoneError) phoneError.style.display = 'none';
                 phoneInput.style.borderColor = '';
                 return true;
             }
+        }
+
+        // ========================================
+        // منطق الإضافة (Add)
+        // ========================================
+
+        function handleRelationshipChangeForAdd() {
+            togglePhoneVisibility('relationshipf', 'phone_group', 'phone', 'phone_error');
+        }
+
+        // ========================================
+        // منطق التعديل (Edit)
+        // ========================================
+
+        function handleEditRelationshipChange() {
+            togglePhoneVisibility('edit_f_relationship', 'edit_f_phone_group', 'edit_f_phone', 'edit_f_phone_error');
         }
 
         // حفظ نسخة من كافة خيارات مسؤول المنطقة الأصلية عند تحميل الصفحة (بحقل edit_area_responsible_id)
@@ -1836,12 +2345,12 @@
 
             $('#open-form').click(function(event) {
                 event.preventDefault();
-                $('#form-popup').show(); // استخدم show() بدلاً من removeClass('hidden') مؤقتًا
+                $('#form-popup').removeClass('hidden');
             });
 
             // إغلاق بوب أب إضافة فرد جديد
             $('#closse-popup').click(function() {
-                $('#form-popup').hide(); // استخدم hide() بدلاً من addClass('hidden') مؤقتًا
+                $('#form-popup').addClass('hidden');
             });
 
             // إضافة فرد جديد إلى قاعدة البيانات
@@ -1856,8 +2365,9 @@
                 const has_condition = $('#has_conditionf').val();
                 const condition_description = has_condition == '1' ? $('#condition_descriptionf').val().trim() : null;
 
-                // التعديل الجديد: إضافة رقم الجوال
-                const phone = relationship === 'wife' ? $('#phone').val().trim() : null;
+                // التعديل الجديد: التحقق من رقم الجوال للزوجة
+                const isWifeMember = isWife(relationship);
+                const phone = isWifeMember ? $('#phone').val().trim() : null;
 
                 // التحقق من الحقول المطلوبة
                 if (!id_num || !first_name || !father_name || !grandfather_name || !family_name || !dob || !relationship) {
@@ -1865,8 +2375,7 @@
                     return;
                 }
 
-                // التعديل الجديد: التحقق من رقم الجوال للزوجة
-                if (relationship === 'wife') {
+                if (isWifeMember) {
                     if (!phone) {
                         showAlert('يرجى إدخال رقم جوال للزوجة!', 'error');
                         return;
@@ -1958,38 +2467,6 @@
                 });
             });
 
-            function showAlert(message, type) {
-                let iconColor, confirmButtonColor, iconType;
-
-                switch (type) {
-                    case 'success':
-                        iconType = 'success';        // أيقونة صح ✓
-                        iconColor = '#28a745';       // أخضر
-                        confirmButtonColor = '#28a745';
-                        break;
-                    case 'warning':
-                        iconType = 'warning';        // علامة تعجب !
-                        iconColor = '#fd7e14';       // برتقالي
-                        confirmButtonColor = '#fd7e14';
-                        break;
-                    case 'error':
-                    default:
-                        iconType = 'error';          // أيقونة خطأ ✖
-                        iconColor = '#dc3545';       // أحمر
-                        confirmButtonColor = '#dc3545';
-                        break;
-                }
-
-                Swal.fire({
-                    html: message,
-                    icon: iconType,
-                    background: '#fff',
-                    color: '#000',
-                    iconColor: iconColor,
-                    confirmButtonColor: confirmButtonColor,
-                    confirmButtonText: 'حسناً'
-                });
-            }
 
             // دالة تأكيد الحذف
             window.confirmDelete = function(id) {
@@ -2288,6 +2765,7 @@
             var checkBox = document.getElementById("has_condition");
             var descriptionRow = document.getElementById("condition_description_group");
 
+
             if (checkBox.checked) {
                 descriptionRow.classList.remove("hidden");
             } else {
@@ -2333,7 +2811,7 @@
 
             let neighborhoodValue = document.getElementById('edit_neighborhood').value.trim();
             let areaResponsibleInput = document.getElementById('edit_area_responsible_id');
-            let rawValue = areaResponsibleInput.value.trim();
+            let rawValue = areaResponsibleInput ? areaResponsibleInput.value.trim() : '';
             let originalIdNumValue = document.getElementById('edit_id_num').getAttribute('data-original') || '';
             console.log('originalIdNumValue:', originalIdNumValue);
 
@@ -2348,7 +2826,7 @@
                 gender: document.getElementById('edit_gender').value.trim(),
                 phone: document.getElementById('edit_phone').value.trim(),
                 social_status: document.getElementById('edit_social_status').value.trim(),
-                relatives_count: document.getElementById('edit_relatives_count').value.trim(),
+                relatives_count: document.getElementById('edit_relatives_count') ? document.getElementById('edit_relatives_count').value.trim() : '0',
                 employment_status: document.getElementById('edit_employment_status').value.trim(),
                 has_condition: document.getElementById('edit_has_condition').value.trim(),
                 condition_description: document.getElementById('edit_condition_description').value.trim(),
@@ -3393,29 +3871,6 @@
             }
         });
 
-        // التعديل الجديد: دالة لمعالجة تغيير العلاقة في نموذج التعديل
-        function handleEditRelationshipChange() {
-            const relationshipSelect = document.getElementById('edit_f_relationship');
-            const phoneGroup = document.getElementById('edit_f_phone_group');
-            const phoneInput = document.getElementById('edit_f_phone');
-
-            if (relationshipSelect.value === 'wife') {
-                phoneGroup.style.display = 'block';
-                phoneInput.required = true;
-            } else {
-                phoneGroup.style.display = 'none';
-                phoneInput.required = false;
-                phoneInput.value = '';
-            }
-        }
-
-        // التعديل الجديد: إضافة Event Listener للتحقق أثناء الكتابة
-        document.getElementById('edit_f_phone').addEventListener('input', function() {
-            validatePhone('edit_f_phone');
-        });
-
-        // التعديل الجديد: إضافة Event Listener لتغيير العلاقة
-        document.getElementById('edit_f_relationship').addEventListener('change', handleEditRelationshipChange);
 
         function editFamilyMember(familyMemberId) {
             // إرسال طلب AJAX إلى الخادم للحصول على بيانات العضو
@@ -3449,19 +3904,31 @@
                     }
                     document.getElementById('edit_f_dob').value = dobValue || '';
 
-                    document.getElementById('edit_f_relationship').value = familyMemberData.data.relationship || familyMemberData.relationship || '';
-
-                    // معالجة has_condition
-                    let hasConditionValue = familyMemberData.data.has_condition || familyMemberData.has_condition;
-                    document.getElementById('edit_f_has_condition').value = hasConditionValue === 1 || hasConditionValue === '1' || hasConditionValue === true ? '1' : '0';
-
-                    document.getElementById('edit_f_condition_description').value = familyMemberData.data.condition_description || familyMemberData.condition_description || '';
-
-                    // التعديل الجديد: إضافة رقم الجوال إذا كان موجوداً
-                    document.getElementById('edit_f_phone').value = familyMemberData.data.phone || familyMemberData.phone || '';
-
-                    // التعديل الجديد: استدعاء دالة معالجة تغيير العلاقة لتحديد ما إذا كان يجب إظهار حقل الجوال
+                    // 1. تحديد الصلة أولاً (مع محاولة مطابقة ذكية للقيم)
+                    const relSelect = document.getElementById('edit_f_relationship');
+                    const incomingRel = (familyMemberData.data.relationship || familyMemberData.relationship || '').toString().trim();
+                    
+                    // محاولة تعيين القيمة مباشرة
+                    relSelect.value = incomingRel;
+                    
+                    // إذا لم يتم التعيين (القيمة غير موجودة بالضبط)، نحاول البحث غير الحساس لحالة الأحرف
+                    if (!relSelect.value && incomingRel) {
+                        for (let i = 0; i < relSelect.options.length; i++) {
+                            if (relSelect.options[i].value.toLowerCase() === incomingRel.toLowerCase()) {
+                                relSelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // 2. تحديث الرؤية (بدون مسح القيمة)
                     handleEditRelationshipChange();
+                    
+                    // 3. تعيين رقم الجوال بعد تحديث الرؤية للتأكد من بقاء القيمة
+                    const phoneValue = familyMemberData.data.phone || familyMemberData.phone || '';
+                    document.getElementById('edit_f_phone').value = phoneValue;
+                    
+                    console.log("📱 رقم الجوال المستلم:", phoneValue, "الصلة:", document.getElementById('edit_f_relationship').value);
 
                     // فتح الفورم المنبثق
                     document.getElementById('editFamilyMemberModal').classList.remove('hidden');
@@ -3557,6 +4024,70 @@
                     });
                 }
             });
+        }
+
+        // ========================================
+        // Navigation and Sidebar Functions
+        // ========================================
+
+        // Toggle navigation item and its sub-menu
+        function toggleNav(element, subNavId) {
+            // Remove active from all nav-items
+            const allNavItems = document.querySelectorAll('.nav-item');
+            allNavItems.forEach(item => {
+                if (item !== element) {
+                    item.classList.remove('active');
+                    const subNav = item.querySelector('.sub-nav');
+                    if (subNav && subNav.id !== subNavId) {
+                        subNav.classList.remove('active');
+                    }
+                }
+            });
+
+            // Toggle active on clicked item
+            element.classList.toggle('active');
+
+            // Toggle sub-nav if exists
+            if (subNavId) {
+                const subNav = document.getElementById(subNavId);
+                if (subNav) {
+                    subNav.classList.toggle('active');
+                }
+            }
+        }
+
+        // Show specific content section (Scroll to it)
+        function showSection(sectionId, event) {
+            if (event) {
+                event.stopPropagation();
+            }
+
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) {
+                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            // Update active sub-nav item styling
+            const allSubNavItems = document.querySelectorAll('.sub-nav-item');
+            allSubNavItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+        }
+
+        // Open password popup
+        function openPasswordPopup(event) {
+            if (event) {
+                event.stopPropagation();
+            }
+            document.getElementById('password-popup').classList.remove('hidden');
+        }
+
+        // Close password popup
+        function closepasswordpopup() {
+            document.getElementById('password-popup').classList.add('hidden');
         }
     </script>
 
