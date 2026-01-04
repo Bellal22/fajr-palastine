@@ -106,7 +106,36 @@ class ProjectController extends Controller
             'internalPackages',
         ]);
 
-        return view('dashboard.projects.show', compact('project'));
+        $project->loadCount([
+            'beneficiaries as total_candidates',
+            'beneficiaries as received_count' => function ($query) {
+                $query->where('project_beneficiaries.status', 'مستلم');
+            },
+            'beneficiaries as not_received_count' => function ($query) {
+                $query->where('project_beneficiaries.status', 'غير مستلم');
+            }
+        ]);
+
+        // Get area breakdown for the integrated report panel
+        $project->area_breakdown = DB::table('project_beneficiaries')
+            ->join('persons', 'project_beneficiaries.person_id', '=', 'persons.id')
+            ->leftJoin('persons as head', function($join) {
+                $join->on('persons.relative_id', '=', 'head.id_num')
+                     ->whereNull('head.relative_id');
+            })
+            ->where('project_beneficiaries.project_id', $project->id)
+            ->where('project_beneficiaries.status', 'مستلم')
+            ->select(
+                DB::raw('COALESCE(persons.area_responsible_id, head.area_responsible_id) as area_id'),
+                DB::raw('count(*) as count')
+            )
+            ->groupBy('area_id')
+            ->pluck('count', 'area_id')
+            ->toArray();
+
+        $areas = AreaResponsible::whereIn('id', array_keys($project->area_breakdown))->get()->keyBy('id');
+
+        return view('dashboard.projects.show', compact('project', 'areas'));
     }
 
     /**

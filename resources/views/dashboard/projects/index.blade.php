@@ -74,7 +74,10 @@
                     @endif
                 </td>
 
-                <td style="width: 160px">
+                <td style="width: 200px">
+                    <a href="{{ route('dashboard.reports.projects.show', $project) }}" class="btn btn-sm btn-info" title="{{ trans('projects.reports') }}">
+                        <i class="fas fa-chart-pie"></i>
+                    </a>
                     @include('dashboard.projects.partials.actions.show')
                     @include('dashboard.projects.partials.actions.edit')
                     @include('dashboard.projects.partials.actions.delete')

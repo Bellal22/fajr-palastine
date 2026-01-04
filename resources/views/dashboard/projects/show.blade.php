@@ -63,6 +63,60 @@
                 @endslot
             @endcomponent
         </div>
+
+        <div class="col-md-4">
+            @component('dashboard::components.box')
+                @slot('title')
+                    <i class="fas fa-chart-pie mr-1"></i> ملخص التقارير
+                @endslot
+
+                <div class="row text-center mb-3">
+                    <div class="col-12 mb-3">
+                        @php
+                            $percent = $project->total_candidates > 0 ? round(($project->received_count / $project->total_candidates) * 100) : 0;
+                            $color = $percent > 70 ? 'success' : ($percent > 40 ? 'warning' : 'danger');
+                        @endphp
+                        <div class="knob-label font-weight-bold mb-1">نسبة الإنجاز</div>
+                        <h3 class="text-{{ $color }} font-weight-bold">{{ $percent }}%</h3>
+                        <div class="progress progress-xxs mx-4">
+                            <div class="progress-bar bg-{{ $color }}" style="width: {{ $percent }}%"></div>
+                        </div>
+                    </div>
+                    <div class="col-4 border-right px-1">
+                        <small class="text-muted d-block small">مرشح</small>
+                        <strong>{{ number_format($project->total_candidates) }}</strong>
+                    </div>
+                    <div class="col-4 border-right px-1">
+                        <small class="text-muted d-block text-success small">مستلم</small>
+                        <strong class="text-success">{{ number_format($project->received_count) }}</strong>
+                    </div>
+                    <div class="col-4 px-1">
+                        <small class="text-muted d-block text-danger small">متبقي</small>
+                        <strong class="text-danger">{{ number_format($project->not_received_count) }}</strong>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6 class="font-weight-bold small mb-2"><i class="fas fa-map-marker-alt mr-1"></i> التوزيع (المناطق):</h6>
+                <div class="list-group list-group-unbordered small">
+                    @forelse($areas as $areaId => $area)
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-1 border-0">
+                            <span>{{ $area->name }}</span>
+                            <span class="badge badge-light border">{{ number_format($project->area_breakdown[$areaId] ?? 0) }}</span>
+                        </li>
+                    @empty
+                        <li class="list-group-item text-center text-muted border-0 small">لا يوجد عمليات استلام</li>
+                    @endforelse
+                </div>
+
+                <div class="mt-3">
+                    <a href="{{ route('dashboard.reports.projects.show', $project) }}" class="btn btn-sm btn-block btn-outline-primary">
+                        <i class="fas fa-external-link-alt mr-1"></i> {{ trans('projects.full_report') }}
+                    </a>
+                </div>
+            @endcomponent
+        </div>
     </div>
 
     {{-- قسم المستفيدين --}}

@@ -18,5 +18,11 @@
             'can' => ['ability' => 'create', 'model' => \App\Models\Project::class],
             'active' => request()->routeIs('*projects.create'),
         ],
+        [
+            'name' => 'تقارير الكوبونات',
+            'url' => route('dashboard.reports.projects'),
+            'can' => ['ability' => 'viewAny', 'model' => \App\Models\Project::class],
+            'active' => request()->routeIs('*reports.projects'),
+        ],
     ])
 @endcomponent

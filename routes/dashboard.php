@@ -387,6 +387,11 @@ Route::get('trashed/projects/{trashed_project}', 'ProjectController@showTrashed'
 Route::post('projects/{trashed_project}/restore', 'ProjectController@restore')->name('projects.restore');
 Route::delete('projects/{trashed_project}/forceDelete', 'ProjectController@forceDelete')->name('projects.forceDelete');
 
+// Project Reports
+Route::get('reports/projects', 'ProjectReportController@index')->name('reports.projects');
+Route::get('reports/projects/period/{period}', 'ProjectReportController@periodReport')->name('reports.projects.period');
+Route::get('reports/projects/{project}', 'ProjectReportController@show')->name('reports.projects.show');
+
 // Project Beneficiaries (قبل الـ Resource)
 Route::get('projects/{project}/beneficiaries', 'ProjectController@beneficiaries')->name('projects.beneficiaries');
 Route::get('projects/{project}/beneficiaries/import', 'ProjectController@importForm')->name('projects.beneficiaries.import');
@@ -398,6 +403,7 @@ Route::post('projects/{project}/beneficiaries/add-by-areas', 'ProjectController@
 
 // Project Resource (في الآخر)
 Route::resource('projects', 'ProjectController');
+
 
 // SubWarehouses Routes.
 Route::get('trashed/sub_warehouses', 'SubWarehouseController@trashed')->name('sub_warehouses.trashed');

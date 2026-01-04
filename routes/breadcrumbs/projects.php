@@ -48,3 +48,23 @@ Breadcrumbs::for('dashboard.projects.beneficiaries.filter-areas', function ($bre
     $breadcrumb->parent('dashboard.projects.beneficiaries', $project);
     $breadcrumb->push('ترشيح حسب المناطق', route('dashboard.projects.beneficiaries.filter-areas', $project));
 });
+Breadcrumbs::for('dashboard.reports.projects', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.projects.index');
+    $breadcrumb->push('تقارير الكوبونات', route('dashboard.reports.projects'));
+});
+
+Breadcrumbs::for('dashboard.reports.projects.show', function ($breadcrumb, $project) {
+    $breadcrumb->parent('dashboard.reports.projects');
+    $breadcrumb->push($project->name, route('dashboard.reports.projects.show', $project));
+});
+
+Breadcrumbs::for('dashboard.reports.projects.period', function ($breadcrumb, $period) {
+    $breadcrumb->parent('dashboard.reports.projects');
+    $labels = [
+        'daily' => 'اليومية',
+        'weekly' => 'الأسبوعية',
+        'monthly' => 'الشهرية',
+        'yearly' => 'السنوية'
+    ];
+    $breadcrumb->push('التقارير ' . ($labels[$period] ?? ''), route('dashboard.reports.projects.period', $period));
+});
