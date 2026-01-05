@@ -44,6 +44,31 @@
                 font-size: 0.75rem;
                 color: #6c757d;
             }
+            .warehouse-badge {
+                background: #e3f2fd;
+                border-radius: 8px;
+                padding: 12px 10px;
+                margin-bottom: 10px;
+                border: 1px solid #90caf9;
+                text-align: center;
+                height: 100%;
+                transition: all 0.2s;
+            }
+            .warehouse-badge:hover {
+                background: white;
+                border-color: #1976d2;
+                box-shadow: 0 2px 8px rgba(25,118,210,0.15);
+            }
+            .warehouse-badge h4 {
+                margin-top: 5px;
+                color: #1976d2;
+                font-weight: bold;
+                margin-bottom: 0;
+            }
+            .warehouse-badge small {
+                font-size: 0.75rem;
+                color: #5c6bc0;
+            }
             .progress-custom {
                 height: 10px;
                 border-radius: 10px;
@@ -209,7 +234,7 @@
                     <i class="fas fa-map-marker-alt text-danger ml-1"></i>
                     توزيع المستلمين حسب المناطق
                 </h6>
-                <div class="row">
+                <div class="row mb-4">
                     @php
                         $activeAreas = collect($areas)->filter(fn($area) => isset($project->area_breakdown[$area->id]) && $project->area_breakdown[$area->id] > 0);
                     @endphp
@@ -226,6 +251,34 @@
                         <div class="alert alert-light text-center mb-0">
                             <i class="fas fa-info-circle text-muted ml-1"></i>
                             لا يوجد مستلمين حتى الآن
+                        </div>
+                    </div>
+                    @endforelse
+                </div>
+
+                <!-- Warehouses Breakdown (NEW) -->
+                <h6 class="font-weight-bold mb-3">
+                    <i class="fas fa-warehouse text-info ml-1"></i>
+                    توزيع المستلمين حسب المخازن الفرعية
+                </h6>
+                <div class="row">
+                    @php
+                        $activeWarehouses = collect($subWarehouses)->filter(fn($warehouse) => isset($project->warehouse_breakdown[$warehouse->id]) && $project->warehouse_breakdown[$warehouse->id] > 0);
+                    @endphp
+
+                    @forelse($activeWarehouses as $warehouse)
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="warehouse-badge">
+                            <i class="fas fa-warehouse" style="font-size: 0.9rem;"></i>
+                            <small class="d-block">{{ $warehouse->name }}</small>
+                            <h4>{{ number_format($project->warehouse_breakdown[$warehouse->id]) }}</h4>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="col-12">
+                        <div class="alert alert-light text-center mb-0" style="background: #e3f2fd; border-color: #90caf9;">
+                            <i class="fas fa-warehouse text-info ml-1"></i>
+                            لم يتم تحديد مخازن فرعية للمستفيدين
                         </div>
                     </div>
                     @endforelse

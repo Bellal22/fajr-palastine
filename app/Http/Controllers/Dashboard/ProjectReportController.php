@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Models\Project;
 use App\Models\AreaResponsible;
+use App\Models\SubWarehouse;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,23 +16,28 @@ class ProjectReportController extends Controller
     {
         $now = Carbon::now();
 
-        // 1. General Summary Stats
+        // 1. General Summary Stats (FIXED - بداية الأسبوع من السبت)
         $stats = [
             'daily' => [
                 'count' => Project::whereDate('created_at', $now->toDateString())->count(),
-                'recipients' => $this->getRecipientsCountByPeriod('day', $now),
+                'recipients' => $this->getRecipientsCountByPeriod('day', $now->copy()),
             ],
             'weekly' => [
-                'count' => Project::whereBetween('created_at', [$now->startOfWeek()->toDateTimeString(), $now->endOfWeek()->toDateTimeString()])->count(),
-                'recipients' => $this->getRecipientsCountByPeriod('week', $now),
+                'count' => Project::whereBetween('created_at', [
+                    $now->copy()->startOfWeek(Carbon::SATURDAY)->toDateTimeString(),
+                    $now->copy()->endOfWeek(Carbon::FRIDAY)->toDateTimeString()
+                ])->count(),
+                'recipients' => $this->getRecipientsCountByPeriod('week', $now->copy()),
             ],
             'monthly' => [
-                'count' => Project::whereMonth('created_at', $now->month)->whereYear('created_at', $now->year)->count(),
-                'recipients' => $this->getRecipientsCountByPeriod('month', $now),
+                'count' => Project::whereMonth('created_at', $now->month)
+                    ->whereYear('created_at', $now->year)
+                    ->count(),
+                'recipients' => $this->getRecipientsCountByPeriod('month', $now->copy()),
             ],
             'yearly' => [
                 'count' => Project::whereYear('created_at', $now->year)->count(),
-                'recipients' => $this->getRecipientsCountByPeriod('year', $now),
+                'recipients' => $this->getRecipientsCountByPeriod('year', $now->copy()),
             ],
         ];
 
@@ -46,13 +52,12 @@ class ProjectReportController extends Controller
             }
         ])->latest()->get();
 
-        // 3. Area-based Breakdown for Each Project (Fixed & Optimized)
-        // We fallback to head of family area if the person's area is null
+        // 3. Area-based Breakdown for Each Project
         $areaBreakdowns = DB::table('project_beneficiaries')
             ->join('persons', 'project_beneficiaries.person_id', '=', 'persons.id')
-            ->leftJoin('persons as head', function($join) {
+            ->leftJoin('persons as head', function ($join) {
                 $join->on('persons.relative_id', '=', 'head.id_num')
-                     ->whereNull('head.relative_id');
+                    ->whereNull('head.relative_id');
             })
             ->whereIn('project_beneficiaries.project_id', $projects->pluck('id'))
             ->where('project_beneficiaries.status', 'مستلم')
@@ -65,6 +70,20 @@ class ProjectReportController extends Controller
             ->get()
             ->groupBy('project_id');
 
+        // 4. Sub-Warehouse Breakdown for Each Project
+        $warehouseBreakdowns = DB::table('project_beneficiaries')
+            ->whereIn('project_id', $projects->pluck('id'))
+            ->where('status', 'مستلم')
+            ->whereNotNull('sub_warehouse_id')
+            ->select(
+                'project_id',
+                'sub_warehouse_id',
+                DB::raw('count(*) as count')
+            )
+            ->groupBy('project_id', 'sub_warehouse_id')
+            ->get()
+            ->groupBy('project_id');
+
         $allAreaIds = DB::table('persons')->pluck('area_responsible_id')
             ->merge(DB::table('persons')
                 ->whereNotNull('persons.relative_id')
@@ -74,12 +93,21 @@ class ProjectReportController extends Controller
             ->filter();
 
         $areas = AreaResponsible::whereIn('id', $allAreaIds)->get()->keyBy('id');
-        
+
+        // Get all sub warehouses
+        $allWarehouseIds = DB::table('project_beneficiaries')
+            ->where('status', 'مستلم')
+            ->whereNotNull('sub_warehouse_id')
+            ->pluck('sub_warehouse_id')
+            ->unique();
+        $subWarehouses = SubWarehouse::whereIn('id', $allWarehouseIds)->get()->keyBy('id');
+
         foreach ($projects as $project) {
             $project->area_breakdown = $areaBreakdowns->get($project->id, collect())->pluck('count', 'area_id')->toArray();
+            $project->warehouse_breakdown = $warehouseBreakdowns->get($project->id, collect())->pluck('count', 'sub_warehouse_id')->toArray();
         }
 
-        return view('dashboard.reports.projects', compact('stats', 'projects', 'areas'));
+        return view('dashboard.reports.projects', compact('stats', 'projects', 'areas', 'subWarehouses'));
     }
 
     public function show(Project $project)
@@ -97,9 +125,9 @@ class ProjectReportController extends Controller
         // Get area breakdown for this specific project
         $areaBreakdown = DB::table('project_beneficiaries')
             ->join('persons', 'project_beneficiaries.person_id', '=', 'persons.id')
-            ->leftJoin('persons as head', function($join) {
+            ->leftJoin('persons as head', function ($join) {
                 $join->on('persons.relative_id', '=', 'head.id_num')
-                     ->whereNull('head.relative_id');
+                    ->whereNull('head.relative_id');
             })
             ->where('project_beneficiaries.project_id', $project->id)
             ->where('project_beneficiaries.status', 'مستلم')
@@ -111,11 +139,26 @@ class ProjectReportController extends Controller
             ->pluck('count', 'area_id')
             ->toArray();
 
+        // Get warehouse breakdown for this specific project
+        $warehouseBreakdown = DB::table('project_beneficiaries')
+            ->where('project_id', $project->id)
+            ->where('status', 'مستلم')
+            ->whereNotNull('sub_warehouse_id')
+            ->select(
+                'sub_warehouse_id',
+                DB::raw('count(*) as count')
+            )
+            ->groupBy('sub_warehouse_id')
+            ->pluck('count', 'sub_warehouse_id')
+            ->toArray();
+
         $project->area_breakdown = $areaBreakdown;
+        $project->warehouse_breakdown = $warehouseBreakdown;
 
         $areas = AreaResponsible::whereIn('id', array_keys($areaBreakdown))->get()->keyBy('id');
+        $subWarehouses = SubWarehouse::whereIn('id', array_keys($warehouseBreakdown))->get()->keyBy('id');
 
-        return view('dashboard.reports.project', compact('project', 'areas'));
+        return view('dashboard.reports.project', compact('project', 'areas', 'subWarehouses'));
     }
 
     public function periodReport(Request $request, $period)
@@ -136,11 +179,12 @@ class ProjectReportController extends Controller
                 }
                 break;
             case 'weekly':
-                $startDate = $today->copy()->startOfWeek();
-                $endDate = $today->copy()->endOfWeek();
+                // ✅ بداية الأسبوع من السبت
+                $startDate = $today->copy()->startOfWeek(Carbon::SATURDAY);
+                $endDate = $today->copy()->endOfWeek(Carbon::FRIDAY);
                 $label = 'الأسبوعية';
                 if ($dateInput) {
-                    $label .= ' للأسبوع الذي يتضمن ' . $today->format('Y-m-d');
+                    $label .= ' للأسبوع من ' . $startDate->format('Y-m-d') . ' إلى ' . $endDate->format('Y-m-d');
                 }
                 break;
             case 'monthly':
@@ -187,9 +231,9 @@ class ProjectReportController extends Controller
         $recipients = DB::table('project_beneficiaries')
             ->join('persons', 'project_beneficiaries.person_id', '=', 'persons.id')
             ->join('projects', 'project_beneficiaries.project_id', '=', 'projects.id')
-            ->leftJoin('persons as head', function($join) {
+            ->leftJoin('persons as head', function ($join) {
                 $join->on('persons.relative_id', '=', 'head.id_num')
-                     ->whereNull('head.relative_id');
+                    ->whereNull('head.relative_id');
             })
             ->where('project_beneficiaries.status', 'مستلم')
             ->whereBetween('project_beneficiaries.delivery_date', [$startDate, $endDate])
@@ -205,9 +249,9 @@ class ProjectReportController extends Controller
         // 4. Area breakdown for this period
         $areaBreakdown = DB::table('project_beneficiaries')
             ->join('persons', 'project_beneficiaries.person_id', '=', 'persons.id')
-            ->leftJoin('persons as head', function($join) {
+            ->leftJoin('persons as head', function ($join) {
                 $join->on('persons.relative_id', '=', 'head.id_num')
-                     ->whereNull('head.relative_id');
+                    ->whereNull('head.relative_id');
             })
             ->where('project_beneficiaries.status', 'مستلم')
             ->whereBetween('project_beneficiaries.delivery_date', [$startDate, $endDate])
@@ -219,9 +263,23 @@ class ProjectReportController extends Controller
             ->pluck('count', 'area_id')
             ->toArray();
 
-        $areas = AreaResponsible::whereIn('id', array_keys($areaBreakdown))->get()->keyBy('id');
+        // 5. Warehouse breakdown for this period
+        $warehouseBreakdown = DB::table('project_beneficiaries')
+            ->where('status', 'مستلم')
+            ->whereBetween('delivery_date', [$startDate, $endDate])
+            ->whereNotNull('sub_warehouse_id')
+            ->select(
+                'sub_warehouse_id',
+                DB::raw('count(*) as count')
+            )
+            ->groupBy('sub_warehouse_id')
+            ->pluck('count', 'sub_warehouse_id')
+            ->toArray();
 
-        return view('dashboard.reports.period', compact('createdProjects', 'activeProjects', 'recipients', 'areaBreakdown', 'areas', 'label', 'period', 'today'));
+        $areas = AreaResponsible::whereIn('id', array_keys($areaBreakdown))->get()->keyBy('id');
+        $subWarehouses = SubWarehouse::whereIn('id', array_keys($warehouseBreakdown))->get()->keyBy('id');
+
+        return view('dashboard.reports.period', compact('createdProjects', 'activeProjects', 'recipients', 'areaBreakdown', 'warehouseBreakdown', 'areas', 'subWarehouses', 'label', 'period', 'today'));
     }
 
     private function getRecipientsCountByPeriod($period, $date)
@@ -234,10 +292,18 @@ class ProjectReportController extends Controller
                 $query->whereDate('delivery_date', $date->toDateString());
                 break;
             case 'week':
-                $query->whereBetween('delivery_date', [$date->startOfWeek()->toDateString(), $date->endOfWeek()->toDateString()]);
+                // ✅ بداية الأسبوع من السبت
+                $startOfWeek = $date->copy()->startOfWeek(Carbon::SATURDAY);
+                $endOfWeek = $date->copy()->endOfWeek(Carbon::FRIDAY);
+
+                $query->whereBetween('delivery_date', [
+                    $startOfWeek->toDateString(),
+                    $endOfWeek->toDateString()
+                ]);
                 break;
             case 'month':
-                $query->whereMonth('delivery_date', $date->month)->whereYear('delivery_date', $date->year);
+                $query->whereMonth('delivery_date', $date->month)
+                    ->whereYear('delivery_date', $date->year);
                 break;
             case 'year':
                 $query->whereYear('delivery_date', $date->year);

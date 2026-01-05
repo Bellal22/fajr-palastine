@@ -190,7 +190,7 @@ class Project extends Model
     public function beneficiaries()
     {
         return $this->belongsToMany(Person::class, 'project_beneficiaries')
-            ->withPivot('status', 'notes', 'delivery_date', 'quantity')
+            ->withPivot('status', 'notes', 'delivery_date', 'quantity', 'sub_warehouse_id')
             ->withTimestamps();
     }
 }

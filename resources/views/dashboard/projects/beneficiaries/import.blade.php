@@ -1,4 +1,4 @@
-<x-layout :title="'استيراد المستفيدين - ' . $project->name">
+<x-layout :title="'استيراد المستفيدين - ' . $project->name" :breadcrumbs="['dashboard.projects.beneficiaries.import', $project]">
 
     <div class="row">
         <div class="col-md-8">
@@ -20,17 +20,44 @@
                         </ul>
                     </div>
 
-                    <div class="form-group">
-                        <label for="file">اختر ملف Excel <span class="text-danger">*</span></label>
-                        <input type="file"
-                               name="file"
-                               id="file"
-                               class="form-control @error('file') is-invalid @enderror"
-                               accept=".xlsx,.xls,.csv"
-                               required>
-                        @error('file')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="sub_warehouse_id">المخزن الفرعي <span class="text-danger">*</span></label>
+                                <select name="sub_warehouse_id"
+                                        id="sub_warehouse_id"
+                                        class="form-control @error('sub_warehouse_id') is-invalid @enderror"
+                                        required>
+                                    <option value="">-- اختر المخزن الفرعي --</option>
+                                    @foreach(\App\Models\SubWarehouse::all() as $warehouse)
+                                        <option value="{{ $warehouse->id }}" {{ old('sub_warehouse_id') == $warehouse->id ? 'selected' : '' }}>
+                                            {{ $warehouse->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('sub_warehouse_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i> المخزن الذي سيستلم منه المستفيدون
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="file">اختر ملف Excel <span class="text-danger">*</span></label>
+                                <input type="file"
+                                       name="file"
+                                       id="file"
+                                       class="form-control @error('file') is-invalid @enderror"
+                                       accept=".xlsx,.xls,.csv"
+                                       required>
+                                @error('file')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group mb-0">
@@ -42,6 +69,40 @@
                         </a>
                     </div>
                 </form>
+            @endcomponent
+        </div>
+
+        <div class="col-md-4">
+            @component('dashboard::components.box')
+                @slot('title', 'ملاحظات هامة')
+
+                <div class="alert alert-warning mb-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>تنبيه:</strong> يجب اختيار المخزن الفرعي قبل رفع الملف
+                </div>
+
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        الملف يجب أن يكون بصيغة Excel (.xlsx, .xls, .csv)
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        الحد الأقصى لحجم الملف: 10 ميجابايت
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        يجب أن يحتوي الملف على رقم الهوية لكل مستفيد
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        سيتم ربط جميع المستفيدين بالمخزن المحدد
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-info-circle text-info"></i>
+                        المستفيدون الموجودون مسبقاً سيتم تحديث بياناتهم
+                    </li>
+                </ul>
             @endcomponent
         </div>
     </div>

@@ -1,6 +1,5 @@
 <x-layout :title="'المستفيدين من مشروع: ' . $project->name" :breadcrumbs="['dashboard.projects.beneficiaries', $project]">
 
-
     @if(session('import_errors'))
         <div class="alert alert-warning">
             <strong>أخطاء الاستيراد:</strong>
@@ -11,7 +10,6 @@
             </ul>
         </div>
     @endif
-
 
     {{-- البحث والفلتر --}}
     <div class="row mb-3">
@@ -30,7 +28,6 @@
                                        value="{{ request('search') }}">
                             </div>
 
-
                             <div class="col-md-2 mb-2">
                                 <label for="status"><i class="fas fa-filter"></i> الحالة:</label>
                                 <select name="status" id="status" class="form-control">
@@ -39,7 +36,6 @@
                                     <option value="غير مستلم" {{ request('status') === 'غير مستلم' ? 'selected' : '' }}>غير مستلم</option>
                                 </select>
                             </div>
-
 
                             <div class="col-md-2 mb-2">
                                 <label for="date_from"><i class="fas fa-calendar"></i> التاريخ من:</label>
@@ -50,7 +46,6 @@
                                        value="{{ request('date_from') }}">
                             </div>
 
-
                             <div class="col-md-2 mb-2">
                                 <label for="date_to"><i class="fas fa-calendar"></i> التاريخ إلى:</label>
                                 <input type="date"
@@ -60,13 +55,11 @@
                                        value="{{ request('date_to') }}">
                             </div>
 
-
                             <div class="col-md-3 mb-2">
                                 <label>&nbsp;</label><br>
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-search"></i> بحث
                                 </button>
-
 
                                 @if(request('search') || request('status') || request('date_from') || request('date_to'))
                                     <a href="{{ route('dashboard.projects.beneficiaries', $project) }}" class="btn btn-secondary">
@@ -81,12 +74,10 @@
         </div>
     </div>
 
-
     @component('dashboard::components.table-box')
         @slot('title')
             المستفيدين ({{ $beneficiaries->total() }})
         @endslot
-
 
         @slot('tools')
             <a href="{{ route('dashboard.projects.beneficiaries.filter-areas', $project) }}" class="btn btn-info btn-sm">
@@ -100,16 +91,16 @@
             </a>
         @endslot
 
-
         <thead>
             <tr>
-                <th style="width: 4%;">#</th>
-                <th style="width: 10%;">رقم الهوية</th>
-                <th style="width: 20%;">الاسم الرباعي</th>
-                <th style="width: 9%;">رقم الجوال</th>
-                <th style="width: 12%;">المنطقة</th>
-                <th style="width: 6%;">الكمية</th>
-                <th style="width: 9%;">الحالة</th>
+                <th style="width: 3%;">#</th>
+                <th style="width: 9%;">رقم الهوية</th>
+                <th style="width: 17%;">الاسم الرباعي</th>
+                <th style="width: 8%;">رقم الجوال</th>
+                <th style="width: 10%;">المنطقة</th>
+                <th style="width: 10%;">المخزن الفرعي</th>
+                <th style="width: 5%;">الكمية</th>
+                <th style="width: 8%;">الحالة</th>
                 <th style="width: 10%;">تاريخ التسليم</th>
                 <th style="width: 12%;">الملاحظات</th>
                 <th style="width: 8%;">...</th>
@@ -127,6 +118,16 @@
                 </td>
                 <td>{{ $beneficiary->phone ?? '-' }}</td>
                 <td><small class="text-muted">{{ $beneficiary->neighborhood ?? $beneficiary->current_city ?? '-' }}</small></td>
+                <td>
+                    @if($beneficiary->pivot->sub_warehouse_id && isset($subWarehouses[$beneficiary->pivot->sub_warehouse_id]))
+                        <span class="badge badge-info">
+                            <i class="fas fa-warehouse"></i>
+                            {{ $subWarehouses[$beneficiary->pivot->sub_warehouse_id]->name }}
+                        </span>
+                    @else
+                        <span class="text-muted">{{ $beneficiary->pivot->sub_warehouse_id ? 'محذوف' : 'غير محدد' }}</span>
+                    @endif
+                </td>
                 <td class="text-center"><strong>{{ $beneficiary->pivot->quantity ?? 1 }}</strong></td>
                 <td>
                     @if($beneficiary->pivot->status === 'مستلم')
@@ -150,7 +151,6 @@
                         <i class="fas fa-edit"></i>
                     </button>
 
-
                     <form action="{{ route('dashboard.projects.beneficiaries.destroy', [$project, $beneficiary]) }}"
                           method="POST"
                           style="display: inline-block;">
@@ -164,7 +164,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="10" class="text-center py-4">
+                <td colspan="11" class="text-center py-4">
                     @if(request('search') || request('status') || request('date_from') || request('date_to'))
                         <i class="fas fa-search fa-3x text-muted mb-3"></i>
                         <p class="text-muted">لا توجد نتائج للبحث</p>
@@ -180,14 +180,12 @@
         @endforelse
         </tbody>
 
-
         @if($beneficiaries->hasPages())
             @slot('footer')
                 {{ $beneficiaries->links() }}
             @endslot
         @endif
     @endcomponent
-
 
     {{-- Modals --}}
     @foreach($beneficiaries as $beneficiary)
@@ -246,13 +244,11 @@
     @endforeach
 </x-layout>
 
-
 @push('scripts')
 <script>
 $(document).ready(function() {
     // Focus على حقل البحث عند تحميل الصفحة
     $('#search').focus();
-
 
     // عند فتح الـ Modal، اضبط التاريخ الحالي إذا كان فارغاً
     $('.modal').on('show.bs.modal', function (e) {
@@ -262,7 +258,6 @@ $(document).ready(function() {
             dateInput.val(today);
         }
     });
-
 
     // Debug
     $('.modal form').on('submit', function(e) {

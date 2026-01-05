@@ -10,6 +10,7 @@ use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\ProjectRequest;
 use App\Models\AreaResponsible;
 use App\Models\Block;
+use App\Models\SubWarehouse;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
@@ -353,7 +354,7 @@ class ProjectController extends Controller
     public function beneficiaries(Request $request, Project $project)
     {
         $query = $project->beneficiaries()
-            ->withPivot('status', 'notes', 'delivery_date', 'quantity');
+            ->withPivot('status', 'notes', 'delivery_date', 'quantity', 'sub_warehouse_id');
 
         // البحث برقم الهوية
         if ($request->filled('search')) {
@@ -378,8 +379,13 @@ class ProjectController extends Controller
 
         $beneficiaries = $query->paginate(50)->appends($request->all());
 
-        return view('dashboard.projects.beneficiaries.index', compact('project', 'beneficiaries'));
+        // جلب كل المخازن مرة واحدة بدل استعلام لكل مستفيد
+        $subWarehouseIds = $beneficiaries->pluck('pivot.sub_warehouse_id')->filter()->unique();
+        $subWarehouses = SubWarehouse::whereIn('id', $subWarehouseIds)->get()->keyBy('id');
+
+        return view('dashboard.projects.beneficiaries.index', compact('project', 'beneficiaries', 'subWarehouses'));
     }
+
 
     /**
      * Show import form.
@@ -403,16 +409,19 @@ class ProjectController extends Controller
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv|max:10240',
+            'sub_warehouse_id' => 'required|exists:sub_warehouses,id',
         ]);
 
         try {
             $file = $request->file('file');
+            $subWarehouseId = $request->sub_warehouse_id;
+
             $spreadsheet = IOFactory::load($file->getPathname());
             $worksheet = $spreadsheet->getActiveSheet();
             $rows = $worksheet->toArray();
 
             $header = $rows[0] ?? [];
-            
+
             // تهيئة الفهارس الافتراضية
             $idIdx = 0;
             $qtyIdx = 3;
@@ -420,18 +429,26 @@ class ProjectController extends Controller
             $dateIdx = 7; // تاريخ التسليم
             $generalDateIdx = 4; // التاريخ العام
             $notesIdx = 6;
-            
+
             // محاولة الكشف عن الفهارس من العناوين (Header)
             $hasHeader = false;
             foreach ($header as $i => $col) {
                 $col = trim($col);
                 if (empty($col)) continue;
-                
-                if (mb_strpos($col, 'هوية') !== false) { $idIdx = $i; $hasHeader = true; }
-                elseif (mb_strpos($col, 'كمية') !== false) { $qtyIdx = $i; $hasHeader = true; }
-                elseif (mb_strpos($col, 'حالة') !== false || mb_strpos($col, 'استلام') !== false) { $statusIdx = $i; $hasHeader = true; }
-                elseif (mb_strpos($col, 'ملاحظات') !== false) { $notesIdx = $i; $hasHeader = true; }
-                elseif (mb_strpos($col, 'تاريخ') !== false) {
+
+                if (mb_strpos($col, 'هوية') !== false) {
+                    $idIdx = $i;
+                    $hasHeader = true;
+                } elseif (mb_strpos($col, 'كمية') !== false) {
+                    $qtyIdx = $i;
+                    $hasHeader = true;
+                } elseif (mb_strpos($col, 'حالة') !== false || mb_strpos($col, 'استلام') !== false) {
+                    $statusIdx = $i;
+                    $hasHeader = true;
+                } elseif (mb_strpos($col, 'ملاحظات') !== false) {
+                    $notesIdx = $i;
+                    $hasHeader = true;
+                } elseif (mb_strpos($col, 'تاريخ') !== false) {
                     if (mb_strpos($col, 'تسليم') !== false) {
                         $dateIdx = $i;
                     } else {
@@ -448,7 +465,11 @@ class ProjectController extends Controller
                 $firstId = trim($header[0] ?? '');
                 if (is_numeric($firstId) && strlen($firstId) < 7 && !empty($header[1]) && strlen(trim($header[1])) >= 9) {
                     // تنسيق: مسلسل، هوية، اسم، جوال، منطقة، كمية، حالة، تاريخ، ملاحظات
-                    $idIdx = 1; $qtyIdx = 5; $statusIdx = 6; $dateIdx = 7; $notesIdx = 8;
+                    $idIdx = 1;
+                    $qtyIdx = 5;
+                    $statusIdx = 6;
+                    $dateIdx = 7;
+                    $notesIdx = 8;
                 }
             }
 
@@ -505,8 +526,7 @@ class ProjectController extends Controller
                             // إذا كان التاريخ بصيغة الرقم (Excel Serial Date)
                             $deliveryDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($rawDateValue)->format('Y-m-d');
                         } else {
-                            // تنظيف النص من أي حروف زائدة قد تفسد التحليل (مثل المسافات أو أرقام ملتصقة)
-                            // نأخذ أول 10 حروف إذا كانت تشبه شكل التاريخ YYYY-MM-DD
+                            // تنظيف النص من أي حروف زائدة قد تفسد التحليل
                             if (preg_match('/(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/', $rawDateValue, $matches)) {
                                 $deliveryDate = \Illuminate\Support\Carbon::parse($matches[1])->format('Y-m-d');
                             } else {
@@ -527,6 +547,7 @@ class ProjectController extends Controller
                     'status' => $status,
                     'notes' => ($notesValue == '-' || empty(trim($notesValue))) ? null : trim($notesValue),
                     'delivery_date' => $deliveryDate,
+                    'sub_warehouse_id' => $subWarehouseId,
                 ];
 
                 if ($project->beneficiaries()->where('person_id', $person->id)->exists()) {

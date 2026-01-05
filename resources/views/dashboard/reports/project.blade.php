@@ -3,6 +3,8 @@
         .report-card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .area-badge { background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #eee; text-align: center; }
         .area-badge h3 { margin-top: 5px; color: #007bff; font-weight: bold; }
+        .warehouse-badge { background: #e3f2fd; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #90caf9; text-align: center; }
+        .warehouse-badge h3 { margin-top: 5px; color: #1976d2; font-weight: bold; }
         .progress-custom { height: 12px; border-radius: 6px; background: #eee; overflow: hidden; }
         .progress-bar-custom { height: 100%; transition: width 1s ease; }
     </style>
@@ -66,7 +68,7 @@
                     <h4 class="font-weight-bold mb-4 border-bottom pb-2">
                         <i class="fas fa-map-marked-alt text-primary mr-2"></i> توزيع المستلمين حسب المناطق المسؤول عنها
                     </h4>
-                    <div class="row">
+                    <div class="row mb-5">
                         @forelse($areas as $area)
                         <div class="col-lg-3 col-md-4 col-sm-6">
                             <div class="area-badge shadow-sm">
@@ -78,6 +80,27 @@
                         <div class="col-12 py-5 text-center bg-light rounded">
                             <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
                             <p class="text-muted">لم يتم رصد أي عمليات استلام في أي منطقة لهذا الكوبون حتى الآن.</p>
+                        </div>
+                        @endforelse
+                    </div>
+
+                    <!-- Warehouse Breakdown (NEW) -->
+                    <h4 class="font-weight-bold mb-4 border-bottom pb-2">
+                        <i class="fas fa-warehouse text-info mr-2"></i> توزيع المستلمين حسب المخازن الفرعية
+                    </h4>
+                    <div class="row">
+                        @forelse($subWarehouses as $warehouse)
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="warehouse-badge shadow-sm">
+                                <i class="fas fa-warehouse text-info mb-2"></i>
+                                <small class="text-muted text-uppercase font-weight-bold d-block">{{ $warehouse->name }}</small>
+                                <h3>{{ number_format($project->warehouse_breakdown[$warehouse->id] ?? 0) }}</h3>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="col-12 py-5 text-center bg-light rounded">
+                            <i class="fas fa-warehouse fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">لم يتم تحديد مخازن فرعية للمستفيدين من هذا الكوبون.</p>
                         </div>
                         @endforelse
                     </div>

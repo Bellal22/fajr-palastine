@@ -5,7 +5,6 @@
         <div class="card-body">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    {{-- <h3 class="mb-2"><i class="fas fa-chart-bar ml-2"></i> تقرير الكوبونات - <span class="text-primary">{{ $label }}</span></h3> --}}
                     <p class="mb-0 text-muted">نظرة شاملة على العمليات خلال هذه الفترة</p>
                 </div>
                 <div class="col-md-4 text-left">
@@ -114,9 +113,9 @@
         </div>
     </div>
 
-    <!-- Active Coupons & Areas -->
+    <!-- Active Coupons & Areas & Warehouses -->
     <div class="row mb-4">
-        <div class="col-lg-8 mb-3">
+        <div class="col-lg-6 mb-3">
             <div class="card h-100">
                 <div class="card-header bg-white">
                     <h5 class="mb-0">
@@ -161,7 +160,7 @@
             </div>
         </div>
 
-        <div class="col-lg-4 mb-3">
+        <div class="col-lg-3 mb-3">
             <div class="card h-100">
                 <div class="card-header bg-white">
                     <h5 class="mb-0">
@@ -175,6 +174,34 @@
                         <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
                             <span class="font-weight-bold">{{ $area->name }}</span>
                             <span class="badge badge-dark">{{ number_format($areaBreakdown[$areaId]) }}</span>
+                        </div>
+                        @empty
+                        <div class="text-center text-muted py-4">
+                            لا توجد بيانات
+                        </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-warehouse text-info ml-2"></i>
+                        المخازن الفرعية
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div style="max-height: 350px; overflow-y: auto;">
+                        @forelse($subWarehouses as $warehouseId => $warehouse)
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                            <span class="font-weight-bold">
+                                <i class="fas fa-warehouse text-info"></i>
+                                {{ $warehouse->name }}
+                            </span>
+                            <span class="badge badge-info">{{ number_format($warehouseBreakdown[$warehouseId] ?? 0) }}</span>
                         </div>
                         @empty
                         <div class="text-center text-muted py-4">

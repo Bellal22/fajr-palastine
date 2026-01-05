@@ -5,35 +5,67 @@
     @component('dashboard::components.box')
         @slot('title', 'ترشيح المستفيدين حسب المناطق')
 
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            <strong>ملاحظة:</strong> سيتم إضافة جميع الأشخاص الموجودين في المربع المحدد كمستفيدين في المشروع
+        </div>
+
         <div class="row">
-            <div class="col-md-6 form-group">
+            <div class="col-md-4 form-group">
                 <label for="area_responsible_id">مسؤول المنطقة <span class="text-danger">*</span></label>
                 <select name="area_responsible_id"
                         id="area_responsible_id"
-                        class="form-control"
+                        class="form-control @error('area_responsible_id') is-invalid @enderror"
                         required>
                     <option value="">اختر مسؤول المنطقة</option>
                     @foreach($areaResponsibles as $area)
-                        <option value="{{ $area->id }}">{{ $area->name }}</option>
+                        <option value="{{ $area->id }}" {{ old('area_responsible_id') == $area->id ? 'selected' : '' }}>
+                            {{ $area->name }}
+                        </option>
                     @endforeach
                 </select>
+                @error('area_responsible_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
-            <div class="col-md-6 form-group">
+            <div class="col-md-4 form-group">
                 <label for="block_id">المربع <span class="text-danger">*</span></label>
                 <select name="block_id"
                         id="block_id"
-                        class="form-control"
+                        class="form-control @error('block_id') is-invalid @enderror"
                         required
                         disabled>
                     <option value="">اختر المربع</option>
                 </select>
+                @error('block_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
                 <small class="form-text text-muted">يجب اختيار مسؤول المنطقة أولاً</small>
+            </div>
+
+            <div class="col-md-4 form-group">
+                <label for="sub_warehouse_id">المخزن الفرعي <span class="text-danger">*</span></label>
+                <select name="sub_warehouse_id"
+                        id="sub_warehouse_id"
+                        class="form-control @error('sub_warehouse_id') is-invalid @enderror"
+                        required>
+                    <option value="">-- اختر المخزن الفرعي --</option>
+                    @foreach(\App\Models\SubWarehouse::all() as $warehouse)
+                        <option value="{{ $warehouse->id }}" {{ old('sub_warehouse_id') == $warehouse->id ? 'selected' : '' }}>
+                            {{ $warehouse->name }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('sub_warehouse_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+                <small class="form-text text-muted">المخزن الذي سيستلم منه المستفيدون</small>
             </div>
         </div>
 
-        <div class="row mt-3">
-            <div class="col-md-6">
+        <div class="row">
+            <div class="col-md-4">
                 {{ BsForm::number('quantity')
                     ->label('الكمية لكل مستفيد')
                     ->value(1)
@@ -58,8 +90,8 @@
 
 </x-layout>
 
+@push('scripts')
 <script>
-// استخدم JavaScript عادي بدون jQuery
 document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Page loaded');
 
@@ -126,3 +158,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+@endpush
