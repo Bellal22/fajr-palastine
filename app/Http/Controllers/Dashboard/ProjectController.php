@@ -411,7 +411,46 @@ class ProjectController extends Controller
             $worksheet = $spreadsheet->getActiveSheet();
             $rows = $worksheet->toArray();
 
-            array_shift($rows);
+            $header = $rows[0] ?? [];
+            
+            // تهيئة الفهارس الافتراضية
+            $idIdx = 0;
+            $qtyIdx = 3;
+            $statusIdx = 5;
+            $dateIdx = 7; // تاريخ التسليم
+            $generalDateIdx = 4; // التاريخ العام
+            $notesIdx = 6;
+            
+            // محاولة الكشف عن الفهارس من العناوين (Header)
+            $hasHeader = false;
+            foreach ($header as $i => $col) {
+                $col = trim($col);
+                if (empty($col)) continue;
+                
+                if (mb_strpos($col, 'هوية') !== false) { $idIdx = $i; $hasHeader = true; }
+                elseif (mb_strpos($col, 'كمية') !== false) { $qtyIdx = $i; $hasHeader = true; }
+                elseif (mb_strpos($col, 'حالة') !== false || mb_strpos($col, 'استلام') !== false) { $statusIdx = $i; $hasHeader = true; }
+                elseif (mb_strpos($col, 'ملاحظات') !== false) { $notesIdx = $i; $hasHeader = true; }
+                elseif (mb_strpos($col, 'تاريخ') !== false) {
+                    if (mb_strpos($col, 'تسليم') !== false) {
+                        $dateIdx = $i;
+                    } else {
+                        $generalDateIdx = $i;
+                    }
+                    $hasHeader = true;
+                }
+            }
+
+            if ($hasHeader) {
+                array_shift($rows);
+            } else {
+                // إذا لم يتم العثور على عناوين، نطبق كشفاً ذكياً على الصف الأول
+                $firstId = trim($header[0] ?? '');
+                if (is_numeric($firstId) && strlen($firstId) < 7 && !empty($header[1]) && strlen(trim($header[1])) >= 9) {
+                    // تنسيق: مسلسل، هوية، اسم، جوال، منطقة، كمية، حالة، تاريخ، ملاحظات
+                    $idIdx = 1; $qtyIdx = 5; $statusIdx = 6; $dateIdx = 7; $notesIdx = 8;
+                }
+            }
 
             $imported = 0;
             $errors = [];
@@ -419,8 +458,18 @@ class ProjectController extends Controller
             DB::beginTransaction();
 
             foreach ($rows as $index => $row) {
-                $rowNumber = $index + 2;
-                $idNumber = trim($row[0]);
+                $rowNumber = $index + ($hasHeader ? 2 : 1);
+                $idNumber = trim($row[$idIdx] ?? '');
+
+                $quantityValue = $row[$qtyIdx] ?? 1;
+                $statusValue = $row[$statusIdx] ?? '';
+                $deliveryDateValue = $row[$dateIdx] ?? '';
+                $notesValue = $row[$notesIdx] ?? '';
+
+                // إذا كان تاريخ التسليم المباشر فارغاً، نجرب عمود التاريخ العام
+                if (empty(trim($deliveryDateValue)) || $deliveryDateValue == '-') {
+                    $deliveryDateValue = $row[$generalDateIdx] ?? '';
+                }
 
                 if (empty($idNumber)) {
                     continue;
@@ -433,18 +482,58 @@ class ProjectController extends Controller
                     continue;
                 }
 
-                if ($project->beneficiaries()->where('person_id', $person->id)->exists()) {
-                    $errors[] = "الصف {$rowNumber}: الشخص {$person->first_name} {$person->family_name} مضاف مسبقاً";
-                    continue;
+                $status = trim($statusValue);
+                // معالجة الحالة بمرونة أكبر (البحث عن كلمة مستلم داخل النص)
+                if (mb_strpos($status, 'غير') !== false) {
+                    $status = 'غير مستلم';
+                } elseif (mb_strpos($status, 'مستلم') !== false) {
+                    $status = 'مستلم';
+                } else {
+                    $status = 'غير مستلم';
                 }
 
-                // إضافة المستفيد مع الكمية
-                $project->beneficiaries()->attach($person->id, [
-                    'quantity' => $row[3] ?? 1,
-                    'status' => $row[8] ?? 'غير مستلم',
-                    'notes' => $row[9] ?? null,
-                    'delivery_date' => !empty($row[10]) ? date('Y-m-d', strtotime($row[10])) : null,
-                ]);
+                // معالجة التاريخ بشكل أكثر مرونة وقوة
+                $deliveryDate = null;
+                $rawDateValue = trim($deliveryDateValue);
+                if (empty($rawDateValue) || $rawDateValue == '-') {
+                    $rawDateValue = trim($row[$generalDateIdx] ?? '');
+                }
+
+                if (!empty($rawDateValue) && $rawDateValue != '-') {
+                    try {
+                        if (is_numeric($rawDateValue) && $rawDateValue > 30000) {
+                            // إذا كان التاريخ بصيغة الرقم (Excel Serial Date)
+                            $deliveryDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($rawDateValue)->format('Y-m-d');
+                        } else {
+                            // تنظيف النص من أي حروف زائدة قد تفسد التحليل (مثل المسافات أو أرقام ملتصقة)
+                            // نأخذ أول 10 حروف إذا كانت تشبه شكل التاريخ YYYY-MM-DD
+                            if (preg_match('/(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/', $rawDateValue, $matches)) {
+                                $deliveryDate = \Illuminate\Support\Carbon::parse($matches[1])->format('Y-m-d');
+                            } else {
+                                $deliveryDate = \Illuminate\Support\Carbon::parse($rawDateValue)->format('Y-m-d');
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        // محاولة أخيرة باستخدام strtotime
+                        $timestamp = strtotime($rawDateValue);
+                        if ($timestamp) {
+                            $deliveryDate = date('Y-m-d', $timestamp);
+                        }
+                    }
+                }
+
+                $pivotData = [
+                    'quantity' => is_numeric($quantityValue) ? (int)$quantityValue : 1,
+                    'status' => $status,
+                    'notes' => ($notesValue == '-' || empty(trim($notesValue))) ? null : trim($notesValue),
+                    'delivery_date' => $deliveryDate,
+                ];
+
+                if ($project->beneficiaries()->where('person_id', $person->id)->exists()) {
+                    $project->beneficiaries()->updateExistingPivot($person->id, $pivotData);
+                } else {
+                    $project->beneficiaries()->attach($person->id, $pivotData);
+                }
 
                 $imported++;
             }
