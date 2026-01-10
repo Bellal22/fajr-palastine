@@ -777,6 +777,7 @@ class ProjectController extends Controller
             'status' => 'required_if:action,update_status|nullable|in:مستلم,غير مستلم',
             'delivery_date' => 'nullable|date',
             'notes' => 'nullable|string',
+            'quantity' => 'nullable|integer|min:1',
         ]);
 
         $personIds = $request->items;
@@ -794,6 +795,9 @@ class ProjectController extends Controller
                 }
                 if ($request->filled('delivery_date')) {
                     $updateData['delivery_date'] = $request->delivery_date;
+                }
+                if ($request->filled('quantity')) {
+                    $updateData['quantity'] = $request->quantity;
                 }
                 if ($request->has('notes')) {
                     $updateData['notes'] = $request->notes;
