@@ -400,6 +400,7 @@ Route::delete('projects/{project}/beneficiaries/{person}', 'ProjectController@re
 Route::post('projects/{project}/beneficiaries/{person}/status', 'ProjectController@updateBeneficiaryStatus')->name('projects.beneficiaries.update-status');
 Route::get('projects/{project}/beneficiaries/filter-areas', 'ProjectController@filterByAreasForm')->name('projects.beneficiaries.filter-areas');
 Route::post('projects/{project}/beneficiaries/add-by-areas', 'ProjectController@addBeneficiariesByAreas')->name('projects.beneficiaries.add-by-areas');
+Route::post('projects/{project}/beneficiaries/bulk-actions', 'ProjectController@bulkBeneficiariesActions')->name('projects.beneficiaries.bulk-actions');
 
 // Project Resource (في الآخر)
 Route::resource('projects', 'ProjectController');

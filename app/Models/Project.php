@@ -114,6 +114,15 @@ class Project extends Model
     }
 
     /**
+     * Get the projects that conflict with this project.
+     */
+    public function conflicts()
+    {
+        return $this->belongsToMany(Project::class, 'project_conflicts', 'project_id', 'conflict_id')
+            ->withTimestamps();
+    }
+
+    /**
      * Get the ready packages associated with the project.
      */
     public function readyPackages()

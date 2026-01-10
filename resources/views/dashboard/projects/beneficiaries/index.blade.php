@@ -74,18 +74,58 @@
         </div>
     </div>
 
+    <form action="{{ route('dashboard.projects.beneficiaries.bulk-actions', $project) }}" method="POST" id="bulk-actions-form">
+        @csrf
+        
+        <div class="card mb-3 d-none shadow-lg border-primary" id="bulk-actions-bar" style="position: sticky; top: 0; z-index: 1020; background: #f8f9fa;">
+            <div class="card-body p-2">
+                <div class="row align-items-center">
+                    <div class="col-md-auto border-left ml-2">
+                        <strong>المحدد: </strong> <span class="badge badge-primary font-weight-bold" id="selected-count" style="font-size: 1.1rem;">0</span>
+                    </div>
+                    <div class="col-md">
+                        <div class="form-row align-items-center">
+                            <div class="col-auto">
+                                <button type="submit" name="action" value="update_status" onclick="$('#bulk-status-input').val('مستلم')" class="btn btn-success btn-sm">
+                                    <i class="fas fa-check-circle"></i> تحديد كمستلم
+                                </button>
+                                <button type="submit" name="action" value="update_status" onclick="$('#bulk-status-input').val('غير مستلم')" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-times-circle"></i> تحديد كغير مستلم
+                                </button>
+                            </div>
+                            
+                            <input type="hidden" name="status" id="bulk-status-input">
+
+                            <div class="col-auto">
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                    </div>
+                                    <input type="date" name="delivery_date" class="form-control" placeholder="التاريخ">
+                                </div>
+                            </div>
+                            
+                            <div class="col-auto">
+                                <input type="text" name="notes" class="form-control form-control-sm" placeholder="إضافة ملاحظة...">
+                            </div>
+
+                            <div class="col-auto ml-auto">
+                                <button type="submit" name="action" value="delete" class="btn btn-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف المستفيدين المحددين؟')">
+                                    <i class="fas fa-trash-alt"></i> حذف المحددين
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     @component('dashboard::components.table-box')
         @slot('title')
             المستفيدين ({{ $beneficiaries->total() }})
         @endslot
 
         @slot('tools')
-            <a href="{{ route('dashboard.projects.beneficiaries.filter-areas', $project) }}" class="btn btn-info btn-sm">
-                <i class="fas fa-filter"></i> ترشيح حسب المناطق
-            </a>
-            <a href="{{ route('dashboard.projects.beneficiaries.import', $project) }}" class="btn btn-success btn-sm">
-                <i class="fas fa-file-import"></i> استيراد من Excel
-            </a>
             <a href="{{ route('dashboard.projects.show', $project) }}" class="btn btn-secondary btn-sm">
                 <i class="fas fa-arrow-right"></i> العودة للمشروع
             </a>
@@ -93,6 +133,35 @@
 
         <thead>
             <tr>
+                <th colspan="100">
+                    <div class="d-flex align-items-center">
+                        {{-- أزرار الإجراءات الجماعية --}}
+                        <div class="bulk-actions-group mr-3">
+                            <button type="submit" name="action" value="update_status" onclick="$('#bulk-status-input').val('مستلم')" class="btn btn-outline-success btn-sm mr-1">
+                                <i class="fas fa-check"></i> مستلم
+                            </button>
+                            <button type="submit" name="action" value="update_status" onclick="$('#bulk-status-input').val('غير مستلم')" class="btn btn-outline-warning btn-sm mr-1">
+                                <i class="fas fa-times"></i> غير مستلم
+                            </button>
+                            <button type="submit" name="action" value="delete" class="btn btn-outline-danger btn-sm" onclick="return confirm('هل أنت متأكد من حذف المستفيدين المحددين؟')">
+                                <i class="fas fa-trash"></i> حذف
+                            </button>
+                        </div>
+
+                        {{-- أزرار الإجراءات الأساسية --}}
+                        <div class="ml-auto">
+                            <a href="{{ route('dashboard.projects.beneficiaries.filter-areas', $project) }}" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-filter"></i> ترشيح حسب المناطق
+                            </a>
+                            <a href="{{ route('dashboard.projects.beneficiaries.import', $project) }}" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-file-import"></i> استيراد من Excel
+                            </a>
+                        </div>
+                    </div>
+                </th>
+            </tr>
+            <tr>
+                <th style="width: 3%;"><x-check-all></x-check-all></th>
                 <th style="width: 3%;">#</th>
                 <th style="width: 9%;">رقم الهوية</th>
                 <th style="width: 17%;">الاسم الرباعي</th>
@@ -109,6 +178,9 @@
         <tbody>
         @forelse($beneficiaries as $index => $beneficiary)
             <tr>
+                <td class="text-center">
+                    <input type="checkbox" name="items[]" value="{{ $beneficiary->id }}" class="item-checkbox">
+                </td>
                 <td class="text-center">{{ $beneficiaries->firstItem() + $index }}</td>
                 <td><strong>{{ $beneficiary->id_num }}</strong></td>
                 <td>
@@ -145,26 +217,30 @@
                 </td>
                 <td><small>{{ $beneficiary->pivot->notes ?? '-' }}</small></td>
                 <td>
-                    <button class="btn btn-sm btn-primary"
+                    <a href="{{ route('dashboard.people.show', $beneficiary) }}" class="btn btn-sm btn-outline-dark" title="عرض الملف الشخصي">
+                        <i class="fas fa-fw fa-eye"></i>
+                    </a>
+
+                    <button type="button" class="btn btn-sm btn-outline-primary"
                             data-toggle="modal"
-                            data-target="#statusModal{{ $beneficiary->id }}">
-                        <i class="fas fa-edit"></i>
+                            data-target="#statusModal{{ $beneficiary->id }}"
+                            title="تعديل الحالة">
+                        <i class="fas fa-fw fa-edit"></i>
                     </button>
 
-                    <form action="{{ route('dashboard.projects.beneficiaries.destroy', [$project, $beneficiary]) }}"
-                          method="POST"
-                          style="display: inline-block;">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('هل أنت متأكد؟')">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-sm btn-outline-danger row-delete-btn" 
+                            data-action="{{ route('dashboard.projects.beneficiaries.destroy', [$project, $beneficiary]) }}"
+                            onclick="if(confirm('هل أنت متأكد؟')) { 
+                                $('#row-delete-form').attr('action', $(this).data('action')).submit(); 
+                            }"
+                            title="حذف من المشروع">
+                        <i class="fas fa-fw fa-trash"></i>
+                    </button>
                 </td>
             </tr>
         @empty
             <tr>
-                <td colspan="11" class="text-center py-4">
+                <td colspan="12" class="text-center py-4">
                     @if(request('search') || request('status') || request('date_from') || request('date_to'))
                         <i class="fas fa-search fa-3x text-muted mb-3"></i>
                         <p class="text-muted">لا توجد نتائج للبحث</p>
@@ -186,6 +262,14 @@
             @endslot
         @endif
     @endcomponent
+    </form>
+
+    {{-- مخفي للحذف الفردي لتجنب تداخل النماذج --}}
+    <form id="row-delete-form" method="POST" style="display:none;">
+        @csrf
+        @method('DELETE')
+    </form>
+
 
     {{-- Modals --}}
     @foreach($beneficiaries as $beneficiary)
@@ -249,6 +333,25 @@
 $(document).ready(function() {
     // Focus على حقل البحث عند تحميل الصفحة
     $('#search').focus();
+
+    // السيطرة على العبارة بناءً على التعديلات
+    function toggleBulkActionsBar() {
+        const selectedCount = $('.item-checkbox:checked').length;
+        if (selectedCount > 0) {
+            $('#bulk-actions-bar').removeClass('d-none').show();
+            $('#selected-count').text(selectedCount);
+        } else {
+            $('#bulk-actions-bar').hide(function() {
+                $(this).addClass('d-none');
+            });
+        }
+    }
+
+    // الاستماع للتغيير على المربعات بشكل عام
+    $(document).on('change', '.item-checkbox, [data-children=".item-checkbox"]', function() {
+        // نستخدم setTimeout لضمان أن CheckAll قد قام بتحديث جميع الحقول
+        setTimeout(toggleBulkActionsBar, 50);
+    });
 
     // عند فتح الـ Modal، اضبط التاريخ الحالي إذا كان فارغاً
     $('.modal').on('show.bs.modal', function (e) {

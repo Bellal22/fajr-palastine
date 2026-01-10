@@ -72,6 +72,14 @@
                     ->min(1)
                     ->required() }}
             </div>
+            <div class="col-md-4 form-group">
+                <label for="ignore_conflicts">تجاوز التعارض المشروع <span class="text-danger">*</span></label>
+                <select name="ignore_conflicts" id="ignore_conflicts" class="form-control">
+                    <option value="0">لا (منع إضافة المستفيدين في حال وجود تعارض)</option>
+                    <option value="1">نعم (إسقاط التعارض وإضافة المستفيدين)</option>
+                </select>
+                <small class="text-muted">إذا اخترت "نعم"، سيتم إضافة المستفيدين حتى لو كانوا مضافين في مشاريع متعارضة.</small>
+            </div>
         </div>
 
         @slot('footer')

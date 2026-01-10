@@ -60,6 +60,19 @@
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="ignore_conflicts">تجاوز التعارض المشروع <span class="text-danger">*</span></label>
+                                <select name="ignore_conflicts" id="ignore_conflicts" class="form-control">
+                                    <option value="0">لا (منع إضافة المستفيدين في حال وجود تعارض)</option>
+                                    <option value="1">نعم (إسقاط التعارض وإضافة المستفيدين)</option>
+                                </select>
+                                <small class="text-muted">إذا اخترت "نعم"، سيتم إضافة المستفيدين حتى لو كانوا مضافين في مشاريع متعارضة.</small>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group mb-0">
                         <button type="submit" class="btn btn-success">
                             <i class="fas fa-upload"></i> رفع واستيراد

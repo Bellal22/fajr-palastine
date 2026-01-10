@@ -55,6 +55,10 @@ class ProjectRequest extends FormRequest
             'ready_packages.*' => ['exists:ready_packages,id'],
             'internal_packages' => ['nullable', 'array'],
             'internal_packages.*' => ['exists:internal_packages,id'],
+
+            // التعارض مع مشاريع أخرى
+            'conflicts' => ['nullable', 'array'],
+            'conflicts.*' => ['exists:projects,id'],
         ];
     }
 

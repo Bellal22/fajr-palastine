@@ -93,6 +93,22 @@
 
 <hr>
 
+<h5 class="mb-3">تعارض المشاريع</h5>
+<div class="row">
+    <div class="col-md-12">
+        {{ BsForm::select('conflicts[]')
+            ->label('هذا المشروع يتضارب مع')
+            ->options(App\Models\Project::where('id', '!=', $project->id ?? 0)->pluck('name', 'id'))
+            ->multiple()
+            ->attribute('class', 'form-control select2')
+            ->value(isset($project) ? $project->conflicts->pluck('id')->toArray() : [])
+        }}
+        <small class="text-muted">ملاحظة: إذا اخترت مشروعاً هنا، سيتم تحذيرك (أو منعك) عند إضافة نفس المستفيدين لكلا المشروعين.</small>
+    </div>
+</div>
+
+<hr>
+
 <h5 class="mt-3 mb-3">أنواع الكوبونات والكميات</h5>
 <div id="coupon_types_container">
     @php

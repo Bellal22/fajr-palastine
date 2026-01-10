@@ -717,6 +717,24 @@
             grid-template-columns: repeat(4, 1fr) !important;
         }
 
+        .sub-nav-item i {
+            margin-left: 8px;
+            font-size: 14px;
+            width: 20px;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .sub-nav-item a {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .sub-nav-item a i {
+            margin-left: 8px;
+        }
+
         @media (max-width: 768px) {
             .name-row {
                 grid-template-columns: 1fr !important;
@@ -968,7 +986,7 @@
         <!-- الصف الرئيسي -->
         <div class="main-row">
             <!-- السايد بار -->
-            <div class="sidebar">
+           <div class="sidebar">
                 <h2>القائمة</h2>
 
                 <!-- معلومات رب الأسرة -->
@@ -977,19 +995,19 @@
                     <span class="nav-description">البيانات الأساسية وتفاصيل السكن والعمل</span>
                     <div class="sub-nav active" id="family-head-nav">
                         <div class="sub-nav-item active" onclick="showSection('personal-info', event)">
-                            البيانات الشخصية
+                            <i class="fas fa-id-card text-primary"></i> البيانات الشخصية
                             <span class="nav-description">الاسم ورقم الهوية ومعلومات التواصل</span>
                         </div>
                         <div class="sub-nav-item" onclick="showSection('social-work-info', event)">
-                            البيانات الاجتماعية والعمل
+                            <i class="fas fa-briefcase text-success"></i> البيانات الاجتماعية والعمل
                             <span class="nav-description">الحالة الاجتماعية وتفاصيل الوظيفة</span>
                         </div>
                         <div class="sub-nav-item" onclick="showSection('health-info', event)">
-                            الحالة الصحية
+                            <i class="fas fa-heartbeat text-danger"></i> الحالة الصحية
                             <span class="nav-description">الأمراض المزمنة والحالة الطبية</span>
                         </div>
                         <div class="sub-nav-item" onclick="showSection('housing-info', event)">
-                            بيانات السكن
+                            <i class="fas fa-home text-info"></i> بيانات السكن
                             <span class="nav-description">العنوان الحالي وتفاصيل المنطقة</span>
                         </div>
                     </div>
@@ -1013,12 +1031,12 @@
                     <span class="nav-description">تغيير كلمة المرور وإدارة الحساب</span>
                     <div class="sub-nav" id="settings-nav">
                         <div class="sub-nav-item" onclick="openPasswordPopup(event)">
-                            تغيير كلمة المرور
+                            <i class="fas fa-key text-warning"></i> تغيير كلمة المرور
                             <span class="nav-description">تحديث بيانات الدخول الخاصة بك</span>
                         </div>
                         <div class="sub-nav-item">
-                            <a href="{{ route('logout') }}" style="color: inherit; text-decoration: none;">
-                                تسجيل الخروج
+                            <a href="{{ route('logout') }}" style="color: inherit; text-decoration: none; display: block;">
+                                <i class="fas fa-sign-out-alt text-danger"></i> تسجيل الخروج
                                 <span class="nav-description">إنهاء الجلسة الحالية بشكل آمن</span>
                             </a>
                         </div>
@@ -3873,7 +3891,6 @@
 
 
         function editFamilyMember(familyMemberId) {
-            // إرسال طلب AJAX إلى الخادم للحصول على بيانات العضو
             fetch(`/get-family-member-data/${familyMemberId}`)
                 .then(response => {
                     if (!response.ok) {
@@ -3882,14 +3899,21 @@
                     return response.json();
                 })
                 .then(familyMemberData => {
-                    console.log("📌 بيانات عضو الأسرة:", familyMemberData);
+                    // 🔍 تشخيص كامل للـ response
+                    console.log("=" .repeat(50));
+                    console.log("📦 كامل الـ Response:", familyMemberData);
+                    console.log("📦 familyMemberData.data:", familyMemberData.data);
+                    console.log("📱 Phone من data:", familyMemberData.data?.phone);
+                    console.log("📱 Phone مباشرة:", familyMemberData.phone);
+                    console.log("🔍 typeof phone:", typeof familyMemberData.data?.phone);
+                    console.log("=" .repeat(50));
 
                     if (!familyMemberData.success) {
                         showAlert(familyMemberData.message || 'تعذر تحميل بيانات العضو', 'error');
                         return;
                     }
 
-                    // تعبئة البيانات في الفورم
+                    // تعبئة البيانات الأساسية
                     document.getElementById('familyMemberId').value = familyMemberData.data.id || familyMemberData.id;
                     document.getElementById('edit_f_first_name').value = familyMemberData.data.first_name || familyMemberData.first_name || '';
                     document.getElementById('edit_f_father_name').value = familyMemberData.data.father_name || familyMemberData.father_name || '';
@@ -3904,14 +3928,16 @@
                     }
                     document.getElementById('edit_f_dob').value = dobValue || '';
 
-                    // 1. تحديد الصلة أولاً (مع محاولة مطابقة ذكية للقيم)
+                    // حفظ رقم الجوال مع تشخيص
+                    const phoneValue = familyMemberData.data?.phone || familyMemberData.phone || '';
+                    console.log("💾 phoneValue المحفوظ:", phoneValue, "| empty?", phoneValue === '');
+
+                    // تحديد الصلة
                     const relSelect = document.getElementById('edit_f_relationship');
                     const incomingRel = (familyMemberData.data.relationship || familyMemberData.relationship || '').toString().trim();
-                    
-                    // محاولة تعيين القيمة مباشرة
+
                     relSelect.value = incomingRel;
-                    
-                    // إذا لم يتم التعيين (القيمة غير موجودة بالضبط)، نحاول البحث غير الحساس لحالة الأحرف
+
                     if (!relSelect.value && incomingRel) {
                         for (let i = 0; i < relSelect.options.length; i++) {
                             if (relSelect.options[i].value.toLowerCase() === incomingRel.toLowerCase()) {
@@ -3920,26 +3946,45 @@
                             }
                         }
                     }
-                    
-                    // 2. تحديث الرؤية (بدون مسح القيمة)
-                    handleEditRelationshipChange();
-                    
-                    // 3. تعيين رقم الجوال بعد تحديث الرؤية للتأكد من بقاء القيمة
-                    const phoneValue = familyMemberData.data.phone || familyMemberData.phone || '';
-                    document.getElementById('edit_f_phone').value = phoneValue;
-                    
-                    console.log("📱 رقم الجوال المستلم:", phoneValue, "الصلة:", document.getElementById('edit_f_relationship').value);
 
-                    // فتح الفورم المنبثق
+                    console.log("👔 الصلة المختارة:", relSelect.value);
+
+                    // تعيين رقم الجوال قبل handleEditRelationshipChange
+                    const phoneField = document.getElementById('edit_f_phone');
+                    if (phoneField) {
+                        phoneField.value = phoneValue;
+                        console.log("✅ تم تعيين phone قبل toggle:", phoneField.value);
+                    }
+
+                    // تحديث الرؤية
+                    handleEditRelationshipChange();
+
+                    // تحقق من القيمة بعد toggle مباشرة
+                    console.log("🔍 القيمة بعد toggle مباشرة:", phoneField.value);
+
+                    // إعادة تعيين بعد 100ms
+                    setTimeout(() => {
+                        const phoneFieldAfter = document.getElementById('edit_f_phone');
+                        if (phoneFieldAfter) {
+                            const currentValue = phoneFieldAfter.value;
+                            console.log("🔍 القيمة الحالية قبل setTimeout:", currentValue);
+
+                            if (!currentValue && phoneValue) {
+                                phoneFieldAfter.value = phoneValue;
+                                console.log("✅ تم إعادة تعيين القيمة:", phoneValue);
+                            } else {
+                                console.log("ℹ️ القيمة موجودة أو phoneValue فارغ");
+                            }
+                        }
+                    }, 100);
+
                     document.getElementById('editFamilyMemberModal').classList.remove('hidden');
-                    console.log("✅ تم تعبئة الفورم وفتحه بنجاح");
+                    console.log("✅ تم فتح الفورم");
                 })
                 .catch(error => {
-                    console.error("❌ خطأ في جلب بيانات العضو:", error);
+                    console.error("❌ خطأ:", error);
 
-                    // معالجة أخطاء الرفض المفصلة
                     if (error.name === 'SyntaxError' || error.message.includes('HTTP error')) {
-                        // جرب قراءة الاستجابة كـ text لمعرفة نوع الخطأ
                         fetch(`/get-family-member-data/${familyMemberId}`)
                             .then(response => response.text())
                             .then(text => {
@@ -3965,6 +4010,10 @@
                         showAlert('حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى.', 'error');
                     }
                 });
+        }
+
+        function handleEditRelationshipChange() {
+            togglePhoneVisibility('edit_f_relationship', 'edit_f_phone_group', 'edit_f_phone', 'edit_f_phone_error');
         }
 
         // دالة لإغلاق الفورم المنبثق
