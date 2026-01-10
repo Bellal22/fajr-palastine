@@ -399,7 +399,8 @@ class ProjectController extends Controller
             $query->wherePivot('delivery_date', '<=', $request->date_to);
         }
 
-        $beneficiaries = $query->paginate(50)->appends($request->all());
+        $perPage = $request->get('per_page', 50);
+    $beneficiaries = $query->paginate($perPage)->appends($request->all());
 
         // جلب كل المخازن مرة واحدة بدل استعلام لكل مستفيد
         $subWarehouseIds = $beneficiaries->pluck('pivot.sub_warehouse_id')->filter()->unique();
