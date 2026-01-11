@@ -4,10 +4,19 @@ return [
     'plural' => 'المشرفين',
     'singular' => 'المشرف',
     'empty' => 'لا توجد مشرفين',
+    'empty_hint' => 'لا يوجد مشرفين حالياً. يمكنك إضافة مشرف جديد من الزر أعلاه.',
     'select' => 'اختر المشرف',
     'permission' => 'ادارة المشرفين',
     'trashed' => 'المشرفين المحذوفين',
     'perPage' => 'عدد النتائج في الصفحة',
+    'profile_details' => 'تفاصيل الملف الشخصي',
+    'pagination_info' => 'عرض :from إلى :to من أصل :total',
+
+    'sections' => [
+        'basic_info' => 'المعلومات الأساسية',
+        'security' => 'الأمان',
+    ],
+
     'actions' => [
         'list' => 'كل المشرفين',
         'show' => 'عرض',
@@ -19,13 +28,19 @@ return [
         'forceDelete' => 'حذف نهائي',
         'save' => 'حفظ',
         'filter' => 'بحث',
+        'reset_filter' => 'تفريغ الحقول',
+        'clear_filter' => 'مسح الفلتر',
+        'actions' => 'الإجراءات',
     ],
+
     'messages' => [
         'created' => 'تم إضافة المشرف بنجاح .',
         'updated' => 'تم تعديل المشرف بنجاح .',
         'deleted' => 'تم حذف المشرف بنجاح .',
         'restored' => 'تم استعادة المشرف بنجاح .',
+        'forceDeleted' => 'تم حذف المشرف نهائياً.',
     ],
+
     'attributes' => [
         'name' => 'اسم المشرف',
         'phone' => 'رقم الهاتف',
@@ -36,7 +51,37 @@ return [
         'password_confirmation' => 'تأكيد كلمة المرور',
         'type' => 'نوع المستخدم',
         'avatar' => 'الصورة الشخصية',
+        'person_status' => 'حالة المشرف',
     ],
+
+    'status' => [
+        'active' => 'فعال',
+        'inactive' => 'غير فعال',
+    ],
+
+    'hints' => [
+        'password' => 'اترك الحقل فارغاً إذا كنت لا تريد تغيير كلمة المرور',
+        'avatar_title' => 'نصائح لرفع الصورة:',
+        'avatar_size' => 'الحجم الموصى به: 400x400 بكسل',
+        'avatar_format' => 'الصيغ المدعومة: JPG, PNG, GIF',
+    ],
+
+    'placeholders' => [
+        'name' => 'أدخل اسم المشرف',
+        'email' => 'أدخل البريد الإلكتروني',
+        'phone' => 'أدخل رقم الهاتف',
+        'password' => 'أدخل كلمة المرور',
+        'password_confirmation' => 'أعد إدخال كلمة المرور',
+    ],
+
+    'filter_placeholders' => [
+        'name' => 'ابحث بالاسم...',
+        'email' => 'ابحث بالبريد الإلكتروني...',
+        'phone' => 'ابحث برقم الهاتف...',
+        'status' => 'اختر الحالة',
+        'all_status' => 'كل الحالات',
+    ],
+
     'dialogs' => [
         'delete' => [
             'title' => 'تحذير !',

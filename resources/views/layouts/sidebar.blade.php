@@ -7,9 +7,9 @@
 
  @include('dashboard.accounts.sidebar')
 {{-- @include('dashboard.families.partials.actions.sidebar') --}}
-@include('dashboard.cities.partials.actions.sidebar')
-@include('dashboard.sub_cities.partials.actions.sidebar')
-@include('dashboard.neighborhoods.partials.actions.sidebar')
+{{-- @include('dashboard.cities.partials.actions.sidebar') --}}
+{{-- @include('dashboard.sub_cities.partials.actions.sidebar') --}}
+{{-- @include('dashboard.neighborhoods.partials.actions.sidebar') --}}
 @include('dashboard.people.partials.actions.sidebar')
 {{-- @include('dashboard.people.partials.actions.sidebar') --}}
 @include('dashboard.complaints.partials.actions.sidebar')

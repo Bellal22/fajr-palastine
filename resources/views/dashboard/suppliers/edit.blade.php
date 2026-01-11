@@ -1,5 +1,5 @@
 <x-layout :title="$supplier->name" :breadcrumbs="['dashboard.suppliers.edit', $supplier]">
-    {{ BsForm::resource('suppliers')->putModel($supplier, route('dashboard.suppliers.update', $supplier)) }}
+    {{ BsForm::resource('suppliers')->putModel($supplier, route('dashboard.suppliers.update', $supplier), ['files' => true]) }}
     @component('dashboard::components.box')
         @slot('title', trans('suppliers.actions.edit'))
 

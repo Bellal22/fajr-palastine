@@ -1,5 +1,5 @@
 <x-layout :title="trans('suppliers.actions.create')" :breadcrumbs="['dashboard.suppliers.create']">
-    {!! Form::open(['route' => 'dashboard.suppliers.store', 'files' => true]) !!}
+    {{ BsForm::resource('suppliers')->post(route('dashboard.suppliers.store'), ['files' => true]) }}
     @component('dashboard::components.box')
         @slot('title', trans('suppliers.actions.create'))
 
@@ -9,5 +9,5 @@
             {{ BsForm::submit()->label(trans('suppliers.actions.save')) }}
         @endslot
     @endcomponent
-    {!! Form::close() !!}
+    {{ BsForm::close() }}
 </x-layout>

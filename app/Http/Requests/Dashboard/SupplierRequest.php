@@ -26,13 +26,6 @@ class SupplierRequest extends FormRequest
         return [
             'name'         => ['required', 'string', 'max:255'],
             'description'  => ['required', 'string', 'max:1024'],
-            'image'        => ['nullable', 'image', 'max:5120'],
-            'document'     => [
-                'nullable',
-                'file',
-                'mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'max:10240'
-            ],
             'type' => 'required|in:donor,operator',
         ];
     }

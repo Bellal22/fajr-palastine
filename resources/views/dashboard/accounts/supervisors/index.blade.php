@@ -2,7 +2,6 @@
     @include('dashboard.accounts.supervisors.partials.filter')
 
     @component('dashboard::components.table-box')
-
         @slot('title')
             @lang('supervisors.actions.list') ({{ count_formatted($supervisors->total()) }})
         @endslot
@@ -12,8 +11,9 @@
             <th colspan="100">
                 <div class="d-flex">
                     <x-check-all-delete
-                            type="{{ \App\Models\Supervisor::class }}"
-                            :resource="trans('supervisors.plural')"></x-check-all-delete>
+                        type="{{ \App\Models\Supervisor::class }}"
+                        :resource="trans('supervisors.plural')">
+                    </x-check-all-delete>
 
                     <div class="ml-2 d-flex justify-content-between flex-grow-1">
                         @include('dashboard.accounts.supervisors.partials.actions.create')
@@ -23,7 +23,7 @@
             </th>
         </tr>
         <tr>
-            <th>
+            <th style="width: 30px;" class="text-center">
                 <x-check-all></x-check-all>
             </th>
             <th>@lang('supervisors.attributes.name')</th>
@@ -36,30 +36,37 @@
         <tbody>
         @forelse($supervisors as $supervisor)
             <tr>
-                <td>
+                <td class="text-center">
                     <x-check-all-item :model="$supervisor"></x-check-all-item>
                 </td>
                 <td>
                     <a href="{{ route('dashboard.supervisors.show', $supervisor) }}"
                        class="text-decoration-none text-ellipsis">
-                            <span class="index-flag">
+                        <span class="index-flag">
                             @include('dashboard.accounts.supervisors.partials.flags.svg')
-                            </span>
+                        </span>
                         <img src="{{ $supervisor->getAvatar() }}"
-                             alt="Product 1"
+                             alt="{{ $supervisor->name }}"
                              class="img-circle img-size-32 mr-2">
-                        {{ $supervisor->name }}
+                        <strong class="text-dark">{{ $supervisor->name }}</strong>
                     </a>
                 </td>
-
                 <td class="d-none d-md-table-cell">
-                    {{ $supervisor->email }}
+                    <i class="fas fa-envelope text-primary"></i>
+                    <span class="text-muted">{{ $supervisor->email }}</span>
                 </td>
                 <td>
-                    @include('dashboard.accounts.supervisors.partials.flags.phone')
+                    @if($supervisor->phone)
+                        <i class="fas fa-phone text-success"></i>
+                        <span class="text-muted">{{ $supervisor->phone }}</span>
+                    @else
+                        <span class="text-muted">-</span>
+                    @endif
                 </td>
-                <td>{{ $supervisor->created_at->format('Y-m-d') }}</td>
-
+                <td>
+                    <i class="fas fa-calendar-alt text-info"></i>
+                    <span class="text-muted">{{ $supervisor->created_at->format('Y-m-d') }}</span>
+                </td>
                 <td style="width: 160px">
                     @include('dashboard.accounts.supervisors.partials.actions.impersonate')
                     @include('dashboard.accounts.supervisors.partials.actions.edit')

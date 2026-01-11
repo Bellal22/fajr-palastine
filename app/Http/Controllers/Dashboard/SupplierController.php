@@ -51,52 +51,9 @@ class SupplierController extends Controller
      */
     public function store(SupplierRequest $request)
     {
-        // Debug: شوف شو واصل
-        Log::info('Request all data:', $request->all());
-        Log::info('Has image file?', ['result' => $request->hasFile('image')]);
-        Log::info('Has document file?', ['result' => $request->hasFile('document')]);
+        $supplier = Supplier::create($request->all());
 
-        $data = $request->only(['name', 'description', 'type']);
-
-        // حفظ الصورة
-        if ($request->hasFile('image')) {
-            $imageFile = $request->file('image');
-            Log::info('Image file details:', [
-                'original_name' => $imageFile->getClientOriginalName(),
-                'size' => $imageFile->getSize(),
-                'mime' => $imageFile->getMimeType(),
-            ]);
-
-            $imagePath = $imageFile->store('suppliers/images', 'public');
-            Log::info('Image stored at:', ['path' => $imagePath]);
-            Log::info('Full storage path:', ['full_path' => storage_path('app/public/' . $imagePath)]);
-            Log::info('File exists?', ['exists' => file_exists(storage_path('app/public/' . $imagePath))]);
-
-            $data['image'] = $imagePath;
-        } else {
-            Log::warning('No image file received');
-        }
-
-        // حفظ المستند
-        if ($request->hasFile('document')) {
-            $documentFile = $request->file('document');
-            Log::info('Document file details:', [
-                'original_name' => $documentFile->getClientOriginalName(),
-                'size' => $documentFile->getSize(),
-                'mime' => $documentFile->getMimeType(),
-            ]);
-
-            $documentPath = $documentFile->store('suppliers/documents', 'public');
-            Log::info('Document stored at:', ['path' => $documentPath]);
-            Log::info('Full storage path:', ['full_path' => storage_path('app/public/' . $documentPath)]);
-            Log::info('File exists?', ['exists' => file_exists(storage_path('app/public/' . $documentPath))]);
-
-            $data['document'] = $documentPath;
-        } else {
-            Log::warning('No document file received');
-        }
-
-        $supplier = Supplier::create($data);
+        $supplier->addAllMediaFromTokens();
 
         flash()->success(trans('suppliers.messages.created'));
         return redirect()->route('dashboard.suppliers.show', $supplier);

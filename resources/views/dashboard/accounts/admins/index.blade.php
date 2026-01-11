@@ -2,7 +2,6 @@
     @include('dashboard.accounts.admins.partials.filter')
 
     @component('dashboard::components.table-box')
-
         @slot('title')
             @lang('admins.actions.list') ({{ count_formatted($admins->total()) }})
         @endslot
@@ -12,8 +11,9 @@
             <th colspan="100">
                 <div class="d-flex">
                     <x-check-all-delete
-                            type="{{ \App\Models\Admin::class }}"
-                            :resource="trans('admins.plural')"></x-check-all-delete>
+                        type="{{ \App\Models\Admin::class }}"
+                        :resource="trans('admins.plural')">
+                    </x-check-all-delete>
 
                     <div class="ml-2 d-flex justify-content-between flex-grow-1">
                         @include('dashboard.accounts.admins.partials.actions.create')
@@ -23,7 +23,7 @@
             </th>
         </tr>
         <tr>
-            <th>
+            <th style="width: 30px;" class="text-center">
                 <x-check-all></x-check-all>
             </th>
             <th>@lang('admins.attributes.name')</th>
@@ -36,28 +36,37 @@
         <tbody>
         @forelse($admins as $admin)
             <tr>
-                <td>
+                <td class="text-center">
                     <x-check-all-item :model="$admin"></x-check-all-item>
                 </td>
                 <td>
                     <a href="{{ route('dashboard.admins.show', $admin) }}"
                        class="text-decoration-none text-ellipsis">
-                            <span class="index-flag">
+                        <span class="index-flag">
                             @include('dashboard.accounts.admins.partials.flags.svg')
-                            </span>
+                        </span>
                         <img src="{{ $admin->getAvatar() }}"
-                             alt="Product 1"
+                             alt="{{ $admin->name }}"
                              class="img-circle img-size-32 mr-2">
-                        {{ $admin->name }}
+                        <strong class="text-dark">{{ $admin->name }}</strong>
                     </a>
                 </td>
-
                 <td class="d-none d-md-table-cell">
-                    {{ $admin->email }}
+                    <i class="fas fa-envelope text-primary"></i>
+                    <span class="text-muted">{{ $admin->email }}</span>
                 </td>
-                <td>{{ $admin->phone }}</td>
-                <td>{{ $admin->created_at->format('Y-m-d') }}</td>
-
+                <td>
+                    @if($admin->phone)
+                        <i class="fas fa-phone text-success"></i>
+                        <span class="text-muted">{{ $admin->phone }}</span>
+                    @else
+                        <span class="text-muted">-</span>
+                    @endif
+                </td>
+                <td>
+                    <i class="fas fa-calendar-alt text-info"></i>
+                    <span class="text-muted">{{ $admin->created_at->format('Y-m-d') }}</span>
+                </td>
                 <td style="width: 160px">
                     @include('dashboard.accounts.admins.partials.actions.show')
                     @include('dashboard.accounts.admins.partials.actions.edit')
@@ -77,4 +86,3 @@
         @endif
     @endcomponent
 </x-layout>
-

@@ -4,6 +4,7 @@ return [
     'singular' => 'المدينة',
     'plural' => 'المدن',
     'empty' => 'لا يوجد مدن حتى الان',
+    'empty_hint' => 'لا توجد مدن حالياً. يمكنك إضافة مدينة جديدة من الزر أعلاه.',
     'count' => 'عدد المدن',
     'search' => 'بحث',
     'select' => 'اختر المدينة',
@@ -11,6 +12,13 @@ return [
     'trashed' => 'المدن المحذوفة',
     'perPage' => 'عدد النتائج بالصفحة',
     'filter' => 'ابحث عن مدينة',
+    'city_details' => 'تفاصيل المدينة',
+    'pagination_info' => 'عرض :from إلى :to من أصل :total',
+
+    'sections' => [
+        'city_info' => 'معلومات المدينة',
+    ],
+
     'actions' => [
         'list' => 'عرض الكل',
         'create' => 'اضافة مدينة',
@@ -22,16 +30,32 @@ return [
         'options' => 'خيارات',
         'save' => 'حفظ',
         'filter' => 'بحث',
+        'reset_filter' => 'تفريغ الحقول',
+        'clear_filter' => 'مسح الفلتر',
+        'actions' => 'الإجراءات',
     ],
+
     'messages' => [
         'created' => 'تم اضافة المدينة بنجاح.',
         'updated' => 'تم تعديل المدينة بنجاح.',
         'deleted' => 'تم حذف المدينة بنجاح.',
         'restored' => 'تم استعادة المدينة بنجاح.',
+        'forceDeleted' => 'تم حذف المدينة نهائياً.',
     ],
+
     'attributes' => [
         'name' => 'اسم المدينة',
+        'created_at' => 'تاريخ الإضافة',
     ],
+
+    'placeholders' => [
+        'name' => 'أدخل اسم المدينة',
+    ],
+
+    'filter_placeholders' => [
+        'name' => 'ابحث باسم المدينة...',
+    ],
+
     'dialogs' => [
         'delete' => [
             'title' => 'تحذير !',

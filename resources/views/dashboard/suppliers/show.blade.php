@@ -25,28 +25,28 @@
                             @endif
                         </td>
                     </tr>
-                    @if($supplier->image)
+                    @if($supplier->getFirstMediaUrl('default'))
                         <tr>
                             <th width="200">@lang('suppliers.attributes.image')</th>
                             <td>
-                                <img src="{{ asset('storage/' . $supplier->image) }}"
+                                <img src="{{ $supplier->getFirstMediaUrl('default') }}"
                                      alt="{{ $supplier->name }}"
                                      style="max-width: 100%; max-height: 400px;"
                                      class="img-thumbnail">
                             </td>
                         </tr>
                     @endif
-                    @if($supplier->document)
+                    @if($supplier->getFirstMediaUrl('document'))
                         <tr>
                             <th width="200">@lang('suppliers.attributes.document')</th>
                             <td>
-                                <a href="{{ asset('storage/' . $supplier->document) }}"
+                                <a href="{{ $supplier->getFirstMediaUrl('document') }}"
                                    target="_blank"
                                    class="btn btn-primary">
                                     <i class="fas fa-file-download"></i> تحميل الملف
                                 </a>
                                 <small class="text-muted d-block mt-2">
-                                    {{ basename($supplier->document) }}
+                                    {{ basename($supplier->getFirstMediaUrl('document')) }}
                                 </small>
                             </td>
                         </tr>

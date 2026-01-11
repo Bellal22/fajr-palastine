@@ -3,32 +3,71 @@
 @include('dashboard.errors')
 
 <div class="row">
-</div>
+    {{-- المعلومات الأساسية --}}
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> @lang('area_responsibles.sections.basic_info')
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-user text-primary"></i>
+                        @lang('area_responsibles.attributes.name')
+                        <span class="text-danger">*</span>
+                    </label>
+                    {{ BsForm::text('name')
+                        ->placeholder(trans('area_responsibles.placeholders.name'))
+                        ->autofocus()
+                        ->required()
+                        ->label(false) }}
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="row">
-    <div class="col-md-12">
-        {{-- حقل الاسم (Name) --}}
-        {{ BsForm::text('name')
-            ->label(trans('area_responsibles.attributes.name'))
-            ->autofocus()
-            ->required() }}
+    {{-- بيانات الاتصال --}}
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-address-card"></i> @lang('area_responsibles.sections.contact_info')
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-phone text-success"></i>
+                        @lang('area_responsibles.attributes.phone')
+                    </label>
+                    {{ BsForm::text('phone')
+                        ->placeholder(trans('area_responsibles.placeholders.phone'))
+                        ->label(false) }}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-12">
-        {{-- حقل رقم الهاتف (Phone) --}}
-        {{ BsForm::text('phone')
-            ->label(trans('area_responsibles.attributes.phone'))
-            }} {{-- لا يوجد required() لأنه nullable في DB --}}
+{{-- العنوان --}}
+<div class="card mb-4">
+    <div class="card-header bg-gray text-dark">
+        <h5 class="mb-0">
+            <i class="fas fa-map-marked-alt"></i> @lang('area_responsibles.sections.address')
+        </h5>
     </div>
-</div>
-
-<div class="row">
-    <div class="col-md-12">
-        {{-- حقل العنوان (Address) --}}
-        {{ BsForm::textarea('address')
-            ->label(trans('area_responsibles.attributes.address'))
-            }} {{-- لا يوجد required() لأنه nullable في DB --}}
+    <div class="card-body">
+        <div class="form-group">
+            <label>
+                <i class="fas fa-map-marker-alt text-info"></i>
+                @lang('area_responsibles.attributes.address')
+            </label>
+            {{ BsForm::textarea('address')
+                ->placeholder(trans('area_responsibles.placeholders.address'))
+                ->attribute('rows', '3')
+                ->label(false) }}
+        </div>
     </div>
 </div>
