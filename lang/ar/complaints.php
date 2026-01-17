@@ -25,7 +25,7 @@ return [
         'filter' => 'تصفية',
         'reset' => 'إعادة تعيين',
         'empty_filters' => 'تفريغ الحقول',
-        'actions' => 'الإجراءات',
+        'actions' => 'إجراءات',
         'send_response' => 'إرسال الرد',
         'quick_actions' => 'إجراءات سريعة',
     ],
@@ -39,11 +39,14 @@ return [
 
     'attributes' => [
         'id' => 'رقم الشكوى',
+        'number' => 'رقم',
         'id_num' => 'رقم الهوية',
         'complaint_title' => 'عنوان الشكوى',
+        'title' => 'العنوان',
         'complaint_text' => 'نص الشكوى',
         'complaint_number' => 'رقم الشكوى',
         'submission_date' => 'تاريخ التقديم',
+        'date' => 'التاريخ',
         'status' => 'الحالة',
         'full_name' => 'الاسم الكامل',
         'phone' => 'رقم الجوال',
@@ -63,11 +66,11 @@ return [
     ],
 
     'status' => [
-        'pending' => 'قيد الانتظار',
-        'in_progress' => 'قيد المعالجة',
+        'pending' => 'انتظار',
+        'in_progress' => 'معالجة',
         'resolved' => 'تم الحل',
-        'rejected' => 'مرفوضة',
-        'responded' => 'تم الرد',
+        'rejected' => 'مرفوض',
+        'replied' => 'تم الرد',
     ],
 
     'placeholders' => [

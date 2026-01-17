@@ -6,7 +6,7 @@
         data-target="#assign-areaResponsible-block-modal"
         style="color:#f57c00; border:1px solid #f57c00;margin-right: 10px;">
     <i class="fas fa-user-tie"></i>
-    تخصيص مسؤول ومندوب
+    @lang('check-all.actions.assignResponsibleAndBlock')
 </button>
 
 <!-- المودال -->
@@ -16,7 +16,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="assign-areaResponsible-block-title">
-                    تخصيص مسؤول المنطقة والمندوب
+                    @lang('check-all.dialogs.assignResponsibleAndBlock.title')
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -28,9 +28,12 @@
 
                     <!-- اختيار مسؤول المنطقة -->
                     <div class="form-group">
-                        <label for="area_responsible_id">مسؤول المنطقة <span class="text-danger">*</span></label>
+                        <label for="area_responsible_id">
+                            @lang('check-all.dialogs.assignResponsibleAndBlock.area_responsible_label')
+                            <span class="text-danger">*</span>
+                        </label>
                         <select class="form-control" name="area_responsible_id" id="area_responsible_id" required>
-                            <option value="">اختر مسؤول المنطقة</option>
+                            <option value="">@lang('check-all.dialogs.assignResponsibleAndBlock.select_area_responsible')</option>
                             @foreach(\App\Models\AreaResponsible::orderBy('name')->get(['id', 'name']) as $responsible)
                                 <option value="{{ $responsible->id }}">{{ $responsible->name }}</option>
                             @endforeach
@@ -39,20 +42,23 @@
 
                     <!-- اختيار المندوب -->
                     <div class="form-group">
-                        <label for="block_id">المندوب <span class="text-danger">*</span></label>
+                        <label for="block_id">
+                            @lang('check-all.dialogs.assignResponsibleAndBlock.block_label')
+                            <span class="text-danger">*</span>
+                        </label>
                         <select class="form-control" name="block_id" id="block_id" required disabled>
-                            <option value="">اختر المندوب</option>
+                            <option value="">@lang('check-all.dialogs.assignResponsibleAndBlock.select_block')</option>
                         </select>
-                        <small class="text-muted">يجب اختيار مسؤول المنطقة أولاً</small>
+                        <small class="text-muted">@lang('check-all.dialogs.assignResponsibleAndBlock.select_responsible_first')</small>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
-                    إلغاء
+                    @lang('check-all.dialogs.assignResponsibleAndBlock.cancel')
                 </button>
                 <button type="submit" class="btn btn-success btn-sm" form="assign-areaResponsible-block-form">
-                    تحديث
+                    @lang('check-all.dialogs.assignResponsibleAndBlock.confirm')
                 </button>
             </div>
         </div>
@@ -72,7 +78,7 @@
                 });
 
                 if (selectedPeopleIds.length === 0) {
-                    alert('يرجى اختيار أشخاص للتخصيص أولاً');
+                    alert('{{ __("check-all.messages.no_people_selected") }}');
                     e.preventDefault();
                     return false;
                 }
@@ -85,7 +91,7 @@
                 const responsibleId = $(this).val();
                 const blockSelect = $('#block_id');
 
-                blockSelect.html('<option value="">جارِ التحميل...</option>').prop('disabled', true);
+                blockSelect.html('<option value="">{{ __("check-all.messages.loading") }}</option>').prop('disabled', true);
 
                 if (responsibleId) {
                     $.ajax({
@@ -100,7 +106,7 @@
                         },
                         success: function(response) {
                             console.log('استجابة المندوبين:', response);
-                            blockSelect.html('<option value="">اختر المندوب</option>');
+                            blockSelect.html('<option value="">{{ __("check-all.dialogs.assignResponsibleAndBlock.select_block") }}</option>');
 
                             if (response.blocks && response.blocks.length > 0) {
                                 $.each(response.blocks, function(index, block) {
@@ -108,7 +114,7 @@
                                 });
                                 blockSelect.prop('disabled', false);
                             } else {
-                                blockSelect.html('<option value="">لا توجد مندوبين لهذا المسؤول</option>');
+                                blockSelect.html('<option value="">{{ __("check-all.messages.no_blocks_for_responsible") }}</option>');
                             }
                         },
                         error: function(xhr, status, error) {
@@ -118,11 +124,11 @@
                                 responseText: xhr.responseText,
                                 error: error
                             });
-                            blockSelect.html('<option value="">حدث خطأ في التحميل</option>');
+                            blockSelect.html('<option value="">{{ __("check-all.messages.loading_error") }}</option>');
                         }
                     });
                 } else {
-                    blockSelect.html('<option value="">اختر المندوب</option>').prop('disabled', true);
+                    blockSelect.html('<option value="">{{ __("check-all.dialogs.assignResponsibleAndBlock.select_block") }}</option>').prop('disabled', true);
                 }
             });
 
@@ -133,7 +139,7 @@
                 console.log('بدء إرسال النموذج...');
 
                 if (selectedPeopleIds.length === 0) {
-                    alert('يرجى اختيار أشخاص للتخصيص أولاً');
+                    alert('{{ __("check-all.messages.no_people_selected") }}');
                     return false;
                 }
 
@@ -141,7 +147,7 @@
                 const blockId = $('#block_id').val();
 
                 if (!areaResponsibleId || !blockId) {
-                    alert('يرجى اختيار مسؤول المنطقة والمندوب');
+                    alert('{{ __("check-all.messages.select_responsible_and_block") }}');
                     return false;
                 }
 
@@ -156,7 +162,10 @@
                 console.log('البيانات المرسلة:', postData);
 
                 const submitBtn = $('button[type="submit"][form="assign-areaResponsible-block-form"]');
-                submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> جاري التحديث...');
+                const updatingText = '{{ __("check-all.messages.updating") }}';
+                const updateText = '{{ __("check-all.dialogs.assignResponsibleAndBlock.confirm") }}';
+
+                submitBtn.prop('disabled', true).html(`<i class="fa fa-spinner fa-spin"></i> ${updatingText}`);
 
                 $.ajax({
                     url: $(this).attr('action'),
@@ -175,10 +184,10 @@
                         $('#assign-areaResponsible-block-modal').modal('hide');
 
                         if (response.success) {
-                            alert('تم التخصيص بنجاح');
+                            alert('{{ __("check-all.messages.assigned_successfully") }}');
                             window.location.reload();
                         } else {
-                            alert(response.message || 'حدث خطأ غير متوقع');
+                            alert(response.message || '{{ __("check-all.messages.unexpected_error") }}');
                         }
                     },
                     error: function(xhr, status, error) {
@@ -190,7 +199,7 @@
                             error: error
                         });
 
-                        let errorMessage = 'حدث خطأ في التخصيص';
+                        let errorMessage = '{{ __("check-all.messages.assignment_error") }}';
 
                         if (xhr.status === 422) {
                             // خطأ في validation
@@ -199,22 +208,22 @@
                             }
                         } else if (xhr.status === 419) {
                             // خطأ في CSRF token
-                            errorMessage = 'انتهت صلاحية الجلسة. يرجى إعادة تحميل الصفحة';
+                            errorMessage = '{{ __("check-all.messages.session_expired") }}';
                         } else if (xhr.status === 404) {
-                            errorMessage = 'الرابط غير موجود';
+                            errorMessage = '{{ __("check-all.messages.not_found") }}';
                         } else if (xhr.status === 500) {
-                            errorMessage = 'خطأ في الخادم';
+                            errorMessage = '{{ __("check-all.messages.server_error") }}';
                             if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMessage += ': ' + xhr.responseJSON.message;
                             }
                         } else if (xhr.status === 0) {
-                            errorMessage = 'فشل الاتصال بالخادم';
+                            errorMessage = '{{ __("check-all.messages.connection_failed") }}';
                         }
 
                         alert(errorMessage);
                     },
                     complete: function() {
-                        submitBtn.prop('disabled', false).html('تحديث');
+                        submitBtn.prop('disabled', false).html(updateText);
                     }
                 });
             });
@@ -222,7 +231,7 @@
             // إعادة تعيين المودال عند إغلاقه
             $('#assign-areaResponsible-block-modal').on('hidden.bs.modal', function() {
                 $('#assign-areaResponsible-block-form')[0].reset();
-                $('#block_id').html('<option value="">اختر المندوب</option>').prop('disabled', true);
+                $('#block_id').html('<option value="">{{ __("check-all.dialogs.assignResponsibleAndBlock.select_block") }}</option>').prop('disabled', true);
                 selectedPeopleIds = [];
             });
         });

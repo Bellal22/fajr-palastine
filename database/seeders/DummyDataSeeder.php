@@ -20,6 +20,7 @@ class DummyDataSeeder extends Seeder
 //        $this->call(SubCitySeeder::class);
 //        $this->call(NeighborhoodSeeder::class);
         $this->call(CitySeeder::class);
+        $this->call(NeighborhoodSeeder::class);
         $this->call(PersonSeeder::class);
         $this->call(PersonSeeder::class);
         $this->call(ComplaintSeeder::class);
@@ -40,6 +41,7 @@ class DummyDataSeeder extends Seeder
         $this->call(OutboundShipmentSeeder::class);
         $this->call(OutboundShipmentItemSeeder::class);
         $this->call(CouponTypeSeeder::class);
+        $this->call(ChooseSeeder::class);
         /*  The seeders of generated crud will set here: Don't remove this line  */
     }
 }

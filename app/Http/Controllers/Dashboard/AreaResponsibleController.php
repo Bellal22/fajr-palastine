@@ -27,7 +27,7 @@ class AreaResponsibleController extends Controller
      */
     public function index()
     {
-        $area_responsibles = AreaResponsible::filter()->latest()->paginate();
+        $area_responsibles = AreaResponsible::filter()->withCount('neighborhoods')->latest()->paginate();
 
         return view('dashboard.area_responsibles.index', compact('area_responsibles'));
     }
@@ -39,7 +39,8 @@ class AreaResponsibleController extends Controller
      */
     public function create()
     {
-        return view('dashboard.area_responsibles.create');
+        $cities = \App\Models\City::has('neighborhoods')->with('neighborhoods')->get();
+        return view('dashboard.area_responsibles.create', compact('cities'));
     }
 
     /**
@@ -51,6 +52,7 @@ class AreaResponsibleController extends Controller
     public function store(AreaResponsibleRequest $request)
     {
         $area_responsible = AreaResponsible::create($request->all());
+        $area_responsible->neighborhoods()->sync($request->input('neighborhoods', []));
 
         flash()->success(trans('area_responsibles.messages.created'));
 
@@ -65,6 +67,7 @@ class AreaResponsibleController extends Controller
      */
     public function show(AreaResponsible $area_responsible)
     {
+        $area_responsible->load('neighborhoods.city');
         return view('dashboard.area_responsibles.show', compact('area_responsible'));
     }
 
@@ -76,7 +79,9 @@ class AreaResponsibleController extends Controller
      */
     public function edit(AreaResponsible $area_responsible)
     {
-        return view('dashboard.area_responsibles.edit', compact('area_responsible'));
+        $cities = \App\Models\City::has('neighborhoods')->with('neighborhoods')->get();
+        $area_responsible->load('neighborhoods');
+        return view('dashboard.area_responsibles.edit', compact('area_responsible', 'cities'));
     }
 
     /**
@@ -89,6 +94,7 @@ class AreaResponsibleController extends Controller
     public function update(AreaResponsibleRequest $request, AreaResponsible $area_responsible)
     {
         $area_responsible->update($request->all());
+        $area_responsible->neighborhoods()->sync($request->input('neighborhoods', []));
 
         flash()->success(trans('area_responsibles.messages.updated'));
 

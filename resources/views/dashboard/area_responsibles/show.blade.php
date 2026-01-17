@@ -89,6 +89,21 @@
                             </tr>
                             <tr>
                                 <th>
+                                    <i class="fas fa-map-signs text-warning"></i>
+                                    @lang('neighborhoods.plural')
+                                </th>
+                                <td>
+                                    @forelse($area_responsible->neighborhoods as $neighborhood)
+                                        <span class="badge badge-warning text-dark mb-1">
+                                            {{ $neighborhood->city->name ?? '' }} - {{ $neighborhood->name }}
+                                        </span>
+                                    @empty
+                                        <span class="text-muted">-</span>
+                                    @endforelse
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>
                                     <i class="fas fa-users text-primary"></i>
                                     @lang('area_responsibles.attributes.block_count')
                                 </th>

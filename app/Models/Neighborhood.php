@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Neighborhood extends Model
 {
+
     use HasFactory;
     use Filterable;
     use Selectable;
@@ -29,4 +30,20 @@ class Neighborhood extends Model
     protected $fillable = [
         'name',
     ];
+
+    /**
+     * العلاقة مع مسؤولي المناطق (Many-to-Many)
+     */
+    public function areaResponsibles()
+    {
+        return $this->belongsToMany(AreaResponsible::class, 'area_responsible_neighborhood');
+    }
+
+    /**
+     * العلاقة مع المدينة
+     */
+    public function city()
+    {
+        return $this->belongsTo(City::class);
+    }
 }

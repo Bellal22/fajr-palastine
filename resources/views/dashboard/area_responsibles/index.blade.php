@@ -45,6 +45,7 @@
             <th><i class="fas fa-user"></i> @lang('area_responsibles.attributes.name')</th>
             <th><i class="fas fa-phone"></i> @lang('area_responsibles.attributes.phone')</th>
             <th class="text-center"><i class="fas fa-users"></i> @lang('area_responsibles.attributes.block_count')</th>
+            <th class="text-center"><i class="fas fa-map-marked"></i> @lang('neighborhoods.plural')</th>
             <th class="text-center"><i class="fas fa-user-check"></i> @lang('area_responsibles.attributes.person_count')</th>
             <th class="d-none d-lg-table-cell"><i class="fas fa-map-marker-alt"></i> @lang('area_responsibles.attributes.address')</th>
             <th class="text-center" style="width: 100px"><i class="fas fa-cog"></i> @lang('area_responsibles.actions.actions')</th>
@@ -82,6 +83,13 @@
                 <td class="text-center">
                     <span class="badge badge-secondary badge-pill">
                         <i class="fas fa-users"></i> {{ $area_responsible->blocks->count() }}
+                    </span>
+                </td>
+
+                {{-- Neighborhood Count --}}
+                <td class="text-center">
+                    <span class="badge badge-warning badge-pill">
+                        <i class="fas fa-map-marked"></i> {{ $area_responsible->neighborhoods_count }}
                     </span>
                 </td>
 

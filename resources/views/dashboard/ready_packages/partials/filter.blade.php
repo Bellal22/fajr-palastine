@@ -1,24 +1,57 @@
 {{ BsForm::resource('ready_packages')->get(url()->current()) }}
+
 @component('dashboard::components.box')
-    @slot('title', trans('ready_packages.filter'))
+    @slot('title')
+        <i class="fas fa-filter"></i> @lang('ready_packages.filter')
+    @endslot
 
     <div class="row">
-        <div class="col-md-6">
-            {{ BsForm::text('name')->value(request('name')) }}
+        <div class="col-md-6 mb-2">
+            <label class="mb-1 font-weight-bold">
+                <i class="fas fa-box text-primary"></i>
+                @lang('ready_packages.attributes.name')
+            </label>
+            {{ BsForm::text('name')
+                ->value(request('name'))
+                ->placeholder(trans('ready_packages.placeholders.name'))
+                ->label(false) }}
         </div>
-        <div class="col-md-6">
+
+        <div class="col-md-6 mb-2">
+            <label class="mb-1 font-weight-bold">
+                <i class="fas fa-list-ol text-info"></i>
+                @lang('ready_packages.perPage')
+            </label>
             {{ BsForm::number('perPage')
                 ->value(request('perPage', 15))
                 ->min(1)
-                 ->label(trans('ready_packages.perPage')) }}
+                ->label(false) }}
         </div>
     </div>
 
     @slot('footer')
         <button type="submit" class="btn btn-primary btn-sm">
-            <i class="fas fa fa-fw fa-filter"></i>
+            <i class="fas fa-filter"></i>
             @lang('ready_packages.actions.filter')
+        </button>
+
+        <button type="button" class="btn btn-secondary btn-sm {{ app()->isLocale('ar') ? 'mr-2' : 'ml-2' }}" id="resetFiltersReadyPackages">
+            <i class="fas fa-eraser"></i>
+            @lang('ready_packages.actions.reset')
         </button>
     @endslot
 @endcomponent
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    $('#resetFiltersReadyPackages').on('click', function() {
+        $('form')[0].reset();
+        history.pushState({}, document.title, window.location.pathname);
+        location.reload();
+    });
+});
+</script>
+@endpush
+
 {{ BsForm::close() }}

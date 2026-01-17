@@ -151,11 +151,11 @@
                 <td class="d-none d-xl-table-cell text-center">
                     @if($person->has_condition == 1)
                         <span class="badge badge-warning">
-                            <i class="fas fa-check"></i> نعم
+                            <i class="fas fa-check"></i> @lang('people.condition.yes')
                         </span>
                     @elseif($person->has_condition == 0)
                         <span class="badge badge-secondary">
-                            <i class="fas fa-times"></i> لا
+                            <i class="fas fa-times"></i> @lang('people.condition.no')
                         </span>
                     @else
                         <span class="text-muted">{{ $person->has_condition }}</span>
@@ -202,6 +202,9 @@
                                 <div class="dropdown-divider"></div>
 
                                 {{-- حذف مسؤول المنطقة --}}
+                                @php
+                                    $removeMsg = __('people.dialogs.remove_responsible');
+                                @endphp
                                 <form action="{{ route('dashboard.people.areaResponsible.delete', $person) }}"
                                     method="POST"
                                     style="display: inline;">
@@ -209,7 +212,7 @@
                                     @method('PUT')
                                     <button type="submit"
                                             class="dropdown-item"
-                                            onclick="return confirm('هل أنت متأكد من إزالة المسؤول؟')">
+                                            onclick="return confirm('{{ $removeMsg }}')">
                                         <i class="fas fa-user-times text-secondary"></i>
                                         <span class="mr-2">@lang('people.actions.remove_responsible')</span>
                                     </button>
@@ -218,6 +221,9 @@
                                 <div class="dropdown-divider"></div>
 
                                 {{-- حذف السجل --}}
+                                @php
+                                    $deleteMsg = __('people.dialogs.delete_record');
+                                @endphp
                                 <form action="{{ route('dashboard.people.destroy', $person) }}"
                                     method="POST"
                                     style="display: inline;">
@@ -225,7 +231,7 @@
                                     @method('DELETE')
                                     <button type="submit"
                                             class="dropdown-item"
-                                            onclick="return confirm('هل أنت متأكد من حذف هذا السجل نهائياً؟')">
+                                            onclick="return confirm('{{ $deleteMsg }}')">
                                         <i class="fas fa-trash text-danger"></i>
                                         <span class="mr-2">@lang('people.actions.delete')</span>
                                     </button>

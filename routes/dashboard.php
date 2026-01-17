@@ -235,12 +235,7 @@ Route::post('families/{trashed_family}/restore', 'FamilyController@restore')->na
 Route::delete('families/{trashed_family}/forceDelete', 'FamilyController@forceDelete')->name('families.forceDelete');
 Route::resource('families', 'FamilyController');
 
-// SubCities Routes.
-Route::get('trashed/sub_cities', 'SubCityController@trashed')->name('sub_cities.trashed');
-Route::get('trashed/sub_cities/{trashed_sub_city}', 'SubCityController@showTrashed')->name('sub_cities.trashed.show');
-Route::post('sub_cities/{trashed_sub_city}/restore', 'SubCityController@restore')->name('sub_cities.restore');
-Route::delete('sub_cities/{trashed_sub_city}/forceDelete', 'SubCityController@forceDelete')->name('sub_cities.forceDelete');
-Route::resource('sub_cities', 'SubCityController');
+
 
 // Neighborhoods Routes.
 Route::get('trashed/neighborhoods', 'NeighborhoodController@trashed')->name('neighborhoods.trashed');
@@ -441,5 +436,12 @@ Route::get('trashed/coupon_types/{trashed_coupon_type}', 'CouponTypeController@s
 Route::post('coupon_types/{trashed_coupon_type}/restore', 'CouponTypeController@restore')->name('coupon_types.restore');
 Route::delete('coupon_types/{trashed_coupon_type}/forceDelete', 'CouponTypeController@forceDelete')->name('coupon_types.forceDelete');
 Route::resource('coupon_types', 'CouponTypeController');
+
+// Chooses Routes.
+Route::get('trashed/chooses', 'ChooseController@trashed')->name('chooses.trashed');
+Route::get('trashed/chooses/{trashed_choose}', 'ChooseController@showTrashed')->name('chooses.trashed.show');
+Route::post('chooses/{trashed_choose}/restore', 'ChooseController@restore')->name('chooses.restore');
+Route::delete('chooses/{trashed_choose}/forceDelete', 'ChooseController@forceDelete')->name('chooses.forceDelete');
+Route::resource('chooses', 'ChooseController');
 
 /*  The routes of generated crud will set here: Don't remove this line  */

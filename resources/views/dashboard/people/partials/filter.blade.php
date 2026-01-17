@@ -9,7 +9,7 @@
         {{-- البحث بالهوية --}}
         <div class="col-12 mb-1 mt-1">
             <h6 class="text-primary mb-0">
-                <i class="fas fa-id-card"></i> البحث بالهوية
+                <i class="fas fa-id-card"></i> @lang('people.sections.id_search')
             </h6>
             <hr class="mt-1 mb-2">
         </div>
@@ -35,7 +35,7 @@
         @if ($currentRouteName == 'dashboard.people.index' || $currentRouteName == 'dashboard.people.view')
             <div class="col-12 mb-1 mt-1">
                 <h6 class="text-primary mb-0">
-                    <i class="fas fa-user-tie"></i> المسؤول والمندوب
+                    <i class="fas fa-user-tie"></i> @lang('people.sections.responsible_delegate')
                 </h6>
                 <hr class="mt-1 mb-2">
             </div>
@@ -43,7 +43,7 @@
             @if ($currentRouteName == 'dashboard.people.index')
                 <div class="col-md-6 mb-2">
                     <label class="mb-1">
-                        <i class="fas fa-user-tie"></i> {{ trans('people.placeholders.area_responsible_label') }}
+                        <i class="fas fa-user-tie"></i> @lang('people.placeholders.area_responsible_label')
                     </label>
                     <?php
                         $areaResponsiblesQuery = \App\Models\AreaResponsible::query();
@@ -72,7 +72,7 @@
 
                 <div class="col-md-6 mb-2" style="display: none;">
                     <label class="mb-1">
-                        <i class="fas fa-users"></i> {{ trans('people.placeholders.block_label') }}
+                        <i class="fas fa-users"></i> @lang('people.placeholders.block_label')
                     </label>
                     <?php
                         $blocksQuery = \App\Models\Block::query();
@@ -103,7 +103,7 @@
                 @if(auth()->user()?->isAdmin())
                     <div class="col-md-6 mb-2">
                         <label class="mb-1">
-                            <i class="fas fa-user-tie"></i> {{ trans('people.placeholders.area_responsible_label') }}
+                            <i class="fas fa-user-tie"></i> @lang('people.placeholders.area_responsible_label')
                         </label>
                         <?php
                             $areaResponsiblesOptions = \App\Models\AreaResponsible::query()
@@ -127,7 +127,7 @@
 
                 <div class="col-md-6 mb-2">
                     <label class="mb-1">
-                        <i class="fas fa-users"></i> {{ trans('people.placeholders.block_label') }}
+                        <i class="fas fa-users"></i> @lang('people.placeholders.block_label')
                     </label>
                     <?php
                         $blocksQuery = \App\Models\Block::query();
@@ -159,7 +159,7 @@
             {{-- المعلومات الشخصية --}}
             <div class="col-12 mb-1 mt-2">
                 <h6 class="text-primary mb-0">
-                    <i class="fas fa-user-circle"></i> المعلومات الشخصية
+                    <i class="fas fa-user-circle"></i> @lang('people.sections.personal_info')
                 </h6>
                 <hr class="mt-1 mb-2">
             </div>
@@ -217,7 +217,7 @@
                     'أنثى' => 'أنثى',
                 ])
                 ->value(request('gender'))
-                ->placeholder('اختر الجنس')
+                ->placeholder(trans('people.placeholders.select_gender'))
                 ->label(false) }}
             </div>
 
@@ -233,14 +233,14 @@
                     'widowed' => 'أرمل / أرملة',
                 ])
                 ->value(request('social_status'))
-                ->placeholder('اختر الحالة الاجتماعية')
+                ->placeholder(trans('people.placeholders.select_social_status'))
                 ->label(false) }}
             </div>
 
             {{-- معلومات السكن --}}
             <div class="col-12 mb-1 mt-2">
                 <h6 class="text-primary mb-0">
-                    <i class="fas fa-map-marked-alt"></i> معلومات السكن
+                    <i class="fas fa-map-marked-alt"></i> @lang('people.sections.housing_info')
                 </h6>
                 <hr class="mt-1 mb-2">
             </div>
@@ -254,7 +254,7 @@
                     'rafah' => 'رفح',
                 ])
                 ->value(request('current_city'))
-                ->placeholder('اختر المحافظة الحالية')
+                ->placeholder(trans('people.placeholders.select_current_city'))
                 ->label(false) }}
             </div>
 
@@ -296,32 +296,32 @@
                     'zararRoundabout' => 'دوار زعارير',
                 ])
                 ->value(request('neighborhood'))
-                ->placeholder('اختر الحي/المنطقة')
+                ->placeholder(trans('people.placeholders.select_neighborhood'))
                 ->label(false) }}
             </div>
 
             {{-- معلومات الطفل --}}
             <div class="col-12 mb-1 mt-2">
                 <h6 class="text-primary mb-0">
-                    <i class="fas fa-child"></i> معلومات الطفل
+                    <i class="fas fa-child"></i> @lang('people.sections.child_info')
                 </h6>
                 <hr class="mt-1 mb-2">
             </div>
 
             <div class="col-md-6 mb-2">
                 <label class="mb-1">
-                    <i class="fas fa-id-card"></i> رقم هوية الطفل
+                    <i class="fas fa-id-card"></i> @lang('people.attributes.child_id_num')
                 </label>
                 <input type="text"
                        name="child_id_num"
                        class="form-control"
-                       placeholder="رقم الهوية"
+                       placeholder="@lang('people.placeholders.child_id_num')"
                        value="{{ request('child_id_num') }}">
             </div>
 
             <div class="col-md-6 mb-2">
                 <label class="mb-1">
-                    <i class="fas fa-calendar"></i> تاريخ ميلاد الطفل (مطابق)
+                    <i class="fas fa-calendar"></i> @lang('people.attributes.child_dob_exact')
                 </label>
                 <input type="date"
                        name="child_dob"
@@ -332,7 +332,7 @@
 
             <div class="col-md-6 mb-2">
                 <label class="mb-1">
-                    <i class="fas fa-calendar-alt"></i> تاريخ ميلاد الطفل - من
+                    <i class="fas fa-calendar-alt"></i> @lang('people.attributes.child_dob_from')
                 </label>
                 <input type="date"
                        name="child_dob_from"
@@ -343,7 +343,7 @@
 
             <div class="col-md-6 mb-2">
                 <label class="mb-1">
-                    <i class="fas fa-calendar-alt"></i> تاريخ ميلاد الطفل - إلى
+                    <i class="fas fa-calendar-alt"></i> @lang('people.attributes.child_dob_to')
                 </label>
                 <input type="date"
                        name="child_dob_to"
@@ -354,57 +354,57 @@
 
             <div class="col-md-6 mb-2">
                 <label class="mb-1">
-                    <i class="fas fa-hourglass-half"></i> عمر الطفل بالأشهر - من
+                    <i class="fas fa-hourglass-half"></i> @lang('people.attributes.child_age_months_from')
                 </label>
                 <input type="number"
                        name="child_age_months_from"
                        class="form-control"
                        min="0"
                        max="300"
-                       placeholder="مثال: 6"
+                       placeholder="@lang('people.placeholders.age_example', ['age' => 6])"
                        value="{{ request('child_age_months_from') }}">
             </div>
 
             <div class="col-md-6 mb-2">
                 <label class="mb-1">
-                    <i class="fas fa-hourglass-half"></i> عمر الطفل بالأشهر - إلى
+                    <i class="fas fa-hourglass-half"></i> @lang('people.attributes.child_age_months_to')
                 </label>
                 <input type="number"
                        name="child_age_months_to"
                        class="form-control"
                        min="0"
                        max="300"
-                       placeholder="مثال: 24"
+                       placeholder="@lang('people.placeholders.age_example', ['age' => 24])"
                        value="{{ request('child_age_months_to') }}">
             </div>
 
             {{-- معلومات الأسرة والصحة --}}
             <div class="col-12 mb-1 mt-2">
                 <h6 class="text-primary mb-0">
-                    <i class="fas fa-home"></i> معلومات الأسرة والصحة
+                    <i class="fas fa-home"></i> @lang('people.sections.family_health')
                 </h6>
                 <hr class="mt-1 mb-2">
             </div>
 
             <div class="col-md-3 mb-2">
                 <label class="mb-1">
-                    <i class="fas fa-users"></i> عدد أفراد الأسرة من
+                    <i class="fas fa-users"></i> @lang('people.attributes.family_members_min')
                 </label>
                 <input type="number"
                        name="family_members_min"
                        class="form-control"
-                       placeholder="الحد الأدنى"
+                       placeholder="@lang('people.placeholders.minimum')"
                        value="{{ request('family_members_min') }}">
             </div>
 
             <div class="col-md-3 mb-2">
                 <label class="mb-1">
-                    <i class="fas fa-users"></i> عدد أفراد الأسرة إلى
+                    <i class="fas fa-users"></i> @lang('people.attributes.family_members_max')
                 </label>
                 <input type="number"
                        name="family_members_max"
                        class="form-control"
-                       placeholder="الحد الأقصى"
+                       placeholder="@lang('people.placeholders.maximum')"
                        value="{{ request('family_members_max') }}">
             </div>
 
@@ -413,11 +413,11 @@
                     <i class="fas fa-notes-medical"></i> @lang('people.attributes.has_condition')
                 </label>
                 {{ BsForm::select('has_condition', [
-                    '0' => 'صحيح',
-                    '1' => 'يعاني',
+                    '0' => trans('people.health_status.healthy'),
+                    '1' => trans('people.health_status.has_condition'),
                 ])
                 ->value(request('has_condition'))
-                ->placeholder('اختر الحالة')
+                ->placeholder(trans('people.placeholders.select_health_status'))
                 ->label(false) }}
             </div>
         @endif
@@ -425,7 +425,7 @@
         {{-- إعدادات العرض --}}
         <div class="col-12 mb-1 mt-2">
             <h6 class="text-primary mb-0">
-                <i class="fas fa-cog"></i> إعدادات العرض
+                <i class="fas fa-cog"></i> @lang('people.sections.display_settings')
             </h6>
             <hr class="mt-1 mb-2">
         </div>
@@ -460,7 +460,7 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="notFoundModalTitle">
-                    نتائج البحث عن الهويات
+                    @lang('people.modal.search_results_title')
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -472,7 +472,7 @@
                     <div class="mb-4">
                         <h6 class="font-weight-bold">
                             <i class="fas fa-times-circle"></i>
-                            الهويات التالية لم يتم العثور عليها:
+                            @lang('people.modal.not_found_ids')
                         </h6>
                         <ul class="mb-0">
                             @foreach($notFoundIds as $id)
@@ -486,7 +486,7 @@
                     <div class="mb-4">
                         <h6 class="font-weight-bold">
                             <i class="fas fa-exclamation-triangle"></i>
-                            الهويات التالية مسجلة ولكن غير متاحة في منطقتك:
+                            @lang('people.modal.unavailable_ids')
                         </h6>
                         <ul class="mb-0">
                             @foreach($unavailableIds as $id)
@@ -500,7 +500,7 @@
                     <div class="mb-4">
                         <h6 class="font-weight-bold">
                             <i class="fas fa-check-circle"></i>
-                            الهويات التالية موجودة ولكن تمت معالجتها مسبقاً:
+                            @lang('people.modal.processed_ids')
                         </h6>
                         <ul class="mb-0">
                             @foreach($processedIds as $id)
@@ -513,14 +513,14 @@
                 @if(empty($notFoundIds) && empty($unavailableIds) && empty($processedIds))
                     <div class="alert alert-success">
                         <i class="fas fa-check-circle"></i>
-                        جميع الهويات المدخلة موجودة ومتاحة في منطقتك.
+                        @lang('people.modal.all_ids_found')
                     </div>
                 @endif
             </div>
 
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" id="clear-session-button">
-                    موافق
+                    @lang('people.modal.confirm')
                 </button>
             </div>
         </div>
@@ -530,12 +530,10 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
-    // إظهار المودال إذا كان هناك نتائج
     @if(!empty($notFoundIds) || !empty($unavailableIds) || !empty($processedIds))
         $('#not-found-modal').modal('show');
     @endif
 
-    // زر موافق - إغلاق المودال وتفريغ الجلسة
     $('#clear-session-button').on('click', function() {
         $.ajax({
             url: '{{ route("dashboard.people.clear") }}',
@@ -547,19 +545,17 @@ $(document).ready(function() {
                 $('#not-found-modal').modal('hide');
             },
             error: function(xhr) {
-                alert('حدث خطأ أثناء محاولة تفريغ الجلسة.');
+                alert('{{ trans("people.modal.error_clearing_session") }}');
             }
         });
     });
 
-    // زر إعادة تعيين الفلاتر
     $('#resetFilters').on('click', function() {
         $('form')[0].reset();
         history.pushState({}, document.title, window.location.pathname);
         location.reload();
     });
 
-    // التعامل مع اختيار المسؤول عن المنطقة
     const areaSelect = $('#area_responsible_select');
     const blockSelect = $('#block_select');
 
@@ -572,7 +568,7 @@ $(document).ready(function() {
                 blockSelect.parent().show();
 
                 $.get(`${url}?area_responsible_id=${areaId}`, function(data) {
-                    blockSelect.html('<option value="">اختر المندوب</option>');
+                    blockSelect.html('<option value="">{{ trans("people.placeholders.select_block") }}</option>');
 
                     $.each(data, function(id, name) {
                         blockSelect.append(`<option value="${id}">${name}</option>`);
@@ -588,7 +584,6 @@ $(document).ready(function() {
         }
     }
 
-    // Auto-resize textarea للهويات
     $('.id-numbers-input').on('input', function() {
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';

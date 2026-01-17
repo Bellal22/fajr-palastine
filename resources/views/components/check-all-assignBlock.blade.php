@@ -15,7 +15,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="assign-blocks-title">
-                    @lang('check-all.dialogs.assign.title')
+                    @lang('check-all.dialogs.assignBlock.title')
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -27,17 +27,17 @@
                     @method('PUT')
                     <input type="hidden" name="items" id="selected-people" value="">
                     {{ BsForm::select('block_id', $blocks->toArray())
-                        ->placeholder('اختر المندوب')
-                        ->label('المندوب')
+                        ->placeholder(trans('check-all.dialogs.assignBlock.select_block'))
+                        ->label(trans('check-all.dialogs.assignBlock.block_label'))
                         ->required() }}
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
-                    @lang('check-all.dialogs.assign.cancel')
+                    @lang('check-all.dialogs.assignBlock.cancel')
                 </button>
                 <button type="submit" class="btn btn-info btn-sm" form="assign-blocks-form">
-                    @lang('check-all.dialogs.assign.confirm')
+                    @lang('check-all.dialogs.assignBlock.confirm')
                 </button>
             </div>
         </div>
@@ -53,6 +53,5 @@
             });
             document.getElementById('selected-people').value = selectedIds.join(',');
         });
-
     </script>
 @endpush

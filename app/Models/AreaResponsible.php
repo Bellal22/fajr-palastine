@@ -129,4 +129,12 @@ class AreaResponsible extends Model
     {
         return $this->blocks()->count();
     }
+
+    /**
+     * العلاقة مع الأحياء (Many-to-Many)
+     */
+    public function neighborhoods()
+    {
+        return $this->belongsToMany(Neighborhood::class, 'area_responsible_neighborhood');
+    }
 }

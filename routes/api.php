@@ -123,4 +123,8 @@ Route::get('/select/outbound_shipment_items', 'OutboundShipmentItemController@se
 Route::apiResource('coupon_types', 'CouponTypeController');
 Route::get('/select/coupon_types', 'CouponTypeController@select')->name('coupon_types.select');
 
+// Chooses Routes.
+Route::apiResource('chooses', 'ChooseController');
+Route::get('/select/chooses', 'ChooseController@select')->name('chooses.select');
+
 /*  The routes of generated crud will set here: Don't remove this line  */

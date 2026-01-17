@@ -28,6 +28,8 @@ class AreaResponsibleRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
+            'neighborhoods' => ['nullable', 'array'],
+            'neighborhoods.*' => ['exists:neighborhoods,id'],
         ];
         return $rules;
     }

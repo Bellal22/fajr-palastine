@@ -2,7 +2,7 @@
 
 namespace App\Enums\Person;
 
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Lang;
 use Spatie\Enum\Enum;
 
 /**
@@ -18,4 +18,34 @@ use Spatie\Enum\Enum;
  * @method static self khanYounis()
  * @method static self rafah()
  */
-class PersonCity extends Enum {}
+class PersonCity extends Enum
+{
+    /**
+     * إرجاع الترجمة من ملف اللغة
+     */
+    public function getLabelAttribute()
+    {
+        return Lang::get($this->value);
+    }
+
+    /**
+     * دالة مخصصة لإرجاع خيارات القائمة المنسدلة
+     * تستخدم داخل ملف الـ Blade في BsForm::options()
+     */
+    public static function options(): array
+    {
+        return [
+            self::northGaza()->value   => self::northGaza()->getLabelAttribute(),
+            self::gaza()->value        => self::gaza()->getLabelAttribute(),
+            self::zahra()->value       => self::zahra()->getLabelAttribute(),
+            self::maghraqa()->value    => self::maghraqa()->getLabelAttribute(),
+            self::breij()->value       => self::breij()->getLabelAttribute(),
+            self::nusairat()->value    => self::nusairat()->getLabelAttribute(),
+            self::maghazi()->value     => self::maghazi()->getLabelAttribute(),
+            self::zawaida()->value     => self::zawaida()->getLabelAttribute(),
+            self::deirBalh()->value    => self::deirBalh()->getLabelAttribute(),
+            self::khanYounis()->value  => self::khanYounis()->getLabelAttribute(),
+            self::rafah()->value       => self::rafah()->getLabelAttribute(),
+        ];
+    }
+}

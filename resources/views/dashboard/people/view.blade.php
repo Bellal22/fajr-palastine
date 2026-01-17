@@ -72,17 +72,17 @@
                                     {{-- زر تصدير الكل --}}
                                     <a href="{{ route('dashboard.people.export.view', request()->all()) }}"
                                        class="btn btn-outline-success btn-sm"
-                                       title="@lang('تصدير الكل (تطابق نتائج البحث)')">
+                                       title="@lang('people.actions.export_all_hint')">
                                         <i class="fa-fw fas fa-file-excel"></i>
-                                        @lang('تصدير الكل')
+                                        @lang('people.actions.export_all_short')
                                     </a>
 
                                     {{-- زر تصدير الأطفال --}}
                                     <a href="{{ route('dashboard.people.export.exportChildren', request()->all()) }}"
                                        class="btn btn-outline-success btn-sm"
-                                       title="@lang('تصدير بيانات الأطفال (تطابق نتائج البحث)')">
+                                       title="@lang('people.actions.export_children_hint')">
                                         <i class="fa-fw fas fa-child"></i>
-                                        @lang('تصدير الأطفال')
+                                        @lang('people.actions.export_children')
                                     </a>
                                 </div>
                             @endif
@@ -121,7 +121,7 @@
                     <i class="fas fa-users"></i> @lang('people.attributes.relatives_count')
                 </th>
                 <th style="width: 160px" class="text-center">
-                    <i class="fas fa-cog"></i> الإجراءات
+                    <i class="fas fa-cog"></i> @lang('people.actions.actions')
                 </th>
             </tr>
         </thead>
@@ -189,7 +189,7 @@
                             <i class="fas fa-user-tie text-primary"></i>
                             {{ $person->areaResponsible->name }}
                         @else
-                            <span class="text-muted">لم يتم تحديده</span>
+                            <span class="text-muted">@lang('people.messages.not_assigned')</span>
                         @endif
                     </td>
 
@@ -199,7 +199,7 @@
                             <i class="fas fa-users text-success"></i>
                             {{ $person->block->name }}
                         @else
-                            <span class="text-muted">لم يتم تحديده</span>
+                            <span class="text-muted">@lang('people.messages.not_assigned')</span>
                         @endif
                     </td>
 
@@ -207,11 +207,11 @@
                     <td class="text-center">
                         @if($person->has_condition == 1)
                             <span class="badge badge-warning">
-                                <i class="fas fa-check"></i> نعم
+                                <i class="fas fa-check"></i> @lang('people.condition.yes')
                             </span>
                         @elseif($person->has_condition == 0)
                             <span class="badge badge-secondary">
-                                <i class="fas fa-times"></i> لا
+                                <i class="fas fa-times"></i> @lang('people.condition.no')
                             </span>
                         @else
                             <span class="text-muted">-</span>
@@ -255,6 +255,9 @@
                                     <div class="dropdown-divider"></div>
 
                                     {{-- حذف --}}
+                                    @php
+                                        $deleteMsg = __('people.dialogs.delete_confirm');
+                                    @endphp
                                     <form action="{{ route('dashboard.people.destroy', $person) }}"
                                         method="POST"
                                         style="display: inline;">
@@ -262,7 +265,7 @@
                                         @method('DELETE')
                                         <button type="submit"
                                                 class="dropdown-item"
-                                                onclick="return confirm('هل أنت متأكد من حذف هذا السجل؟')">
+                                                onclick="return confirm('{{ $deleteMsg }}')">
                                             <i class="fas fa-trash text-danger"></i>
                                             <span class="mr-2">@lang('people.actions.delete')</span>
                                         </button>
@@ -289,8 +292,11 @@
             @slot('footer')
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="text-muted small">
-                        عرض {{ $people->firstItem() ?? 0 }} - {{ $people->lastItem() ?? 0 }}
-                        من أصل {{ $people->total() }} نتيجة
+                        @lang('people.pagination_results', [
+                            'from' => $people->firstItem() ?? 0,
+                            'to' => $people->lastItem() ?? 0,
+                            'total' => $people->total()
+                        ])
                     </div>
                     {{ $people->appends(request()->query())->links() }}
                 </div>

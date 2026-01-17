@@ -4,7 +4,7 @@
         data-checkbox=".item-checkbox"
         style="margin-right: 10px;">
     <i class="fas fa-user-times"></i>
-    حذف مسؤول المنطقة
+    @lang('check-all.actions.deleteAreaResponsibles')
 </button>
 
 <!-- Modal حذف المسؤول للمجموعة -->
@@ -14,7 +14,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="bulk-delete-area-responsible-title">
-                    تأكيد حذف المسؤول
+                    @lang('check-all.dialogs.bulkDeleteResponsible.title')
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -22,9 +22,9 @@
             </div>
             <div class="modal-body">
                 <i class="fas fa-exclamation-triangle"></i>
-                هل أنت متأكد من إلغاء ربط المسؤول والمندوب من الأشخاص المحددين؟
+                @lang('check-all.dialogs.bulkDeleteResponsible.info')
                 <br>
-                <small class="text-muted">سيتم إزالة مسؤول المنطقة والمندوب من جميع الأشخاص المحددين</small>
+                <small class="text-muted">@lang('check-all.dialogs.bulkDeleteResponsible.warning')</small>
 
                 <form action="{{ route('dashboard.people.areaResponsible.bulkDelete') }}" method="POST" id="bulk-delete-area-responsible-form">
                     @csrf
@@ -35,11 +35,11 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
-                    إلغاء
+                    @lang('check-all.dialogs.bulkDeleteResponsible.cancel')
                 </button>
                 <button type="submit" class="btn btn-danger btn-sm" form="bulk-delete-area-responsible-form" id="confirm-delete-btn">
                     <i class="fas fa-user-times"></i>
-                    تأكيد حذف المسؤول
+                    @lang('check-all.dialogs.bulkDeleteResponsible.confirm')
                 </button>
             </div>
         </div>
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value).filter(id => id);
 
             if (selectedIds.length === 0) {
-                alert('يرجى تحديد أشخاص أولاً');
+                alert('{{ __("check-all.messages.no_people_selected") }}');
                 return;
             }
 
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // تحديث عنوان الـ modal
             const modalTitle = document.getElementById('bulk-delete-area-responsible-title');
             if (modalTitle) {
-                modalTitle.textContent = `تأكيد حذف المسؤول من ${selectedIds.length} شخص`;
+                modalTitle.textContent = '{{ __("check-all.dialogs.bulkDeleteResponsible.title_with_count", ["count" => ""]) }}'.replace(':count', selectedIds.length);
             }
 
             // فتح الـ modal
@@ -91,14 +91,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!selectedIds || selectedIds.trim() === '') {
                 e.preventDefault();
-                alert('يرجى تحديد أشخاص أولاً');
+                alert('{{ __("check-all.messages.no_people_selected") }}');
                 return false;
             }
 
             // إظهار مؤشر تحميل
             if (confirmBtn) {
                 confirmBtn.disabled = true;
-                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المعالجة...';
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ __("check-all.messages.processing") }}';
             }
         });
     }
@@ -113,4 +113,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
-

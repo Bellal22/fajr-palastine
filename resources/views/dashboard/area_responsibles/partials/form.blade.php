@@ -51,6 +51,35 @@
     </div>
 </div>
 
+{{-- المناطق المخصصة --}}
+<div class="card mb-4">
+    <div class="card-header bg-warning text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-map-marked"></i> @lang('neighborhoods.plural')
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="form-group">
+            <label>
+                <i class="fas fa-map-signs text-warning"></i>
+                @lang('neighborhoods.plural')
+            </label>
+            <select name="neighborhoods[]" class="form-control select2" multiple data-placeholder="@lang('neighborhoods.plural')">
+                @foreach($cities as $city)
+                <optgroup label="{{ $city->name }}">
+                    @foreach($city->neighborhoods as $neighborhood)
+                    <option value="{{ $neighborhood->id }}"
+                        {{ in_array($neighborhood->id, old('neighborhoods', isset($area_responsible) ? $area_responsible->neighborhoods->pluck('id')->toArray() : [])) ? 'selected' : '' }}>
+                        {{ $neighborhood->name }}
+                    </option>
+                    @endforeach
+                </optgroup>
+                @endforeach
+            </select>
+        </div>
+    </div>
+</div>
+
 {{-- العنوان --}}
 <div class="card mb-4">
     <div class="card-header bg-gray text-dark">
@@ -71,3 +100,10 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        $('.select2').select2();
+    });
+</script>
+@endpush
