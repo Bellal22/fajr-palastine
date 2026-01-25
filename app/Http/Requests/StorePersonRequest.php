@@ -41,55 +41,52 @@ class StorePersonRequest extends FormRequest
             'father_name'             => ['required', 'string', 'regex:/^[\p{Arabic} ]+$/u', 'max:255'],
             'grandfather_name'        => ['required', 'string', 'regex:/^[\p{Arabic} ]+$/u', 'max:255'],
             'family_name'             => ['required', 'string', 'regex:/^[\p{Arabic} ]+$/u', 'max:255'],
-            'gender'                  => ['required', 'in:ذكر,أنثى'],
+            'gender'                  => ['required', 'in:male,female,ذكر,أنثى'],
             'dob'                     => ['required', 'date'],
-            'phone'                   => ['required', 'string', 'regex:/^(059|056)\d{7}$/'],
+            'phone'                   => ['required', 'string', 'regex:/^(056|059)\d{7}$/'],
             'social_status' => [
                 'required',
-                Rule::in(PersonSocialStatus::toValues()),
+                Rule::exists('chooses', 'slug')->where('type', 'social_status'),
                 function ($attribute, $value, $fail) {
                     $gender = request('gender');
 
-                    if ($gender === 'أنثى' && ($value === 'married' || $value === 'polygamous')) {
-                        $fail('يرجى التسجيل ببيانات الزوج حتى لو كان الزوج متزوج أكثر من زوجة.');
-                    }
-                    if ($gender === 'ذكر' && $value === 'single') {
-                        $fail('ممنوع التسجيل للذكر الغير متزوج.');
+                    // 1. منع تسجيل الزوجة كصاحب طلب إذا كانت متزوجة أو في حالة تعدد
+                    if (($gender === 'أنثى') &&
+                        (in_array($value, ['متزوج/ة','متعدد الزوجات']))) {
+                        $fail('يمنع التسجيل ببيانات الزوجة يرجى التسجيل ببيانات الزوج');
                     }
 
-                    // منع وجود علاقات 'husband' أو 'wife' في أفراد الأسرة عند الحالات الاجتماعية التالية:
-                    $forbiddenStatuses = ['single', 'divorced', 'widowed'];
-                    if (in_array($value, $forbiddenStatuses)) {
-                        $familyMembers = request('family_members'); // أو اسم الحقل الذي يحتوي على قائمة أفراد الأسرة
-                        if (is_array($familyMembers)) {
-                            foreach ($familyMembers as $member) {
-                                if (isset($member['relationship']) && in_array($member['relationship'], ['husband', 'wife'])) {
-                                    $fail('لا يمكن تسجيل الزوج أو الزوجة إذا كانت الحالة الاجتماعية ' . $value);
-                                    break;
-                                }
-                            }
+                    // 2. منع تسجيل الذكر الأعزب
+                    if (($gender === 'ذكر') && (in_array($value, ['أعزب/انسة']))) {
+                        $fail('ممنوع التسجيل للذكر الغير متزوج');
+                    }
+                }
+            ],
+            'employment_status'       => ['required', Rule::exists('chooses', 'slug')->where('type', 'employment_status')],
+            'has_condition'           => ['required', 'boolean'],
+            'condition_description'   => ['nullable', 'string', 'required_if:has_condition,true', 'regex:/^[\p{Arabic}0-9\s,.()!?-]+$/u'],
+            'city'                    => ['required', Rule::exists('cities', 'name')],
+            'current_city'            => ['required', Rule::exists('cities', 'name')],
+            'neighborhood'            => ['required', Rule::exists('neighborhoods', 'name')],
+            'area_responsible_id'     => [
+                'nullable',
+                Rule::exists('area_responsibles', 'id'),
+                function ($attribute, $value, $fail) {
+                    $neighborhood = request('neighborhood');
+                    if ($neighborhood) {
+                        $hasResponsibles = \App\Models\AreaResponsible::whereHas('neighborhoods', function($q) use ($neighborhood) {
+                            $q->where('name', $neighborhood);
+                        })->exists();
+                        if ($hasResponsibles && empty($value)) {
+                            $fail('يرجى اختيار مسؤول المنطقة.');
                         }
                     }
                 }
             ],
-            'employment_status'       => ['required',Rule::in(['موظف', 'عامل', 'لا يعمل'])],
-            'has_condition'           => ['required', 'boolean'],
-            'condition_description'   => ['nullable', 'string', 'required_if:has_condition,true'],
-            'city'                    => ['required', Rule::in(PersonCity::toValues())],
-            'current_city'            => ['required', Rule::in(PersonCurrentCity::toValues())],
-            'neighborhood'            => ['required', Rule::in(PersonNeighborhood::toValues())],
-            'area_responsible_id' => [
-                'nullable',
-                Rule::exists('area_responsibles', 'id')->when(
-                    $this->input('neighborhood') === PersonNeighborhood::alMawasi(),
-                    function (Rule $rule) {
-                        return $rule->required();
-                    }
-                ),
-            ],
-            'landmark'                => ['required','string', 'regex:/^[\p{Arabic} ]+$/u', 'max:255'],
-            'housing_type'            => ['required', Rule::in(PersonHousingType::toValues())],
-            'housing_damage_status'   => ['required', Rule::in(PersonDamageHousingStatus::toValues())],
+            'landmark'                => ['required','string', 'regex:/^[\p{Arabic}0-9 ]+$/u', 'max:255'],
+            'housing_type'            => ['required', Rule::exists('chooses', 'slug')->where('type', 'housing_type')],
+            'housing_damage_status'   => ['required', Rule::exists('chooses', 'slug')->where('type', 'housing_damage_status')],
+            'block_id'                => ['nullable', Rule::exists('blocks', 'id')],
         ];
     }
 
@@ -101,10 +98,6 @@ class StorePersonRequest extends FormRequest
     public function messages(): array
     {
         return [
-            //     'id_num.required'          => 'الرجاء إدخال رقم الهوية',
-            //     'id_num.numeric'           => 'رقم الهوية يجب أن يحتوي على أرقام فقط',
-            //     'id_num.digits'            => 'رقم الهوية يجب أن يتكون من 9 أرقام',
-            //     'id_num.unique'            => 'رقم الهوية مسجل بالفعل في النظام',
             'first_name.required'      => 'الرجاء إدخال الاسم الأول بشكل صحيح.',
             'first_name.regex'         => 'الاسم الأول يجب أن يحتوي فقط على حروف عربية.',
             'first_name.max'           => 'الاسم الأول يجب ألا يتجاوز 255 حرفاً.',
@@ -122,13 +115,14 @@ class StorePersonRequest extends FormRequest
             'family_name.max'          => 'اسم العائلة يجب ألا يتجاوز 255 حرفاً.',
 
             'gender.required'          => 'يرجى اختيار الجنس.',
+            'gender.exists'            => 'لا يمكنك اختيار "غير محدد"، يرجى اختيار "ذكر" أو "أنثى".',
             'gender.in'                => 'لا يمكنك اختيار "غير محدد"، يرجى اختيار "ذكر" أو "أنثى".',
 
             'dob.required'             => 'الرجاء إدخال تاريخ الميلاد بشكل صحيح.',
             'dob.date'                 => 'الرجاء إدخال تاريخ ميلاد صحيح.',
 
             'phone.required'           => 'الرجاء إدخال رقم الهاتف بشكل صحيح.',
-            'phone.regex'              => 'رقم الهاتف يجب أن يبدأ بـ 059 أو 056 ويتبعه 7 أرقام.',
+            'phone.regex'              => 'رقم الهاتف يجب أن يبدأ بـ 059 أو 056 ويتكون من 10 أرقام.',
 
             'social_status.required'   => 'الرجاء تحديد الحالة الاجتماعية.',
 
@@ -139,6 +133,7 @@ class StorePersonRequest extends FormRequest
 
             'condition_description.required_if' => 'الرجاء وصف الحالة الصحية التي تعاني منها.',
             'condition_description.string'    => 'وصف الحالة الصحية يجب أن يكون نصاً.',
+            'condition_description.regex'     => 'وصف الحالة الصحية يجب أن يكون باللغة العربية.',
 
             'city.required'            => 'الرجاء اختيار المدينة بشكل صحيح.',
 
@@ -146,11 +141,11 @@ class StorePersonRequest extends FormRequest
 
             'neighborhood.required'    => 'الرجاء إدخال الحي بشكل صحيح.',
 
-            'area_responsible_id.required' => 'يرجى اختيار مسؤول المنطقة بما أن الحي السكني هو المواصي.',
+            'area_responsible_id.required' => 'يرجى اختيار مسؤول المنطقة.',
             'area_responsible_id.exists' => 'مسؤول المنطقة المحدد غير موجود.',
 
             'landmark.required'        => 'الرجاء إدخال المعلم بشكل صحيح.',
-            'landmark.regex'           => 'المعلم يجب أن يحتوي فقط على حروف عربية.',
+            'landmark.regex'           => 'المعلم يجب أن يكون باللغة العربية فقط.',
 
             'housing_type.required'    => 'الرجاء تحديد نوع السكن.',
 

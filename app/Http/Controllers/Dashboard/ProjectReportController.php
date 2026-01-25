@@ -9,6 +9,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use PDF;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProjectReportController extends Controller
 {
@@ -50,7 +52,12 @@ class ProjectReportController extends Controller
             'beneficiaries as not_received_count' => function ($query) {
                 $query->where('project_beneficiaries.status', 'غير مستلم');
             }
-        ])->latest()->get();
+        ])
+        ->withSum(['beneficiaries as total_delivered_coupons' => function ($query) {
+            $query->where('project_beneficiaries.status', 'مستلم');
+        }], 'project_beneficiaries.quantity')
+        ->with('couponTypes')
+        ->latest()->get();
 
         // 3. Area-based Breakdown for Each Project
         $areaBreakdowns = DB::table('project_beneficiaries')
@@ -155,10 +162,107 @@ class ProjectReportController extends Controller
         $project->area_breakdown = $areaBreakdown;
         $project->warehouse_breakdown = $warehouseBreakdown;
 
+        // Load coupon types
+        $project->load('couponTypes');
+
+        // Calculate total delivered coupons (sum of quantities given to beneficiaries)
+        $totalDeliveredCoupons = DB::table('project_beneficiaries')
+            ->where('project_id', $project->id)
+            ->where('status', 'مستلم')
+            ->sum('quantity');
+
         $areas = AreaResponsible::whereIn('id', array_keys($areaBreakdown))->get()->keyBy('id');
         $subWarehouses = SubWarehouse::whereIn('id', array_keys($warehouseBreakdown))->get()->keyBy('id');
 
-        return view('dashboard.reports.project', compact('project', 'areas', 'subWarehouses'));
+        return view('dashboard.reports.project', compact('project', 'areas', 'subWarehouses', 'totalDeliveredCoupons'));
+    }
+
+    public function export(Request $request, Project $project)
+    {
+        // Reuse logic from show method to prepare data
+         $project->loadCount([
+            'beneficiaries as total_candidates',
+            'beneficiaries as received_count' => function ($query) {
+                $query->where('project_beneficiaries.status', 'مستلم');
+            },
+            'beneficiaries as not_received_count' => function ($query) {
+                $query->where('project_beneficiaries.status', 'غير مستلم');
+            }
+        ]);
+
+        $areaBreakdown = DB::table('project_beneficiaries')
+            ->join('persons', 'project_beneficiaries.person_id', '=', 'persons.id')
+            ->leftJoin('persons as head', function ($join) {
+                $join->on('persons.relative_id', '=', 'head.id_num')
+                    ->whereNull('head.relative_id');
+            })
+            ->where('project_beneficiaries.project_id', $project->id)
+            ->where('project_beneficiaries.status', 'مستلم')
+            ->select(
+                DB::raw('COALESCE(persons.area_responsible_id, head.area_responsible_id) as area_id'),
+                DB::raw('count(*) as count')
+            )
+            ->groupBy('area_id')
+            ->pluck('count', 'area_id')
+            ->toArray();
+
+        $warehouseBreakdown = DB::table('project_beneficiaries')
+            ->where('project_id', $project->id)
+            ->where('status', 'مستلم')
+            ->whereNotNull('sub_warehouse_id')
+            ->select(
+                'sub_warehouse_id',
+                DB::raw('count(*) as count')
+            )
+            ->groupBy('sub_warehouse_id')
+            ->pluck('count', 'sub_warehouse_id')
+            ->toArray();
+
+        $project->area_breakdown = $areaBreakdown;
+        $project->warehouse_breakdown = $warehouseBreakdown;
+        $project->load('couponTypes');
+
+        $totalDeliveredCoupons = DB::table('project_beneficiaries')
+            ->where('project_id', $project->id)
+            ->where('status', 'مستلم')
+            ->sum('quantity');
+
+        $areas = AreaResponsible::whereIn('id', array_keys($areaBreakdown))->get()->keyBy('id');
+        $subWarehouses = SubWarehouse::whereIn('id', array_keys($warehouseBreakdown))->get()->keyBy('id');
+
+        if ($request->type === 'pdf') {
+            $html = view('dashboard.reports.project_pdf', [
+                'project' => $project,
+                'areas' => $areas,
+                'subWarehouses' => $subWarehouses,
+                'totalDeliveredCoupons' => $totalDeliveredCoupons,
+            ])->render();
+
+            $mpdf = new \Mpdf\Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'orientation' => 'P',
+                'margin_left' => 10,
+                'margin_right' => 10,
+                'margin_top' => 15,
+                'margin_bottom' => 15,
+                'default_font' => 'dejavusans'
+            ]);
+
+            $mpdf->autoScriptToLang = true;
+            $mpdf->autoLangToFont = true;
+
+            $mpdf->WriteHTML($html);
+
+            return $mpdf->Output('project-report-' . $project->id . '.pdf', 'D');
+        } elseif ($request->type === 'xlsx') {
+            return \Maatwebsite\Excel\Facades\Excel::download(
+                new \App\Exports\ProjectReportExport($project, $project->area_breakdown, $areas),
+                'project-report-' . $project->id . '.xlsx'
+            );
+        }
+
+        abort(404);
     }
 
     public function periodReport(Request $request, $period)
@@ -217,14 +321,35 @@ class ProjectReportController extends Controller
             ->pluck('project_id')
             ->unique();
 
-        $activeProjects = Project::whereIn('id', $activeProjectIds)->get();
+        $activeProjects = Project::whereIn('id', $activeProjectIds)
+            ->with('couponTypes')
+            ->get();
+
+        $deliveredItemsSummary = [];
 
         foreach ($activeProjects as $project) {
+            // Calculate total quantity delivered in this period (Sum of quantities)
+            $project->period_delivered_quantity = DB::table('project_beneficiaries')
+                ->where('project_id', $project->id)
+                ->where('status', 'مستلم')
+                ->whereBetween('delivery_date', [$startDate, $endDate])
+                ->sum('quantity');
+
+            // Count beneficiaries as well for the table display
             $project->period_received_count = DB::table('project_beneficiaries')
                 ->where('project_id', $project->id)
                 ->where('status', 'مستلم')
                 ->whereBetween('delivery_date', [$startDate, $endDate])
                 ->count();
+            
+            // Accumulate Item Quantities
+            foreach ($project->couponTypes as $type) {
+                if (!isset($deliveredItemsSummary[$type->name])) {
+                    $deliveredItemsSummary[$type->name] = 0;
+                }
+                // (Quantity of Type in Coupon) * (Sum of delivered coupons quantity in period)
+                $deliveredItemsSummary[$type->name] += ($type->pivot->quantity * $project->period_delivered_quantity);
+            }
         }
 
         // 3. Recipients list for this period
@@ -279,7 +404,7 @@ class ProjectReportController extends Controller
         $areas = AreaResponsible::whereIn('id', array_keys($areaBreakdown))->get()->keyBy('id');
         $subWarehouses = SubWarehouse::whereIn('id', array_keys($warehouseBreakdown))->get()->keyBy('id');
 
-        return view('dashboard.reports.period', compact('createdProjects', 'activeProjects', 'recipients', 'areaBreakdown', 'warehouseBreakdown', 'areas', 'subWarehouses', 'label', 'period', 'today'));
+        return view('dashboard.reports.period', compact('createdProjects', 'activeProjects', 'recipients', 'areaBreakdown', 'warehouseBreakdown', 'areas', 'subWarehouses', 'label', 'period', 'today', 'deliveredItemsSummary'));
     }
 
     private function getRecipientsCountByPeriod($period, $date)

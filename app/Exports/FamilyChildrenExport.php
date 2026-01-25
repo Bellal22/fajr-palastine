@@ -16,8 +16,9 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 
-class FamilyChildrenExport implements FromQuery, WithHeadings, WithChunkReading, WithStyles, WithMapping, ShouldQueue
+class FamilyChildrenExport implements FromQuery, WithHeadings, WithChunkReading, WithStyles, WithMapping, ShouldQueue, ShouldAutoSize
 {
     use Exportable;
 
@@ -265,7 +266,7 @@ class FamilyChildrenExport implements FromQuery, WithHeadings, WithChunkReading,
         return [
             '#',
             'رقم هوية رب الأسرة',
-            'اسم رب الأسرة الكامل',
+            'اسم رب الأسرة رباعي',
             'جنس رب الأسرة',
             'هاتف رب الأسرة',
             'تاريخ ميلاد رب الأسرة',
@@ -280,20 +281,20 @@ class FamilyChildrenExport implements FromQuery, WithHeadings, WithChunkReading,
             'البلوك',
             // ✅ الزوجات (حتى 4 زوجات)
             'هوية الزوجة 1',
-            'اسم الزوجة 1',
+            'اسم الزوجة 1 رباعي',
             'هاتف الزوجة 1',
             'هوية الزوجة 2',
-            'اسم الزوجة 2',
+            'اسم الزوجة 2 رباعي',
             'هاتف الزوجة 2',
             'هوية الزوجة 3',
-            'اسم الزوجة 3',
+            'اسم الزوجة 3 رباعي',
             'هاتف الزوجة 3',
             'هوية الزوجة 4',
-            'اسم الزوجة 4',
+            'اسم الزوجة 4 رباعي',
             'هاتف الزوجة 4',
             // بيانات الطفل
             'رقم هوية الطفل',
-            'اسم الطفل الكامل',
+            'اسم الطفل رباعي',
             'جنس الطفل',
             'تاريخ ميلاد الطفل',
             'عمر الطفل (بالسنوات)',
@@ -366,13 +367,6 @@ class FamilyChildrenExport implements FromQuery, WithHeadings, WithChunkReading,
     public function styles(Worksheet $sheet)
     {
         $sheet->setRightToLeft(true);
-
-        // تحديد عرض الأعمدة
-        $columns = array_merge(range('A', 'Z'), ['AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ', 'AK', 'AL', 'AM']);
-        foreach ($columns as $col) {
-            $sheet->getColumnDimension($col)->setWidth(18);
-        }
-        $sheet->getColumnDimension('AM')->setWidth(30); // عمود الوصف
 
         // تنسيق رأس الجدول
         $sheet->getStyle('A1:AM1')->applyFromArray([

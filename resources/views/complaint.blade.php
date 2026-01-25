@@ -625,7 +625,7 @@
                 @endif
 
                 <!-- النموذج -->
-                <form action="{{ route('complaints.store') }}" method="POST">
+                <form action="{{ route('complaints.store') }}" method="POST" id="complaintForm">
                     @csrf
 
                     <div class="form-group">
@@ -633,11 +633,15 @@
                         <div class="input-wrapper">
                             <i class="fas fa-id-card input-icon"></i>
                             <input
-                                type="number"
+                                type="text"
                                 id="id_num"
                                 name="id_num"
-                                placeholder="أدخل رقم الهوية"
+                                placeholder="أدخل 9 أرقام"
                                 value="{{ old('id_num') }}"
+                                maxlength="9"
+                                pattern="\d{9}"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                                title="يجب إدخال 9 أرقام فقط"
                                 required>
                         </div>
                     </div>
@@ -650,7 +654,8 @@
                                 type="text"
                                 id="complaint_title"
                                 name="complaint_title"
-                                placeholder="أدخل عنوان الشكوى"
+                                maxlength="150"
+                                placeholder="عنوان مختصر للشكوى"
                                 value="{{ old('complaint_title') }}"
                                 required>
                         </div>
@@ -663,7 +668,8 @@
                             <textarea
                                 id="complaint_text"
                                 name="complaint_text"
-                                placeholder="أدخل تفاصيل الشكوى بشكل واضح..."
+                                maxlength="3000"
+                                placeholder="اكتب تفاصيل الشكوى هنا (حد أقصى 3000 حرف)..."
                                 required>{{ old('complaint_text') }}</textarea>
                         </div>
                     </div>
@@ -700,30 +706,89 @@
 
     </div>
 
-    <!-- رسائل SweetAlert -->
-    @if (session('success'))
-        <script>
-            Swal.fire({
-                icon: 'success',
-                title: 'تم بنجاح',
-                text: '{{ session('success') }}',
-                confirmButtonColor: '#FF6F00',
-                confirmButtonText: 'حسنًا'
-            });
-        </script>
-    @endif
+    <script>
+        document.getElementById('complaintForm').addEventListener('submit', function(e) {
+            e.preventDefault();
 
-    @if ($errors->any())
-        <script>
-            // رسالة الخطأ العامة (إذا لم تكن هناك رسالة خطأ مخصصة أعلاً)
+            const form = this;
+            const idNum = document.getElementById('id_num').value;
+            const title = document.getElementById('complaint_title').value;
+            const text = document.getElementById('complaint_text').value;
+
+            const codePattern = /<script|javascript:|alert\(|<\?php|eval\(|document\.|[<>/{}[\]\\^]/i;
+
+            if (codePattern.test(title) || codePattern.test(text)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'تنبيه أمني',
+                    text: 'يرجى عدم استخدام رموز خاصة أو أكواد برمجية!',
+                    confirmButtonColor: '#FF6F00'
+                });
+                return;
+            }
+
+            if (idNum.length !== 9) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'رقم الهوية خطأ',
+                    text: 'يجب أن يتكون رقم الهوية من 9 أرقام بالضبط.',
+                    confirmButtonColor: '#FF6F00'
+                });
+                return;
+            }
+
             Swal.fire({
-                icon: 'error',
-                title: 'خطأ',
-                text: 'يرجى ملء جميع الحقول المطلوبة بشكل صحيح!',
-                confirmButtonColor: '#FF6F00',
-                confirmButtonText: 'حسنًا'
+                title: 'جاري الإرسال...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
             });
-        </script>
-    @endif
+
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // إذا فشل الـ Validation في Laravel سيرسل كود 422
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(data => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم بنجاح!',
+                    text: 'تم تسجيل شكواك بنجاح في جمعية الفجر.',
+                    confirmButtonColor: '#FF6F00',
+                    confirmButtonText: 'حسنًا'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // التحويل للمسار المباشر كما طلبت
+                        window.location.href = "/successcomplaint";
+                    }
+                });
+            })
+            .catch(error => {
+                // عرض تفاصيل الخطأ في حال وجود خطأ Validation من السيرفر
+                let errorMessage = 'حدثت مشكلة أثناء الإرسال، يرجى المحاولة مرة أخرى.';
+                if (error.errors) {
+                    errorMessage = Object.values(error.errors).flat().join('\n');
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ',
+                    text: errorMessage,
+                    confirmButtonColor: '#FF6F00'
+                });
+            });
+        });
+    </script>
 </body>
 </html>

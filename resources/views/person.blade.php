@@ -249,6 +249,7 @@
             height: fit-content;
             position: sticky;
             top: 20px;
+            order: 2; /* في RTL: العمود الثاني (اليسار) */
         }
 
         .sidebar h2 {
@@ -308,6 +309,7 @@
             padding: 40px;
             border-radius: 15px;
             box-shadow: 0 8px 32px rgba(255, 111, 0, 0.12);
+            order: 1; /* في RTL: العمود الأول (اليمين) */
         }
 
         .welcome-box {
@@ -580,7 +582,7 @@
         }
 
         /* Responsive */
-        @media (max-width: 1200px) {
+        @media (max-width: 991px) {
             .main-row {
                 grid-template-columns: 1fr;
             }
@@ -819,8 +821,8 @@
                                     <i class="fas fa-venus-mars input-icon"></i>
                                     <select id="gender" name="gender" required oninput="validateGender()" onfocus="resetBorderAndError('gender')">
                                         <option value="">اختر الجنس</option>
-                                        @foreach(['ذكر' => 'ذكر', 'أنثى' => 'أنثى'] as $key => $gender)
-                                            <option {{ old('gender') == $key ? 'selected' : '' }} value="{{ $key }}">{{ $gender }}</option>
+                                        @foreach($chooses['gender'] ?? [] as $choice)
+                                            <option {{ old('gender') == $choice->slug ? 'selected' : '' }} value="{{ $choice->slug }}">{{ $choice->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -857,8 +859,8 @@
                                     <i class="fas fa-heart input-icon"></i>
                                     <select id="social_status" name="social_status" required oninput="validateSocialStatus()" onfocus="resetBorderAndError('social_status')">
                                         <option value="">اختر الحالة</option>
-                                        @foreach($social_statuses as $key => $status)
-                                            <option {{ old('social_status') == $key ? 'selected' : '' }} value="{{ $key }}">{{ $status }}</option>
+                                        @foreach($chooses['social_status'] ?? [] as $choice)
+                                            <option {{ old('social_status') == $choice->slug ? 'selected' : '' }} value="{{ $choice->slug }}">{{ $choice->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -870,9 +872,10 @@
                                 <div class="input-wrapper">
                                     <i class="fas fa-briefcase input-icon"></i>
                                     <select id="employment_status" name="employment_status" required oninput="validateEmploymentStatus()" onfocus="resetBorderAndError('employment_status')">
-                                        <option value="لا يعمل" {{ old('employment_status') == 'لا يعمل' ? 'selected' : '' }}>لا يعمل</option>
-                                        <option value="موظف" {{ old('employment_status') == 'موظف' ? 'selected' : '' }}>موظف</option>
-                                        <option value="عامل" {{ old('employment_status') == 'عامل' ? 'selected' : '' }}>عامل</option>
+                                        <option value="">اختر حالة العمل</option>
+                                        @foreach($chooses['employment_status'] ?? [] as $choice)
+                                            <option {{ old('employment_status') == $choice->slug ? 'selected' : (old('employment_status') == null && $choice->slug == 'unemployed' ? 'selected' : '') }} value="{{ $choice->slug }}">{{ $choice->name }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                                 <div class="error-message" id="employment_status_error"></div>
@@ -914,8 +917,8 @@
                                     <i class="fas fa-map-marker-alt input-icon"></i>
                                     <select id="city" name="city" required oninput="validateCity()" onfocus="resetBorderAndError('city')">
                                         <option value="">اختر المحافظة الأصلية</option>
-                                        @foreach($cities as $key => $city)
-                                            <option {{ old('city') == $key ? 'selected' : '' }} value="{{ $key }}">{{ $city }}</option>
+                                        @foreach($cities as $id => $name)
+                                            <option {{ old('city') == $name ? 'selected' : '' }} value="{{ $name }}">{{ $name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -928,8 +931,8 @@
                                     <i class="fas fa-house-damage input-icon"></i>
                                     <select id="housing_damage_status" name="housing_damage_status" required oninput="validateHousingDamageStatus()" onfocus="resetBorderAndError('housing_damage_status')">
                                         <option value="">اختر حالة السكن السابق</option>
-                                        @foreach($housing_damage_statuses as $key => $status)
-                                            <option value="{{ $key }}" {{ old('housing_damage_status') == $key ? 'selected' : '' }}>{{ $status }}</option>
+                                        @foreach($chooses['housing_damage_status'] ?? [] as $choice)
+                                            <option {{ old('housing_damage_status') == $choice->slug ? 'selected' : '' }} value="{{ $choice->slug }}">{{ $choice->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -944,8 +947,8 @@
                                     <i class="fas fa-map-marked-alt input-icon"></i>
                                     <select id="current_city" name="current_city" required oninput="validateCurrentCity()" onfocus="resetBorderAndError('current_city')">
                                         <option value="">اختر المحافظة التي تسكن فيها حالياً</option>
-                                        @foreach($current_cities as $key => $city)
-                                            <option value="{{ $key }}" {{ old('current_city') == $key ? 'selected' : '' }}>{{ $city }}</option>
+                                        @foreach($cities as $id => $name)
+                                            <option {{ old('current_city') == $name ? 'selected' : '' }} value="{{ $name }}">{{ $name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -958,8 +961,8 @@
                                     <i class="fas fa-building input-icon"></i>
                                     <select id="housing_type" name="housing_type" required oninput="validateHousingType()" onfocus="resetBorderAndError('housing_type')">
                                         <option value="">اختر نوع السكن الذي تعيش فيه حالياً</option>
-                                        @foreach($housing_types as $key => $type)
-                                            <option value="{{ $key }}" {{ old('housing_type') == $key ? 'selected' : '' }}>{{ $type }}</option>
+                                        @foreach($chooses['housing_type'] ?? [] as $choice)
+                                            <option {{ old('housing_type') == $choice->slug ? 'selected' : '' }} value="{{ $choice->slug }}">{{ $choice->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -985,16 +988,23 @@
                                     <i class="fas fa-user-tie input-icon"></i>
                                     <select id="area_responsible_id" name="area_responsible_id" oninput="validateAreaResponsible()" onfocus="resetBorderAndError('area_responsible_id')">
                                         <option value="">اختر المسؤول</option>
-                                        @foreach (\App\Models\AreaResponsible::all() as $responsible)
-                                            <option value="{{ $responsible->id }}" {{ old('area_responsible_id') == $responsible->id ? 'selected' : '' }}>
-                                                {{ $responsible->name }}
-                                            </option>
-                                        @endforeach
                                     </select>
                                 </div>
                                 <div class="error-message" id="area_responsible_id_error"></div>
                             </div>
                         </div>
+
+                        <div class="row">
+                            <div class="form-group" id="blockField" style="display:none !important;">
+                                <label for="block_id" class="form-label">المندوب</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-user-shield input-icon"></i>
+                                    <select id="block_id" name="block_id" oninput="resetBorderAndError('block_id')" onfocus="resetBorderAndError('block_id')">
+                                        <option value="">اختر المندوب</option>
+                                    </select>
+                                </div>
+                                <div class="error-message" id="block_id_error"></div>
+                            </div>
 
                         <div class="form-group">
                             <label for="landmark">أقرب معلم</label>
@@ -1019,36 +1029,58 @@
                         </button>
                     </div>
                 </form>
-            </div>
-
-            <!-- القسم الجانبي -->
-            <div class="sidebar">
-                <h2>أقسام النموذج</h2>
-
-                <div class="info-item" onclick="scrollToSection('personal-info')">
-                    <h3><i class="fas fa-user"></i> البيانات الشخصية</h3>
-                    <p>الاسم، الهوية، الجنس، تاريخ الميلاد، رقم الجوال</p>
-                </div>
-
-                <div class="info-item" onclick="scrollToSection('social-info')">
-                    <h3><i class="fas fa-briefcase"></i> الحالة الاجتماعية</h3>
-                    <p>الحالة الاجتماعية وحالة العمل</p>
-                </div>
-
-                <div class="info-item" onclick="scrollToSection('health-info')">
-                    <h3><i class="fas fa-heartbeat"></i> الحالة الصحية</h3>
-                    <p>معلومات عن الحالة الصحية والأمراض المزمنة</p>
-                </div>
-
-                <div class="info-item" onclick="scrollToSection('housing-info')">
-                    <h3><i class="fas fa-home"></i> معلومات السكن</h3>
-                    <p>المحافظة، نوع السكن، الحي السكني، أقرب معلم</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            @if ($errors->any())
+                let errorHtml = '<ul style="text-align: right; direction: rtl;">';
+                @foreach ($errors->all() as $error)
+                    errorHtml += '<li>{{ $error }}</li>';
+                @endforeach
+                errorHtml += '</ul>';
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'يرجى تصحيح الأخطاء التالية',
+                    html: errorHtml,
+                    confirmButtonColor: '#FF6F00',
+                    confirmButtonText: 'حسناً'
+                });
+            @endif
+        });
+    </script>
+            </div>
+        </div>
+         <!-- القسم الجانبي -->
+        <div class="sidebar">
+            <h2>أقسام النموذج</h2>
+
+            <div class="info-item" onclick="scrollToSection('personal-info')">
+                <h3><i class="fas fa-user"></i> البيانات الشخصية</h3>
+                <p>الاسم، الهوية، الجنس، تاريخ الميلاد، رقم الجوال</p>
+            </div>
+
+            <div class="info-item" onclick="scrollToSection('social-info')">
+                <h3><i class="fas fa-briefcase"></i> الحالة الاجتماعية</h3>
+                <p>الحالة الاجتماعية وحالة العمل</p>
+            </div>
+
+            <div class="info-item" onclick="scrollToSection('health-info')">
+                <h3><i class="fas fa-heartbeat"></i> الحالة الصحية</h3>
+                <p>معلومات عن الحالة الصحية والأمراض المزمنة</p>
+            </div>
+
+            <div class="info-item" onclick="scrollToSection('housing-info')">
+                <h3><i class="fas fa-home"></i> معلومات السكن</h3>
+                <p>المحافظة، نوع السكن، الحي السكني، أقرب معلم</p>
+            </div>
+        </div>
+
+    <script>
+        const neighborhoodsData = @json($neighborhoodsGroupedByCity);
+        const responsiblesData = @json($responsiblesGroupedByNeighborhood);
+        const blocksData = @json($blocksGroupedByResponsible);
+
         // دالة التنقل للأقسام
         function scrollToSection(sectionId) {
             const section = document.getElementById(sectionId);
@@ -1090,20 +1122,18 @@
             const inputField = document.getElementById(inputId);
             const errorMessage = document.getElementById(`${inputId}_error`);
             const value = inputField.value.trim();
-            const arabicRegex = /^[\u0621-\u064A\s]+$/;
+            const arabicRegex = /^[\u0621-\u064A\s0-9]+$/; // Allow numbers in landmark etc
 
             if (value === '') {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 inputField.style.borderColor = 'red';
-            } else if (/[\d!@#$%^&*(),.?":{}|<>0-9]/.test(value)) {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'غير مسموح بإدخال الأرقام والرموز.';
-                inputField.style.borderColor = 'red';
+                return false;
             } else if (!arabicRegex.test(value)) {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'لغة الكتابة المسموح بها العربية فقط.';
                 inputField.style.borderColor = 'red';
+                return false;
             } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
@@ -1121,7 +1151,7 @@
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 inputField.style.borderColor = 'red';
-                return;
+                return false;
             }
 
             const birthDate = new Date(value);
@@ -1131,6 +1161,7 @@
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'تاريخ الميلاد لا يمكن أن يكون في المستقبل.';
                 inputField.style.borderColor = 'red';
+                return false;
             } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
@@ -1148,7 +1179,7 @@
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'يرجى اختيار الجنس.';
                 inputField.style.borderColor = 'red';
-            } else if (value === "غير محدد") {
+            } else if (value === "unspecified") {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'لا يمكنك اختيار "غير محدد".';
                 inputField.style.borderColor = 'red';
@@ -1175,35 +1206,25 @@
             let value = phoneInput.value.trim();
 
             const cleanValue = value.replace(/-/g, '');
+            // Must start with 059 or 056 and be 10 digits total
             const phoneRegex = /^(059|056)\d{7}$/;
 
             if (cleanValue === '') {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 phoneInput.style.borderColor = 'red';
+                return false;
             } else if (!phoneRegex.test(cleanValue)) {
                 errorMessage.style.display = 'block';
-                errorMessage.textContent = 'الرجاء إدخال رقم جوال صحيح يبدأ بـ 059 أو 056 ويتكون من 10 أرقام.';
+                errorMessage.textContent = 'رقم الجوال يجب أن يبدأ بـ 056 أو 059 ويتكون من 10 أرقام.';
                 phoneInput.style.borderColor = 'red';
+                return false;
             } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
                 phoneInput.style.borderColor = '';
                 return true;
             }
-
-            let formattedValue = cleanValue;
-            if (cleanValue.length > 3) {
-                formattedValue = cleanValue.slice(0, 3) + '-' + cleanValue.slice(3);
-            }
-            if (cleanValue.length > 7) {
-                formattedValue = formattedValue.slice(0, 7) + '-' + formattedValue.slice(7);
-            }
-            if (formattedValue.length > 12) {
-                formattedValue = formattedValue.slice(0, 12);
-            }
-
-            phoneInput.value = formattedValue;
         }
 
         function resetPhoneError() {
@@ -1216,20 +1237,41 @@
 
         document.getElementById('form').addEventListener('submit', function (e) {
             e.preventDefault();
-            const phoneInput = document.getElementById('phone');
-            const phoneRegex = /^[0-9]{10,15}$/;
-            const sanitizedPhone = phoneInput.value.replace(/[^0-9]/g, '');
 
-            if (!phoneRegex.test(sanitizedPhone)) {
+            // تشغيل كافة التحققات
+            const isFirstNameValid = validateArabicInput('first_name');
+            const isFatherNameValid = validateArabicInput('father_name');
+            const isGrandfatherNameValid = validateArabicInput('grandfather_name');
+            const isFamilyNameValid = validateArabicInput('family_name');
+            const isGenderValid = validateGender();
+            const isDobValid = validatedob();
+            const isPhoneValid = validatePhoneInput();
+            const isSocialStatusValid = validateSocialStatus();
+            const isEmploymentStatusValid = validateEmploymentStatus();
+            const isCityValid = validateCity();
+            const isCurrentCityValid = validateCurrentCity();
+            const isHousingTypeValid = validateHousingType();
+            const isNeighborhoodValid = validateNeighborhood();
+            const isAreaResponsibleValid = validateAreaResponsible();
+            const isHousingDamageValid = validateHousingDamageStatus();
+            const isLandmarkValid = validateArabicInput('landmark');
+
+            if (!isFirstNameValid || !isFatherNameValid || !isGrandfatherNameValid || !isFamilyNameValid ||
+                !isGenderValid || !isDobValid || !isPhoneValid || !isSocialStatusValid ||
+                !isEmploymentStatusValid || !isCityValid || !isCurrentCityValid ||
+                !isHousingTypeValid || !isNeighborhoodValid || !isAreaResponsibleValid ||
+                !isHousingDamageValid || !isLandmarkValid) {
+
                 Swal.fire({
                     icon: 'error',
                     title: 'خطأ في الإدخال',
-                    text: 'الرجاء إدخال رقم جوال صحيح',
+                    text: 'يرجى التأكد من ملء جميع الحقول بشكل صحيح وحل الأخطاء الظاهرة.',
                     confirmButtonText: 'حسناً'
                 });
                 return;
             }
 
+            const phoneInput = document.getElementById('phone');
             phoneInput.value = phoneInput.value.replace(/-/g, '');
             this.submit();
         });
@@ -1237,24 +1279,35 @@
         function validateSocialStatus() {
             const socialStatusInput = document.getElementById('social_status');
             const errorMessage = document.getElementById('social_status_error');
+            const gender = document.getElementById('gender').value;
             const value = socialStatusInput.value.trim();
-
-            const validValues = @json(\App\Enums\Person\PersonSocialStatus::toValues());
 
             if (value === '') {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 socialStatusInput.style.borderColor = 'red';
-            } else if (!validValues.includes(value)) {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'القيمة المدخلة غير صالحة.';
-                socialStatusInput.style.borderColor = 'red';
-            } else {
-                errorMessage.style.display = 'none';
-                errorMessage.textContent = '';
-                socialStatusInput.style.borderColor = '';
-                return true;
+                return false;
             }
+
+            // شروط الحالة الاجتماعية بناءً على الجنس
+            if ((gender === 'أنثى') && ['متزوج/ة', 'متعدد الزوجات'].includes(value)) {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'يمنع التسجيل ببيانات الزوجة يرجى التسجيل ببيانات الزوج';
+                socialStatusInput.style.borderColor = 'red';
+                return false;
+            }
+
+            if ((gender === 'ذكر') && ['أعزب/انسة'].includes(value)) {
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'ممنوع التسجيل للذكر الغير متزوج';
+                socialStatusInput.style.borderColor = 'red';
+                return false;
+            }
+
+            errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
+            socialStatusInput.style.borderColor = '';
+            return true;
         }
 
         function validateEmploymentStatus() {
@@ -1262,16 +1315,11 @@
             const errorMessage = document.getElementById('employment_status_error');
             const value = employmentStatusInput.value.trim();
 
-            const validValues = ['موظف', 'عامل', 'لا يعمل'];
-
             if (value === '') {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 employmentStatusInput.style.borderColor = 'red';
-            } else if (!validValues.includes(value)) {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'القيمة المدخلة غير صالحة.';
-                employmentStatusInput.style.borderColor = 'red';
+                return false;
             } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
@@ -1316,16 +1364,11 @@
             const errorMessage = document.getElementById('city_error');
             const value = cityInput.value.trim();
 
-            const validValues = @json(\App\Enums\Person\PersonCity::toValues());
-
             if (value === '') {
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 cityInput.style.borderColor = 'red';
-            } else if (!validValues.includes(value)) {
-                errorMessage.style.display = 'block';
-                errorMessage.textContent = 'القيمة المدخلة غير صالحة.';
-                cityInput.style.borderColor = 'red';
+                return false;
             } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
@@ -1343,6 +1386,7 @@
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 input.style.borderColor = 'red';
+                return false;
             } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
@@ -1360,6 +1404,7 @@
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 input.style.borderColor = 'red';
+                return false;
             } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
@@ -1377,6 +1422,7 @@
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 input.style.borderColor = 'red';
+                return false;
             } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
@@ -1394,6 +1440,7 @@
                 errorMessage.style.display = 'block';
                 errorMessage.textContent = 'هذا الحقل مطلوب.';
                 input.style.borderColor = 'red';
+                return false;
             } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
@@ -1406,12 +1453,13 @@
             const input = document.getElementById('area_responsible_id');
             const errorMessage = document.getElementById('area_responsible_id_error');
             const value = input.value.trim();
-            const neighborhood = document.getElementById('neighborhood').value;
+            const hasOptions = input.options.length > 1; // More than "اختر المسئول"
 
-            if (neighborhood === 'alMawasi' && value === '') {
+            if (hasOptions && value === '') {
                 errorMessage.style.display = 'block';
-                errorMessage.textContent = 'هذا الحقل مطلوب.';
+                errorMessage.textContent = 'يرجى اختيار مسؤول المنطقة.';
                 input.style.borderColor = 'red';
+                return false;
             } else {
                 errorMessage.style.display = 'none';
                 errorMessage.textContent = '';
@@ -1420,121 +1468,86 @@
             }
         }
 
+        // City -> Neighborhood
         document.getElementById('current_city').addEventListener('change', function () {
             const selectedCity = this.value;
             const neighborhoodSelect = document.getElementById('neighborhood');
+            const areaResponsibleSelect = document.getElementById('area_responsible_id');
+            const blockSelect = document.getElementById('block_id');
 
             neighborhoodSelect.innerHTML = '<option value="">اختر الحي السكني</option>';
+            areaResponsibleSelect.innerHTML = '<option value="">اختر المسؤول</option>';
+            blockSelect.innerHTML = '<option value="">اختر المندوب</option>';
 
-            if (selectedCity === 'rafah') {
-                const rafahNeighborhoods = [
-                    { value: 'masbah', label: 'مصبح' },
-                    { value: 'khirbetAlAdas', label: 'خربة العدس' },
-                    { value: 'alJaninehNeighborhood', label: 'حي الجنينة' },
-                    { value: 'alAwda', label: 'العودة' },
-                    { value: 'alZohourNeighborhood', label: 'حي الزهور' },
-                    { value: 'brazilianHousing', label: 'الإسكان البرازيلي' },
-                    { value: 'telAlSultan', label: 'تل السلطان' },
-                    { value: 'alShabouraNeighborhood', label: 'حي الشابورة' },
-                    { value: 'rafahProject', label: 'مشروع رفح' },
-                    { value: 'zararRoundabout', label: 'دوار زعرب' }
-                ];
-                rafahNeighborhoods.forEach(n => {
-                    const option = document.createElement('option');
-                    option.value = n.value;
-                    option.textContent = n.label;
-                    neighborhoodSelect.appendChild(option);
-                });
+            document.getElementById('areaResponsibleField').style.display = 'none';
+            document.getElementById('blockField').style.display = 'none';
 
-            } else if (selectedCity === 'khanYounis') {
-                const khanYounisNeighborhoods = [
-                    { value: 'qizanAlNajjar', label: 'قيزان النجار' },
-                    { value: 'qizanAbuRashwan', label: 'قيزان أبو رشوان' },
-                    { value: 'juraAlLoot', label: 'جورة اللوت' },
-                    { value: 'sheikhNasser', label: 'الشيخ ناصر' },
-                    { value: 'maAn', label: 'معن' },
-                    { value: 'alManaraNeighborhood', label: 'حي المنارة' },
-                    { value: 'easternLine', label: 'السطر الشرقي' },
-                    { value: 'westernLine', label: 'السطر الغربي' },
-                    { value: 'alMahatta', label: 'المحطة' },
-                    { value: 'alKatiba', label: 'الكتيبة' },
-                    { value: 'alBatanAlSameen', label: 'البطن السمين' },
-                    { value: 'alMaskar', label: 'المعسكر' },
-                    { value: 'alMashroo', label: 'المشروع' },
-                    { value: 'hamidCity', label: 'مدينة حمد' },
-                    { value: 'alMawasi', label: 'المواصي' },
-                    { value: 'alQarara', label: 'القرارة' },
-                    { value: 'eastKhanYounis', label: 'شرق خانيونس' },
-                    { value: 'downtown', label: 'وسط البلد' },
-                    { value: 'mirage', label: 'ميراج' },
-                    { value: 'european', label: 'الأوروبي' },
-                    { value: 'alFakhari', label: 'الفخاري' },
-                    { value: 'alQalaaSouth', label: 'القلعة وجنوبها' },
-                    { value: 'northJalalStreet', label: 'شمال شارع جلال' }
-                ];
-                khanYounisNeighborhoods.forEach(n => {
+            if (selectedCity && neighborhoodsData[selectedCity]) {
+                const neighborhoods = neighborhoodsData[selectedCity];
+                for (const [id, name] of Object.entries(neighborhoods)) {
                     const option = document.createElement('option');
-                    option.value = n.value;
-                    option.textContent = n.label;
+                    option.value = name; // Storing Name in DB
+                    option.textContent = name;
                     neighborhoodSelect.appendChild(option);
-                });
-
-            } else if (selectedCity === 'northGaza') {
-                const northGazaNeighborhoods = [
-                    { value: 'jabalia', label: 'جباليا' },
-                    { value: 'beitLahia', label: 'بيت لاهيا' },
-                    { value: 'beitHanoun', label: 'بيت حانون' },
-                    { value: 'other', label: 'أخرى' }
-                ];
-                northGazaNeighborhoods.forEach(n => {
-                    const option = document.createElement('option');
-                    option.value = n.value;
-                    option.textContent = n.label;
-                    neighborhoodSelect.appendChild(option);
-                });
-            } else if (selectedCity === 'gazaCity') {
-                const gazaCityNeighborhoods = [
-                    { value: 'alRimal', label: 'الرمال' },
-                    { value: 'alNasr', label: 'النصر' },
-                    { value: 'alShati', label: 'الشاطئ' },
-                    { value: 'alZaitoun', label: 'الزيتون' },
-                    { value: 'alSabra', label: 'الصبرة' },
-                    { value: 'talAlHawa', label: 'تل الهوى' },
-                    { value: 'alDaraj', label: 'الدرج' },
-                    { value: 'alShujaia', label: 'الشجاعية' },
-                    { value: 'other', label: 'أخرى' }
-                ];
-                gazaCityNeighborhoods.forEach(n => {
-                    const option = document.createElement('option');
-                    option.value = n.value;
-                    option.textContent = n.label;
-                    neighborhoodSelect.appendChild(option);
-                });
-            } else if (selectedCity === 'deirAlBalah') {
-                const deirAlBalahNeighborhoods = [
-                    { value: 'alMaghazi', label: 'المغازي' },
-                    { value: 'alBureij', label: 'البريج' },
-                    { value: 'alNuseirat', label: 'النصيرات' },
-                    { value: 'deirAlBalah', label: 'دير البلح' },
-                    { value: 'alZawayda', label: 'الزوايدة' },
-                    { value: 'other', label: 'أخرى' }
-                ];
-                deirAlBalahNeighborhoods.forEach(n => {
-                    const option = document.createElement('option');
-                    option.value = n.value;
-                    option.textContent = n.label;
-                    neighborhoodSelect.appendChild(option);
-                });
+                }
             }
         });
 
+        // Neighborhood -> Area Responsible
         document.getElementById('neighborhood').addEventListener('change', function() {
+            const selectedNeighborhood = this.value;
+            const areaResponsibleSelect = document.getElementById('area_responsible_id');
             const areaResponsibleField = document.getElementById('areaResponsibleField');
-            if (this.value === 'alMawasi') {
-                areaResponsibleField.style.display = 'block';
+            const blockSelect = document.getElementById('block_id');
+            const blockField = document.getElementById('blockField');
+
+            areaResponsibleSelect.innerHTML = '<option value="">اختر المسؤول</option>';
+            blockSelect.innerHTML = '<option value="">اختر المندوب</option>';
+            blockField.style.display = 'none';
+
+            if (selectedNeighborhood && responsiblesData[selectedNeighborhood]) {
+                const responsibles = responsiblesData[selectedNeighborhood];
+                const keys = Object.keys(responsibles);
+                if (keys.length > 0) {
+                    areaResponsibleField.style.display = 'block';
+                    for (const [id, name] of Object.entries(responsibles)) {
+                        const option = document.createElement('option');
+                        option.value = id;
+                        option.textContent = name;
+                        areaResponsibleSelect.appendChild(option);
+                    }
+                } else {
+                    areaResponsibleField.style.display = 'none';
+                }
             } else {
                 areaResponsibleField.style.display = 'none';
-                document.getElementById('area_responsible_id').value = '';
+            }
+        });
+
+        // Area Responsible -> Block
+        document.getElementById('area_responsible_id').addEventListener('change', function() {
+            const selectedResponsible = this.value;
+            const blockSelect = document.getElementById('block_id');
+            const blockField = document.getElementById('blockField');
+
+            blockSelect.innerHTML = '<option value="">اختر المندوب</option>';
+
+            if (selectedResponsible && blocksData[selectedResponsible]) {
+                const blocks = blocksData[selectedResponsible];
+                const keys = Object.keys(blocks);
+                if (keys.length > 0) {
+                    // blockField.style.display = 'block'; // Hidden as per user request
+                    for (const [id, name] of Object.entries(blocks)) {
+                        const option = document.createElement('option');
+                        option.value = id;
+                        option.textContent = name;
+                        blockSelect.appendChild(option);
+                    }
+                } else {
+                    blockField.style.display = 'none';
+                }
+            } else {
+                blockField.style.display = 'none';
             }
         });
     </script>

@@ -16,7 +16,9 @@ return [
     'pagination_info' => 'عرض :from إلى :to من أصل :total',
 
     'sections' => [
-        'city_info' => 'معلومات المدينة',
+        'search_settings' => 'إعدادات البحث',
+        'basic_info' => 'المعلومات الأساسية',
+        'city_details' => 'تفاصيل المدينة',
     ],
 
     'actions' => [
@@ -30,7 +32,7 @@ return [
         'options' => 'خيارات',
         'save' => 'حفظ',
         'filter' => 'بحث',
-        'reset_filter' => 'تفريغ الحقول',
+        'reset' => 'تفريغ الحقول',
         'clear_filter' => 'مسح الفلتر',
         'actions' => 'الإجراءات',
     ],
@@ -49,7 +51,7 @@ return [
     ],
 
     'placeholders' => [
-        'name' => 'أدخل اسم المدينة',
+        'name' => 'أدخل اسم المدينة للبحث...',
     ],
 
     'filter_placeholders' => [

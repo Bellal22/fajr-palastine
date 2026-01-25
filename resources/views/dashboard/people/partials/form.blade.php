@@ -29,10 +29,16 @@
                 <span id="id_num_error" class="text-danger" style="display:none; font-size: 0.9rem;"></span>
             </div>
             <div class="col-md-3">
-                {{ BsForm::select('gender')->options(['ذكر' => 'ذكر', 'أنثى' => 'أنثى'])->label('الجنس')->placeholder('اختر الجنس')->required() }}
+                @php
+                    $genderOptions = isset($chooses['gender']) ? $chooses['gender']->pluck('name', 'name')->toArray() : ['ذكر' => 'ذكر', 'أنثى' => 'أنثى'];
+                @endphp
+                {{ BsForm::select('gender')->options($genderOptions)->label('الجنس')->placeholder('اختر الجنس')->required() }}
             </div>
             <div class="col-md-3">
-                {{ BsForm::date('dob')->label('تاريخ الميلاد')->required()->attribute('oninput', "validatedob()") }}
+                <div class="form-group">
+                    <label>تاريخ الميلاد <span class="text-danger">*</span></label>
+                    <input type="date" name="dob" id="dob" class="form-control" value="{{ old('dob', (isset($person) && $person->dob) ? $person->dob->format('Y-m-d') : '') }}" required>
+                </div>
                 <span id="dob_error" class="text-danger" style="display:none; font-size: 0.9rem;"></span>
             </div>
             <div class="col-md-3">
@@ -54,8 +60,11 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
+                @php
+                    $socialStatusOptions = isset($chooses['social_status']) ? $chooses['social_status']->mapWithKeys(fn($i) => [$i->slug ?: $i->name => $i->name])->toArray() : [];
+                @endphp
                 {{ BsForm::select('social_status')
-                    ->options(isset($social_statuses) ? $social_statuses : \App\Enums\Person\PersonSocialStatus::options())
+                    ->options($socialStatusOptions)
                     ->label('الحالة الاجتماعية')
                     ->placeholder('اختر الحالة')
                     ->required()
@@ -63,8 +72,11 @@
                 }}
             </div>
             <div class="col-md-6">
+                @php
+                    $employmentStatusOptions = isset($chooses['employment_status']) ? $chooses['employment_status']->mapWithKeys(fn($i) => [$i->slug ?: $i->name => $i->name])->toArray() : ['لا يعمل' => 'لا يعمل', 'موظف' => 'موظف', 'عامل' => 'عامل'];
+                @endphp
                 {{ BsForm::select('employment_status')
-                    ->options(['لا يعمل' => 'لا يعمل', 'موظف' => 'موظف', 'عامل' => 'عامل'])
+                    ->options($employmentStatusOptions)
                     ->label('حالة العمل')
                     ->required()
                 }}
@@ -102,15 +114,18 @@
         <div class="row">
             <div class="col-md-6">
                 {{ BsForm::select('city')
-                    ->options(isset($cities) ? $cities : \App\Enums\Person\PersonCity::options())
+                    ->options($cities)
                     ->label('المحافظة الأصلية')
                     ->placeholder('اختر المحافظة')
                     ->required()
                 }}
             </div>
             <div class="col-md-6">
+                @php
+                    $housingDamageOptions = isset($chooses['housing_damage_status']) ? $chooses['housing_damage_status']->mapWithKeys(fn($i) => [$i->slug ?: $i->name => $i->name])->toArray() : [];
+                @endphp
                 {{ BsForm::select('housing_damage_status')
-                     ->options(isset($housing_damage_statuses) ? $housing_damage_statuses : \App\Enums\Person\PersonDamageHousingStatus::options())
+                     ->options($housingDamageOptions)
                      ->label('حالة السكن السابق')
                      ->placeholder('اختر الحالة')
                      ->required()
@@ -121,7 +136,7 @@
         <div class="row">
             <div class="col-md-4">
                 {{ BsForm::select('current_city')
-                     ->options(isset($current_cities) ? $current_cities : \App\Enums\Person\PersonCurrentCity::options())
+                     ->options($cities)
                      ->label('المحافظة الحالية')
                      ->placeholder('اختر المحافظة')
                      ->required()
@@ -129,8 +144,11 @@
                 }}
             </div>
             <div class="col-md-4">
+                @php
+                    $housingTypeOptions = isset($chooses['housing_type']) ? $chooses['housing_type']->mapWithKeys(fn($i) => [$i->slug ?: $i->name => $i->name])->toArray() : [];
+                @endphp
                 {{ BsForm::select('housing_type')
-                     ->options(isset($housing_types) ? $housing_types : \App\Enums\Person\PersonHousingType::options())
+                     ->options($housingTypeOptions)
                      ->label('نوع السكن الحالي')
                      ->placeholder('اختر نوع السكن')
                      ->required()
@@ -150,20 +168,23 @@
         </div>
 
         <div class="row">
-             <div class="col-md-6" id="areaResponsibleField" style="display:none;">
+             <div class="col-md-4" id="areaResponsibleField" style="display:none;">
                 <div class="form-group">
                     <label for="area_responsible_id">مسؤول المنطقة</label>
                      <select name="area_responsible_id" id="area_responsible_id" class="form-control">
                         <option value="">اختر المسؤول</option>
-                        @foreach (\App\Models\AreaResponsible::all() as $responsible)
-                            <option value="{{ $responsible->id }}" {{ (isset($person) && $person->area_responsible_id == $responsible->id) ? 'selected' : '' }}>
-                                {{ $responsible->name }}
-                            </option>
-                        @endforeach
                     </select>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4" id="blockField" style="display:none;">
+                <div class="form-group">
+                    <label for="block_id">المندوب</label>
+                     <select name="block_id" id="block_id" class="form-control">
+                        <option value="">اختر المندوب</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
                 {{ BsForm::text('landmark')->label('أقرب معلم')->attribute('oninput', "validateArabicInput('landmark')") }}
             </div>
         </div>
@@ -248,25 +269,25 @@
                     <div class="col-md-3">
                          <div class="form-group">
                             <label>الاسم الأول <span class="text-danger">*</span></label>
-                            <input type="text" id="m_firstname" class="form-control" required>
+                            <input type="text" id="m_firstname" class="form-control">
                          </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group">
                            <label>اسم الأب <span class="text-danger">*</span></label>
-                           <input type="text" id="m_fathername" class="form-control" required>
+                           <input type="text" id="m_fathername" class="form-control">
                         </div>
                    </div>
                    <div class="col-md-3">
                         <div class="form-group">
                            <label>اسم الجد <span class="text-danger">*</span></label>
-                           <input type="text" id="m_grandfathername" class="form-control" required>
+                           <input type="text" id="m_grandfathername" class="form-control">
                         </div>
                    </div>
                    <div class="col-md-3">
                         <div class="form-group">
                            <label>اسم العائلة <span class="text-danger">*</span></label>
-                           <input type="text" id="m_familyname" class="form-control" required>
+                           <input type="text" id="m_familyname" class="form-control">
                         </div>
                    </div>
                 </div>
@@ -277,9 +298,18 @@
                             <label>صلة القرابة <span class="text-danger">*</span></label>
                             <select id="m_relationship" class="form-control">
                                 <option value="">اختر الصلة</option>
-                                @foreach(['father'=>'أب', 'mother'=>'أم', 'brother'=>'أخ', 'sister'=>'أخت', 'husband'=>'زوج', 'wife'=>'زوجة', 'son'=>'ابن', 'daughter'=>'ابنة', 'others'=>'اخرون'] as $key => $val)
-                                    <option value="{{ $key }}">{{ $val }}</option>
-                                @endforeach
+                                @php
+                                    $relChoices = isset($chooses['relationship']) ? $chooses['relationship'] : collect();
+                                @endphp
+                                @if($relChoices->count())
+                                    @foreach($relChoices as $choice)
+                                        <option value="{{ $choice->slug ?: $choice->name }}">{{ $choice->name }}</option>
+                                    @endforeach
+                                @else
+                                    @foreach(['father'=>'أب', 'mother'=>'أم', 'brother'=>'أخ', 'sister'=>'أخت', 'husband'=>'زوج', 'wife'=>'زوجة', 'son'=>'ابن', 'daughter'=>'ابنة', 'others'=>'اخرون'] as $key => $val)
+                                        <option value="{{ $key }}">{{ $val }}</option>
+                                    @endforeach
+                                @endif
                             </select>
                         </div>
                     </div>
@@ -300,8 +330,14 @@
                             <label>الجنس <span class="text-danger">*</span></label>
                             <select id="m_gender" class="form-control">
                                 <option value="">اختر الجنس</option>
-                                <option value="ذكر">ذكر</option>
-                                <option value="أنثى">أنثى</option>
+                                @if(isset($chooses['gender']))
+                                    @foreach($chooses['gender'] as $choice)
+                                        <option value="{{ $choice->name }}">{{ $choice->name }}</option>
+                                    @endforeach
+                                @else
+                                    <option value="ذكر">ذكر</option>
+                                    <option value="أنثى">أنثى</option>
+                                @endif
                             </select>
                         </div>
                     </div>
@@ -346,8 +382,19 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
     $(document).ready(function() {
+        // Native Date Validation
+        $('#dob').on('change', function() {
+            const selectedDate = new Date($(this).val());
+            const today = new Date();
+            if (selectedDate > today) {
+                alert('تاريخ الميلاد لا يمكن أن يكون في المستقبل');
+                $(this).val('');
+            }
+        });
+
         // Validation Functions
         window.validateArabicInput = function(id) {
             const input = document.getElementById(id);
@@ -363,118 +410,111 @@
             // Basic length check
         };
 
-        window.validatedob = function() {
-            // Date validation logic
-        };
-
-        window.validatePhoneInput = function() {
-            // Phone validation logic
-        };
-
         window.toggleConditionDescription = function() {
             const val = $('#has_condition').val();
-            $('#condition_description_group').toggle(val == '1');
+            $ ('#condition_description_group').toggle(val == '1');
             if(val == '0') $('#condition_description').val('');
         };
 
-        // Neighborhood Logic
-        const neighborhoodsData = {
-            'rafah': [
-                { value: 'masbah', label: 'مصبح' },
-                { value: 'khirbetAlAdas', label: 'خربة العدس' },
-                { value: 'alJaninehNeighborhood', label: 'حي الجنينة' },
-                { value: 'alAwda', label: 'العودة' },
-                { value: 'alZohourNeighborhood', label: 'حي الزهور' },
-                { value: 'brazilianHousing', label: 'الإسكان البرازيلي' },
-                { value: 'telAlSultan', label: 'تل السلطان' },
-                { value: 'alShabouraNeighborhood', label: 'حي الشابورة' },
-                { value: 'rafahProject', label: 'مشروع رفح' },
-                { value: 'zararRoundabout', label: 'دوار زعرب' }
-            ],
-            'khanYounis': [
-                 { value: 'qizanAlNajjar', label: 'قيزان النجار' },
-                 { value: 'qizanAbuRashwan', label: 'قيزان أبو رشوان' },
-                 { value: 'juraAlLoot', label: 'جورة اللوت' },
-                 { value: 'sheikhNasser', label: 'الشيخ ناصر' },
-                 { value: 'maAn', label: 'معن' },
-                 { value: 'alManaraNeighborhood', label: 'حي المنارة' },
-                 { value: 'easternLine', label: 'السطر الشرقي' },
-                 { value: 'westernLine', label: 'السطر الغربي' },
-                 { value: 'alMahatta', label: 'المحطة' },
-                 { value: 'alKatiba', label: 'الكتيبة' },
-                 { value: 'alBatanAlSameen', label: 'البطن السمين' },
-                 { value: 'alMaskar', label: 'المعسكر' },
-                 { value: 'alMashroo', label: 'المشروع' },
-                 { value: 'hamidCity', label: 'مدينة حمد' },
-                 { value: 'alMawasi', label: 'المواصي' },
-                 { value: 'alQarara', label: 'القرارة' },
-                 { value: 'eastKhanYounis', label: 'شرق خانيونس' },
-                 { value: 'downtown', label: 'وسط البلد' },
-                 { value: 'mirage', label: 'ميراج' },
-                 { value: 'european', label: 'الأوروبي' },
-                 { value: 'alFakhari', label: 'الفخاري' },
-                 { value: 'alQalaaSouth', label: 'القلعة وجنوبها' },
-                 { value: 'northJalalStreet', label: 'شمال شارع جلال' }
-            ],
-            'northGaza': [
-                { value: 'jabalia', label: 'جباليا' },
-                { value: 'beitLahia', label: 'بيت لاهيا' },
-                { value: 'beitHanoun', label: 'بيت حانون' },
-                { value: 'other', label: 'أخرى' }
-            ],
-            'gaza': [
-                { value: 'alRimal', label: 'الرمال' },
-                { value: 'alNasr', label: 'النصر' },
-                { value: 'alShati', label: 'الشاطئ' },
-                { value: 'alZaitoun', label: 'الزيتون' },
-                { value: 'alSabra', label: 'الصبرة' },
-                { value: 'talAlHawa', label: 'تل الهوى' },
-                { value: 'alDaraj', label: 'الدرج' },
-                { value: 'alShujaia', label: 'الشجاعية' },
-                { value: 'other', label: 'أخرى' }
-            ],
-            'alwsta': [
-                { value: 'alMaghazi', label: 'المغازي' },
-                { value: 'alBureij', label: 'البريج' },
-                { value: 'alNuseirat', label: 'النصيرات' },
-                { value: 'deirAlBalah', label: 'دير البلح' },
-                { value: 'alZawayda', label: 'الزوايدة' },
-                { value: 'other', label: 'أخرى' }
-            ]
+        // Hierarchical Mapping Data
+        const neighborhoodsData = @json($neighborhoodsGroupedByCity);
+
+        // Pre-selected values from Model or Old Input
+        const initialStates = {
+            neighborhood: "{{ old('neighborhood', isset($person) ? $person->neighborhood : '') }}",
+            area_responsible_id: "{{ old('area_responsible_id', isset($person) ? $person->area_responsible_id : '') }}",
+            block_id: "{{ old('block_id', isset($person) ? $person->block_id : '') }}"
         };
 
         $('#current_city').on('change', function() {
             const city = $(this).val();
             const options = neighborhoodsData[city] || [];
             const $neighborhoodSelect = $('#neighborhood');
-            const currentVal = $neighborhoodSelect.val();
-
+            
             $neighborhoodSelect.empty().append('<option value="">اختر الحي السكني</option>');
-
             options.forEach(opt => {
-                const selected = (opt.value === currentVal || opt.value === "{{ old('neighborhood', $person->neighborhood ?? '') }}") ? 'selected' : '';
+                const selected = (opt.value === initialStates.neighborhood) ? 'selected' : '';
                 $neighborhoodSelect.append(`<option value="${opt.value}" ${selected}>${opt.label}</option>`);
             });
 
+            // Reset initial neighborhood after first load
+            initialStates.neighborhood = '';
             $neighborhoodSelect.trigger('change');
         });
 
         $('#neighborhood').on('change', function() {
-            if($(this).val() === 'alMawasi') {
-                $('#areaResponsibleField').show();
-            } else {
-                $('#areaResponsibleField').hide();
-                $('#area_responsible_id').val('');
+            const neighborhood = $(this).val();
+            const $responsibleSelect = $('#area_responsible_id');
+            const $areaResField = $('#areaResponsibleField');
+            
+            if (!neighborhood) {
+                $responsibleSelect.empty().append('<option value="">اختر المسؤول</option>');
+                $areaResField.hide();
+                $responsibleSelect.trigger('change');
+                return;
             }
+
+            // AJAX Method لجلب مسؤولي المنطقة حسب الحي السكني
+            $.ajax({
+                url: "{{ route('dashboard.ajax.getResponsiblesByNeighborhood') }}",
+                data: { neighborhood_name: neighborhood },
+                success: function(response) {
+                    $responsibleSelect.empty().append('<option value="">اختر المسؤول</option>');
+                    if (response.responsibles && response.responsibles.length > 0) {
+                        $areaResField.show();
+                        response.responsibles.forEach(r => {
+                            const selected = (r.id == initialStates.area_responsible_id) ? 'selected' : '';
+                            $responsibleSelect.append(`<option value="${r.id}" ${selected}>${r.name}</option>`);
+                        });
+                    } else {
+                        $areaResField.hide();
+                    }
+                    initialStates.area_responsible_id = '';
+                    $responsibleSelect.trigger('change');
+                },
+                error: function() {
+                    console.error('Error fetching responsibles');
+                }
+            });
         });
 
-        // Trigger on load
+        $('#area_responsible_id').on('change', function() {
+            const responsibleId = $(this).val();
+            const $blockSelect = $('#block_id');
+            const $blockField = $('#blockField');
+
+            if (!responsibleId) {
+                $blockSelect.empty().append('<option value="">اختر المندوب</option>');
+                $blockField.hide();
+                return;
+            }
+
+            // AJAX Method لجلب المندوبين حسب مسؤول المنطقة
+            $.ajax({
+                url: "{{ route('dashboard.ajax.getBlocksByResponsible') }}",
+                data: { responsible_id: responsibleId },
+                success: function(response) {
+                    $blockSelect.empty().append('<option value="">اختر المندوب</option>');
+                    if (response.blocks && response.blocks.length > 0) {
+                        $blockField.show();
+                        response.blocks.forEach(b => {
+                            const selected = (b.id == initialStates.block_id) ? 'selected' : '';
+                            $blockSelect.append(`<option value="${b.id}" ${selected}>${b.name}</option>`);
+                        });
+                    } else {
+                        $blockField.hide();
+                    }
+                    initialStates.block_id = '';
+                },
+                error: function() {
+                    console.error('Error fetching blocks');
+                }
+            });
+        });
+
+        // Trigger chain on load
         if($('#current_city').val()) {
             $('#current_city').trigger('change');
-        } else {
-             if($('#neighborhood').val() === 'alMawasi') {
-                 $('#areaResponsibleField').show();
-             }
         }
 
         // Family Member Modal Logic
@@ -546,3 +586,4 @@
         });
     });
 </script>
+@endpush

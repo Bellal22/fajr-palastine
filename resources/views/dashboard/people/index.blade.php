@@ -51,14 +51,14 @@
                     </div>
 
                     {{-- View Button in Center --}}
-                    <div class="mx-auto">
+                    {{-- <div class="mx-auto">
                         @include('dashboard.people.partials.actions.view')
-                    </div>
+                    </div> --}}
 
                     <div class="d-flex align-items-center flex-wrap">
-                        <div class="mr-2">
+                        {{-- <div class="mr-2">
                             @include('dashboard.people.partials.actions.search')
-                        </div>
+                        </div> --}}
 
                         <div class="mr-2">
                             @include('dashboard.people.partials.actions.trashed')

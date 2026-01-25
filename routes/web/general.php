@@ -174,7 +174,7 @@ Route::resource('complaints', ComplaintController::class);
 
 // Route::post('/complaints/submit', [ComplaintController::class, 'submit'])->name('complaints.submit');
 
-Route::get('/complaints/success', [ComplaintController::class, 'successcomplaint'])->name('complaints.successcomplaint');
+Route::get('successcomplaint', [ComplaintController::class, 'successcomplaint'])->name('complaints.successcomplaint');
 
 Route::get('/get-family-member-data/{id}', [ProfileController::class, 'getFamilyMemberData']);
 

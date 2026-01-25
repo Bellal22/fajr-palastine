@@ -15,43 +15,47 @@
             {{-- Actions Row --}}
             <tr>
                 <th colspan="100">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap">
+                    <div class="d-flex align-items-center justify-content-between">
                         {{-- Left Actions --}}
-                        <div class="d-flex align-items-center flex-wrap">
+                        <div class="d-flex align-items-center">
                             @if (auth()->user()?->isAdmin())
                                 <div class="mr-2">
                                     <x-check-all-delete
-                                        type="{{ \App\Models\Person::class }}"
+                                        :type="\App\Models\Person::class"
                                         :resource="trans('people.plural')">
                                     </x-check-all-delete>
                                 </div>
 
                                 <div class="mr-2">
                                     <x-check-all-api
-                                        type="{{ \App\Models\Person::class }}"
+                                        :type="\App\Models\Person::class"
                                         :resource="trans('people.plural')">
                                     </x-check-all-api>
                                 </div>
 
                                 <div class="mr-2">
                                     <x-check-all-deleteAreaResponsibles
-                                        type="{{ \App\Models\Person::class }}"
+                                        :type="\App\Models\Person::class"
                                         :resource="trans('people.plural')">
                                     </x-check-all-deleteAreaResponsibles>
                                 </div>
 
                                 <div class="mr-2">
                                     <x-check-all-assign-users
-                                        type="{{ \App\Models\Person::class }}"
+                                        :type="\App\Models\Person::class"
                                         :resource="trans('people.plural')">
                                     </x-check-all-assign-users>
+                                </div>
+
+                                <div class="mr-2">
+                                    <x-check-all-freeze></x-check-all-freeze>
                                 </div>
                             @endif
 
                             @if (auth()->user()?->isSupervisor())
                                 <div class="mr-2">
                                     <x-check-all-assignBlock
-                                        type="{{ \App\Models\Person::class }}"
+                                        :type="\App\Models\Person::class"
                                         :resource="trans('people.plural')"
                                         :blocks="$blocks">
                                     </x-check-all-assignBlock>
@@ -60,12 +64,7 @@
                         </div>
 
                         {{-- Right Actions --}}
-                        <div class="d-flex align-items-center flex-wrap">
-                            {{-- قسم البحث --}}
-                            <div class="mr-2">
-                                @include('dashboard.people.partials.actions.search')
-                            </div>
-
+                        <div class="d-flex align-items-center">
                             {{-- قسم الأزرار --}}
                             @if (auth()->user()?->isAdmin())
                                 <div class="btn-group" role="group">
@@ -141,6 +140,11 @@
                                class="text-decoration-none text-primary font-weight-bold">
                                 <i class="fas fa-id-card text-muted"></i>
                                 {{ $person->id_num }}
+                                @if($person->is_frozen)
+                                    <span class="badge badge-danger ml-1" title="مجمّد">
+                                        <i class="fas fa-snowflake"></i>
+                                    </span>
+                                @endif
                             </a>
                         @else
                             <span class="text-muted">-</span>
@@ -250,6 +254,28 @@
                                     <i class="fas fa-eye text-primary"></i>
                                     <span class="mr-2">@lang('people.actions.show')</span>
                                 </a>
+
+                                @if(auth()->user()?->isAdmin())
+                                    <div class="dropdown-divider"></div>
+
+                                    {{-- تجميد/إلغاء تجميد --}}
+                                    <form action="{{ route('dashboard.people.toggleFreeze', $person) }}"
+                                        method="POST"
+                                        style="display: inline;">
+                                        @csrf
+                                        @method('PUT')
+                                        <button type="submit"
+                                                class="dropdown-item">
+                                            @if($person->is_frozen)
+                                                <i class="fas fa-snowflake text-warning"></i>
+                                                <span class="mr-2">إلغاء التجميد</span>
+                                            @else
+                                                <i class="fas fa-snowflake text-secondary"></i>
+                                                <span class="mr-2">تجميد</span>
+                                            @endif
+                                        </button>
+                                    </form>
+                                @endif
 
                                 @if(auth()->user()?->isAdmin())
                                     <div class="dropdown-divider"></div>

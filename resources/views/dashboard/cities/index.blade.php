@@ -8,7 +8,8 @@
     @component('dashboard::components.table-box')
 
         @slot('title')
-            @lang('cities.actions.list') ({{ count_formatted($cities->total()) }})
+            <i class="fas fa-city text-primary mr-1"></i> @lang('cities.actions.list')
+            <span class="badge badge-primary badge-pill ml-1">{{ count_formatted($cities->total()) }}</span>
         @endslot
 
         {{-- Table Header Actions --}}
@@ -40,6 +41,9 @@
             <th class="d-none d-sm-table-cell">
                 <i class="fas fa-calendar"></i> @lang('cities.attributes.created_at')
             </th>
+            <th class="text-center">
+                <i class="fas fa-map-marked"></i> @lang('neighborhoods.plural')
+            </th>
             <th class="text-center" style="width: 160px">
                 <i class="fas fa-cog"></i> @lang('cities.actions.actions')
             </th>
@@ -69,6 +73,13 @@
                           title="{{ $city->created_at->format('Y-m-d H:i') }}">
                         <i class="fas fa-calendar-alt text-info"></i>
                         {{ $city->created_at->diffForHumans() }}
+                    </span>
+                </td>
+
+                {{-- Neighborhood Count --}}
+                <td class="text-center">
+                    <span class="badge badge-warning badge-pill">
+                        <i class="fas fa-map-marked"></i> {{ $city->neighborhoods_count }}
                     </span>
                 </td>
 

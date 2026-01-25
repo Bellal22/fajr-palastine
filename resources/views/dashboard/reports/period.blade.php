@@ -214,6 +214,45 @@
         </div>
     </div>
 
+    </div>
+
+    <!-- Submitted Items Summary (NEW) -->
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">
+                <i class="fas fa-boxes text-success ml-2"></i>
+                تحليل الكميات المسلمة خلال الفترة ({{ $label }})
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 text-center">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>الصنف</th>
+                            <th>إجمالي الكمية المسلمة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($deliveredItemsSummary ?? [] as $itemName => $quantity)
+                        <tr>
+                            <td class="font-weight-bold">{{ $itemName }}</td>
+                            <td class="font-weight-bold text-success h5">{{ number_format($quantity) }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="2" class="text-center text-muted py-4">
+                                <i class="fas fa-box-open fa-2x mb-3 d-block"></i>
+                                لا توجد عمليات تسليم لأصناف خلال هذه الفترة
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Delivery Logs -->
     <div class="card">
         <div class="card-header bg-white">

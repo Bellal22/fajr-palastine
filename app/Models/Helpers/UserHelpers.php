@@ -65,6 +65,17 @@ trait UserHelpers
     }
 
     /**
+     * Check if the user has a given permission.
+     *
+     * @param string $permission
+     * @return bool
+     */
+    public function hasPermission(string $permission)
+    {
+        return $this->hasPermissionTo($permission);
+    }
+
+    /**
      * The user profile image url.
      *
      * @return bool

@@ -3,7 +3,7 @@
     @slot('url', route('dashboard.chooses.index'))
     @slot('name', trans('chooses.plural'))
     @slot('active', request()->routeIs('*chooses*'))
-    @slot('icon', 'fas fa-th')
+    @slot('icon', 'fas fa-cogs')
     @slot('tree', [
         [
             'name' => trans('chooses.actions.list'),

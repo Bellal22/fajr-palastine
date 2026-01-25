@@ -283,6 +283,39 @@
                     </div>
                     @endforelse
                 </div>
+                </div>
+
+                <!-- Submitted Items Analysis (NEW) -->
+                <h6 class="font-weight-bold mb-3">
+                    <i class="fas fa-boxes text-success ml-1"></i>
+                    تحليل الكميات المسلمة
+                </h6>
+                <div class="table-responsive shadow-sm rounded mb-4">
+                    <table class="table table-bordered table-sm text-center mb-0" style="font-size: 0.85rem;">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>#</th>
+                                <th>الصنف</th>
+                                <th>الكمية في الكوبون</th>
+                                <th>إجمالي المسلم</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($project->couponTypes as $index => $type)
+                            <tr>
+                                <td>{{ $index + 1 }}</td>
+                                <td class="font-weight-bold">{{ $type->name }}</td>
+                                <td>{{ number_format($type->pivot->quantity) }}</td>
+                                <td class="font-weight-bold text-success">{{ number_format($type->pivot->quantity * ($project->total_delivered_coupons ?? 0)) }}</td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4" class="text-muted py-2">لا توجد أصناف</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="card-footer bg-white">

@@ -15,6 +15,11 @@ use App\Http\Requests\UpdateFamilyRequest;
 use App\Http\Requests\UpdatePersonRequest;
 use App\Models\BanList;
 use App\Models\Person;
+use App\Models\Choose;
+use App\Models\City;
+use App\Models\AreaResponsible;
+use App\Models\Block;
+use App\Models\Neighborhood;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -46,21 +51,37 @@ class PersonController extends Controller
             return redirect()->route('persons.intro');
         }
 
-        $collections = [
-            'social_statuses'         => PersonSocialStatus::toValues(),
-            'cities'                  => PersonCity::toValues(),
-            'current_cities'          => PersonCurrentCity::toValues(),
-            'neighborhoods'           => PersonNeighborhood::toValues(),
-            'housing_types'           => PersonHousingType::toValues(),
-            'housing_damage_statuses' => PersonDamageHousingStatus::toValues(),
-        ];
+        $id_num = $request->session()->get('id_num');
 
-        // تحويل جميع القيم إلى مصفوفات قابلة للعرض
-        $data = collect($collections)
-            ->map(fn($values) => collect($values)->mapWithKeys(fn($value) => [$value => __($value)]))
-            ->all();
+        // Fetch all cities
+        $cities = City::pluck('name', 'id');
 
-        return view('person', array_merge(['id_num' => $request->session()->get('id_num')], $data));
+        // Fetch and group chooses by type
+        $chooses = Choose::all()->groupBy('type');
+
+        // Fetch neighborhoods grouped by city Name for JS compatibility
+        $neighborhoodsGroupedByCity = City::with('neighborhoods')->get()->mapWithKeys(function ($city) {
+            return [$city->name => $city->neighborhoods->pluck('name', 'id')];
+        });
+
+        // Fetch responsibles grouped by neighborhood Name
+        $responsiblesGroupedByNeighborhood = Neighborhood::with('areaResponsibles')->get()->mapWithKeys(function ($neighborhood) {
+            return [$neighborhood->name => $neighborhood->areaResponsibles->pluck('name', 'id')];
+        });
+
+        // Fetch blocks grouped by responsible ID
+        $blocksGroupedByResponsible = AreaResponsible::with('blocks')->get()->mapWithKeys(function ($responsible) {
+            return [$responsible->id => $responsible->blocks->pluck('name', 'id')];
+        });
+
+        return view('person', compact(
+            'id_num',
+            'cities',
+            'chooses',
+            'neighborhoodsGroupedByCity',
+            'responsiblesGroupedByNeighborhood',
+            'blocksGroupedByResponsible'
+        ));
     }
 
     public function store(StorePersonRequest $request)
@@ -135,12 +156,12 @@ class PersonController extends Controller
 
         $peopleList = $session->get('peopleList', []);
 
-        $relationships = collect(PersonRelationship::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
+        // Fetch and group chooses by type
+        $chooses = Choose::all()->groupBy('type');
 
         $person = $request->session()->get('person');
 
-        return view('family', array_merge($personData, compact('relationships', 'peopleList','person')));
+        return view('family', array_merge($personData, compact('chooses', 'peopleList', 'person')));
     }
 
     public function storeFamily(StoreFamilyRequest $request)
@@ -209,32 +230,52 @@ class PersonController extends Controller
             }
         }
 
-        // تجهيز مصفوفة الأشخاص للإدخال في persons
+        // تحويل القيم الفارغة إلى null في بيانات رب الأسرة
+        if (isset($person['area_responsible_id']) && $person['area_responsible_id'] === '') {
+            $person['area_responsible_id'] = null;
+        }
+        if (isset($person['block_id']) && $person['block_id'] === '') {
+            $person['block_id'] = null;
+        }
+
+        // استخلاص الـ passkey لربط الجلسة
+        $passkey = $person['passkey'] ?? null;
+
+        // عدد الأقارب لرب الأسرة
+        $person['relatives_count'] = count($peopleList) + 1;
         $persons = collect($peopleList)
-            ->map(function ($p) use ($id_num) {
-                if (array_key_exists('area_responsible_id', $p) && $p['area_responsible_id'] === '') {
-                    $p['area_responsible_id'] = null;
-                }
-
-                // تنظيف رقم الجوال للزوجة
-                if (isset($p['phone'])) {
-                    $cleanPhone = str_replace('-', '', $p['phone']);
-                    $cleanPhone = ltrim($cleanPhone, '0');
-                    $p['phone'] = $cleanPhone;
-                }
-
-                return array_merge($p, [
-                    'relative_id'   => $id_num,
-                    'id_num'        => $p['id_num'] ?? $id_num,
-                    'has_condition' => array_key_exists('has_condition', $p) && $p['has_condition'] === '' ? 0 : ($p['has_condition'] ?? 0),
+            ->map(function ($p) use ($id_num, $passkey) {
+                // بيانات الفرد (بقائمة الحقول المطلوبة فقط، الباقي null)
+                $mergedData = array_merge($p, [
+                    'relative_id'           => $id_num,
+                    'passkey'               => null, // أفراد العائلة لا يملكون passkey خاص بهم
+                    'relatives_count'       => 1,
+                    'person_status'         => 'غير فعال',
+                    'has_condition'         => array_key_exists('has_condition', $p) && $p['has_condition'] === '' ? 0 : ($p['has_condition'] ?? 0),
+                    // تصفير حقول الموقع لعدم الوراثة
+                    'city'                  => null,
+                    'current_city'          => null,
+                    'neighborhood'          => null,
+                    'area_responsible_id'   => null,
+                    'block_id'              => null,
+                    'landmark'              => null,
+                    'housing_type'          => null,
+                    'housing_damage_status' => null,
+                    'employment_status'     => null,
+                    'social_status'         => null,
                 ]);
+
+                // تنظيف رقم الجوال (للزوجة مثلاً) إن وجد
+                if (isset($mergedData['phone'])) {
+                    $mergedData['phone'] = ltrim(preg_replace('/[^0-9]/', '', $mergedData['phone']), '0');
+                }
+
+                return $this->mapSlugsToNames($mergedData);
             })
-            ->push(array_merge($person, [
-                'area_responsible_id' => (array_key_exists('area_responsible_id', $person) && $person['area_responsible_id'] === '') ? null : ($person['area_responsible_id'] ?? null),
-                'id_num'        => $person['id_num'] ?? $id_num,
-                'has_condition' => array_key_exists('has_condition', $person) && $person['has_condition'] === '' ? 0 : ($person['has_condition'] ?? 0),
-                'phone'         => isset($person['phone']) ? ltrim(str_replace('-', '', $person['phone']), '0') : null,
-            ]))
+            ->push($this->mapSlugsToNames(array_merge($person, [
+                'id_num' => $person['id_num'] ?? $id_num,
+                'phone'  => isset($person['phone']) ? ltrim(preg_replace('/[^0-9]/', '', $person['phone']), '0') : null,
+            ])))
             ->toArray();
 
         try {
@@ -332,7 +373,7 @@ class PersonController extends Controller
 
         try {
             // إنشاء السجل الجديد
-            $person = Person::create($validatedData);
+            $person = Person::create($this->mapSlugsToNames($validatedData));
 
             // تحديث عدد الأقارب للمستخدم الأساسي
             $parentPerson = Person::where('id_num', $relative_id)->first();
@@ -421,7 +462,7 @@ class PersonController extends Controller
             ->push($person);
 
         $persons->each(function ($p) {
-            Person::create($p);
+            Person::create($this->mapSlugsToNames($p));
         });
 
         return redirect()->route('profile');
@@ -491,6 +532,23 @@ class PersonController extends Controller
             ], 404);
         }
 
+        if ($user->is_frozen) {
+            $frozenFields = [
+                'city', 'neighborhood', 'current_city', 
+                'area_responsible_id', 'housing_type', 
+                'housing_damage_status', 'landmark', 'block_id'
+            ];
+
+            foreach ($frozenFields as $field) {
+                if ($request->has($field) && $request->input($field) != $user->$field) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'تم اعتماد بياناتك وتجميد التعديل على بيانات السكن تجنباً لفقدان حقه في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا للخصوص'
+                    ], 422);
+                }
+            }
+        }
+
         // التحقق من تكرار رقم الهوية الجديد
         if ($request->id_num !== $request->old_id_num) {
             $exists = Person::where('id_num', $request->id_num)
@@ -528,6 +586,13 @@ class PersonController extends Controller
             $data['phone'] = $cleanPhone;
         }
 
+        // Remove housing fields from data if frozen to prevent any accidental backend update
+        if ($user->is_frozen) {
+            unset($data['city'], $data['neighborhood'], $data['current_city'], 
+                  $data['area_responsible_id'], $data['housing_type'], 
+                  $data['housing_damage_status'], $data['landmark'], $data['block_id']);
+        }
+
         $updated = $user->update($data);
 
         if ($updated) {
@@ -547,6 +612,13 @@ class PersonController extends Controller
                 'success' => false,
                 'message' => "المستخدم غير موجود."
             ], 404);
+        }
+
+        if ($user->is_frozen) {
+             return response()->json([
+                'success' => false,
+                'message' => 'تم اعتماد بيانات هذا الفرد وتجميد التعديل على بيانات السكن تجنباً لفقدان حقه في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
+            ], 422);
         }
 
         $oldId = $user->id_num; // ✅ الرقم القديم من قاعدة البيانات
@@ -592,7 +664,7 @@ class PersonController extends Controller
         // تحديث البيانات
         $data = $request->except(['old_id_num', 'id']);
 
-        $updated = $user->update($data);
+        $updated = $user->update($this->mapSlugsToNames($data));
 
         if ($updated) {
             return response()->json(['success' => true, 'message' => 'تم تحديث فرد الأسرة بنجاح']);
@@ -651,5 +723,57 @@ class PersonController extends Controller
 
         // إذا لم يتم العثور على الشخص
         return response()->json(['error' => 'الشخص غير موجود.'], 404);
+    }
+    private function mapSlugsToNames(array $data)
+    {
+        $mapping = [
+            'employment_status' => [
+                'employee'   => 'موظف',
+                'worker'     => 'عامل',
+                'unemployed' => 'لا يعمل',
+            ],
+            'social_status' => [
+                'single'     => 'أعزب/ة',
+                'married'    => 'متزوج/ة',
+                'polygamous' => 'متعدد/ة',
+                'divorced'   => 'مطلق/ة',
+                'widowed'    => 'أرمل/ة',
+            ],
+            'housing_type' => [
+                'tent'     => 'خيمة',
+                'zinc'     => 'زينكو',
+                'concrete' => 'باطون',
+            ],
+            'housing_damage_status' => [
+                'total'        => 'كلي',
+                'partial'      => 'جزئي',
+                'notAffected'  => 'غير متضرر',
+            ],
+            'gender' => [
+                'male'   => 'ذكر',
+                'female' => 'أنثى',
+            ],
+            'relationship' => [
+                'father'      => 'أب',
+                'mother'      => 'أم',
+                'brother'     => 'أخ',
+                'sister'      => 'أخت',
+                'husband'     => 'زوج',
+                'wife'        => 'زوجة',
+                'son'         => 'ابن',
+                'daughter'    => 'ابنة',
+                'grandparent' => 'جد/ة',
+                'grandchild'  => 'حفيد/ة',
+                'others'      => 'اخرون',
+            ],
+        ];
+
+        foreach ($mapping as $key => $map) {
+            if (isset($data[$key]) && isset($map[$data[$key]])) {
+                $data[$key] = $map[$data[$key]];
+            }
+        }
+
+        return $data;
     }
 }

@@ -22,6 +22,14 @@ return [
         'options' => 'خيارات',
         'save' => 'حفظ',
         'filter' => 'بحث',
+        'reset' => 'تفريغ الحقول',
+    ],
+    'sections' => [
+        'search_settings' => 'إعدادات البحث',
+        'basic_info' => 'المعلومات الأساسية',
+    ],
+    'placeholders' => [
+        'name' => 'البحث باسم الحي...',
     ],
     'messages' => [
         'created' => 'تم اضافة الحي بنجاح.',
@@ -31,6 +39,7 @@ return [
     ],
     'attributes' => [
         'name' => 'اسم الحي',
+        'created_at' => 'تاريخ الإضافة',
     ],
     'dialogs' => [
         'delete' => [

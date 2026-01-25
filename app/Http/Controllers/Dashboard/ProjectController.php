@@ -431,182 +431,240 @@ class ProjectController extends Controller
     public function importBeneficiaries(Request $request, Project $project)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:10240',
+            'file' => 'required_without:id_nums|nullable|mimes:xlsx,xls,csv|max:10240',
+            'id_nums' => 'nullable|string',
+            'manual_notes' => 'nullable|string',
             'sub_warehouse_id' => 'required|exists:sub_warehouses,id',
             'ignore_conflicts' => 'nullable|boolean',
+            'delivery_date' => 'nullable|date|required_with:id_nums',
+            'status' => 'nullable|in:مستلم,غير مستلم|required_with:id_nums',
         ]);
 
         try {
-            $file = $request->file('file');
+            DB::beginTransaction();
+            
             $subWarehouseId = $request->sub_warehouse_id;
             $ignoreConflicts = $request->boolean('ignore_conflicts');
-
-            // جلب المشاريع المتعارضة
             $conflictingProjectIds = $project->conflicts()->pluck('conflict_id')->toArray();
-
-            $spreadsheet = IOFactory::load($file->getPathname());
-            $worksheet = $spreadsheet->getActiveSheet();
-            $rows = $worksheet->toArray();
-
-            $header = $rows[0] ?? [];
-
-            // تهيئة الفهارس الافتراضية
-            $idIdx = 0;
-            $qtyIdx = 3;
-            $statusIdx = 5;
-            $dateIdx = 7; // تاريخ التسليم
-            $generalDateIdx = 4; // التاريخ العام
-            $notesIdx = 6;
-
-            // محاولة الكشف عن الفهارس من العناوين (Header)
-            $hasHeader = false;
-            foreach ($header as $i => $col) {
-                $col = trim($col);
-                if (empty($col)) continue;
-
-                if (mb_strpos($col, 'هوية') !== false) {
-                    $idIdx = $i;
-                    $hasHeader = true;
-                } elseif (mb_strpos($col, 'كمية') !== false) {
-                    $qtyIdx = $i;
-                    $hasHeader = true;
-                } elseif (mb_strpos($col, 'حالة') !== false || mb_strpos($col, 'استلام') !== false) {
-                    $statusIdx = $i;
-                    $hasHeader = true;
-                } elseif (mb_strpos($col, 'ملاحظات') !== false) {
-                    $notesIdx = $i;
-                    $hasHeader = true;
-                } elseif (mb_strpos($col, 'تاريخ') !== false) {
-                    if (mb_strpos($col, 'تسليم') !== false) {
-                        $dateIdx = $i;
-                    } else {
-                        $generalDateIdx = $i;
-                    }
-                    $hasHeader = true;
-                }
-            }
-
-            if ($hasHeader) {
-                array_shift($rows);
-            } else {
-                // إذا لم يتم العثور على عناوين، نطبق كشفاً ذكياً على الصف الأول
-                $firstId = trim($header[0] ?? '');
-                if (is_numeric($firstId) && strlen($firstId) < 7 && !empty($header[1]) && strlen(trim($header[1])) >= 9) {
-                    // تنسيق: مسلسل، هوية، اسم، جوال، منطقة، كمية، حالة، تاريخ، ملاحظات
-                    $idIdx = 1;
-                    $qtyIdx = 5;
-                    $statusIdx = 6;
-                    $dateIdx = 7;
-                    $notesIdx = 8;
-                }
-            }
-
+            
             $imported = 0;
             $errors = [];
 
-            DB::beginTransaction();
+            // Case 1: Manual Import via ID Numbers
+            if ($request->filled('id_nums')) {
+                $status = $request->status;
+                $deliveryDate = $request->delivery_date;
+                // استخدام الملاحظات اليدوية أو القيمة الافتراضية
+                $notes = $request->filled('manual_notes') ? $request->manual_notes : 'إدخال يدوي';
+                
+                $idNums = preg_split('/[\s,]+/', $request->id_nums, -1, PREG_SPLIT_NO_EMPTY);
+                
+                foreach ($idNums as $index => $idNumber) {
+                    $idNumber = trim($idNumber);
+                    if (empty($idNumber)) continue;
 
-            foreach ($rows as $index => $row) {
-                $rowNumber = $index + ($hasHeader ? 2 : 1);
-                $idNumber = trim($row[$idIdx] ?? '');
+                    $person = Person::where('id_num', $idNumber)->first();
 
-                $quantityValue = $row[$qtyIdx] ?? 1;
-                $statusValue = $row[$statusIdx] ?? '';
-                $deliveryDateValue = $row[$dateIdx] ?? '';
-                $notesValue = $row[$notesIdx] ?? '';
-
-                // إذا كان تاريخ التسليم المباشر فارغاً، نجرب عمود التاريخ العام
-                if (empty(trim($deliveryDateValue)) || $deliveryDateValue == '-') {
-                    $deliveryDateValue = $row[$generalDateIdx] ?? '';
-                }
-
-                if (empty($idNumber)) {
-                    continue;
-                }
-
-                $person = Person::where('id_num', $idNumber)->first();
-
-                if (!$person) {
-                    $errors[] = "الصف {$rowNumber}: لم يتم العثور على الشخص برقم الهوية {$idNumber}";
-                    continue;
-                }
-
-                // التحقق من التعارض
-                if (!$ignoreConflicts && !empty($conflictingProjectIds)) {
-                    $hasConflict = DB::table('project_beneficiaries')
-                        ->where('person_id', $person->id)
-                        ->whereIn('project_id', $conflictingProjectIds)
-                        ->exists();
-
-                    if ($hasConflict) {
-                        $errors[] = "الصف {$rowNumber}: الشخص برقم الهوية {$idNumber} موجود مسبقاً في مشروع متعارض";
+                    if (!$person) {
+                        $errors[] = "الرقم {$idNumber}: لم يتم العثور على الشخص";
                         continue;
                     }
+
+                    // Check Conflicts
+                    if (!$ignoreConflicts && !empty($conflictingProjectIds)) {
+                        $hasConflict = DB::table('project_beneficiaries')
+                            ->where('person_id', $person->id)
+                            ->whereIn('project_id', $conflictingProjectIds)
+                            ->exists();
+
+                        if ($hasConflict) {
+                            $errors[] = "الرقم {$idNumber}: موجود مسبقاً في مشروع متعارض";
+                            continue;
+                        }
+                    }
+
+                    $pivotData = [
+                        'quantity' => 1, // Default quantity for manual import
+                        'status' => $status,
+                        'notes' => $notes,
+                        'delivery_date' => $deliveryDate,
+                        'sub_warehouse_id' => $subWarehouseId,
+                    ];
+
+                    if ($project->beneficiaries()->where('person_id', $person->id)->exists()) {
+                        $project->beneficiaries()->updateExistingPivot($person->id, $pivotData);
+                    } else {
+                        $project->beneficiaries()->attach($person->id, $pivotData);
+                    }
+
+                    $imported++;
                 }
 
-                $status = trim($statusValue);
-                // معالجة الحالة بمرونة أكبر (البحث عن كلمة مستلم داخل النص)
-                if (mb_strpos($status, 'غير') !== false) {
-                    $status = 'غير مستلم';
-                } elseif (mb_strpos($status, 'مستلم') !== false) {
-                    $status = 'مستلم';
-                } else {
-                    $status = 'غير مستلم';
-                }
+            } 
+            // Case 2: Excel Import
+            elseif ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $overrideDeliveryDate = $request->filled('delivery_date') ? $request->delivery_date : null;
 
-                // معالجة التاريخ بشكل أكثر مرونة وقوة
-                $deliveryDate = null;
-                $rawDateValue = trim($deliveryDateValue);
-                if (empty($rawDateValue) || $rawDateValue == '-') {
-                    $rawDateValue = trim($row[$generalDateIdx] ?? '');
-                }
+                $spreadsheet = IOFactory::load($file->getPathname());
+                $worksheet = $spreadsheet->getActiveSheet();
+                $rows = $worksheet->toArray();
 
-                if (!empty($rawDateValue) && $rawDateValue != '-') {
-                    try {
-                        if (is_numeric($rawDateValue) && $rawDateValue > 30000) {
-                            // إذا كان التاريخ بصيغة الرقم (Excel Serial Date)
-                            $deliveryDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($rawDateValue)->format('Y-m-d');
+                $header = $rows[0] ?? [];
+
+                // تهيئة الفهارس الافتراضية
+                $idIdx = 0;
+                $qtyIdx = 3;
+                $statusIdx = 5;
+                $dateIdx = 7; // تاريخ التسليم
+                $generalDateIdx = 4; // التاريخ العام
+                $notesIdx = 6;
+
+                // محاولة الكشف عن الفهارس من العناوين (Header)
+                $hasHeader = false;
+                foreach ($header as $i => $col) {
+                    $col = trim($col);
+                    if (empty($col)) continue;
+
+                    if (mb_strpos($col, 'هوية') !== false) {
+                        $idIdx = $i;
+                        $hasHeader = true;
+                    } elseif (mb_strpos($col, 'كمية') !== false) {
+                        $qtyIdx = $i;
+                        $hasHeader = true;
+                    } elseif (mb_strpos($col, 'حالة') !== false || mb_strpos($col, 'استلام') !== false) {
+                        $statusIdx = $i;
+                        $hasHeader = true;
+                    } elseif (mb_strpos($col, 'ملاحظات') !== false) {
+                        $notesIdx = $i;
+                        $hasHeader = true;
+                    } elseif (mb_strpos($col, 'تاريخ') !== false) {
+                        if (mb_strpos($col, 'تسليم') !== false) {
+                            $dateIdx = $i;
                         } else {
-                            // تنظيف النص من أي حروف زائدة قد تفسد التحليل
-                            if (preg_match('/(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/', $rawDateValue, $matches)) {
-                                $deliveryDate = \Illuminate\Support\Carbon::parse($matches[1])->format('Y-m-d');
-                            } else {
-                                $deliveryDate = \Illuminate\Support\Carbon::parse($rawDateValue)->format('Y-m-d');
-                            }
+                            $generalDateIdx = $i;
                         }
-                    } catch (\Exception $e) {
-                        // محاولة أخيرة باستخدام strtotime
-                        $timestamp = strtotime($rawDateValue);
-                        if ($timestamp) {
-                            $deliveryDate = date('Y-m-d', $timestamp);
-                        }
+                        $hasHeader = true;
                     }
                 }
 
-                $pivotData = [
-                    'quantity' => is_numeric($quantityValue) ? (int)$quantityValue : 1,
-                    'status' => $status,
-                    'notes' => ($notesValue == '-' || empty(trim($notesValue))) ? null : trim($notesValue),
-                    'delivery_date' => $deliveryDate,
-                    'sub_warehouse_id' => $subWarehouseId,
-                ];
-
-                if ($project->beneficiaries()->where('person_id', $person->id)->exists()) {
-                    $project->beneficiaries()->updateExistingPivot($person->id, $pivotData);
+                if ($hasHeader) {
+                    array_shift($rows);
                 } else {
-                    $project->beneficiaries()->attach($person->id, $pivotData);
+                    // إذا لم يتم العثور على عناوين، نطبق كشفاً ذكياً على الصف الأول
+                    $firstId = trim($header[0] ?? '');
+                    if (is_numeric($firstId) && strlen($firstId) < 7 && !empty($header[1]) && strlen(trim($header[1])) >= 9) {
+                        // تنسيق: مسلسل، هوية، اسم، جوال، منطقة، كمية، حالة، تاريخ، ملاحظات
+                        $idIdx = 1;
+                        $qtyIdx = 5;
+                        $statusIdx = 6;
+                        $dateIdx = 7;
+                        $notesIdx = 8;
+                    }
                 }
 
-                $imported++;
+                foreach ($rows as $index => $row) {
+                    $rowNumber = $index + ($hasHeader ? 2 : 1);
+                    $idNumber = trim($row[$idIdx] ?? '');
+                    $quantityValue = $row[$qtyIdx] ?? 1;
+                    $statusValue = $row[$statusIdx] ?? '';
+                    $notesValue = $row[$notesIdx] ?? '';
+
+                    // معالجة التاريخ (تحديد الأولولية: المدخل يدوياً > الملف)
+                    $deliveryDate = null;
+
+                    if ($overrideDeliveryDate) {
+                        $deliveryDate = $overrideDeliveryDate;
+                    } else {
+                        $deliveryDateValue = $row[$dateIdx] ?? '';
+                        // إذا كان تاريخ التسليم المباشر فارغاً، نجرب عمود التاريخ العام
+                        if (empty(trim($deliveryDateValue)) || $deliveryDateValue == '-') {
+                            $deliveryDateValue = $row[$generalDateIdx] ?? '';
+                        }
+
+                         $rawDateValue = trim($deliveryDateValue);
+                        if (!empty($rawDateValue) && $rawDateValue != '-') {
+                            try {
+                                if (is_numeric($rawDateValue) && $rawDateValue > 30000) {
+                                    // إذا كان التاريخ بصيغة الرقم (Excel Serial Date)
+                                    $deliveryDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($rawDateValue)->format('Y-m-d');
+                                } else {
+                                    // تنظيف النص من أي حروف زائدة قد تفسد التحليل
+                                    if (preg_match('/(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/', $rawDateValue, $matches)) {
+                                        $deliveryDate = \Illuminate\Support\Carbon::parse($matches[1])->format('Y-m-d');
+                                    } else {
+                                        $deliveryDate = \Illuminate\Support\Carbon::parse($rawDateValue)->format('Y-m-d');
+                                    }
+                                }
+                            } catch (\Exception $e) {
+                                // محاولة أخيرة باستخدام strtotime
+                                $timestamp = strtotime($rawDateValue);
+                                if ($timestamp) {
+                                    $deliveryDate = date('Y-m-d', $timestamp);
+                                }
+                            }
+                        }
+                    }
+
+                    if (empty($idNumber)) {
+                        continue;
+                    }
+
+                    $person = Person::where('id_num', $idNumber)->first();
+
+                    if (!$person) {
+                        $errors[] = "الصف {$rowNumber}: لم يتم العثور على الشخص برقم الهوية {$idNumber}";
+                        continue;
+                    }
+
+                    // التحقق من التعارض
+                    if (!$ignoreConflicts && !empty($conflictingProjectIds)) {
+                        $hasConflict = DB::table('project_beneficiaries')
+                            ->where('person_id', $person->id)
+                            ->whereIn('project_id', $conflictingProjectIds)
+                            ->exists();
+
+                        if ($hasConflict) {
+                            $errors[] = "الصف {$rowNumber}: الشخص برقم الهوية {$idNumber} موجود مسبقاً في مشروع متعارض";
+                            continue;
+                        }
+                    }
+
+                    $status = trim($statusValue);
+                    // معالجة الحالة بمرونة أكبر (البحث عن كلمة مستلم داخل النص)
+                    if (mb_strpos($status, 'غير') !== false) {
+                        $status = 'غير مستلم';
+                    } elseif (mb_strpos($status, 'مستلم') !== false) {
+                        $status = 'مستلم';
+                    } else {
+                        $status = 'غير مستلم';
+                    }
+
+                    $pivotData = [
+                        'quantity' => is_numeric($quantityValue) ? (int)$quantityValue : 1,
+                        'status' => $status,
+                        'notes' => ($notesValue == '-' || empty(trim($notesValue))) ? null : trim($notesValue),
+                        'delivery_date' => $deliveryDate,
+                        'sub_warehouse_id' => $subWarehouseId,
+                    ];
+
+                    if ($project->beneficiaries()->where('person_id', $person->id)->exists()) {
+                        $project->beneficiaries()->updateExistingPivot($person->id, $pivotData);
+                    } else {
+                        $project->beneficiaries()->attach($person->id, $pivotData);
+                    }
+
+                    $imported++;
+                }
             }
 
             DB::commit();
 
             if (count($errors) > 0) {
-                flash()->warning("تم استيراد {$imported} مستفيد مع بعض الأخطاء");
+                flash()->warning("تم استيراد/معالجة {$imported} مستفيد مع بعض الأخطاء");
                 session()->flash('import_errors', $errors);
             } else {
-                flash()->success("تم استيراد {$imported} مستفيد بنجاح");
+                flash()->success("تم استيراد/معالجة {$imported} مستفيد بنجاح");
             }
         } catch (\Exception $e) {
             DB::rollBack();
@@ -693,8 +751,10 @@ class ProjectController extends Controller
     public function addBeneficiariesByAreas(Request $request, Project $project)
     {
         $request->validate([
-            'area_responsible_id' => 'required|exists:area_responsibles,id',
-            'block_id' => 'required|exists:blocks,id',
+            'id_nums' => 'nullable|string',
+            'area_responsible_id' => 'required_without:id_nums|nullable|exists:area_responsibles,id',
+            'block_id' => 'required_without:id_nums|nullable|exists:blocks,id',
+            'sub_warehouse_id' => 'required|exists:sub_warehouses,id',
             'quantity' => 'required|integer|min:1',
             'ignore_conflicts' => 'nullable|boolean',
         ]);
@@ -705,12 +765,24 @@ class ProjectController extends Controller
             $ignoreConflicts = $request->boolean('ignore_conflicts');
             $conflictingProjectIds = $project->conflicts()->pluck('conflict_id')->toArray();
 
-            // جلب جميع الأشخاص في المربع المحدد
-            $people = Person::where('block_id', $request->block_id)->get();
-
-            if ($people->isEmpty()) {
-                flash()->warning('لا يوجد أشخاص في هذا المربع');
-                return redirect()->back();
+            // تحديد الأشخاص بناءً على المدخلات
+            if ($request->filled('id_nums')) {
+                // البحث باستخدام أرقام الهويات
+                $idNums = preg_split('/[\s,]+/', $request->id_nums, -1, PREG_SPLIT_NO_EMPTY);
+                $people = Person::whereIn('id_num', $idNums)->get();
+                
+                if ($people->isEmpty()) {
+                    flash()->warning('لم يتم العثور على أي شخص بأرقام الهويات المدخلة');
+                    return redirect()->back()->withInput();
+                }
+            } else {
+                // البحث باستخدام المربع
+                $people = Person::where('block_id', $request->block_id)->get();
+                
+                if ($people->isEmpty()) {
+                    flash()->warning('لا يوجد أشخاص في هذا المربع');
+                    return redirect()->back();
+                }
             }
 
             // استبعاد المضافين مسبقاً
@@ -738,13 +810,15 @@ class ProjectController extends Controller
                         'quantity' => $request->quantity,
                         'notes' => null,
                         'delivery_date' => null,
+                        // إضافة sub_warehouse_id إذا تم اختياره
+                        'sub_warehouse_id' => $request->sub_warehouse_id, 
                     ];
                     $addedCount++;
                 }
             }
 
             if ($addedCount == 0) {
-                flash()->warning('جميع الأشخاص في هذا المربع مضافين مسبقاً');
+                flash()->warning('جميع الأشخاص المحددين مضافين مسبقاً أو تم استبعادهم بسبب التعارض');
                 return redirect()->back();
             }
 
@@ -819,5 +893,18 @@ class ProjectController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    /**
+     * Export beneficiaries list to Excel.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Project $project
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportBeneficiaries(Request $request, Project $project)
+    {
+        $fileName = 'beneficiaries_' . $project->id . '_' . date('Y-m-d') . '.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\BeneficiariesExport($project, $request->all()), $fileName);
     }
 }

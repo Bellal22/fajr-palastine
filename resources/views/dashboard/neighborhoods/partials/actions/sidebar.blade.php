@@ -3,7 +3,7 @@
     @slot('url', route('dashboard.neighborhoods.index'))
     @slot('name', trans('neighborhoods.plural'))
     @slot('active', request()->routeIs('*neighborhoods*'))
-    @slot('icon', 'fas fa-map-marker')
+    @slot('icon', 'fas fa-map-marked-alt')
     @slot('tree', [
         [
             'name' => trans('neighborhoods.actions.list'),

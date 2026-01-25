@@ -16,6 +16,16 @@
                     <h3 class="card-title font-weight-bold mb-0 text-white">
                         <i class="fas fa-chart-bar mr-2"></i> تقرير إحصائي: {{ $project->name }}
                     </h3>
+                    @if(!isset($isPdf) || !$isPdf)
+                    <div class="card-tools float-left">
+                        <a href="{{ route('dashboard.reports.projects.export', ['project' => $project, 'type' => 'xlsx']) }}" class="btn btn-success btn-sm">
+                            <i class="fas fa-file-excel mr-1"></i> تصدير Excel
+                        </a>
+                        <a href="{{ route('dashboard.reports.projects.export', ['project' => $project, 'type' => 'pdf']) }}" class="btn btn-danger btn-sm ml-2">
+                            <i class="fas fa-file-pdf mr-1"></i> تصدير PDF
+                        </a>
+                    </div>
+                    @endif
                 </div>
                 <div class="card-body">
                     <!-- Progress Section -->
@@ -103,6 +113,44 @@
                             <p class="text-muted">لم يتم تحديد مخازن فرعية للمستفيدين من هذا الكوبون.</p>
                         </div>
                         @endforelse
+                    </div>
+
+                    <!-- Submitted Items Analysis (NEW) -->
+                    <h4 class="font-weight-bold mb-4 border-bottom pb-2 mt-5">
+                        <i class="fas fa-boxes text-success mr-2"></i> تحليل الكميات المسلمة
+                    </h4>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="table-responsive shadow-sm rounded">
+                                <table class="table table-bordered table-hover text-center mb-0">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>الصنف</th>
+                                            <th>الكمية في الكوبون الواحد</th>
+                                            <th>إجمالي الكمية المسلمة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($project->couponTypes as $index => $type)
+                                        <tr>
+                                            <td>{{ $index + 1 }}</td>
+                                            <td class="font-weight-bold">{{ $type->name }}</td>
+                                            <td>{{ number_format($type->pivot->quantity) }}</td>
+                                            <td class="font-weight-bold text-success h5">{{ number_format($type->pivot->quantity * $totalDeliveredCoupons) }}</td>
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="4" class="text-muted py-4">
+                                                <i class="fas fa-box-open fa-2x mb-3 d-block"></i>
+                                                لا يوجد أصناف مرتبطة بهذا الكوبون.
+                                            </td>
+                                        </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="card-footer bg-light border-0 py-3">

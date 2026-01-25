@@ -1,1 +1,1 @@
-<input type="checkbox" data-children=".item-checkbox">
+<input type="checkbox" id="check-all" data-children=".item-checkbox">

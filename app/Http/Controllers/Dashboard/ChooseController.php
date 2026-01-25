@@ -17,7 +17,7 @@ class ChooseController extends Controller
      */
     public function __construct()
     {
-        $this->authorizeResource(Choose::class, 'choose');
+        // Manual authorization in methods
     }
 
     /**
@@ -27,9 +27,13 @@ class ChooseController extends Controller
      */
     public function index()
     {
-        $chooses = Choose::filter()->latest()->paginate();
+        $this->authorize('viewAny', Choose::class);
+        $types = Choose::selectRaw('type, COUNT(*) as total_count')
+            ->groupBy('type')
+            ->orderBy('type')
+            ->get();
 
-        return view('dashboard.chooses.index', compact('chooses'));
+        return view('dashboard.chooses.index', compact('types'));
     }
 
     /**
@@ -39,6 +43,7 @@ class ChooseController extends Controller
      */
     public function create()
     {
+        $this->authorize('create', Choose::class);
         return view('dashboard.chooses.create');
     }
 
@@ -54,18 +59,14 @@ class ChooseController extends Controller
 
         flash()->success(trans('chooses.messages.created'));
 
-        return redirect()->route('dashboard.chooses.show', $choose);
+        return redirect()->route('dashboard.chooses.show', $choose->type);
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param \App\Models\Choose $choose
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Choose $choose)
+    public function show($type)
     {
-        return view('dashboard.chooses.show', compact('choose'));
+        $this->authorize('viewAny', Choose::class);
+        $chooses = Choose::where('type', $type)->orderBy('order')->paginate();
+        return view('dashboard.chooses.show', compact('chooses', 'type'));
     }
 
     /**
@@ -76,6 +77,7 @@ class ChooseController extends Controller
      */
     public function edit(Choose $choose)
     {
+        $this->authorize('update', $choose);
         return view('dashboard.chooses.edit', compact('choose'));
     }
 

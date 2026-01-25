@@ -547,4 +547,215 @@
         </div>
     @endif
 
+    {{-- Coupons --}}
+    @php
+        $personCoupons = $person->projects
+            ->map(function ($project) {
+                $beneficiary = $project->pivot;
+
+                return [
+                    'project_name' => $project->name,
+                    'project_id' => $project->id,
+                    'total_quantity' => $beneficiary->quantity ?? 0,
+                    'status' => $beneficiary->status ?? 'غير مستلم',
+                    'delivery_date' => $beneficiary->delivery_date ?? null,
+                    'coupon_types' => $project->couponTypes->map(function($type) {
+                        return [
+                            'id' => $type->id,
+                            'name' => $type->name,
+                            'quantity' => $type->pivot->quantity ?? 1, // ✅ الكمية من pivot بين project و coupon_type
+                        ];
+                    }),
+                ];
+            })
+            ->filter(fn($p) => $p['total_quantity'] > 0);
+    @endphp
+
+    @if($personCoupons->count() > 0)
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-gradient-gray text-white py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-ticket-alt"></i> الكوبونات المستلمة
+                    </h6>
+                    <span class="badge badge-light">{{ $personCoupons->count() }}</span>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th width="35%"><small>اسم الكوبون</small></th>
+                            <th width="15%" class="text-center"><small>الكمية</small></th>
+                            <th width="15%" class="text-center"><small>الحالة</small></th>
+                            <th width="20%"><small>تاريخ التسليم</small></th>
+                            <th width="15%" class="text-center"><small>الإجراءات</small></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($personCoupons as $coupon)
+                            <tr>
+                                <td>
+                                    <strong>{{ $coupon['project_name'] }}</strong>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge badge-primary badge-pill">{{ $coupon['total_quantity'] }}</span>
+                                </td>
+                                <td class="text-center">
+                                    @if($coupon['status'] == 'مستلم')
+                                        <span class="badge badge-success badge-pill">
+                                            <i class="fas fa-check-circle"></i> مستلم
+                                        </span>
+                                    @else
+                                        <span class="badge badge-secondary badge-pill">
+                                            <i class="fas fa-clock"></i> غير مستلم
+                                        </span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($coupon['delivery_date'])
+                                        <small>
+                                            <i class="fas fa-calendar-alt text-info"></i>
+                                            {{ \Carbon\Carbon::parse($coupon['delivery_date'])->format('Y-m-d') }}
+                                        </small>
+                                    @else
+                                        <small class="text-muted">-</small>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-info"
+                                            data-toggle="modal"
+                                            data-target="#couponModal{{ $coupon['project_id'] }}">
+                                        <i class="fas fa-eye"></i> عرض التفاصيل
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- Modals for Coupon Details --}}
+        @foreach($personCoupons as $coupon)
+            <div class="modal fade" id="couponModal{{ $coupon['project_id'] }}" tabindex="-1" role="dialog">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header bg-gray text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-ticket-alt"></i> تفاصيل الكوبون: {{ $coupon['project_name'] }}
+                            </h5>
+                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            {{-- Coupon Info --}}
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <small class="text-muted">الكمية الإجمالية</small>
+                                            <h5 class="mb-0 text-primary">{{ $coupon['total_quantity'] }}</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <small class="text-muted">الحالة</small>
+                                            <h6 class="mb-0">
+                                                @if($coupon['status'] == 'مستلم')
+                                                    <span class="badge badge-success">
+                                                        <i class="fas fa-check-circle"></i> مستلم
+                                                    </span>
+                                                @else
+                                                    <span class="badge badge-secondary">
+                                                        <i class="fas fa-clock"></i> غير مستلم
+                                                    </span>
+                                                @endif
+                                            </h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <small class="text-muted">تاريخ التسليم</small>
+                                            <h6 class="mb-0">
+                                                @if($coupon['delivery_date'])
+                                                    {{ \Carbon\Carbon::parse($coupon['delivery_date'])->format('Y-m-d') }}
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            </h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Coupon Types Table --}}
+                            @if($coupon['coupon_types']->count() > 0)
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="fas fa-boxes text-info"></i> أنواع الكوبونات والكميات
+                                </h6>
+
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover table-bordered mb-0">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th width="10%" class="text-center">#</th>
+                                                <th width="60%">النوع</th>
+                                                <th width="30%" class="text-center">الكمية</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($coupon['coupon_types'] as $index => $couponType)
+                                                <tr>
+                                                    <td class="text-center">{{ $index + 1 }}</td>
+                                                    <td>
+                                                        <i class="fas fa-ticket-alt text-info"></i>
+                                                        <strong>{{ $couponType['name'] }}</strong>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge badge-primary badge-pill">
+                                                            {{ $couponType['quantity'] }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                        <tfoot class="bg-light">
+                                            <tr>
+                                                <td colspan="2" class="text-right font-weight-bold">
+                                                    <i class="fas fa-calculator text-success"></i> الإجمالي:
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge badge-success badge-pill">
+                                                        {{ $coupon['coupon_types']->sum('quantity') }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle"></i>
+                                    لا توجد أنواع كوبونات مرتبطة بهذا المشروع
+                                </div>
+                            @endif
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+                                <i class="fas fa-times"></i> إغلاق
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    @endif
+
 </x-layout>

@@ -326,6 +326,10 @@
                    class="btn btn-info btn-sm">
                     <i class="fas fa-map-marked-alt"></i> ترشيح حسب المناطق
                 </a>
+                <a href="{{ route('dashboard.projects.beneficiaries.export', [$project] + request()->all()) }}"
+                   class="btn btn-primary btn-sm">
+                    <i class="fas fa-file-export"></i> تصدير نتائج البحث (Excel)
+                </a>
                 <a href="{{ route('dashboard.projects.beneficiaries.import', $project) }}"
                    class="btn btn-success btn-sm">
                     <i class="fas fa-file-import"></i> استيراد Excel

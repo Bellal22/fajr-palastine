@@ -27,7 +27,7 @@ class NeighborhoodController extends Controller
      */
     public function index()
     {
-        $neighborhoods = Neighborhood::filter()->latest()->paginate();
+        $neighborhoods = Neighborhood::filter()->with('city')->latest()->paginate();
 
         return view('dashboard.neighborhoods.index', compact('neighborhoods'));
     }

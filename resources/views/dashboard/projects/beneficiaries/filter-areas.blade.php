@@ -11,12 +11,25 @@
         </div>
 
         <div class="row">
+            <div class="col-md-12 form-group">
+                <label for="id_nums">أرقام الهويات (اختياري)</label>
+                <textarea name="id_nums" id="id_nums" class="form-control" rows="3" placeholder="أدخل أرقام الهويات هنا، كل رقم في سطر أو مفصولة بفواصل. عند إدخال الهويات سيتم تجاهل فلتر المنطقة والمربع."></textarea>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <hr>
+                <h5>أو اختر حسب المنطقة والمربع</h5>
+            </div>
+        </div>
+
+        <div class="row">
             <div class="col-md-4 form-group">
-                <label for="area_responsible_id">مسؤول المنطقة <span class="text-danger">*</span></label>
+                <label for="area_responsible_id">مسؤول المنطقة</label>
                 <select name="area_responsible_id"
                         id="area_responsible_id"
-                        class="form-control @error('area_responsible_id') is-invalid @enderror"
-                        required>
+                        class="form-control @error('area_responsible_id') is-invalid @enderror">
                     <option value="">اختر مسؤول المنطقة</option>
                     @foreach($areaResponsibles as $area)
                         <option value="{{ $area->id }}" {{ old('area_responsible_id') == $area->id ? 'selected' : '' }}>
@@ -30,11 +43,10 @@
             </div>
 
             <div class="col-md-4 form-group">
-                <label for="block_id">المربع <span class="text-danger">*</span></label>
+                <label for="block_id">المربع</label>
                 <select name="block_id"
                         id="block_id"
                         class="form-control @error('block_id') is-invalid @enderror"
-                        required
                         disabled>
                     <option value="">اختر المربع</option>
                 </select>
@@ -96,74 +108,110 @@
 
     {{ BsForm::close() }}
 
+    @push('scripts')
+        <script>
+            $(document).ready(function() {
+                console.log('✅ الصفحة جاهزة');
+
+                const areaSelect = $('#area_responsible_id');
+                const blockSelect = $('#block_id');
+                const idNumsTextarea = $('#id_nums');
+
+                function updateFieldsState() {
+                    const hasIdNums = idNumsTextarea.val().trim().length > 0;
+
+                    if (hasIdNums) {
+                        areaSelect.prop('disabled', true);
+                        blockSelect.prop('disabled', true);
+                    } else {
+                        areaSelect.prop('disabled', false);
+                        if (areaSelect.val()) {
+                            blockSelect.prop('disabled', false);
+                        } else {
+                            blockSelect.prop('disabled', true);
+                        }
+                    }
+                }
+
+                idNumsTextarea.on('input', function() {
+                    updateFieldsState();
+                });
+
+                updateFieldsState();
+
+                areaSelect.on('change', function() {
+                    const responsibleId = $(this).val();
+                    console.log('🔄 تم تغيير المنطقة، ID:', responsibleId);
+
+                    if (!responsibleId) {
+                        blockSelect.html('<option value="">اختر المربع</option>');
+                        blockSelect.prop('disabled', true);
+                        return;
+                    }
+
+                    if (idNumsTextarea.val().trim().length > 0) {
+                        console.log('⚠️ يوجد هويات في textarea، لن يتم جلب المربعات');
+                        return;
+                    }
+
+                    blockSelect.html('<option value="">جارِ التحميل...</option>');
+                    blockSelect.prop('disabled', true);
+
+                    $.ajax({
+                        url: "/dashboard/ajax/blocks-by-responsible", // ✅ المسار الصحيح
+                        type: 'GET',
+                        data: { responsible_id: responsibleId },
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                            'Accept': 'application/json'
+                        },
+                        success: function(response) {
+                            console.log('✅ تم استلام البيانات:', response);
+
+                            blockSelect.html('<option value="">اختر المربع</option>');
+
+                            if (response.blocks && response.blocks.length > 0) {
+                                $.each(response.blocks, function(index, block) {
+                                    blockSelect.append(`<option value="${block.id}">${block.name}</option>`);
+                                });
+
+                                blockSelect.prop('disabled', false);
+                                console.log('✅ تم إضافة ' + response.blocks.length + ' مربع وتفعيل السيليكت');
+
+                                if ($.fn.select2 && blockSelect.hasClass('select2-hidden-accessible')) {
+                                    blockSelect.select2('destroy').select2();
+                                }
+                            } else {
+                                blockSelect.html('<option value="">لا توجد مربعات لهذه المنطقة</option>');
+                                blockSelect.prop('disabled', true);
+                                console.log('⚠️ لا توجد مربعات متاحة');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('❌ خطأ في جلب المربعات:', {
+                                status: xhr.status,
+                                statusText: xhr.statusText,
+                                error: error
+                            });
+
+                            blockSelect.html('<option value="">حدث خطأ في التحميل</option>');
+                            blockSelect.prop('disabled', true);
+
+                            alert('حدث خطأ في تحميل المربعات. الرجاء المحاولة مرة أخرى.');
+                        }
+                    });
+                });
+
+                if (areaSelect.val() && idNumsTextarea.val().trim().length === 0) {
+                    console.log('🚀 تحميل المربعات للمنطقة المختارة مسبقاً...');
+                    areaSelect.trigger('change');
+                }
+            });
+        </script>
+    @endpush
+
 </x-layout>
 
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ Page loaded');
 
-    const areaSelect = document.getElementById('area_responsible_id');
-    const blockSelect = document.getElementById('block_id');
 
-    console.log('Area select found:', areaSelect !== null);
-    console.log('Block select found:', blockSelect !== null);
 
-    if (!areaSelect || !blockSelect) {
-        console.error('❌ Select elements not found!');
-        return;
-    }
-
-    areaSelect.addEventListener('change', function() {
-        const responsibleId = this.value;
-        console.log('🔄 Area changed, ID:', responsibleId);
-
-        if (!responsibleId) {
-            blockSelect.innerHTML = '<option value="">اختر المربع</option>';
-            blockSelect.disabled = true;
-            return;
-        }
-
-        blockSelect.innerHTML = '<option value="">جارِ التحميل...</option>';
-        blockSelect.disabled = true;
-
-        const url = "{{ route('dashboard.ajax.getBlocksByResponsible') }}?responsible_id=" + responsibleId;
-        console.log('📡 Fetching from:', url);
-
-        fetch(url)
-            .then(response => {
-                console.log('📥 Response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                console.log('✅ Data received:', data);
-
-                blockSelect.innerHTML = '<option value="">اختر المربع</option>';
-
-                if (data.blocks && data.blocks.length > 0) {
-                    console.log('📋 Blocks count:', data.blocks.length);
-
-                    data.blocks.forEach(function(block) {
-                        const option = document.createElement('option');
-                        option.value = block.id;
-                        option.textContent = block.name;
-                        blockSelect.appendChild(option);
-                        console.log('➕ Added block:', block.name);
-                    });
-
-                    blockSelect.disabled = false;
-                    console.log('✅ Block select enabled');
-                } else {
-                    console.log('⚠️ No blocks found');
-                    blockSelect.innerHTML = '<option value="">لا توجد مربعات</option>';
-                }
-            })
-            .catch(error => {
-                console.error('❌ Error:', error);
-                blockSelect.innerHTML = '<option value="">حدث خطأ</option>';
-                alert('حدث خطأ في تحميل المربعات: ' + error.message);
-            });
-    });
-});
-</script>
-@endpush

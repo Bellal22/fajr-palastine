@@ -12,6 +12,9 @@ use App\Http\Requests\Dashboard\PersonRequest;
 use App\Jobs\UpdateAreaResponsiblePeopleCount;
 use App\Jobs\UpdateBlockPeopleCount;
 use App\Models\AreaResponsible;
+use App\Models\City;
+use App\Models\Neighborhood;
+use App\Models\Choose;
 use DB;
 use Exception;
 use Gate;
@@ -256,6 +259,76 @@ class PersonController extends Controller
         }
     }
 
+    public function generalSearch(Request $request)
+    {
+        $person = null;
+        if ($request->filled('q')) {
+            $person = Person::where('id_num', $request->q)
+                ->with(['areaResponsible', 'block', 'wife', 'spouse', 'familyHead'])
+                ->first();
+
+            if ($person) {
+                // جلب جميع أرقام الـ ID الخاصة بأفراد العائلة (لجلب كافة الكوبونات المرتبطة بالعائلة)
+                $familyIds = collect([$person->id]);
+                
+                if ($person->relative_id) {
+                    // إذا كان الشخص تابعاً، نجلب رب الأسرة وكل أتباعه
+                    $head = Person::where('id_num', $person->relative_id)->with('familyMembers')->first();
+                    if ($head) {
+                        $familyIds->push($head->id);
+                        $familyIds = $familyIds->merge($head->familyMembers->pluck('id'));
+                    }
+                } else {
+                    // إذا كان الشخص رب أسرة، نجلب كل أتباعه
+                    $person->load('familyMembers');
+                    $familyIds = $familyIds->merge($person->familyMembers->pluck('id'));
+                }
+
+                $familyIds = $familyIds->unique();
+                // تحميل المشاريع لجميع أفراد العائلة
+                $coupons = \DB::table('project_beneficiaries')
+                    ->join('projects', 'project_beneficiaries.project_id', '=', 'projects.id')
+                    ->leftJoin('sub_warehouses', 'project_beneficiaries.sub_warehouse_id', '=', 'sub_warehouses.id')
+                    ->leftJoin('persons', 'project_beneficiaries.person_id', '=', 'persons.id')
+                    ->whereIn('project_beneficiaries.person_id', $familyIds)
+                    ->select(
+                        'projects.id as project_id',
+                        'projects.name',
+                        'projects.description as project_description',
+                        'project_beneficiaries.quantity',
+                        'project_beneficiaries.status',
+                        'project_beneficiaries.delivery_date',
+                        'project_beneficiaries.person_id',
+                        'project_beneficiaries.notes',
+                        'sub_warehouses.name as warehouse_name',
+                        \DB::raw("CONCAT(persons.first_name, ' (', persons.relationship, ')') as recipient_name")
+                    )
+                    ->get();
+
+                // جلب أنواع الكوبونات لكل مشروع
+                $projectIds = $coupons->pluck('project_id')->unique();
+                $allCouponTypes = \DB::table('project_coupon_types')
+                    ->join('coupon_types', 'project_coupon_types.coupon_type_id', '=', 'coupon_types.id')
+                    ->whereIn('project_coupon_types.project_id', $projectIds)
+                    ->select('project_coupon_types.project_id', 'coupon_types.name', 'project_coupon_types.quantity')
+                    ->get()
+                    ->groupBy('project_id');
+
+                foreach ($coupons as $coupon) {
+                    $coupon->coupon_types = $allCouponTypes->get($coupon->project_id) ?? collect();
+                }
+                
+                $person->setRelation('familyCoupons', $coupons);
+            }
+
+            if (!$person) {
+                flash()->error('لم يتم العثور على شخص برقم الهوية المدخل.');
+            }
+        }
+
+        return view('dashboard.people.general_search', compact('person'));
+    }
+
     public function listPersonFamily(Person $person)
     {
         $people = Person::filter()
@@ -276,11 +349,23 @@ class PersonController extends Controller
      */
     public function create()
     {
-        $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
+        $blocks_all = Block::when(auth()->user()?->isSupervisor(), function ($query) {
             $query->where('area_responsible_id', auth()->user()->id);
         })->orderBy('name')->get();
 
-        return view('dashboard.people.create', compact('blocks'));
+        $cities = City::orderBy('name')->pluck('name', 'name');
+        $chooses = Choose::orderBy('order')->get()->groupBy('type');
+
+        $neighborhoodsGroupedByCity = City::with('neighborhoods')->get()->mapWithKeys(function ($city) {
+            return [$city->name => $city->neighborhoods->map(function ($n) {
+                return ['value' => $n->name, 'label' => $n->name];
+            })];
+        });
+
+        return view('dashboard.people.create', compact(
+            'blocks_all', 'cities', 'chooses',
+            'neighborhoodsGroupedByCity'
+        ));
     }
 
     /**
@@ -291,11 +376,71 @@ class PersonController extends Controller
      */
     public function store(PersonRequest $request)
     {
-        $person = Person::create($request->all());
+        try {
+            DB::beginTransaction();
 
-        flash()->success(trans('people.messages.created'));
+            $data = $request->validated();
+            $familyMembersData = $data['family_members'] ?? [];
+            unset($data['family_members']);
 
-        return redirect()->route('dashboard.people.show', $person);
+            // Map slugs to names for DB compatibility (No migration)
+            $data = $this->mapSlugsToNames($data);
+
+            // Set head of household relationship if not set
+            $data['relationship'] = 'رب الأسرة';
+            $data['relatives_count'] = count($familyMembersData) + 1;
+
+            $person = Person::create($data);
+
+            // Create family members
+            // Create family members
+            foreach ($familyMembersData as $memberData) {
+                $memberData = $this->mapSlugsToNames($memberData);
+
+                // ربط فقط برقم هوية رب الأسرة - باقي الحقول NULL
+                $memberData['relative_id'] = $person->id_num;
+
+                Person::create($memberData);
+            }
+
+            DB::commit();
+
+            flash()->success(trans('people.messages.created'));
+
+            return redirect()->route('dashboard.people.show', $person);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->withErrors(['error' => 'حدث خطأ أثناء حفظ البيانات: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Map slugs to names based on Lookups (chooses table)
+     */
+    protected function mapSlugsToNames(array $data)
+    {
+        $fields = [
+            'social_status',
+            'employment_status',
+            'housing_type',
+            'housing_damage_status',
+            'gender',
+            'relationship'
+        ];
+
+        foreach ($fields as $field) {
+            if (isset($data[$field])) {
+                $choose = Choose::where('type', $field)
+                    ->where('slug', $data[$field])
+                    ->first();
+
+                if ($choose) {
+                    $data[$field] = $choose->name;
+                }
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -306,7 +451,11 @@ class PersonController extends Controller
      */
     public function show(Person $person)
     {
-        $person->load(['block', 'areaResponsible']);
+        $person->load([
+            'block',
+            'areaResponsible',
+            'projects.couponTypes' // ✅ بس couponTypes بدون items
+        ]);
 
         $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
             $query->where('area_responsible_id', auth()->user()->id);
@@ -323,10 +472,67 @@ class PersonController extends Controller
      */
     public function edit(Person $person)
     {
-        $blocks = Block::when(auth()->user()?->isSupervisor(), function ($query) {
+        $blocks_all = Block::when(auth()->user()?->isSupervisor(), function ($query) {
             $query->where('area_responsible_id', auth()->user()?->id);
         })->orderBy('name')->get();
-        return view('dashboard.people.edit', compact('person', 'blocks'));
+
+        $cities = City::orderBy('name')->pluck('name', 'name');
+        $chooses = Choose::orderBy('order')->get()->groupBy('type');
+
+        $neighborhoodsGroupedByCity = City::with('neighborhoods')->get()->mapWithKeys(function ($city) {
+            return [$city->name => $city->neighborhoods->map(function ($n) {
+                return ['value' => $n->name, 'label' => $n->name];
+            })];
+        });
+
+        return view('dashboard.people.edit', compact(
+            'person', 'blocks_all', 'cities', 'chooses',
+            'neighborhoodsGroupedByCity'
+        ));
+    }
+
+    public function toggleFreeze(Person $person)
+    {
+        $person->update([
+            'is_frozen' => !$person->is_frozen
+        ]);
+
+        $message = $person->is_frozen 
+            ? 'تم تجميد بيانات الفرد بنجاح' 
+            : 'تم إلغاء تجميد بيانات الفرد بنجاح';
+
+        flash()->success($message);
+
+        return back();
+    }
+
+    public function bulkToggleFreeze(Request $request)
+    {
+        logger()->info('بدء عملية التجميد الجماعي', [
+            'raw_items' => $request->input('items'),
+            'freeze' => $request->input('freeze'),
+            'user' => auth()->id()
+        ]);
+        try {
+            $peopleIds = $request->input('items', []);
+            if (!is_array($peopleIds)) {
+                $peopleIds = array_filter(explode(',', $peopleIds));
+            }
+
+            $freeze = $request->input('freeze', true);
+            $freeze = filter_var($freeze, FILTER_VALIDATE_BOOLEAN);
+
+            if (!empty($peopleIds)) {
+                Person::whereIn('id', $peopleIds)->update(['is_frozen' => $freeze]);
+
+                $message = $freeze ? 'تم تجميد الأشخاص المحددين بنجاح' : 'تم إلغاء تجميد الأشخاص المحددين بنجاح';
+                return response()->json(['success' => true, 'message' => $message]);
+            }
+
+            return response()->json(['success' => false, 'message' => 'لم يتم تحديد أي أشخاص']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'حدث خطأ: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -338,11 +544,61 @@ class PersonController extends Controller
      */
     public function update(PersonRequest $request, Person $person)
     {
-        $person->update($request->all());
+        try {
+            DB::beginTransaction();
 
-        flash()->success(trans('people.messages.updated'));
+            if ($person->is_frozen) {
+                $housingFields = [
+                    'city', 'neighborhood', 'current_city', 
+                    'area_responsible_id', 'housing_type', 
+                    'housing_damage_status', 'landmark', 'block_id'
+                ];
 
-        return redirect()->route('dashboard.people.show', $person);
+                foreach ($housingFields as $field) {
+                    if ($request->has($field) && $request->input($field) != $person->$field) {
+                        flash()->error('تم تجميد بيانات هذا الفرد وتجميد التعديل على بيانات السكن تجنباً لفقدان حقه في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص');
+                        return back()->withInput();
+                    }
+                }
+            }
+
+            $oldIdNum = $person->id_num;
+            $data = $request->validated();
+            $familyMembersData = $data['family_members'] ?? [];
+            unset($data['family_members']);
+
+            // Map slugs to names for DB compatibility (No migration)
+            $data = $this->mapSlugsToNames($data);
+
+            // Update Head
+            $data['relatives_count'] = count($familyMembersData) + 1;
+            $person->update($data);
+
+            // Sync Family Members: Delete old and create new
+            Person::where('relative_id', $oldIdNum)->delete();
+
+            foreach ($familyMembersData as $memberData) {
+                $memberData = $this->mapSlugsToNames($memberData);
+
+                $memberData['relative_id'] = $person->id_num;
+                $memberData['city'] = $person->city;
+                $memberData['current_city'] = $person->current_city;
+                $memberData['neighborhood'] = $person->neighborhood;
+                $memberData['block_id'] = $person->block_id;
+                $memberData['area_responsible_id'] = $person->area_responsible_id;
+
+                Person::create($memberData);
+            }
+
+            DB::commit();
+
+            flash()->success(trans('people.messages.updated'));
+
+            return redirect()->route('dashboard.people.show', $person);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->withErrors(['error' => 'حدث خطأ أثناء تحديث البيانات: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -373,7 +629,6 @@ class PersonController extends Controller
         return redirect()->route('dashboard.people.index');
     }
 
-
     /**
      * Display a listing of the trashed resource.
      *
@@ -396,7 +651,6 @@ class PersonController extends Controller
 
         return view('dashboard.people.trashed', compact('allTrashedPeople'));
     }
-
 
     /**
      * Display the specified trashed resource.
@@ -535,6 +789,7 @@ class PersonController extends Controller
             flash()->error('حدث خطأ أثناء تصدير الملف. يرجى المحاولة مرة أخرى.');
             return back();
         }
+
     }
 
     /**
@@ -600,6 +855,11 @@ class PersonController extends Controller
 
     public function assignToSupervisor(Person $person)
     {
+        if ($person->is_frozen) {
+            flash()->error('لا يمكن تخصيص الفرد لك لأنه مجمّد.');
+            return back();
+        }
+
         $person->update([
             'area_responsible_id' => auth()->user()?->id
         ]);
@@ -615,6 +875,11 @@ class PersonController extends Controller
     public function assignBlock(Person $person, Request $request)
     {
         try {
+            if ($person->is_frozen) {
+                flash()->error('لا يمكن تخصيص مندوب للفرد لأنه مجمّد.');
+                return back();
+            }
+
             $oldBlockId = $person->block_id;
 
             $person->update([
@@ -656,30 +921,41 @@ class PersonController extends Controller
             $blockId = $request->input('block_id');
 
             if (!empty($peopleIds) && $blockId) {
-                $updatedCount = 0;
-                $areaResponsibleId = null;
-
-                Person::whereIn('id', $peopleIds)->each(function ($person) use ($blockId, &$updatedCount, &$areaResponsibleId) {
+                $frozenCount = 0;
+                Person::whereIn('id', $peopleIds)->each(function ($person) use ($blockId, &$updatedCount, &$areaResponsibleId, &$frozenCount) {
                     if (Gate::allows('update', $person)) {
+                        if ($person->is_frozen) {
+                            $frozenCount++;
+                            return;
+                        }
+
                         $person->update([
                             'block_id' => $blockId,
                             'area_responsible_id' => auth()->user()?->id,
                         ]);
 
                         $updatedCount++;
-                        $areaResponsibleId = auth()->user()?->id; // نفترض أن المستخدم الحالي هو مسؤول المنطقة
+                        $areaResponsibleId = auth()->user()?->id;
                     }
                 });
 
-                // تشغيل جوب تحديث عدد الأشخاص للمندوب
-                UpdateBlockPeopleCount::dispatch($blockId);
+                // ... (jobs)
 
-                // تشغيل جوب تحديث عدد الأشخاص لمسؤول المنطقة (إذا تم تحديده)
-                if ($areaResponsibleId) {
-                    UpdateAreaResponsiblePeopleCount::dispatch($areaResponsibleId);
+                if ($updatedCount > 0) {
+                    $msg = "تم تحديث {$updatedCount} شخص بنجاح.";
+                    if ($frozenCount > 0) {
+                        $msg .= " (تم استثناء {$frozenCount} شخص لأن بياناتهم مجمّدة)";
+                    }
+                    flash()->success($msg);
+                } else {
+                    $msg = "لم يتم تحديث أي سجل.";
+                    if ($frozenCount > 0) {
+                        $msg .= " (تم استثناء {$frozenCount} شخص لأن بياناتهم مجمّدة تجنباً لفقدان حقهم في الإدراج على بيانات المستفيدين)";
+                        flash()->error($msg);
+                    } else {
+                        flash()->warning($msg);
+                    }
                 }
-
-                flash()->success("تم تحديث {$updatedCount} شخص وسيتم تحديث عدد المندوب ومسؤول المنطقة قريباً");
             } else {
                 flash()->error('يرجى تحديد فرد أو مجموعة أفراد.');
             }
@@ -700,6 +976,11 @@ class PersonController extends Controller
     public function deleteAreaResponsible(Person $person)
     {
         try {
+            if ($person->is_frozen) {
+                flash()->error('لا يمكن إلغاء ربط المسؤول للفرد لأنه مجمّد.');
+                return back();
+            }
+
             $person->update([
                 'area_responsible_id' => null,
                 'block_id' => null
@@ -769,12 +1050,24 @@ class PersonController extends Controller
             }
 
             // تنفيذ التحديث
-            $updatedCount = Person::whereIn('id', $personIds)->update($updateData);
+            $updatedCount = Person::whereIn('id', $personIds)
+                ->where('is_frozen', false)
+                ->update($updateData);
+
+            $frozenCount = Person::whereIn('id', $personIds)->where('is_frozen', true)->count();
 
             if ($updatedCount > 0) {
-                flash()->success("تم إلغاء ربط {$actionText} من {$updatedCount} شخص بنجاح");
+                $msg = "تم إلغاء ربط {$actionText} من {$updatedCount} شخص بنجاح";
+                if ($frozenCount > 0) {
+                    $msg .= " (تم استثناء {$frozenCount} شخص لأن بياناتهم مجمّدة)";
+                }
+                flash()->success($msg);
             } else {
-                flash()->warning("لم يتم تحديث أي سجل. قد تكون البيانات محدثة مسبقاً");
+                $msg = "لم يتم تحديث أي سجل.";
+                if ($frozenCount > 0) {
+                    $msg .= " (تم استثناء {$frozenCount} شخص لأن بياناتهم مجمّدة)";
+                }
+                flash()->warning($msg);
             }
 
             return back();
@@ -807,9 +1100,15 @@ class PersonController extends Controller
             $oldResponsibleIds = [];
             $oldBlockIds = [];
 
-            DB::beginTransaction();
+            $updatedCount = 0;
+            $frozenCount = 0;
 
             foreach ($people as $person) {
+                if ($person->is_frozen) {
+                    $frozenCount++;
+                    continue;
+                }
+
                 if ($person->area_responsible_id) {
                     $oldResponsibleIds[] = $person->area_responsible_id;
                 }
@@ -821,9 +1120,17 @@ class PersonController extends Controller
                     'area_responsible_id' => $request->area_responsible_id,
                     'block_id' => $request->block_id
                 ]);
+                $updatedCount++;
             }
 
             DB::commit();
+
+            if ($updatedCount === 0 && $frozenCount > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'لم يتم تحديث أي سجل لأن جميع الأشخاص المحددين بياناتهم مجمّدة تجنباً لفقدان حقهم في الإدراج على بيانات المستفيدين.'
+                ], 422);
+            }
 
             // تشغيل الجوبات لتحديث العدادات
             foreach (array_unique($oldResponsibleIds) as $oldResponsibleId) {
@@ -838,9 +1145,14 @@ class PersonController extends Controller
 
             UpdateBlockPeopleCount::dispatch($request->block_id);
 
+            $message = 'تم تخصيص مسؤول المنطقة والمندوب بنجاح';
+            if ($frozenCount > 0) {
+                $message .= " (تم استثناء {$frozenCount} شخص لأن بياناتهم مجمّدة)";
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'تم تخصيص مسؤول المنطقة والمندوب بنجاح'
+                'message' => $message
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -871,6 +1183,11 @@ class PersonController extends Controller
     {
         try {
             $responsibleId = $request->get('responsible_id');
+            logger()->info('طلب جلب المندوبين لمسؤول المنطقة', [
+                'responsible_id' => $responsibleId,
+                'url' => $request->fullUrl(),
+                'user_id' => auth()->id()
+            ]);
 
             if (!$responsibleId) {
                 return response()->json(['blocks' => []]);
@@ -879,6 +1196,7 @@ class PersonController extends Controller
             // التحقق من وجود مسؤول المنطقة
             $areaResponsible = AreaResponsible::find($responsibleId);
             if (!$areaResponsible) {
+                logger()->warning('مسؤول المنطقة غير موجود', ['responsible_id' => $responsibleId]);
                 return response()->json([
                     'blocks' => [],
                     'message' => 'مسؤول المنطقة غير موجود'
@@ -891,6 +1209,11 @@ class PersonController extends Controller
                 ->orderBy('name')
                 ->get();
 
+            logger()->info('تم جلب المندوبين بنجاح', [
+                'responsible_id' => $responsibleId,
+                'blocks_count' => $blocks->count()
+            ]);
+
             return response()->json([
                 'blocks' => $blocks,
                 'message' => 'تم جلب المندوبين بنجاح'
@@ -898,12 +1221,58 @@ class PersonController extends Controller
         } catch (\Exception $e) {
             logger()->error('خطأ في جلب المندوبين', [
                 'responsible_id' => $request->get('responsible_id'),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'blocks' => [],
                 'message' => 'حدث خطأ في جلب المندوبين'
+            ], 500);
+        }
+    }
+
+    /**
+     * AJAX Method لجلب مسؤولي المنطقة حسب الحي السكني
+     */
+    public function getResponsiblesByNeighborhood(Request $request)
+    {
+        try {
+            $neighborhoodName = $request->get('neighborhood_name');
+
+            if (!$neighborhoodName) {
+                return response()->json(['responsibles' => []]);
+            }
+
+            $neighborhood = Neighborhood::where('name', $neighborhoodName)->first();
+
+            if (!$neighborhood) {
+                return response()->json([
+                    'responsibles' => [],
+                    'message' => 'الحي غير موجود'
+                ], 404);
+            }
+
+            $responsibles = $neighborhood->areaResponsibles()
+                ->select('area_responsibles.id', 'area_responsibles.name')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'responsibles' => $responsibles,
+                'message' => 'تم جلب المسؤولين بنجاح'
+            ]);
+        } catch (\Exception $e) {
+            logger()->error('خطأ في جلب مسؤولي المنطقة', [
+                'neighborhood_name' => $request->get('neighborhood_name'),
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'responsibles' => [],
+                'message' => 'حدث خطأ في جلب المسؤولين'
             ], 500);
         }
     }
@@ -1159,5 +1528,42 @@ class PersonController extends Controller
                 'api_sync_error' => 'HTTP ' . $response->status() . ': ' . $response->body(),
             ]);
         }
+    }
+
+    /**
+     * Get coupon details for a person.
+     *
+     * @param Person $person
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function coupons(Person $person)
+    {
+        $person->load(['projects.couponTypes']);
+
+        $personCoupons = $person->projects
+            ->map(function ($project) {
+                $beneficiary = $project->pivot;
+
+                return [
+                    'project_name' => $project->name,
+                    'project_id' => $project->id,
+                    'total_quantity' => $beneficiary->quantity ?? 0,
+                    'status' => $beneficiary->status ?? 'غير مستلم',
+                    'delivery_date' => $beneficiary->delivery_date ?? null,
+                    'coupon_types' => $project->couponTypes->map(function($type) {
+                        return [
+                            'id' => $type->id,
+                            'name' => $type->name,
+                            'quantity' => $type->pivot->quantity ?? 1,
+                        ];
+                    }),
+                ];
+            })
+            ->filter(fn($p) => $p['total_quantity'] > 0);
+
+        return response()->json([
+            'person' => $person->getFullName(),
+            'coupons' => $personCoupons->values(),
+        ]);
     }
 }

@@ -34,24 +34,43 @@ class ComplaintController extends Controller
      */
     public function store(Request $request)
     {
-        // تحقق وجود id_num مع الشروط المناسبة
+        // 1. التحقق من البيانات
         $request->validate([
             'id_num' => ['required', 'numeric', 'digits:9'],
-            'complaint_title' => ['required', 'string', 'max:255'],
-            'complaint_text' => ['required', 'string'],
+            'complaint_title' => ['required', 'string', 'max:150'],
+            'complaint_text' => ['required', 'string', 'max:5000'],
         ]);
 
-        // التخزين في القاعدة
+        // 2. تنظيف البيانات
+        $cleanTitle = strip_tags(trim($request->complaint_title));
+        $cleanText = strip_tags(trim($request->complaint_text));
+
+        // 3. التخزين
         Complaint::create([
             'id_num' => $request->id_num,
-            'complaint_title' => $request->complaint_title,
-            'complaint_text' => $request->complaint_text,
+            'complaint_title' => $cleanTitle,
+            'complaint_text' => $cleanText,
         ]);
 
-        return redirect()->back()->with('success', 'تم إرسال الشكوى بنجاح!');
+        // 4. الرد (التعديل هنا)
+        if ($request->ajax()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'تم تسجيل الشكوى بنجاح'
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'تم إرسال الشكوى بنجاح');
     }
 
-
+    /**
+     * عرض صفحة نجاح إرسال الشكوى
+     */
+    public function successcomplaint()
+    {
+        // تأكد أن لديك ملف في resources/views اسمه successcomplaint.blade.php
+        return view('successcomplaint');
+    }
 
     /**
      * Display the specified resource.

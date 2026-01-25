@@ -267,9 +267,13 @@ Route::put('people/areaResponsible/delete/{person}', 'PersonController@deleteAre
 Route::put('people/areaResponsible/bulk-delete', 'PersonController@deleteAreaResponsibles')->name('people.areaResponsible.bulkDelete');
 Route::post('people/assign-supervisor-block', 'PersonController@assignToUsers')->name('people.assignToUsers');
 Route::get('ajax/blocks-by-responsible', 'PersonController@getBlocksByResponsible')->name('ajax.getBlocksByResponsible');
+Route::get('ajax/responsibles-by-neighborhood', 'PersonController@getResponsiblesByNeighborhood')->name('ajax.getResponsiblesByNeighborhood');
 Route::get('people/view', 'PersonController@view')->name('people.view');
+Route::get('people/general-search', 'PersonController@generalSearch')->name('people.general_search');
 Route::get('people/search', 'PersonController@search')->name('people.search');
 Route::post('people/clear', 'PersonController@clearSession')->name('people.clear');
+Route::put('people/bulk-toggle-freeze', 'PersonController@bulkToggleFreeze')->name('people.bulkToggleFreeze');
+Route::put('people/toggle-freeze/{person}', 'PersonController@toggleFreeze')->name('people.toggleFreeze');
 Route::resource('people', 'PersonController');
 
 Route::get('people/aid/api/{person}', 'PersonController@api')->name('people.aid.api');
@@ -386,9 +390,11 @@ Route::delete('projects/{trashed_project}/forceDelete', 'ProjectController@force
 Route::get('reports/projects', 'ProjectReportController@index')->name('reports.projects');
 Route::get('reports/projects/period/{period}', 'ProjectReportController@periodReport')->name('reports.projects.period');
 Route::get('reports/projects/{project}', 'ProjectReportController@show')->name('reports.projects.show');
+Route::get('reports/projects/{project}/export', 'ProjectReportController@export')->name('reports.projects.export');
 
 // Project Beneficiaries (قبل الـ Resource)
 Route::get('projects/{project}/beneficiaries', 'ProjectController@beneficiaries')->name('projects.beneficiaries');
+Route::get('projects/{project}/beneficiaries/export', 'ProjectController@exportBeneficiaries')->name('projects.beneficiaries.export'); // New Export Route
 Route::get('projects/{project}/beneficiaries/import', 'ProjectController@importForm')->name('projects.beneficiaries.import');
 Route::post('projects/{project}/beneficiaries/import', 'ProjectController@importBeneficiaries')->name('projects.beneficiaries.import.store');
 Route::delete('projects/{project}/beneficiaries/{person}', 'ProjectController@removeBeneficiary')->name('projects.beneficiaries.destroy');
@@ -442,6 +448,7 @@ Route::get('trashed/chooses', 'ChooseController@trashed')->name('chooses.trashed
 Route::get('trashed/chooses/{trashed_choose}', 'ChooseController@showTrashed')->name('chooses.trashed.show');
 Route::post('chooses/{trashed_choose}/restore', 'ChooseController@restore')->name('chooses.restore');
 Route::delete('chooses/{trashed_choose}/forceDelete', 'ChooseController@forceDelete')->name('chooses.forceDelete');
-Route::resource('chooses', 'ChooseController');
+Route::get('chooses/{type}', 'ChooseController@show')->name('chooses.show');
+Route::resource('chooses', 'ChooseController')->except('show');
 
 /*  The routes of generated crud will set here: Don't remove this line  */

@@ -9,6 +9,7 @@
 {{-- @include('dashboard.families.partials.actions.sidebar') --}}
 @include('dashboard.cities.partials.actions.sidebar')
 @include('dashboard.neighborhoods.partials.actions.sidebar')
+@include('dashboard.chooses.partials.actions.sidebar')
 @include('dashboard.people.partials.actions.sidebar')
 {{-- @include('dashboard.people.partials.actions.sidebar') --}}
 @include('dashboard.complaints.partials.actions.sidebar')
@@ -28,7 +29,6 @@
 @include('dashboard.projects.partials.actions.sidebar')
 @include('dashboard.outbound_shipments.partials.actions.sidebar')
 {{-- @include('dashboard.outbound_shipment_items.partials.actions.sidebar') --}}
-@include('dashboard.chooses.partials.actions.sidebar')
 {{-- The sidebar of generated crud will set here: Don't remove this line --}}
 {{-- @include('dashboard.feedback.partials.actions.sidebar') --}}
 @include('dashboard.settings.sidebar')

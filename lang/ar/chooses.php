@@ -4,6 +4,7 @@ return [
     'singular' => 'الخيار',
     'plural' => 'الخيارات',
     'empty' => 'لا يوجد خيارات حتى الان',
+    'all_types_hint' => 'يتم عرض كافة أنواع الخيارات المعرفة في النظام أدناه.',
     'count' => 'عدد الخيارات',
     'search' => 'بحث',
     'select' => 'اختر الخيار',
@@ -14,7 +15,7 @@ return [
     'actions' => [
         'list' => 'عرض الكل',
         'create' => 'اضافة خيار',
-        'show' => 'عرض الخيار',
+        'show' => 'عرض النوع',
         'edit' => 'تعديل الخيار',
         'delete' => 'حذف الخيار',
         'restore' => 'استعادة',
@@ -22,6 +23,15 @@ return [
         'options' => 'خيارات',
         'save' => 'حفظ',
         'filter' => 'بحث',
+        'reset' => 'تفريغ الحقول',
+    ],
+    'sections' => [
+        'search_settings' => 'إعدادات البحث',
+        'basic_info' => 'المعلومات الأساسية',
+    ],
+    'placeholders' => [
+        'name' => 'ادخل اسم الخيار للبحث...',
+        'slug' => 'مثال: social_status_1',
     ],
     'messages' => [
         'created' => 'تم اضافة الخيار بنجاح.',
@@ -31,6 +41,22 @@ return [
     ],
     'attributes' => [
         'name' => 'اسم الخيار',
+        'slug' => 'الاسم البرمجي (Slug)',
+        'order' => 'الترتيب',
+        'type' => 'النوع',
+        'created_at' => 'تاريخ الإضافة',
+    ],
+    'types' => [
+        'gender' => 'الجنس',
+        'employment_status' => 'الحالة الوظيفية',
+        'social_status' => 'الحالة الاجتماعية',
+        'housing_type' => 'نوع السكن',
+        'housing_damage_status' => 'حالة ضرر السكن',
+        'relationship' => 'صلة القرابة',
+        'education_level' => 'المستوى التعليمي',
+        'nationality' => 'الجنسية',
+        'disability_type' => 'نوع الإعاقة',
+        'health_status' => 'الحالة الصحية',
     ],
     'dialogs' => [
         'delete' => [

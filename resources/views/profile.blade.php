@@ -1051,6 +1051,18 @@
                     <h2>مرحباً، {{ $person->first_name }} {{ $person->family_name }}</h2>
                 </div>
 
+                @if($person->is_frozen)
+                    <div class="bg-red-100 border-r-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg shadow-sm" role="alert">
+                        <div class="flex items-center">
+                            <div class="py-1"><i class="fas fa-exclamation-triangle mr-3 text-xl"></i></div>
+                            <div>
+                                <p class="font-bold">تنبيه: البيانات مجمّدة</p>
+                                <p class="text-sm">تم اعتماد بياناتك وتجميد التعديل على بيانات السكن تجنباً لفقدان حقك في الإدراج على بيانات المستفيدين. يرجى مراجعة الإدارة بهذا الخصوص.</p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <!-- البيانات الشخصية -->
                 <div class="content-section active" id="personal-info">
                     <div class="section-header">
@@ -1533,7 +1545,7 @@
                             <label for="edit_city">المحافظة الأصلية</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
-                                <select id="edit_city" name="city" required oninput="validateCity()" onfocus="resetBorderAndError('edit_city')">
+                                <select id="edit_city" name="city" required oninput="validateCity()" onfocus="resetBorderAndError('edit_city')" {{ $person->is_frozen ? 'disabled' : '' }}>
                                     <option value="">اختر المحافظة الأصلية</option>
                                     @foreach($cities as $key => $city)
                                         <option value="{{ $key }}" {{ $person->city == $key ? 'selected' : '' }}>{{ $city }}</option>
@@ -1546,7 +1558,7 @@
                             <label for="edit_housing_damage_status">حالة السكن السابق</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-house-damage input-icon"></i>
-                                <select id="edit_housing_damage_status" name="housing_damage_status" required oninput="validateHousingDamageStatus()" onfocus="resetBorderAndError('edit_housing_damage_status')">
+                                <select id="edit_housing_damage_status" name="housing_damage_status" required oninput="validateHousingDamageStatus()" onfocus="resetBorderAndError('edit_housing_damage_status')" {{ $person->is_frozen ? 'disabled' : '' }}>
                                     <option value="">اختر حالة السكن السابق</option>
                                     @foreach($housing_damage_statuses as $key => $status)
                                         <option value="{{ $key }}" {{ $person->housing_damage_status == $key ? 'selected' : '' }}>{{ $status }}</option>
@@ -1560,7 +1572,7 @@
                             <label for="edit_current_city">المحافظة التي تسكن فيها حالياً</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-map-marked-alt input-icon"></i>
-                                <select id="edit_current_city" name="current_city" required oninput="validateCurrentCity()" onfocus="resetBorderAndError('edit_current_city')" onchange="updateNeighborhoods(this.value, '{{ $person->neighborhood }}')">
+                                <select id="edit_current_city" name="current_city" required oninput="validateCurrentCity()" onfocus="resetBorderAndError('edit_current_city')" onchange="updateNeighborhoods(this.value, '{{ $person->neighborhood }}')" {{ $person->is_frozen ? 'disabled' : '' }}>
                                     <option value="">خان يونس</option> {{-- افتراض القيمة الأولى كما طلب، لكن سأبقي القائمة --}}
                                     @foreach($current_cities as $key => $city)
                                         <option value="{{ $key }}" {{ $person->current_city == $key ? 'selected' : '' }}>{{ $city }}</option>
@@ -1574,7 +1586,7 @@
                             <label for="edit_housing_type">نوع السكن الذي تعيش فيه حالياً</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-building input-icon"></i>
-                                <select id="edit_housing_type" name="housing_type" required oninput="validateHousingType()" onfocus="resetBorderAndError('edit_housing_type')">
+                                <select id="edit_housing_type" name="housing_type" required oninput="validateHousingType()" onfocus="resetBorderAndError('edit_housing_type')" {{ $person->is_frozen ? 'disabled' : '' }}>
                                     <option value="">اختر نوع السكن الذي تعيش فيه حالياً</option>
                                     @foreach($housing_types as $key => $type)
                                         <option value="{{ $key }}" {{ $person->housing_type == $key ? 'selected' : '' }}>{{ $type }}</option>
@@ -1588,7 +1600,7 @@
                             <label for="edit_neighborhood">الحي السكني الذي تتواجد فيه حالياً</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-map-signs input-icon"></i>
-                                <select id="edit_neighborhood" name="neighborhood" required oninput="validateNeighborhood()" onfocus="resetBorderAndError('edit_neighborhood')">
+                                <select id="edit_neighborhood" name="neighborhood" required oninput="validateNeighborhood()" onfocus="resetBorderAndError('edit_neighborhood')" {{ $person->is_frozen ? 'disabled' : '' }}>
                                     <option value="">اختر الحي</option>
                                     @foreach($neighborhoods as $key => $neighborhood)
                                         <option value="{{ $key }}" {{ $person->neighborhood == $key ? 'selected' : '' }}>{{ $neighborhood }}</option>
@@ -1602,7 +1614,7 @@
                             <label for="edit_area_responsible_id">مسؤول المنطقة</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-user-tie input-icon"></i>
-                                <select class="form-control" name="area_responsible_id" id="edit_area_responsible_id" oninput="validateAreaResponsible()" onfocus="resetBorderAndError('edit_area_responsible_id')">
+                                <select class="form-control" name="area_responsible_id" id="edit_area_responsible_id" oninput="validateAreaResponsible()" onfocus="resetBorderAndError('edit_area_responsible_id')" {{ $person->is_frozen ? 'disabled' : '' }}>
                                     <option value="">اختر المسؤول</option>
                                     @foreach (\App\Models\AreaResponsible::all() as $responsible)
                                         <option value="{{ $responsible->id }}" {{ $person->area_responsible_id == $responsible->id ? 'selected' : '' }}>{{ $responsible->name }}</option>
@@ -1616,7 +1628,7 @@
                             <label for="edit_landmark">أقرب معلم</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-landmark input-icon"></i>
-                                <input type="text" id="edit_landmark" name="landmark" placeholder="أقرب معلم" value="{{ $person->landmark }}" oninput="validateArabicInput('edit_landmark')" onfocus="resetBorderAndError('edit_landmark')">
+                                <input type="text" id="edit_landmark" name="landmark" placeholder="أقرب معلم" value="{{ $person->landmark }}" oninput="validateArabicInput('edit_landmark')" onfocus="resetBorderAndError('edit_landmark')" {{ $person->is_frozen ? 'readonly' : '' }}>
                             </div>
                             <div class="error-message" id="edit_landmark_error"></div>
                         </div>

@@ -2,13 +2,13 @@
 
 namespace App\Exports;
 
-ini_set('memory_limit', '1024M');   // 1 GB
+ini_set('memory_limit', '1024M');
 ini_set('max_execution_time', 0);
 ini_set('max_input_time', -1);
 
 use App\Models\Person;
 use Maatwebsite\Excel\Concerns\Exportable;
-use Maatwebsite\Excel\Concerns\FromQuery;      // المصدر
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -21,8 +21,9 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 
-class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithStyles, WithMapping, ShouldQueue
+class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithStyles, WithMapping, ShouldQueue, ShouldAutoSize
 {
     use Exportable;
 
@@ -58,13 +59,13 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
                     DB::raw('(SELECT id_num
                               FROM persons
                               WHERE relative_id = p.id_num
-                                    AND relationship = "wife"
+                                    AND relationship = "زوجة"
                               ORDER BY id_num
                               LIMIT 1) AS wife1_id_num'),
                     DB::raw('(SELECT TRIM(CONCAT(first_name," ",father_name," ",grandfather_name," ",family_name))
                               FROM persons
                               WHERE relative_id = p.id_num
-                                    AND relationship = "wife"
+                                    AND relationship = "زوجة"
                               ORDER BY id_num
                               LIMIT 1) AS wife1_full_name'),
 
@@ -72,13 +73,13 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
                     DB::raw('(SELECT id_num
                               FROM persons
                               WHERE relative_id = p.id_num
-                                    AND relationship = "wife"
+                                    AND relationship = "زوجة"
                               ORDER BY id_num
                               LIMIT 1 OFFSET 1) AS wife2_id_num'),
                     DB::raw('(SELECT TRIM(CONCAT(first_name," ",father_name," ",grandfather_name," ",family_name))
                               FROM persons
                               WHERE relative_id = p.id_num
-                                    AND relationship = "wife"
+                                    AND relationship = "زوجة"
                               ORDER BY id_num
                               LIMIT 1 OFFSET 1) AS wife2_full_name'),
 
@@ -86,13 +87,13 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
                     DB::raw('(SELECT id_num
                               FROM persons
                               WHERE relative_id = p.id_num
-                                    AND relationship = "wife"
+                                    AND relationship = "زوجة"
                               ORDER BY id_num
                               LIMIT 1 OFFSET 2) AS wife3_id_num'),
                     DB::raw('(SELECT TRIM(CONCAT(first_name," ",father_name," ",grandfather_name," ",family_name))
                               FROM persons
                               WHERE relative_id = p.id_num
-                                    AND relationship = "wife"
+                                    AND relationship = "زوجة"
                               ORDER BY id_num
                               LIMIT 1 OFFSET 2) AS wife3_full_name'),
 
@@ -100,13 +101,13 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
                     DB::raw('(SELECT id_num
                               FROM persons
                               WHERE relative_id = p.id_num
-                                    AND relationship = "wife"
+                                    AND relationship = "زوجة"
                               ORDER BY id_num
                               LIMIT 1 OFFSET 3) AS wife4_id_num'),
                     DB::raw('(SELECT TRIM(CONCAT(first_name," ",father_name," ",grandfather_name," ",family_name))
                               FROM persons
                               WHERE relative_id = p.id_num
-                                    AND relationship = "wife"
+                                    AND relationship = "زوجة"
                               ORDER BY id_num
                               LIMIT 1 OFFSET 3) AS wife4_full_name'),
 
@@ -169,10 +170,7 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
         return [
             '#',
             'رقم الهوية',
-            'الاسم الأول',
-            'اسم الأب',
-            'اسم الجد',
-            'اسم العائلة',
+            'الاسم رباعي',
             'الجنس',
             'رقم الهاتف',
             'مسؤول المنطقة',
@@ -206,10 +204,7 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
         return [
             $i,
             $p->id_num,
-            $p->first_name,
-            $p->father_name,
-            $p->grandfather_name,
-            $p->family_name,
+            trim("{$p->first_name} {$p->father_name} {$p->grandfather_name} {$p->family_name}"),
             $p->gender,
             $p->phone,
             $p->areaResponsible?->name ?? 'غير متوفر',
@@ -238,10 +233,8 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
     public function styles(Worksheet $sheet)
     {
         $sheet->setRightToLeft(true);
-        foreach (range('A', 'AA') as $col) {
-            $sheet->getColumnDimension($col)->setWidth(15);
-        }
-        $sheet->getStyle('A1:AA1')->applyFromArray([
+        
+        $sheet->getStyle('A1:X1')->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             'fill' => [

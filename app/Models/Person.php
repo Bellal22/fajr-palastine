@@ -19,7 +19,7 @@ class Person extends Model
 
     protected $table = 'persons';
     protected $guarded = [];
-    protected $casts = ['dob' => 'date'];
+    protected $casts = ['dob' => 'date', 'is_frozen' => 'boolean'];
     protected $filter = PersonFilter::class;
 
     // --- Relationships ---
@@ -57,13 +57,19 @@ class Person extends Model
     public function wife(): HasOne
     {
         return $this->hasOne(Person::class, 'relative_id', 'id_num')
-            ->where('relationship', 'wife');
+            ->where('relationship', 'زوجة');
+    }
+
+    public function spouse(): HasOne
+    {
+        return $this->hasOne(Person::class, 'relative_id', 'id_num')
+            ->whereIn('relationship', ['زوجة', 'زوج']);
     }
 
     public function projects()
     {
         return $this->belongsToMany(Project::class, 'project_beneficiaries')
-            ->withPivot('status', 'notes', 'delivery_date')
+            ->withPivot('status', 'notes', 'delivery_date', 'quantity', 'sub_warehouse_id')
             ->withTimestamps();
     }
 
@@ -76,14 +82,15 @@ class Person extends Model
 
     public function getWifeName()
     {
-        if (!$this->wife) {
+        $spouse = $this->wife ?: $this->spouse;
+        if (!$spouse) {
             return '';
         }
         $nameParts = [
-            $this->wife->first_name ?? '',
-            $this->wife->father_name ?? '',
-            $this->wife->grandfather_name ?? '',
-            $this->wife->family_name ?? ''
+            $spouse->first_name ?? '',
+            $spouse->father_name ?? '',
+            $spouse->grandfather_name ?? '',
+            $spouse->family_name ?? ''
         ];
         return trim(implode(' ', array_filter($nameParts)));
     }
@@ -372,7 +379,7 @@ class Person extends Model
                 ->whereNull('parents.relative_id')
                 ->whereNotNull('parents.area_responsible_id')
                 ->whereNotNull('parents.block_id')
-                ->whereNotIn('children.relationship', ['wife', 'father', 'mother'])
+                ->whereNotIn('children.relationship', ['زوجة', 'أب', 'أم'])
                 ->selectRaw("
                     SUM(CASE WHEN TIMESTAMPDIFF(YEAR, children.dob, ?) <= 1 THEN 1 ELSE 0 END) as under_1,
                     SUM(CASE WHEN TIMESTAMPDIFF(YEAR, children.dob, ?) < 3 THEN 1 ELSE 0 END) as under_3

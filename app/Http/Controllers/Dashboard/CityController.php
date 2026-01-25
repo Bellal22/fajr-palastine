@@ -27,7 +27,7 @@ class CityController extends Controller
      */
     public function index()
     {
-        $cities = City::filter()->latest()->paginate();
+        $cities = City::filter()->withCount('neighborhoods')->latest()->paginate();
 
         return view('dashboard.cities.index', compact('cities'));
     }
@@ -65,6 +65,7 @@ class CityController extends Controller
      */
     public function show(City $city)
     {
+        $city->load('neighborhoods');
         return view('dashboard.cities.show', compact('city'));
     }
 

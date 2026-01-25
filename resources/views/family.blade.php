@@ -936,8 +936,8 @@
                     <label for="relationship">صلة القرابة <span class="required">*</span></label>
                     <select id="relationship" name="relationship" required>
                         <option value="">-- اختر صلة القرابة --</option>
-                        @foreach($relationships as $key => $relationship)
-                            <option value="{{$key}}">{{$relationship}}</option>
+                        @foreach($chooses['relationship'] ?? [] as $choice)
+                            <option value="{{ $choice->slug }}">{{ $choice->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -960,6 +960,18 @@
                     <span id="idnum_error" class="error-message"><i class="fas fa-exclamation-circle"></i> رقم الهوية غير صالح</span>
                     <span id="idnum_success" class="success-message"><i class="fas fa-check-circle"></i> رقم صحيح</span>
                 </div>
+                <div class="form-group">
+                    <label for="gender">الجنس <span class="required">*</span></label>
+                    <select id="gender" name="gender" required>
+                        <option value="">-- اختر الجنس --</option>
+                        @foreach($chooses['gender'] ?? [] as $choice)
+                            <option value="{{ $choice->slug }}">{{ $choice->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
                 <div class="form-group">
                     <label for="dob">تاريخ الميلاد <span class="required">*</span></label>
                     <input type="date" id="dob" name="dob" required>
@@ -1039,8 +1051,8 @@
                     <label for="editrelationship">صلة القرابة <span class="required">*</span></label>
                     <select id="editrelationship" name="editrelationship" required>
                         <option value="">-- اختر صلة القرابة --</option>
-                        @foreach($relationships as $key => $relationship)
-                            <option value="{{$key}}">{{$relationship}}</option>
+                        @foreach($chooses['relationship'] ?? [] as $choice)
+                            <option value="{{ $choice->slug }}">{{ $choice->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -1063,6 +1075,18 @@
                     <span id="editidnum_error" class="error-message"><i class="fas fa-exclamation-circle"></i> رقم الهوية غير صالح</span>
                     <span id="editidnum_success" class="success-message"><i class="fas fa-check-circle"></i> رقم صحيح</span>
                 </div>
+                <div class="form-group">
+                    <label for="editgender">الجنس <span class="required">*</span></label>
+                    <select id="editgender" name="editgender" required>
+                        <option value="">-- اختر الجنس --</option>
+                        @foreach($chooses['gender'] ?? [] as $choice)
+                            <option value="{{ $choice->slug }}">{{ $choice->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
                 <div class="form-group">
                     <label for="editdob">تاريخ الميلاد <span class="required">*</span></label>
                     <input type="date" id="editdob" name="editdob" required>
@@ -1116,8 +1140,9 @@
 
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const relationshipTranslations = {
-            'father':'أب', 'mother':'أم', 'brother':'أخ', 'sister':'أخت',
-            'husband':'زوج', 'wife':'زوجة', 'son':'ابن', 'daughter':'ابنة', 'others':'اخرون'
+            @foreach($chooses['relationship'] ?? [] as $choice)
+                '{{ $choice->slug }}': '{{ $choice->name }}',
+            @endforeach
         };
 
         let maxPeople = 0, addedPeople = 0, peopleList = [];
@@ -1162,9 +1187,10 @@
         function validatePhone(phoneField) {
             const phoneInput = document.getElementById(phoneField);
             const phoneError = document.getElementById(phoneField + 'error');
-            const phonePattern = /^05[0-9]{8}$/;
+            const phonePattern = /^05[69][0-9]{7}$/;
             if (phoneInput.value && !phonePattern.test(phoneInput.value)) {
                 phoneError.style.display = 'inline';
+                phoneError.textContent = 'يجب أن يبدأ بـ 056 أو 059 ويتكون من 10 أرقام.';
                 phoneInput.style.borderColor = '#ff0000';
                 return false;
             } else {
@@ -1178,7 +1204,7 @@
         document.getElementById('editphone').addEventListener('input', () => validatePhone('editphone'));
 
         function isSpouse(rel) {
-            return ['زوج', 'زوجة', 'wife', 'husband'].includes(rel);
+            return ['زوج', 'زوجة'].includes(rel);
         }
 
         function validateSpouseAge(rel, dobValue, errorElement) {
@@ -1222,21 +1248,100 @@
             return document.getElementById(fieldId).value.length === 9;
         }
 
+        function validateArabicText(text) {
+            // السماح بالحروف العربية والأرقام والمسافات وبعض الرموز للوصف
+            const arabicRegex = /^[\u0600-\u06FF\s0-9,.()!?-]+$/;
+            return arabicRegex.test(text);
+        }
+
+        function validateArabicName(text) {
+            // الأسماء يجب أن تكون حروف عربية ومسافات فقط
+            const arabicRegex = /^[\u0600-\u06FF\s]+$/;
+            return arabicRegex.test(text);
+        }
+
         function validateRequiredFields() {
-            if (!$('#firstname').val() || !$('#fathername').val() || !$('#grandfathername').val() ||
-                !$('#familyname').val() || !$('#relationship').val() || !$('#idnum').val() || !$('#dob').val()) {
-                showAlert('يرجى ملء جميع الحقول المطلوبة!', 'error');
-                return false;
+            const fields = [
+                { id: '#firstname', name: 'الاسم الأول' },
+                { id: '#fathername', name: 'اسم الأب' },
+                { id: '#grandfathername', name: 'اسم الجد' },
+                { id: '#familyname', name: 'اسم العائلة' },
+                { id: '#idnum', name: 'رقم الهوية' },
+                { id: '#dob', name: 'تاريخ الميلاد' },
+                { id: '#gender', name: 'الجنس' },
+                { id: '#relationship', name: 'العلاقة' }
+            ];
+
+            for (let field of fields) {
+                if (!$(field.id).val()) {
+                    showAlert(`حقل ${field.name} مطلوب!`, 'error');
+                    return false;
+                }
             }
+
+            // تحقق من اللغة العربية للأسماء
+            const names = ['#firstname', '#fathername', '#grandfathername', '#familyname'];
+            for (let nameField of names) {
+                if (!validateArabicName($(nameField).val())) {
+                    showAlert('جميع الأسماء يجب أن تكون باللغة العربية فقط!', 'error');
+                    return false;
+                }
+            }
+
+            if ($('#hascondition').val() === '1') {
+                const desc = $('#conditiondescription').val();
+                if (!desc) {
+                    showAlert('يرجى إدخال وصف الحالة الصحية!', 'error');
+                    return false;
+                }
+                if (!validateArabicText(desc)) {
+                    showAlert('وصف الحالة الصحية يجب أن يكون باللغة العربية!', 'error');
+                    return false;
+                }
+            }
+
             return true;
         }
 
         function validateEditRequiredFields() {
-            if (!$('#editfirstname').val() || !$('#editfathername').val() || !$('#editgrandfathername').val() ||
-                !$('#editfamilyname').val() || !$('#editrelationship').val() || !$('#editidnum').val() || !$('#editdob').val()) {
-                showAlert('يرجى ملء جميع الحقول المطلوبة!', 'error');
-                return false;
+            const fields = [
+                { id: '#editfirstname', name: 'الاسم الأول' },
+                { id: '#editfathername', name: 'اسم الأب' },
+                { id: '#editgrandfathername', name: 'اسم الجد' },
+                { id: '#editfamilyname', name: 'اسم العائلة' },
+                { id: '#editidnum', name: 'رقم الهوية' },
+                { id: '#editdob', name: 'تاريخ الميلاد' },
+                { id: '#editgender', name: 'الجنس' },
+                { id: '#editrelationship', name: 'العلاقة' }
+            ];
+
+            for (let field of fields) {
+                if (!$(field.id).val()) {
+                    showAlert(`حقل ${field.name} مطلوب!`, 'error');
+                    return false;
+                }
             }
+
+            const names = ['#editfirstname', '#editfathername', '#editgrandfathername', '#editfamilyname'];
+            for (let nameField of names) {
+                if (!validateArabicName($(nameField).val())) {
+                    showAlert('جميع الأسماء يجب أن تكون باللغة العربية فقط!', 'error');
+                    return false;
+                }
+            }
+
+            if ($('#edithascondition').val() === '1') {
+                const desc = $('#editconditiondescription').val();
+                if (!desc) {
+                    showAlert('يرجى إدخال وصف الحالة الصحية!', 'error');
+                    return false;
+                }
+                if (!validateArabicText(desc)) {
+                    showAlert('وصف الحالة الصحية يجب أن يكون باللغة العربية!', 'error');
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -1258,7 +1363,7 @@
             if (firstPersonData) {
                 const formattedDob = firstPersonData.dob ? new Date(firstPersonData.dob).toLocaleDateString('ar-EN') : 'غير محدد';
                 const translatedRelationship = relationshipTranslations[firstPersonData.relationship] || firstPersonData.relationship;
-                const phoneDisplay = firstPersonData.phone ? firstPersonData.phone : '-';
+                const phoneDisplay = firstPersonData.phone ? '0' + firstPersonData.phone : '-';
                 tableBody.append(`
                     <tr id="first-person-row">
                         <td>${firstPersonData.id_num}</td>
@@ -1313,16 +1418,22 @@
             $('#editidnum').val(person.id_num);
             $('#editdob').val(person.dob);
             $('#editrelationship').val(person.relationship);
+            $('#editgender').val(person.gender);
             $('#edithascondition').val(person.has_condition);
             $('#editconditiondescription').val(person.condition_description || '');
 
             if (person.relationship === 'wife') {
                 $('#editphone-group').show();
                 $('#editphone').val(person.phone || '');
+            } else {
+                $('#editphone-group').hide();
+                $('#editphone').val('');
             }
 
             if (person.has_condition == 1) {
                 $('#editcondition-description-group').show();
+            } else {
+                $('#editcondition-description-group').hide();
             }
 
             $('#save-edits').data('index', index);
@@ -1412,11 +1523,11 @@
 
                 if (relationshipVal === 'wife') {
                     if (!phone) {
-                        showAlert('يرجى إدخال رقم جوال الزوجة!', 'error');
+                        showAlert('رقم جوال الزوجة إلزامي عند اختيار علاقة "زوجة"!', 'error');
                         return;
                     }
                     if (!validatePhone('phone')) {
-                        showAlert('رقم الجوال غير صحيح!', 'error');
+                        showAlert('رقم الجوال يجب أن يبدأ بـ 056 أو 059 ويتكون من 10 أرقام.', 'error');
                         return;
                     }
                 }
@@ -1438,6 +1549,7 @@
                     father_name: $('#fathername').val(),
                     grandfather_name: $('#grandfathername').val(),
                     family_name: $('#familyname').val(),
+                    gender: $('#gender').val(),
                     dob: dobVal,
                     relationship: relationshipVal,
                     has_condition: $('#hascondition').val() === '1' ? 1 : 0,
@@ -1471,9 +1583,15 @@
                 const currentIndex = $(this).data('index');
                 const idnum = $('#editidnum').val();
 
-                if (rel === 'wife' && !validatePhone('editphone')) {
-                    showAlert('رقم الجوال غير صحيح!', 'error');
-                    return;
+                if (rel === 'wife') {
+                    if (!phone) {
+                        showAlert('رقم جوال الزوجة إلزامي عند اختيار علاقة "زوجة"!', 'error');
+                        return;
+                    }
+                    if (!validatePhone('editphone')) {
+                        showAlert('رقم الجوال يجب أن يبدأ بـ 056 أو 059 ويتكون من 10 أرقام.', 'error');
+                        return;
+                    }
                 }
 
                 if (!validateSpouseAge(rel, dobVal, editDobError)) return;
@@ -1497,6 +1615,7 @@
                         id_num: idnum,
                         dob: dobVal,
                         relationship: rel,
+                        gender: $('#editgender').val(),
                         has_condition: $('#edithascondition').val() == '1' ? 1 : 0,
                         condition_description: $('#editconditiondescription').val(),
                         phone: rel === 'wife' ? phone : null
@@ -1513,43 +1632,45 @@
             const submitBtn = document.getElementById('send-btn');
             submitBtn.disabled = true;
 
-            Swal.fire({
-                title: 'جاري تسجيل بياناتك...',
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
-
             let person = @json($person);
 
-            if (['single', 'divorced', 'widowed'].includes(person.social_status)) {
-                const forbiddenRelationships = ['husband', 'wife'];
+            // التحقق من الحالات الاجتماعية التي يمنع فيها وجود زوج/زوجة
+            const singleStatuses = ['أعزب/انسة', 'مطلق/ة', 'أرمل/ة'];
+            if (singleStatuses.includes(person.social_status)) {
+                const forbiddenRelationships = ['husband', 'wife', 'زوج', 'زوجة'];
                 if (peopleList.some(p => forbiddenRelationships.includes(p.relationship))) {
-                    Swal.close();
-                    showAlert('لا يمكن تسجيل أفراد الأسرة ذات علاقات زوج/زوجة إذا كانت الحالة الاجتماعية أعزب/ة أو مطلق/ة أو أرمل/ة.', 'error');
+                    showAlert('لا يمكن تسجيل أفراد الأسرة ذات علاقات زوج/زوجة إذا كانت الحالة الاجتماعية أعزب/انسة أو مطلق/ة أو أرمل/ة.', 'error');
                     submitBtn.disabled = false;
                     return;
                 }
             }
 
-            if (peopleList.length === 0 && !(['single', 'divorced', 'widowed'].includes(person.social_status))) {
-                Swal.close();
+            // التحقق من عدد الزوجات للرجل المتزوج أو المتعدد
+            const wivesCount = peopleList.filter(p => [ 'زوجة'].includes(p.relationship)).length;
+            const marriedStatuses = ['متزوج/ة'];
+            const polygamousStatuses = ['متعدد الزوجات'];
+
+            if (marriedStatuses.includes(person.social_status) && wivesCount !== 1) {
+                showAlert('الشخص المتزوج يجب أن يكون لديه زوجة واحدة فقط في قائمة الأفراد.', 'error');
+                submitBtn.disabled = false;
+                return;
+            } else if (polygamousStatuses.includes(person.social_status) && (wivesCount < 2 || wivesCount > 4)) {
+                showAlert('الشخص المتعدد يجب أن يكون لديه من 2 إلى 4 زوجات في قائمة الأفراد.', 'error');
+                submitBtn.disabled = false;
+                return;
+            }
+
+            if (peopleList.length === 0 && !singleStatuses.includes(person.social_status)) {
                 showAlert('لا توجد بيانات لإرسالها!', 'warning');
                 submitBtn.disabled = false;
                 return;
             }
 
-            const wivesCount = peopleList.filter(p => p.relationship === 'wife').length;
-            if (person.social_status === 'married' && wivesCount !== 1) {
-                Swal.close();
-                showAlert('الشخص المتزوج يجب أن يكون لديه زوجة واحدة فقط في قائمة الأفراد.', 'error');
-                submitBtn.disabled = false;
-                return;
-            } else if (person.social_status === 'polygamous' && (wivesCount < 2 || wivesCount > 4)) {
-                Swal.close();
-                showAlert('الشخص المتعدد يجب أن يكون لديه من 2 إلى 4 زوجات في قائمة الأفراد.', 'error');
-                submitBtn.disabled = false;
-                return;
-            }
+            Swal.fire({
+                title: 'جاري تسجيل بياناتك...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
 
             $.ajax({
                 url: '/store-people-session',
@@ -1566,7 +1687,7 @@
                     }
 
                     $.ajax({
-                        url: sessionResponse.postRedirect || '/store-family',
+                        url: sessionResponse.postRedirect || '/storeFamily',
                         type: 'POST',
                         data: { _token: $('meta[name="csrf-token"]').attr('content') },
                         success: function(storeResponse) {
