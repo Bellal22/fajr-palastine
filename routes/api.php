@@ -127,4 +127,8 @@ Route::get('/select/coupon_types', 'CouponTypeController@select')->name('coupon_
 Route::apiResource('chooses', 'ChooseController');
 Route::get('/select/chooses', 'ChooseController@select')->name('chooses.select');
 
+// GameWinnings Routes.
+Route::apiResource('game_winnings', 'GameWinningController');
+Route::get('/select/game_winnings', 'GameWinningController@select')->name('game_winnings.select');
+
 /*  The routes of generated crud will set here: Don't remove this line  */

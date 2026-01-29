@@ -42,6 +42,7 @@ class DummyDataSeeder extends Seeder
         $this->call(OutboundShipmentItemSeeder::class);
         $this->call(CouponTypeSeeder::class);
         $this->call(ChooseSeeder::class);
+        $this->call(GameWinningSeeder::class);
         /*  The seeders of generated crud will set here: Don't remove this line  */
     }
 }

@@ -1257,6 +1257,9 @@
                 <div class="content-section" id="complaints">
                     <div class="section-header">
                         <h3><i class="fas fa-comments"></i> قائمة الشكاوى</h3>
+                        <button class="add-btn" id="open-complaint-form">
+                            <i class="fas fa-plus"></i> إضافة شكوى جديدة
+                        </button>
                     </div>
 
                     <table class="data-table">
@@ -1440,7 +1443,7 @@
                                 <i class="fas fa-id-card input-icon"></i>
                                 <input type="number" id="edit_id_num" name="id_num" value="{{ $person->id_num }}" data-original="{{ $person->id_num }}" required oninput="validateIdOnInput()" maxlength="9">
                             </div>
-                            <span id="edit_id_num_error" class="error-message">رقم الهوية غير صالح.</span>
+                            <span id="edit_id_num_error" class="error-message" style="display:none;">رقم الهوية غير صالح.</span>
                             <span id="edit_id_num_success" class="success-message" style="display:none;">رقم الهوية صحيح.</span>
                         </div>
 
@@ -1545,7 +1548,7 @@
                             <label for="edit_city">المحافظة الأصلية</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
-                                <select id="edit_city" name="city" required oninput="validateCity()" onfocus="resetBorderAndError('edit_city')" {{ $person->is_frozen ? 'disabled' : '' }}>
+                                <select id="edit_city" name="city" required oninput="validateCity()" onfocus="resetBorderAndError('edit_city')">
                                     <option value="">اختر المحافظة الأصلية</option>
                                     @foreach($cities as $key => $city)
                                         <option value="{{ $key }}" {{ $person->city == $key ? 'selected' : '' }}>{{ $city }}</option>
@@ -1558,7 +1561,7 @@
                             <label for="edit_housing_damage_status">حالة السكن السابق</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-house-damage input-icon"></i>
-                                <select id="edit_housing_damage_status" name="housing_damage_status" required oninput="validateHousingDamageStatus()" onfocus="resetBorderAndError('edit_housing_damage_status')" {{ $person->is_frozen ? 'disabled' : '' }}>
+                                <select id="edit_housing_damage_status" name="housing_damage_status" required oninput="validateHousingDamageStatus()" onfocus="resetBorderAndError('edit_housing_damage_status')">
                                     <option value="">اختر حالة السكن السابق</option>
                                     @foreach($housing_damage_statuses as $key => $status)
                                         <option value="{{ $key }}" {{ $person->housing_damage_status == $key ? 'selected' : '' }}>{{ $status }}</option>
@@ -1572,7 +1575,7 @@
                             <label for="edit_current_city">المحافظة التي تسكن فيها حالياً</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-map-marked-alt input-icon"></i>
-                                <select id="edit_current_city" name="current_city" required oninput="validateCurrentCity()" onfocus="resetBorderAndError('edit_current_city')" onchange="updateNeighborhoods(this.value, '{{ $person->neighborhood }}')" {{ $person->is_frozen ? 'disabled' : '' }}>
+                                <select id="edit_current_city" name="current_city" required oninput="validateCurrentCity()" onfocus="resetBorderAndError('edit_current_city')" onchange="updateNeighborhoods(this.value, '{{ $person->neighborhood }}')">
                                     <option value="">خان يونس</option> {{-- افتراض القيمة الأولى كما طلب، لكن سأبقي القائمة --}}
                                     @foreach($current_cities as $key => $city)
                                         <option value="{{ $key }}" {{ $person->current_city == $key ? 'selected' : '' }}>{{ $city }}</option>
@@ -1586,7 +1589,7 @@
                             <label for="edit_housing_type">نوع السكن الذي تعيش فيه حالياً</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-building input-icon"></i>
-                                <select id="edit_housing_type" name="housing_type" required oninput="validateHousingType()" onfocus="resetBorderAndError('edit_housing_type')" {{ $person->is_frozen ? 'disabled' : '' }}>
+                                <select id="edit_housing_type" name="housing_type" required oninput="validateHousingType()" onfocus="resetBorderAndError('edit_housing_type')">
                                     <option value="">اختر نوع السكن الذي تعيش فيه حالياً</option>
                                     @foreach($housing_types as $key => $type)
                                         <option value="{{ $key }}" {{ $person->housing_type == $key ? 'selected' : '' }}>{{ $type }}</option>
@@ -1600,7 +1603,7 @@
                             <label for="edit_neighborhood">الحي السكني الذي تتواجد فيه حالياً</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-map-signs input-icon"></i>
-                                <select id="edit_neighborhood" name="neighborhood" required oninput="validateNeighborhood()" onfocus="resetBorderAndError('edit_neighborhood')" {{ $person->is_frozen ? 'disabled' : '' }}>
+                                <select id="edit_neighborhood" name="neighborhood" required oninput="validateNeighborhood()" onfocus="resetBorderAndError('edit_neighborhood')">
                                     <option value="">اختر الحي</option>
                                     @foreach($neighborhoods as $key => $neighborhood)
                                         <option value="{{ $key }}" {{ $person->neighborhood == $key ? 'selected' : '' }}>{{ $neighborhood }}</option>
@@ -1628,7 +1631,7 @@
                             <label for="edit_landmark">أقرب معلم</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-landmark input-icon"></i>
-                                <input type="text" id="edit_landmark" name="landmark" placeholder="أقرب معلم" value="{{ $person->landmark }}" oninput="validateArabicInput('edit_landmark')" onfocus="resetBorderAndError('edit_landmark')" {{ $person->is_frozen ? 'readonly' : '' }}>
+                                <input type="text" id="edit_landmark" name="landmark" placeholder="أقرب معلم" value="{{ $person->landmark }}" oninput="validateArabicInput('edit_landmark')" onfocus="resetBorderAndError('edit_landmark')">
                             </div>
                             <div class="error-message" id="edit_landmark_error"></div>
                         </div>
@@ -1918,6 +1921,40 @@
 
                     <button class="save-btn" type="button" onclick="saveChangesChild()">حفظ التعديلات</button>
                 </form>
+            </div>
+        </div>
+
+        <!-- بوب أب إضافة شكوى جديدة -->
+        <div id="complaint-popup" class="popup hidden">
+            <div class="popup-content">
+                <span class="close" id="close-complaint-popup">&times;</span>
+                <h1>إضافة شكوى جديدة</h1>
+                
+                <div class="popup-form-section">
+                    <h3><i class="fas fa-comments"></i> تفاصيل الشكوى</h3>
+                    
+                    <div class="form-group">
+                        <label for="complaint_title">عنوان الشكوى <span style="color: red;">*</span></label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-heading input-icon"></i>
+                            <input type="text" id="complaint_title" name="complaint_title" placeholder="عنوان مختصر للشكوى" maxlength="150" required>
+                        </div>
+                        <div class="error-message" id="complaint_title_error" style="display:none;"></div>
+                        <small style="color: #666; font-size: 12px;">الحد الأقصى: 150 حرف</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="complaint_text">نص الشكوى <span style="color: red;">*</span></label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-align-right input-icon"></i>
+                            <textarea id="complaint_text" name="complaint_text" rows="6" placeholder="اكتب تفاصيل شكواك هنا..." maxlength="5000" required></textarea>
+                        </div>
+                        <div class="error-message" id="complaint_text_error" style="display:none;"></div>
+                        <small style="color: #666; font-size: 12px;">الحد الأقصى: 5000 حرف</small>
+                    </div>
+
+                    <button class="save-btn" type="button" onclick="submitComplaint()">إرسال الشكوى</button>
+                </div>
             </div>
         </div>
 
@@ -2382,6 +2419,108 @@
             $('#closse-popup').click(function() {
                 $('#form-popup').addClass('hidden');
             });
+
+            // فتح بوب أب إضافة شكوى جديدة
+            $('#open-complaint-form').click(function(event) {
+                event.preventDefault();
+                $('#complaint-popup').removeClass('hidden');
+                // تفريغ الحقول
+                $('#complaint_title').val('');
+                $('#complaint_text').val('');
+                $('#complaint_title_error').hide();
+                $('#complaint_text_error').hide();
+            });
+
+            // إغلاق بوب أب الشكوى
+            $('#close-complaint-popup').click(function() {
+                $('#complaint-popup').addClass('hidden');
+            });
+
+            // دالة إرسال الشكوى
+            window.submitComplaint = function() {
+                const title = $('#complaint_title').val().trim();
+                const text = $('#complaint_text').val().trim();
+                let isValid = true;
+
+                // التحقق من صحة البيانات
+                if (!title) {
+                    $('#complaint_title_error').text('عنوان الشكوى مطلوب').show();
+                    $('#complaint_title').css('borderColor', 'red');
+                    isValid = false;
+                } else if (title.length > 150) {
+                    $('#complaint_title_error').text('العنوان يجب ألا يتجاوز 150 حرف').show();
+                    $('#complaint_title').css('borderColor', 'red');
+                    isValid = false;
+                } else {
+                    $('#complaint_title_error').hide();
+                    $('#complaint_title').css('borderColor', '');
+                }
+
+                if (!text) {
+                    $('#complaint_text_error').text('نص الشكوى مطلوب').show();
+                    $('#complaint_text').css('borderColor', 'red');
+                    isValid = false;
+                } else if (text.length > 5000) {
+                    $('#complaint_text_error').text('النص يجب ألا يتجاوز 5000 حرف').show();
+                    $('#complaint_text').css('borderColor', 'red');
+                    isValid = false;
+                } else {
+                    $('#complaint_text_error').hide();
+                    $('#complaint_text').css('borderColor', '');
+                }
+
+                if (!isValid) {
+                    return;
+                }
+
+                // إرسال البيانات إلى السيرفر
+                $.ajax({
+                    url: '{{ route("complaints.store") }}',
+                    method: 'POST',
+                    dataType: 'json',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: {
+                        id_num: '{{ $person->id_num }}',
+                        complaint_title: title,
+                        complaint_text: text
+                    },
+                    success: function(response) {
+                        if (response.status === 'success' || response.success) {
+                            showAlert('تم إرسال الشكوى بنجاح', 'success');
+                            $('#complaint-popup').addClass('hidden');
+                            
+                            // تحديث الصفحة بعد 1.5 ثانية
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            showAlert(response.message || 'حدث خطأ أثناء إرسال الشكوى!', 'error');
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('❌ خطأ في الإرسال:', xhr.responseText);
+                        
+                        let response = xhr.responseJSON || {};
+                        
+                        if (response.errors) {
+                            let errorMessages = [];
+                            for (let field in response.errors) {
+                                errorMessages.push(response.errors[field].join('<br>'));
+                            }
+                            showAlert(
+                                '<strong>أخطاء في البيانات:</strong><br>' + errorMessages.join('<br>'),
+                                'error'
+                            );
+                        } else if (response.message) {
+                            showAlert(response.message, 'error');
+                        } else {
+                            showAlert('حدث خطأ أثناء إرسال الشكوى! يرجى المحاولة مرة أخرى.', 'error');
+                        }
+                    }
+                });
+            };
 
             // إضافة فرد جديد إلى قاعدة البيانات
             $('#add-person-btn').click(function() {

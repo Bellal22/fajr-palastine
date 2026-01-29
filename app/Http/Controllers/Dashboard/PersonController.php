@@ -549,9 +549,7 @@ class PersonController extends Controller
 
             if ($person->is_frozen) {
                 $housingFields = [
-                    'city', 'neighborhood', 'current_city', 
-                    'area_responsible_id', 'housing_type', 
-                    'housing_damage_status', 'landmark', 'block_id'
+                    'area_responsible_id', 'block_id'
                 ];
 
                 foreach ($housingFields as $field) {

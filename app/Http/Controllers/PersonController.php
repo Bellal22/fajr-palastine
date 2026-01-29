@@ -534,9 +534,7 @@ class PersonController extends Controller
 
         if ($user->is_frozen) {
             $frozenFields = [
-                'city', 'neighborhood', 'current_city', 
-                'area_responsible_id', 'housing_type', 
-                'housing_damage_status', 'landmark', 'block_id'
+                'area_responsible_id', 'block_id'
             ];
 
             foreach ($frozenFields as $field) {
@@ -588,9 +586,7 @@ class PersonController extends Controller
 
         // Remove housing fields from data if frozen to prevent any accidental backend update
         if ($user->is_frozen) {
-            unset($data['city'], $data['neighborhood'], $data['current_city'], 
-                  $data['area_responsible_id'], $data['housing_type'], 
-                  $data['housing_damage_status'], $data['landmark'], $data['block_id']);
+            unset($data['area_responsible_id'], $data['block_id']);
         }
 
         $updated = $user->update($data);
@@ -615,10 +611,13 @@ class PersonController extends Controller
         }
 
         if ($user->is_frozen) {
-             return response()->json([
-                'success' => false,
-                'message' => 'تم اعتماد بيانات هذا الفرد وتجميد التعديل على بيانات السكن تجنباً لفقدان حقه في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
-            ], 422);
+            // Check if restricted fields are being updated
+             if ($request->has('area_responsible_id') || $request->has('block_id')) {
+                 return response()->json([
+                    'success' => false,
+                    'message' => 'تم اعتماد بيانات هذا الفرد وتجميد التعديل على المنطقة والمربع السكني تجنباً لفقدان حقه في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
+                ], 422);
+             }
         }
 
         $oldId = $user->id_num; // ✅ الرقم القديم من قاعدة البيانات

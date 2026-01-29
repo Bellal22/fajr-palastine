@@ -128,6 +128,11 @@ class Person extends Model
         return trim("{$this->first_name} {$this->family_name}");
     }
 
+    public function getNameAttribute(): string
+    {
+        return $this->getFullName();
+    }
+
     // --- Scopes ---
 
     public function scopeFamilyHead($query)

@@ -451,4 +451,15 @@ Route::delete('chooses/{trashed_choose}/forceDelete', 'ChooseController@forceDel
 Route::get('chooses/{type}', 'ChooseController@show')->name('chooses.show');
 Route::resource('chooses', 'ChooseController')->except('show');
 
+// GameWinnings Routes.
+Route::get('game_winnings/verify', 'GameWinningController@verifyForm')->name('game_winnings.verify');
+Route::post('game_winnings/verify', 'GameWinningController@verify')->name('game_winnings.verify.post');
+Route::post('game_winnings/{game_winning}/redeem', 'GameWinningController@redeem')->name('game_winnings.redeem');
+
+Route::get('trashed/game_winnings', 'GameWinningController@trashed')->name('game_winnings.trashed');
+Route::get('trashed/game_winnings/{trashed_game_winning}', 'GameWinningController@showTrashed')->name('game_winnings.trashed.show');
+Route::post('game_winnings/{trashed_game_winning}/restore', 'GameWinningController@restore')->name('game_winnings.restore');
+Route::delete('game_winnings/{trashed_game_winning}/forceDelete', 'GameWinningController@forceDelete')->name('game_winnings.forceDelete');
+Route::resource('game_winnings', 'GameWinningController');
+
 /*  The routes of generated crud will set here: Don't remove this line  */
