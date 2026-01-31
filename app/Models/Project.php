@@ -202,4 +202,14 @@ class Project extends Model
             ->withPivot('status', 'notes', 'delivery_date', 'quantity', 'sub_warehouse_id')
             ->withTimestamps();
     }
+
+    public function needRequestProject()
+    {
+        return $this->hasOne(NeedRequestProject::class);
+    }
+
+    public function needRequests()
+    {
+        return $this->hasMany(NeedRequest::class);
+    }
 }

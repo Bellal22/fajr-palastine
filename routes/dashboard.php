@@ -462,4 +462,26 @@ Route::post('game_winnings/{trashed_game_winning}/restore', 'GameWinningControll
 Route::delete('game_winnings/{trashed_game_winning}/forceDelete', 'GameWinningController@forceDelete')->name('game_winnings.forceDelete');
 Route::resource('game_winnings', 'GameWinningController');
 
+// NeedRequests Routes.
+Route::get('trashed/need_requests', 'NeedRequestController@trashed')->name('need_requests.trashed');
+Route::get('trashed/need_requests/{trashed_need_request}', 'NeedRequestController@showTrashed')->name('need_requests.trashed.show');
+Route::post('need_requests/{trashed_need_request}/restore', 'NeedRequestController@restore')->name('need_requests.restore');
+Route::delete('need_requests/{trashed_need_request}/forceDelete', 'NeedRequestController@forceDelete')->name('need_requests.forceDelete');
+
+// Need Request Settings (Admin)
+Route::get('need_requests/settings/supervisors', 'NeedRequestController@settings')->name('need_requests.settings');
+Route::post('need_requests/settings/supervisors/{supervisor}/toggle', 'NeedRequestController@toggleSupervisor')->name('need_requests.settings.toggle');
+Route::get('need_requests/settings/projects', 'NeedRequestController@projectSettings')->name('need_requests.settings.projects');
+Route::post('need_requests/settings/projects/{project}/toggle', 'NeedRequestController@toggleProject')->name('need_requests.settings.projects.toggle');
+
+// Need Request Actions
+Route::get('need_requests/my', 'NeedRequestController@myRequests')->name('need_requests.my');
+Route::post('need_requests/{need_request}/review', 'NeedRequestController@review')->name('need_requests.review');
+Route::get('need_requests/{need_request}/export', 'NeedRequestController@export')->name('need_requests.export');
+Route::post('need_requests/{need_request}/nominate', 'NeedRequestController@nominate')->name('need_requests.nominate');
+Route::post('need_requests/{need_request}/items/{item}/nominate', 'NeedRequestController@nominateItem')->name('need_requests.items.nominate');
+
+Route::post('need_requests/clear', 'NeedRequestController@clearSession')->name('need_requests.clear');
+Route::resource('need_requests', 'NeedRequestController');
+
 /*  The routes of generated crud will set here: Don't remove this line  */

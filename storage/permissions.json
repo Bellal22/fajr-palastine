@@ -26,5 +26,6 @@
     "manage.outbound_shipment_items",
     "manage.coupon_types",
     "manage.projects",
-    "manage.game_winnings"
+    "manage.game_winnings",
+    "manage.need_requests"
 ]

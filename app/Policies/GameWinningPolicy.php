@@ -20,7 +20,7 @@ class GameWinningPolicy
      */
     public function viewAny(User $user)
     {
-        return true;
+        return $user->isAdmin() || $user->hasPermissionTo('manage.game_winnings');
     }
 
     /**
@@ -43,7 +43,7 @@ class GameWinningPolicy
      */
     public function create(User $user)
     {
-        return true;
+        return $user->isAdmin() || $user->hasPermissionTo('manage.game_winnings');
     }
 
     /**

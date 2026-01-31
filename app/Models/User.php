@@ -354,6 +354,12 @@ class User extends Authenticatable implements HasMedia, NotificationTarget
             'manage.people',
             'manage.families',
             'manage.supervisors',
+            'manage.need_requests',
         ]);
+    }
+
+    public function needRequestSetting()
+    {
+        return $this->hasOne(NeedRequestSetting::class, 'supervisor_id');
     }
 }

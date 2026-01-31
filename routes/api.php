@@ -131,4 +131,8 @@ Route::get('/select/chooses', 'ChooseController@select')->name('chooses.select')
 Route::apiResource('game_winnings', 'GameWinningController');
 Route::get('/select/game_winnings', 'GameWinningController@select')->name('game_winnings.select');
 
+// NeedRequests Routes.
+Route::apiResource('need_requests', 'NeedRequestController');
+Route::get('/select/need_requests', 'NeedRequestController@select')->name('need_requests.select');
+
 /*  The routes of generated crud will set here: Don't remove this line  */

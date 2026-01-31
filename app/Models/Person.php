@@ -128,9 +128,25 @@ class Person extends Model
         return trim("{$this->first_name} {$this->family_name}");
     }
 
+    public function getFullQuadName(): string
+    {
+        $nameParts = [
+            $this->first_name ?? '',
+            $this->father_name ?? '',
+            $this->grandfather_name ?? '',
+            $this->family_name ?? ''
+        ];
+        return trim(implode(' ', array_filter($nameParts)));
+    }
+
     public function getNameAttribute(): string
     {
         return $this->getFullName();
+    }
+
+    public function getQuadNameAttribute(): string
+    {
+        return $this->getFullQuadName();
     }
 
     // --- Scopes ---

@@ -32,6 +32,7 @@
 
 
 @include('dashboard.game_winnings.partials.actions.sidebar')
+@include('dashboard.need_requests.partials.actions.sidebar')
 {{-- The sidebar of generated crud will set here: Don't remove this line --}}
 {{-- @include('dashboard.feedback.partials.actions.sidebar') --}}
 @include('dashboard.settings.sidebar')
