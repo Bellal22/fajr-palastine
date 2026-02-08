@@ -205,4 +205,71 @@ class AreaResponsibleController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * تصدير بيانات جميع مسؤولي المناطق في ملف ZIP
+     */
+    public function exportAll()
+    {
+        // زيادة وقت التنفيذ والذاكرة لتجنب مشاكل Time Out
+        set_time_limit(0);
+        ini_set('memory_limit', '-1');
+
+        try {
+            $areaResponsibles = AreaResponsible::with('blocks')->get();
+
+            if ($areaResponsibles->isEmpty()) {
+                flash()->error('لا يوجد مسؤولي مناطق لتصدير بياناتهم.');
+                return redirect()->back();
+            }
+
+            // إنشاء مجلد مؤقت
+            $zipFileName = 'area_responsibles_stats_' . date('Y-m-d_H-i-s') . '.zip';
+            $zipFilePath = storage_path('app/public/' . $zipFileName);
+            $zip = new \ZipArchive;
+
+            if ($zip->open($zipFilePath, \ZipArchive::CREATE) === TRUE) {
+                
+                // التأكد من وجود المجلد في التخزين العام
+                if (!\Illuminate\Support\Facades\Storage::disk('public')->exists('temp')) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->makeDirectory('temp');
+                }
+
+                foreach ($areaResponsibles as $areaResponsible) {
+                    // تنظيف اسم الملف من الأحرف غير المسموح بها
+                    $safeName = preg_replace('~[\\\\/:*?"<>|]~', '_', $areaResponsible->name);
+                    $excelFileName = "{$safeName}.xlsx";
+                    
+                    // استخدام التخزين على القرص العام
+                    $stored = \Maatwebsite\Excel\Facades\Excel::store(
+                        new \App\Exports\AreaResponsibleExport($areaResponsible),
+                        'temp/' . $excelFileName,
+                        'public'
+                    );
+
+                    if ($stored) {
+                        $fullExcelPath = storage_path('app/public/temp/' . $excelFileName);
+                        if (file_exists($fullExcelPath)) {
+                             $zip->addFile($fullExcelPath, $excelFileName);
+                        }
+                    }
+                }
+
+                $zip->close();
+
+                // تنظيف الملفات المؤقتة
+                \Illuminate\Support\Facades\Storage::disk('public')->deleteDirectory('temp');
+
+                return response()->download($zipFilePath)->deleteFileAfterSend(true);
+            } else {
+                flash()->error('فشل إنشاء ملف الضغط.');
+                return redirect()->back();
+            }
+
+        } catch (\Exception $e) {
+            logger()->error('Export All Area Responsibles Failed', ['error' => $e->getMessage()]);
+            flash()->error('حدث خطأ أثناء التصدير: ' . $e->getMessage());
+            return redirect()->back();
+        }
+    }
 }

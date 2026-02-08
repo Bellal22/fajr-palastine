@@ -24,6 +24,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Client\Response;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Cache;
 
 class PersonController extends Controller
 {
@@ -35,6 +36,61 @@ class PersonController extends Controller
     public function __construct()
     {
         $this->authorizeResource(Person::class, 'person');
+    }
+
+    /**
+     * Upload filter file and cache IDs
+     */
+    public function uploadFilterFile(Request $request)
+    {
+        $request->validate([
+            'id_file' => 'required|file|mimes:txt,csv,xlsx,xls|max:10240', // 10MB max
+        ]);
+
+        try {
+            $ids = [];
+            $file = $request->file('id_file');
+            $extension = $file->getClientOriginalExtension();
+
+            if (in_array($extension, ['xlsx', 'xls'])) {
+                $data = Excel::toArray([], $file);
+                if (!empty($data) && count($data) > 0) {
+                    // Flatten all rows in the first sheet
+                    foreach ($data[0] as $row) {
+                        // Assuming the ID is in the first column
+                        if (isset($row[0])) {
+                            $ids[] = trim($row[0]);
+                        }
+                    }
+                }
+            } else {
+                // Text/CSV
+                $content = file_get_contents($file->getRealPath());
+                // Split by newline or comma
+                $ids = preg_split("/\r\n|\n|\r|,/", $content);
+                $ids = array_filter(array_map('trim', $ids));
+            }
+
+            // Filter empty values
+            $ids = array_filter($ids, fn($id) => !empty($id));
+
+            if (empty($ids)) {
+                 return response()->json(['success' => false, 'message' => trans('people.messages.file_empty')]);
+            }
+
+            $key = 'filter_file_' . md5(uniqid(rand(), true));
+            Cache::put($key, array_values($ids), 60); // Cache for 60 minutes
+
+            return response()->json([
+                'success' => true,
+                'key' => $key,
+                'count' => count($ids),
+                'message' => trans('people.messages.file_uploaded_success', ['count' => count($ids)])
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -66,12 +122,26 @@ class PersonController extends Controller
             $unavailableIds = [];
             $processedIds = []; // الحالة الثالثة: موجود ولكن تمت معالجته
 
+            $searchedIds = [];
+
             if (request()->filled('id_num')) {
-                $searchedIds = array_filter(
+                $searchedIds = array_merge($searchedIds, array_filter(
                     preg_split("/\r\n|\n|\r/", request('id_num')),
                     fn($id) => !empty(trim($id))
-                );
+                ));
+            }
 
+            if (request()->filled('filter_file_key')) {
+                $cachedIds = Cache::get(request('filter_file_key'));
+                if ($cachedIds) {
+                    $searchedIds = array_merge($searchedIds, $cachedIds);
+                }
+            }
+            
+            // Remove duplicates and trim
+            $searchedIds = array_unique(array_map('trim', $searchedIds));
+
+            if (!empty($searchedIds)) {
                 $allExistingIds = Person::pluck('id_num')->toArray();
                 $availableIds = $people->pluck('id_num')->toArray();
 

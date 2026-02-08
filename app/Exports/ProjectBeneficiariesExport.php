@@ -40,6 +40,7 @@ class ProjectBeneficiariesExport implements FromQuery, WithHeadings, WithMapping
             $beneficiary->phone,
             $beneficiary->areaResponsible->name ?? '-',
             $beneficiary->block->name ?? '-', // Delegate Name
+            $beneficiary->pivot->quantity ?? 1,
             $beneficiary->pivot->status,
             $beneficiary->pivot->delivery_date ?? '-',
             $beneficiary->pivot->notes ?? '-',
@@ -54,6 +55,7 @@ class ProjectBeneficiariesExport implements FromQuery, WithHeadings, WithMapping
             'رقم الهاتف',
             'المنطقة',
             'المندوب (المربع)',
+            'الكمية',
             'حالة الاستلام',
             'تاريخ الاستلام',
             'ملاحظات',
@@ -64,7 +66,7 @@ class ProjectBeneficiariesExport implements FromQuery, WithHeadings, WithMapping
     {
         $sheet->setRightToLeft(true);
         
-        $sheet->getStyle('A1:H1')->applyFromArray([
+        $sheet->getStyle('A1:I1')->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             'fill' => [

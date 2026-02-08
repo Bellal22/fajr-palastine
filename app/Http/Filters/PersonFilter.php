@@ -44,7 +44,8 @@ class PersonFilter extends BaseFilters
         'first_name',
         'father_name',
         'grandfather_name',
-        'family_name'
+        'family_name',
+        'filter_file_key'
     ];
 
     protected function getColumnName(string $column): string
@@ -52,50 +53,64 @@ class PersonFilter extends BaseFilters
         return $this->tableAlias . $column;
     }
 
+    protected function filterFileKey($value)
+    {
+        $ids = \Illuminate\Support\Facades\Cache::get($value);
+
+        if ($ids && is_array($ids)) {
+             // Reuse the logic from idNum for filtering
+             return $this->applyIdFilter($ids);
+        }
+
+        return $this->builder;
+    }
+
+    protected function applyIdFilter(array $ids)
+    {
+        $notFoundIds = [];
+        $familyHeadIds = [];
+
+        foreach ($ids as $id) {
+            $trimmedId = trim($id);
+            if (empty($trimmedId)) continue;
+            
+            $person = Person::where('id_num', $trimmedId)->first();
+
+            if ($person) {
+                if (is_null($person->relative_id)) {
+                    $familyHeadIds[] = $trimmedId;
+                } else {
+                    $familyHeadIds[] = $person->relative_id;
+                }
+            } else {
+                $notFoundIds[] = $trimmedId;
+            }
+        }
+
+        $familyHeadIds = array_unique($familyHeadIds);
+
+        // Append to existing session notFoundIds if any
+        $existingNotFound = session('notFoundIds', []);
+        session(['notFoundIds' => array_merge($existingNotFound, $notFoundIds)]);
+
+        if (!empty($familyHeadIds)) {
+             // Use whereIn with existing constraints if builder already has some
+             // Warning: multiple whereIn calls are ANDed.
+             // But valid use case: filtering by ID list usually implies narrowing down.
+            return $this->builder->whereIn($this->getColumnName('id_num'), $familyHeadIds);
+        }
+        
+        return $this->builder;
+    }
+
     protected function idNum($value)
     {
-        $notFoundIds = []; // مصفوفة لتخزين الهويات غير الموجودة
-        $ids = []; // تعريف المتغير كفارغ في البداية
-
         if (!empty(trim($value))) {
             $ids = array_filter(
-                preg_split("/\r\n|\n|\r/", $value), // تقسيم حسب الأسطر
+                preg_split("/\r\n|\n|\r/", $value), 
                 fn($id) => !empty(trim($id))
             );
-
-            $familyHeadIds = []; // لتخزين أرقام هويات أرباب الأسر
-
-            // المرور على كل هوية
-            foreach ($ids as $id) {
-                $trimmedId = trim($id);
-
-                // البحث عن الشخص بالهوية
-                $person = Person::where('id_num', $trimmedId)->first();
-
-                if ($person) {
-                    // إذا كان الشخص رب أسرة (relative_id = null)
-                    if (is_null($person->relative_id)) {
-                        $familyHeadIds[] = $trimmedId; // أضف هويته مباشرة
-                    } else {
-                        // إذا كان تابع، أضف هوية رب الأسرة (القيمة الموجودة في relative_id)
-                        $familyHeadIds[] = $person->relative_id;
-                    }
-                } else {
-                    // الهوية غير موجودة
-                    $notFoundIds[] = $trimmedId;
-                }
-            }
-
-            // إزالة التكرارات
-            $familyHeadIds = array_unique($familyHeadIds);
-
-            // تخزين الهويات غير الموجودة في الجلسة
-            session(['notFoundIds' => $notFoundIds]);
-
-            // تطبيق الفلتر على أرقام هويات أرباب الأسر
-            if (!empty($familyHeadIds)) {
-                return $this->builder->whereIn($this->getColumnName('id_num'), $familyHeadIds);
-            }
+            return $this->applyIdFilter($ids);
         }
 
         return $this->builder;

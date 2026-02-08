@@ -918,13 +918,13 @@
                     Swal.fire({
                         icon: 'error',
                         title: 'رقم الهوية مسجل مسبقاً',
-                        text: 'هذا الرقم مسجل لدينا مسبقاً.',
+                        text: ' هذا الرقم مسجل لدينا مسبقاً الذهاب لصفحة تسجيل الدخول.',
                         background: '#fff',
                         confirmButtonColor: '#FF6F00',
                         iconColor: '#d33',
                         confirmButtonText: 'إغلاق'
                     }).then(() => {
-                        window.location.href = '/';
+                        window.location.href = '/loginView';
                     });
                     return;
                 }

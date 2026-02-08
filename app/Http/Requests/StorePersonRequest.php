@@ -43,7 +43,7 @@ class StorePersonRequest extends FormRequest
             'family_name'             => ['required', 'string', 'regex:/^[\p{Arabic} ]+$/u', 'max:255'],
             'gender'                  => ['required', 'in:male,female,ذكر,أنثى'],
             'dob'                     => ['required', 'date'],
-            'phone'                   => ['required', 'string', 'regex:/^(056|059)\d{7}$/'],
+            'phone'                   => ['required', 'string', 'regex:/^0?(56|59)\d{7}$/'],
             'social_status' => [
                 'required',
                 Rule::exists('chooses', 'slug')->where('type', 'social_status'),

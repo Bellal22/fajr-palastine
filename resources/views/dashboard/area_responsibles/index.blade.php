@@ -29,6 +29,12 @@
                             @include('dashboard.area_responsibles.partials.actions.create')
                         </div>
 
+                        <div class="mr-2">
+                            <a href="{{ route('dashboard.area_responsibles.export_all') }}" 
+                               class="btn btn-outline-success">
+                                <i class="fas fa-file-export"></i> تصدير الكل (ZIP)
+                            </a>
+                        </div>
                         <div>
                             @include('dashboard.area_responsibles.partials.actions.trashed')
                         </div>

@@ -19,6 +19,19 @@ class StoreFamilyRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
+    public function prepareForValidation()
+    {
+        if ($this->has('persons')) {
+            $persons = $this->persons;
+            foreach ($persons as &$person) {
+                if (isset($person['id_num'])) {
+                    $person['id_num'] = preg_replace('/\D/', '', $person['id_num']);
+                }
+            }
+            $this->merge(['persons' => $persons]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -30,7 +43,7 @@ class StoreFamilyRequest extends FormRequest
             'persons.*.dob'                        => ['required', 'date'],
             'persons.*.gender'                     => ['required', 'in:ذكر,أنثى'],
             'persons.*.relationship'               => ['required', 'string'],
-            'persons.*.phone'                      => ['nullable', 'required_if:persons.*.relationship,زوجة', 'regex:/^(056|059)\d{7}$/'],
+            'persons.*.phone'                      => ['nullable', 'required_if:persons.*.relationship,زوجة', 'regex:/^0?(56|59)\d{7}$/'],
             'persons.*.condition_description'      => ['nullable', 'string', 'regex:/^[\p{Arabic}0-9\s,.()!?-]+$/u'],
             'persons' => [
                 'nullable',

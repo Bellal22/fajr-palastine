@@ -19,6 +19,19 @@ class UpdateFamilyRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
+    public function prepareForValidation()
+    {
+        if ($this->has('persons')) {
+            $persons = $this->persons;
+            foreach ($persons as &$person) {
+                if (isset($person['id_num'])) {
+                    $person['id_num'] = preg_replace('/\D/', '', $person['id_num']);
+                }
+            }
+            $this->merge(['persons' => $persons]);
+        }
+    }
+
     public function rules(): array
     {
         return [

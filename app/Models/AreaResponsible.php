@@ -55,7 +55,10 @@ class AreaResponsible extends Model
     public function updatePeopleCount(): int
     {
         try {
-            $count = $this->people()->count();
+            $count = $this->people()
+                ->familyHead()
+                ->approved()
+                ->count();
             $this->update(['people_count' => $count]);
 
             logger()->info('تم تحديث عدد الأفراد لمسؤول المنطقة', [

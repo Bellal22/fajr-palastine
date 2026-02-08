@@ -149,6 +149,28 @@ class Person extends Model
         return $this->getFullQuadName();
     }
 
+    /**
+     * Find the ultimate family head recursively.
+     *
+     * @return Person
+     */
+    public function findUltimateHead(): Person
+    {
+        if (is_null($this->relative_id)) {
+            return $this;
+        }
+
+        // Ensure 9 digits for matching
+        $paddedId = str_pad($this->relative_id, 9, '0', STR_PAD_LEFT);
+        $head = Person::where('id_num', $paddedId)->first();
+
+        if (!$head) {
+            return $this;
+        }
+
+        return $head->findUltimateHead();
+    }
+
     // --- Scopes ---
 
     public function scopeFamilyHead($query)

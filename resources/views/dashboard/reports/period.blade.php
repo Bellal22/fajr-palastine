@@ -130,6 +130,7 @@
                                 <tr>
                                     <th>اسم الكوبون</th>
                                     <th class="text-center">عدد المستفيدين</th>
+                                    <th class="text-center">إجمالي الكمية</th>
                                     <th class="text-center">الإجراءات</th>
                                 </tr>
                             </thead>
@@ -138,9 +139,12 @@
                                 <tr>
                                     <td class="font-weight-bold">{{ $project->name }}</td>
                                     <td class="text-center">
-                                        <span class="badge badge-primary badge-pill">
+                                        <span class="badge badge-light border">
                                             {{ number_format($project->period_received_count) }}
                                         </span>
+                                    </td>
+                                    <td class="text-center font-weight-bold text-success">
+                                        {{ number_format($project->period_delivered_quantity) }}
                                     </td>
                                     <td class="text-center">
                                         <a href="{{ route('dashboard.reports.projects.show', $project) }}" class="btn btn-sm btn-info">
@@ -150,7 +154,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted py-4">لا توجد كوبونات نشطة</td>
+                                    <td colspan="4" class="text-center text-muted py-4">لا توجد كوبونات نشطة</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -171,9 +175,12 @@
                 <div class="card-body">
                     <div style="max-height: 350px; overflow-y: auto;">
                         @forelse($areas as $areaId => $area)
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded" title="المستلمين: {{ number_format($areaBreakdown[$areaId]['count'] ?? 0) }} | الكمية: {{ number_format($areaBreakdown[$areaId]['total_quantity'] ?? 0) }}">
                             <span class="font-weight-bold">{{ $area->name }}</span>
-                            <span class="badge badge-dark">{{ number_format($areaBreakdown[$areaId]) }}</span>
+                            <div>
+                                <span class="badge badge-dark">{{ number_format($areaBreakdown[$areaId]['count'] ?? 0) }}</span>
+                                <span class="badge badge-success">{{ number_format($areaBreakdown[$areaId]['total_quantity'] ?? 0) }} ك</span>
+                            </div>
                         </div>
                         @empty
                         <div class="text-center text-muted py-4">
@@ -196,12 +203,15 @@
                 <div class="card-body">
                     <div style="max-height: 350px; overflow-y: auto;">
                         @forelse($subWarehouses as $warehouseId => $warehouse)
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
-                            <span class="font-weight-bold">
-                                <i class="fas fa-warehouse text-info"></i>
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded" title="المستلمين: {{ number_format($warehouseBreakdown[$warehouseId]['count'] ?? 0) }} | الكمية: {{ number_format($warehouseBreakdown[$warehouseId]['total_quantity'] ?? 0) }}">
+                            <span class="font-weight-bold border-left ml-2 pl-2">
+                                <i class="fas fa-warehouse text-info ml-1"></i>
                                 {{ $warehouse->name }}
                             </span>
-                            <span class="badge badge-info">{{ number_format($warehouseBreakdown[$warehouseId] ?? 0) }}</span>
+                            <div>
+                                <span class="badge badge-info">{{ number_format($warehouseBreakdown[$warehouseId]['count'] ?? 0) }}</span>
+                                <span class="badge badge-primary">{{ number_format($warehouseBreakdown[$warehouseId]['total_quantity'] ?? 0) }} ك</span>
+                            </div>
                         </div>
                         @empty
                         <div class="text-center text-muted py-4">

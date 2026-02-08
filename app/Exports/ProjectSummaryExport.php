@@ -27,21 +27,23 @@ class ProjectSummaryExport implements FromCollection, WithHeadings, WithMapping,
     public function collection()
     {
          $rows = [];
-        foreach ($this->data as $areaId => $count) {
+        foreach ($this->data as $areaId => $stats) {
             $areaName = $this->areas[$areaId]->name ?? 'غير محدد';
             $rows[] = [
                 'area' => $areaName,
-                'count' => $count
+                'count' => $stats['count'] ?? 0,
+                'quantity' => $stats['total_quantity'] ?? 0,
             ];
         }
         return collect($rows);
     }
 
-    public function map($row): array // row is now ['area' => ..., 'count' => ...]
+    public function map($row): array
     {
         return [
             $row['area'],
             $row['count'],
+            $row['quantity'],
         ];
     }
 
@@ -50,6 +52,7 @@ class ProjectSummaryExport implements FromCollection, WithHeadings, WithMapping,
         return [
             'المنطقة',
             'عدد المستلمين',
+            'إجمالي الكميات الموزعة',
         ];
     }
 
@@ -57,7 +60,7 @@ class ProjectSummaryExport implements FromCollection, WithHeadings, WithMapping,
     {
         $sheet->setRightToLeft(true);
         
-        $sheet->getStyle('A1:B1')->applyFromArray([
+        $sheet->getStyle('A1:C1')->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             'fill' => [

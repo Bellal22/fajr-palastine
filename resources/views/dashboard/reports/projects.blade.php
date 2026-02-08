@@ -236,14 +236,17 @@
                 </h6>
                 <div class="row mb-4">
                     @php
-                        $activeAreas = collect($areas)->filter(fn($area) => isset($project->area_breakdown[$area->id]) && $project->area_breakdown[$area->id] > 0);
+                        $activeAreas = collect($areas)->filter(fn($area) => isset($project->area_breakdown[$area->id]) && $project->area_breakdown[$area->id]['count'] > 0);
                     @endphp
 
                     @forelse($activeAreas as $area)
                     <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-                        <div class="area-badge">
-                            <small>{{ $area->name }}</small>
-                            <h4>{{ number_format($project->area_breakdown[$area->id]) }}</h4>
+                        <div class="area-badge" title="المستلمين: {{ number_format($project->area_breakdown[$area->id]['count']) }} | الكمية: {{ number_format($project->area_breakdown[$area->id]['total_quantity']) }}">
+                            <small class="d-block text-truncate">{{ $area->name }}</small>
+                            <h4 class="mb-1">{{ number_format($project->area_breakdown[$area->id]['count']) }} <small>شخص</small></h4>
+                            <div class="text-success font-weight-bold" style="font-size: 0.8rem;">
+                                <i class="fas fa-cubes ml-1"></i>{{ number_format($project->area_breakdown[$area->id]['total_quantity']) }}
+                            </div>
                         </div>
                     </div>
                     @empty
@@ -263,15 +266,18 @@
                 </h6>
                 <div class="row">
                     @php
-                        $activeWarehouses = collect($subWarehouses)->filter(fn($warehouse) => isset($project->warehouse_breakdown[$warehouse->id]) && $project->warehouse_breakdown[$warehouse->id] > 0);
+                        $activeWarehouses = collect($subWarehouses)->filter(fn($warehouse) => isset($project->warehouse_breakdown[$warehouse->id]) && $project->warehouse_breakdown[$warehouse->id]['count'] > 0);
                     @endphp
 
                     @forelse($activeWarehouses as $warehouse)
                     <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-                        <div class="warehouse-badge">
+                        <div class="warehouse-badge" title="المستلمين: {{ number_format($project->warehouse_breakdown[$warehouse->id]['count']) }} | الكمية: {{ number_format($project->warehouse_breakdown[$warehouse->id]['total_quantity']) }}">
                             <i class="fas fa-warehouse" style="font-size: 0.9rem;"></i>
-                            <small class="d-block">{{ $warehouse->name }}</small>
-                            <h4>{{ number_format($project->warehouse_breakdown[$warehouse->id]) }}</h4>
+                            <small class="d-block text-truncate">{{ $warehouse->name }}</small>
+                            <h4 class="mb-1">{{ number_format($project->warehouse_breakdown[$warehouse->id]['count']) }} <small>شخص</small></h4>
+                            <div class="text-primary font-weight-bold" style="font-size: 0.8rem;">
+                                <i class="fas fa-cubes ml-1"></i>{{ number_format($project->warehouse_breakdown[$warehouse->id]['total_quantity']) }}
+                            </div>
                         </div>
                     </div>
                     @empty

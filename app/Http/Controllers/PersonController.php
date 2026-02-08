@@ -31,14 +31,21 @@ class PersonController extends Controller
     public function check(Request $request)
     {
         $request->session()->forget('id_num');
+        $request->merge([
+            'id_num' => preg_replace('/\D/', '', $request->id_num),
+        ]);
+
         $request->validate([
-            'id_num'           => ['required', 'numeric', 'digits:9', 'unique:persons,id_num'],
+            'id_num' => ['required', 'numeric', 'digits:9'],
         ], [
-            'id_num.unique'    => 'هذا الشخص موجود بالفعل',
             'id_num.required'  => 'الرجاء ادخال رقم الهوية',
             'id_num.numeric'   => 'رقم الهوية يجب ان يكون ارقام فقط',
             'id_num.digits'    => 'رقم الهوية يجب ان يكون 9 ارقام',
         ]);
+
+        if (Person::where('id_num', $request->id_num)->exists()) {
+             return redirect()->route('loginView')->with('error', 'هذا الشخص موجود بالفعل، يرجى تسجيل الدخول.');
+        }
 
         // store the id_num in session
         $request->session()->put('id_num', $request->id_num);
@@ -310,6 +317,10 @@ class PersonController extends Controller
     {
         Log::info('Received Data:', $request->all());
 
+        $request->merge([
+            'id_num' => preg_replace('/\D/', '', $request->id_num),
+        ]);
+
         // التحقق من صحة البيانات
         try {
             $validatedData = $request->validate([
@@ -322,7 +333,7 @@ class PersonController extends Controller
                 'relationship'          => 'required|string',
                 'has_condition'         => 'required|in:0,1',
                 'condition_description' => 'nullable|string|max:500',
-                'phone'                 => 'nullable|string|max:10' // إضافة التحقق من رقم الجوال
+                'phone'                 => ['nullable', 'string', 'regex:/^0?(59|56)[0-9]{7}$/'] // إضافة التحقق من رقم الجوال
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -511,6 +522,11 @@ class PersonController extends Controller
 
     public function updateProfileParent(Request $request)
     {
+        $request->merge([
+            'id_num' => preg_replace('/\D/', '', $request->id_num),
+            'old_id_num' => preg_replace('/\D/', '', $request->old_id_num),
+        ]);
+
         // جلب المستخدم الحالي حسب رقم هويته القديمة (لو متوفرة) أو الجديدة
         $user = Person::where('id_num', $request->old_id_num ?? $request->id_num)->first();
 
@@ -574,6 +590,13 @@ class PersonController extends Controller
         // استبعاد old_id_num من بيانات التحديث لأنه ليس عمود
         $data = $request->except('old_id_num');
 
+
+        $request->validate([
+            'phone' => ['nullable', 'string', 'regex:/^0?(59|56)[0-9]{7}$/'],
+        ], [
+            'phone.regex' => 'رقم الجوال يجب أن يبدأ بـ 59 أو 56 ويتكون من 9 أرقام.'
+        ]);
+
         if (isset($data['area_responsible_id']) && ($data['area_responsible_id'] === 'null' || $data['area_responsible_id'] === '')) {
             $data['area_responsible_id'] = null;
         }
@@ -600,6 +623,10 @@ class PersonController extends Controller
 
     public function updateProfileChild(Request $request)
     {
+        $request->merge([
+            'id_num' => preg_replace('/\D/', '', $request->id_num),
+        ]);
+
         // ✅ استخدام id بدلاً من id_num للبحث عن المستخدم
         $user = Person::find($request->id);
 
@@ -662,6 +689,24 @@ class PersonController extends Controller
 
         // تحديث البيانات
         $data = $request->except(['old_id_num', 'id']);
+
+        if (isset($data['phone'])) {
+            $data['phone'] = ltrim(str_replace('-', '', $data['phone']), '0');
+        }
+
+        // التحقق من صحة البيانات
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'phone' => ['nullable', 'string', 'regex:/^0?(59|56)[0-9]{7}$/'],
+        ], [
+             'phone.regex' => 'رقم الجوال يجب أن يبدأ بـ 59 أو 56 ويتكون من 9 أرقام.'
+        ]);
+
+        if ($validator->fails()) {
+             return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first()
+            ], 422);
+        }
 
         $updated = $user->update($this->mapSlugsToNames($data));
 

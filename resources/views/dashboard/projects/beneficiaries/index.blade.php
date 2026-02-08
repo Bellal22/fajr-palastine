@@ -2,6 +2,7 @@
 
     @push('styles')
     <style>
+        /* ========== البطاقة الرئيسية للبحث والفلاتر ========== */
         .search-filter-card {
             background: #fff;
             border: 1px solid #e3e6f0;
@@ -14,6 +15,7 @@
             padding: 1.5rem 1.25rem;
         }
 
+        /* ========== تنسيق Labels والأيقونات ========== */
         .form-label-icon {
             font-weight: 600;
             color: #5a5c69;
@@ -28,7 +30,11 @@
             font-size: 0.9rem;
         }
 
-        .date-picker-custom {
+        /* ========== تنسيق الحقول ========== */
+        .date-picker-custom,
+        .custom-select-filter,
+        .search-textarea,
+        .form-control {
             padding: 0.625rem 0.875rem !important;
             border: 2px solid #e3e6f0 !important;
             border-radius: 8px !important;
@@ -36,55 +42,42 @@
             font-size: 0.95rem !important;
         }
 
-        .date-picker-custom:focus {
+        .date-picker-custom:focus,
+        .custom-select-filter:focus,
+        .search-textarea:focus,
+        .form-control:focus {
             border-color: #4e73df !important;
             box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1) !important;
         }
 
         .search-textarea {
-            border: 2px solid #e3e6f0;
-            border-radius: 8px;
-            padding: 0.625rem 0.875rem;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-            resize: none;
+            resize: vertical;
+            min-height: 60px;
         }
 
-        .search-textarea:focus {
-            border-color: #4e73df;
-            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+        .date-picker-custom {
+            cursor: pointer;
         }
 
-        .custom-select-filter {
-            border: 2px solid #e3e6f0;
-            border-radius: 8px;
-            padding: 0.625rem 0.875rem;
-            font-size: 0.95rem;
-            transition: all 0.3s ease;
-        }
-
-        .custom-select-filter:focus {
-            border-color: #4e73df;
-            box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
-        }
-
+        /* ========== تنسيق الأزرار ========== */
         .btn-filter-group {
             display: flex;
             gap: 0.5rem;
         }
 
         .btn-filter-group .btn {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.625rem 1rem;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
+        /* ========== الفلاتر المتقدمة ========== */
+        #advancedFilters {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        /* ========== شريط الإجراءات الجماعية ========== */
         .bulk-actions-bar-sticky {
             position: sticky !important;
             top: 0 !important;
@@ -120,6 +113,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
+        /* ========== تنسيق الجدول ========== */
         .table tbody tr {
             transition: all 0.2s ease;
         }
@@ -129,6 +123,7 @@
             transform: scale(1.001);
         }
 
+        /* ========== تنسيق الـ Badges ========== */
         .badge {
             padding: 0.4rem 0.75rem;
             font-size: 0.85rem;
@@ -142,6 +137,7 @@
             border-radius: 6px;
         }
 
+        /* ========== حالة فارغة ========== */
         .empty-state {
             padding: 3rem 1rem;
             text-align: center;
@@ -159,6 +155,7 @@
             margin-bottom: 1rem;
         }
 
+        /* ========== تنسيق الـ Modals ========== */
         .modal-header {
             border-radius: 10px 10px 0 0;
         }
@@ -168,10 +165,15 @@
             border: none;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
+
+        /* ========== تحسينات عامة ========== */
+        .d-flex.gap-2 {
+            gap: 0.5rem;
+        }
     </style>
     @endpush
 
-    {{-- رسائل الأخطاء --}}
+    {{-- ========== رسائل الأخطاء والتحذيرات ========== --}}
     @if($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <strong><i class="fas fa-exclamation-triangle"></i> عذراً، حدثت بعض الأخطاء:</strong>
@@ -188,8 +190,8 @@
 
     @if(session('import_errors'))
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <strong><i class="fas fa-exclamation-circle"></i> أخطاء الاستيراد:</strong>
-            <ul class="mb-0 mt-2">
+            <strong><i class="fas fa-exclamation-circle"></i> أخطاء الاستيراد ({{ count(session('import_errors')) }}):</strong>
+            <ul class="mb-0 mt-2" style="max-height: 300px; overflow-y: auto;">
                 @foreach(session('import_errors') as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -200,15 +202,18 @@
         </div>
     @endif
 
-    {{-- البحث والفلتر --}}
+    {{-- ========== بطاقة البحث والفلاتر ========== --}}
     <div class="search-filter-card">
         <div class="card-body">
-            <form method="GET" action="{{ route('dashboard.projects.beneficiaries', $project) }}">
-                <div class="row">
+            <form method="GET" action="{{ route('dashboard.projects.beneficiaries', $project) }}" id="filterForm">
+
+                {{-- الصف الأول: البحث الأساسي --}}
+                <div class="row align-items-end">
+
                     {{-- البحث بأرقام الهوية --}}
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <label class="form-label-icon" for="search">
-                            <i class="fas fa-search"></i> بحث بأرقام الهوية
+                    <div class="col-lg-5 col-md-12 mb-3">
+                        <label class="form-label-icon fw-bold" for="search">
+                            <i class="fas fa-search text-primary"></i> بحث بأرقام الهوية
                         </label>
                         <textarea name="search"
                                   id="search"
@@ -221,67 +226,168 @@
                     </div>
 
                     {{-- الحالة --}}
-                    <div class="col-lg-2 col-md-6 mb-3">
-                        <label class="form-label-icon" for="status">
-                            <i class="fas fa-toggle-on"></i> الحالة
+                    <div class="col-lg-2 col-md-4 mb-3">
+                        <label class="form-label-icon fw-bold" for="status">
+                            <i class="fas fa-toggle-on text-info"></i> الحالة
                         </label>
                         <select name="status" id="status" class="form-control custom-select-filter">
                             <option value="">الكل</option>
-                            <option value="مستلم" {{ request('status') === 'مستلم' ? 'selected' : '' }}>مستلم</option>
-                            <option value="غير مستلم" {{ request('status') === 'غير مستلم' ? 'selected' : '' }}>غير مستلم</option>
+                            <option value="مستلم" {{ request('status') === 'مستلم' ? 'selected' : '' }}>✓ مستلم</option>
+                            <option value="غير مستلم" {{ request('status') === 'غير مستلم' ? 'selected' : '' }}>✗ غير مستلم</option>
                         </select>
                     </div>
 
-                    {{-- من تاريخ --}}
-                    <div class="col-lg-2 col-md-6 mb-3">
-                        <label class="form-label-icon" for="date_from">
-                            <i class="fas fa-calendar-alt"></i> من تاريخ
+                    {{-- عدد النتائج --}}
+                    <div class="col-lg-2 col-md-4 mb-3">
+                        <label class="form-label-icon fw-bold" for="per_page">
+                            <i class="fas fa-list-ol text-warning"></i> عدد النتائج
                         </label>
-                        <input type="date"
-                               name="date_from"
-                               id="date_from"
-                               class="form-control date-picker-custom"
-                               value="{{ request('date_from') }}">
+                        <input type="text"
+                               name="per_page"
+                               id="per_page"
+                               class="form-control text-center"
+                               placeholder="50"
+                               value="{{ request('per_page', 50) }}">
+                        <small class="text-muted d-block mt-1">
+                            <i class="fas fa-info-circle"></i> الافتراضي: 50
+                        </small>
                     </div>
 
-                    {{-- إلى تاريخ --}}
-                    <div class="col-lg-2 col-md-6 mb-3">
-                        <label class="form-label-icon" for="date_to">
-                            <i class="fas fa-calendar-check"></i> إلى تاريخ
-                        </label>
-                        <input type="date"
-                               name="date_to"
-                               id="date_to"
-                               class="form-control date-picker-custom"
-                               value="{{ request('date_to') }}">
-                    </div>
-
-                    {{-- عدد العرض --}}
-                    <div class="col-lg-1 col-md-6 mb-3">
-                        <label class="form-label-icon" for="per_page">
-                            <i class="fas fa-list-ol"></i> العرض
-                        </label>
-                        <select name="per_page" id="per_page" class="form-control custom-select-filter">
-                            <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
-                            <option value="50" {{ request('per_page') == 50 || !request('per_page') ? 'selected' : '' }}>50</option>
-                            <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
-                            <option value="500" {{ request('per_page') == 500 ? 'selected' : '' }}>500</option>
-                        </select>
-                    </div>
-
-                    {{-- أزرار البحث --}}
-                    <div class="col-lg-2 col-md-6 mb-3">
-                        <label class="form-label-icon d-block">&nbsp;</label>
-                        <div class="btn-filter-group">
-                            <button type="submit" class="btn btn-primary">
+                    {{-- أزرار التحكم --}}
+                    <div class="col-lg-3 col-md-4 mb-3">
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
                                 <i class="fas fa-search"></i> بحث
                             </button>
-                            @if(request()->anyFilled(['search', 'status', 'date_from', 'date_to', 'per_page']))
+                            @if(request()->anyFilled(['search', 'status', 'date_from', 'date_to', 'exact_date', 'quantity_from', 'quantity_to', 'exact_quantity', 'per_page']))
                                 <a href="{{ route('dashboard.projects.beneficiaries', $project) }}"
-                                   class="btn btn-secondary">
+                                   class="btn btn-secondary"
+                                   title="إعادة تعيين الفلاتر">
                                     <i class="fas fa-redo"></i>
                                 </a>
                             @endif
+                            <button type="button"
+                                    class="btn btn-outline-info"
+                                    data-toggle="collapse"
+                                    data-target="#advancedFilters"
+                                    title="فلاتر متقدمة">
+                                <i class="fas fa-sliders-h"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- الفلاتر المتقدمة (قابلة للطي) --}}
+                <div class="collapse {{ request()->anyFilled(['date_from', 'date_to', 'exact_date', 'quantity_from', 'quantity_to', 'exact_quantity']) ? 'show' : '' }}"
+                     id="advancedFilters">
+
+                    {{-- فاصل --}}
+                    <div class="row">
+                        <div class="col-12">
+                            <hr class="my-3">
+                        </div>
+                    </div>
+
+                    {{-- فلاتر التاريخ --}}
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                     style="width: 30px; height: 30px;">
+                                    <i class="fas fa-calendar text-white"></i>
+                                </div>
+                                <h6 class="mb-0 fw-bold text-primary">فلاتر التاريخ</h6>
+                            </div>
+                        </div>
+
+                        {{-- من تاريخ --}}
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label class="form-label-icon" for="date_from">
+                                <i class="fas fa-calendar-alt"></i> من تاريخ
+                            </label>
+                            <input type="date"
+                                   name="date_from"
+                                   id="date_from"
+                                   class="form-control date-picker-custom"
+                                   value="{{ request('date_from') }}">
+                        </div>
+
+                        {{-- إلى تاريخ --}}
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label class="form-label-icon" for="date_to">
+                                <i class="fas fa-calendar-check"></i> إلى تاريخ
+                            </label>
+                            <input type="date"
+                                   name="date_to"
+                                   id="date_to"
+                                   class="form-control date-picker-custom"
+                                   value="{{ request('date_to') }}">
+                        </div>
+
+                        {{-- مطابقة تاريخ محدد --}}
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label class="form-label-icon" for="exact_date">
+                                <i class="fas fa-calendar-day"></i> تاريخ محدد
+                                <span class="badge bg-info text-white ms-1" style="font-size: 0.65rem;">مطابقة تامة</span>
+                            </label>
+                            <input type="date"
+                                   name="exact_date"
+                                   id="exact_date"
+                                   class="form-control date-picker-custom"
+                                   value="{{ request('exact_date') }}">
+                        </div>
+                    </div>
+
+                    {{-- فلاتر الكمية --}}
+                    <div class="row mt-3">
+                        <div class="col-12 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-2"
+                                     style="width: 30px; height: 30px;">
+                                    <i class="fas fa-hashtag text-white"></i>
+                                </div>
+                                <h6 class="mb-0 fw-bold text-success">فلاتر الكمية</h6>
+                            </div>
+                        </div>
+
+                        {{-- من كمية --}}
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label class="form-label-icon" for="quantity_from">
+                                <i class="fas fa-sort-numeric-up"></i> من كمية
+                            </label>
+                            <input type="text"
+                                   name="quantity_from"
+                                   id="quantity_from"
+                                   class="form-control"
+                                   placeholder="1"
+                                   value="{{ request('quantity_from') }}">
+                        </div>
+
+                        {{-- إلى كمية --}}
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label class="form-label-icon" for="quantity_to">
+                                <i class="fas fa-sort-numeric-down"></i> إلى كمية
+                            </label>
+                            <input type="text"
+                                   name="quantity_to"
+                                   id="quantity_to"
+                                   class="form-control"
+                                   placeholder="100"
+                                   value="{{ request('quantity_to') }}">
+                        </div>
+
+                        {{-- كمية محددة --}}
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label class="form-label-icon" for="exact_quantity">
+                                <i class="fas fa-equals"></i> كمية محددة
+                                <span class="badge bg-info text-white ms-1" style="font-size: 0.65rem;">مطابقة تامة</span>
+                            </label>
+                            <input type="text"
+                                   name="exact_quantity"
+                                   id="exact_quantity"
+                                   class="form-control"
+                                   placeholder="مثال: 5"
+                                   value="{{ request('exact_quantity') }}">
                         </div>
                     </div>
                 </div>
@@ -289,9 +395,10 @@
         </div>
     </div>
 
+    {{-- ========== نموذج الإجراءات الجماعية ========== --}}
     <form action="{{ route('dashboard.projects.beneficiaries.bulk-actions', $project) }}" method="POST" id="bulk-actions-form">
         @csrf
-        {{-- Hidden inputs - سيتم ملؤها عبر JavaScript فقط --}}
+        {{-- Hidden inputs - سيتم ملؤها عبر JavaScript --}}
         <div id="bulk-hidden-fields"></div>
 
         {{-- شريط الإجراءات الجماعية --}}
@@ -316,9 +423,18 @@
             </div>
         </div>
 
+        {{-- ========== جدول المستفيدين ========== --}}
         @component('dashboard::components.table-box')
             @slot('title')
                 <i class="fas fa-users"></i> المستفيدين ({{ number_format($beneficiaries->total()) }})
+                <span class="badge badge-success ml-2" title="إجمالي الكميات المشحونة/الموزعة">
+                    <i class="fas fa-cubes"></i> إجمالي الكميات: {{ number_format($totalQuantity) }}
+                </span>
+                @if(session('skipped_count'))
+                    <span class="badge badge-warning ml-2" title="أسطر تم استبعادها لعدم وجود بيانات أو تعارض">
+                        <i class="fas fa-exclamation-circle"></i> مستبعد: {{ number_format(session('skipped_count')) }}
+                    </span>
+                @endif
             @endslot
 
             @slot('tools')
@@ -328,7 +444,7 @@
                 </a>
                 <a href="{{ route('dashboard.projects.beneficiaries.export', [$project] + request()->all()) }}"
                    class="btn btn-primary btn-sm">
-                    <i class="fas fa-file-export"></i> تصدير نتائج البحث (Excel)
+                    <i class="fas fa-file-export"></i> تصدير النتائج
                 </a>
                 <a href="{{ route('dashboard.projects.beneficiaries.import', $project) }}"
                    class="btn btn-success btn-sm">
@@ -482,13 +598,13 @@
         @endcomponent
     </form>
 
-    {{-- نماذج مخفية --}}
+    {{-- ========== نماذج مخفية ========== --}}
     <form id="row-delete-form" method="POST" style="display:none;">
         @csrf
         @method('DELETE')
     </form>
 
-    {{-- Modal التحديث الجماعي --}}
+    {{-- ========== Modal التحديث الجماعي ========== --}}
     <div class="modal fade" id="bulkStatusModal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
@@ -547,7 +663,7 @@
         </div>
     </div>
 
-    {{-- Modal لكل مستفيد --}}
+    {{-- ========== Modal لكل مستفيد ========== --}}
     @foreach($beneficiaries as $beneficiary)
         <div class="modal fade" id="statusModal{{ $beneficiary->id }}" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
@@ -611,20 +727,19 @@
         </div>
     @endforeach
 
+    {{-- ========== JavaScript ========== --}}
     @push('scripts')
     <script>
     $(document).ready(function() {
-        console.log('✅ Beneficiaries script loaded');
+        console.log('✅ Beneficiaries page loaded');
 
-        // 1. Focus search field
+        // 1. Focus على حقل البحث
         $('#search').focus();
 
-        // 2. Update bulk actions UI
+        // 2. تحديث واجهة الإجراءات الجماعية
         function updateBulkUI() {
             const selectedCheckboxes = $('.item-checkbox:checked');
             const count = selectedCheckboxes.length;
-
-            console.log('🔄 Selected items:', count);
 
             if (count > 0) {
                 $('#bulk-actions-bar').removeClass('d-none').slideDown(200);
@@ -636,12 +751,12 @@
             }
         }
 
-        // Update on checkbox change
+        // التحديث عند تغيير Checkboxes
         $(document).on('change', '.item-checkbox, input[data-children]', function() {
             setTimeout(updateBulkUI, 50);
         });
 
-        // 3. Open Bulk Modal
+        // 3. فتح Modal التحديث الجماعي
         $(document).on('click', '.open-bulk-modal', function(e) {
             e.preventDefault();
             const count = $('.item-checkbox:checked').length;
@@ -651,12 +766,11 @@
                 return;
             }
 
-            console.log('🚀 Opening bulk modal for', count, 'items');
             $('#bulk-selected-count-label').text(count);
             $('#bulkStatusModal').modal('show');
         });
 
-        // 4. Submit Bulk Update
+        // 4. إرسال التحديث الجماعي
         $(document).on('click', '#submit-bulk-modal', function(e) {
             e.preventDefault();
 
@@ -678,9 +792,7 @@
 
             if (!confirm(`هل أنت متأكد من تحديث ${count} مستفيدين؟`)) return;
 
-            console.log('📤 Submitting update:', data);
-
-            // Fill hidden fields
+            // ملء الحقول المخفية
             let fieldsHtml = '';
             for (const [key, value] of Object.entries(data)) {
                 fieldsHtml += `<input type="hidden" name="${key}" value="${value}">`;
@@ -693,7 +805,7 @@
             }, 300);
         });
 
-        // 5. Bulk Delete
+        // 5. الحذف الجماعي
         $(document).on('click', '.bulk-delete-btn', function(e) {
             e.preventDefault();
             const count = $('.item-checkbox:checked').length;
@@ -704,18 +816,12 @@
             }
 
             if (confirm(`⚠️ هل أنت متأكد من حذف ${count} مستفيدين؟ لا يمكن التراجع!`)) {
-                console.log('🗑️ Deleting', count, 'items');
                 $('#bulk-hidden-fields').html('<input type="hidden" name="action" value="delete">');
                 $('#bulk-actions-form').submit();
             }
         });
 
-        // 6. Auto-submit on per_page change
-        $(document).on('change', '#per_page', function() {
-            $(this).closest('form').submit();
-        });
-
-        // Initial check
+        // التحقق الأولي
         updateBulkUI();
     });
     </script>

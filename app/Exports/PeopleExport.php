@@ -170,7 +170,11 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
         return [
             '#',
             'رقم الهوية',
-            'الاسم رباعي',
+            'الاسم الرباعي',
+            'الاسم الأول',
+            'اسم الأب',
+            'اسم الجد',
+            'اسم العائلة',
             'الجنس',
             'رقم الهاتف',
             'مسؤول المنطقة',
@@ -201,10 +205,17 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
         static $i = 0;
         $i++;
 
+        // تركيب الاسم الرباعي
+        $fullName = trim($p->first_name . ' ' . $p->father_name . ' ' . $p->grandfather_name . ' ' . $p->family_name);
+
         return [
             $i,
             $p->id_num,
-            trim("{$p->first_name} {$p->father_name} {$p->grandfather_name} {$p->family_name}"),
+            $fullName,
+            $p->first_name,
+            $p->father_name,
+            $p->grandfather_name,
+            $p->family_name,
             $p->gender,
             $p->phone,
             $p->areaResponsible?->name ?? 'غير متوفر',
@@ -233,7 +244,7 @@ class PeopleExport implements FromQuery, WithHeadings, WithChunkReading, WithSty
     public function styles(Worksheet $sheet)
     {
         $sheet->setRightToLeft(true);
-        
+
         $sheet->getStyle('A1:X1')->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],

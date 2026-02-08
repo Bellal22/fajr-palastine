@@ -271,6 +271,7 @@ Route::get('ajax/responsibles-by-neighborhood', 'PersonController@getResponsible
 Route::get('people/view', 'PersonController@view')->name('people.view');
 Route::get('people/general-search', 'PersonController@generalSearch')->name('people.general_search');
 Route::get('people/search', 'PersonController@search')->name('people.search');
+Route::post('people/upload-filter-file', 'PersonController@uploadFilterFile')->name('people.uploadFilterFile');
 Route::post('people/clear', 'PersonController@clearSession')->name('people.clear');
 Route::put('people/bulk-toggle-freeze', 'PersonController@bulkToggleFreeze')->name('people.bulkToggleFreeze');
 Route::put('people/toggle-freeze/{person}', 'PersonController@toggleFreeze')->name('people.toggleFreeze');
@@ -296,6 +297,7 @@ Route::delete('suppliers/{trashed_supplier}/forceDelete', 'SupplierController@fo
 Route::resource('suppliers', 'SupplierController');
 
 // AreaResponsibles Routes.
+Route::get('area_responsibles/export-all', 'AreaResponsibleController@exportAll')->name('area_responsibles.export_all'); // Must be before resource
 Route::get('trashed/area_responsibles', 'AreaResponsibleController@trashed')->name('area_responsibles.trashed');
 Route::get('trashed/area_responsibles/{trashed_area_responsible}', 'AreaResponsibleController@showTrashed')->name('area_responsibles.trashed.show');
 Route::post('area_responsibles/{trashed_area_responsible}/restore', 'AreaResponsibleController@restore')->name('area_responsibles.restore');

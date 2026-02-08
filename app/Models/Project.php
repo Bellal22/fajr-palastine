@@ -47,6 +47,54 @@ class Project extends Model
     ];
 
     /**
+     * Custom attributes storage.
+     *
+     * @var array
+     */
+    protected $customAttributes = [];
+
+    /**
+     * Magic getter override.
+     */
+    public function __get($key)
+    {
+        // Check custom attributes first
+        if (array_key_exists($key, $this->customAttributes)) {
+            return $this->customAttributes[$key];
+        }
+
+        return parent::__get($key);
+    }
+
+    /**
+     * Magic setter override.
+     */
+    public function __set($key, $value)
+    {
+        // Store these as custom attributes
+        if (in_array($key, ['area_breakdown', 'warehouse_breakdown'])) {
+            $this->customAttributes[$key] = $value;
+            return;
+        }
+
+        parent::__set($key, $value);
+    }
+
+    /**
+     * Magic isset override.
+     */
+    public function __isset($key)
+    {
+        if (array_key_exists($key, $this->customAttributes)) {
+            return isset($this->customAttributes[$key]);
+        }
+
+        return parent::__isset($key);
+    }
+
+    // ... باقي الكود كما هو ...
+
+    /**
      * Check if project is expired.
      */
     public function isExpired(): bool
@@ -71,6 +119,7 @@ class Project extends Model
             $this->update(['status' => 'completed']);
         }
     }
+
     /**
      * Get the executing entities (Suppliers).
      */

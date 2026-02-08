@@ -81,9 +81,12 @@
                     <div class="row mb-5">
                         @forelse($areas as $area)
                         <div class="col-lg-3 col-md-4 col-sm-6">
-                            <div class="area-badge shadow-sm">
+                            <div class="area-badge shadow-sm" title="الكمية: {{ number_format($project->area_breakdown[$area->id]['total_quantity'] ?? 0) }}">
                                 <small class="text-muted text-uppercase font-weight-bold">{{ $area->name }}</small>
-                                <h3>{{ number_format($project->area_breakdown[$area->id] ?? 0) }}</h3>
+                                <h3>{{ number_format($project->area_breakdown[$area->id]['count'] ?? 0) }}</h3>
+                                <div class="text-success font-weight-bold" style="font-size: 0.9rem;">
+                                    <i class="fas fa-cubes ml-1"></i>{{ number_format($project->area_breakdown[$area->id]['total_quantity'] ?? 0) }}
+                                </div>
                             </div>
                         </div>
                         @empty
@@ -101,10 +104,13 @@
                     <div class="row">
                         @forelse($subWarehouses as $warehouse)
                         <div class="col-lg-3 col-md-4 col-sm-6">
-                            <div class="warehouse-badge shadow-sm">
+                            <div class="warehouse-badge shadow-sm" title="الكمية: {{ number_format($project->warehouse_breakdown[$warehouse->id]['total_quantity'] ?? 0) }}">
                                 <i class="fas fa-warehouse text-info mb-2"></i>
                                 <small class="text-muted text-uppercase font-weight-bold d-block">{{ $warehouse->name }}</small>
-                                <h3>{{ number_format($project->warehouse_breakdown[$warehouse->id] ?? 0) }}</h3>
+                                <h3>{{ number_format($project->warehouse_breakdown[$warehouse->id]['count'] ?? 0) }}</h3>
+                                <div class="text-primary font-weight-bold" style="font-size: 0.9rem;">
+                                    <i class="fas fa-cubes ml-1"></i>{{ number_format($project->warehouse_breakdown[$warehouse->id]['total_quantity'] ?? 0) }}
+                                </div>
                             </div>
                         </div>
                         @empty

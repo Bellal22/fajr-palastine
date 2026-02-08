@@ -25,6 +25,7 @@ class UpdatePersonRequest extends FormRequest
     {
         $this->merge([
             'phone' => str_replace('-', '', $this->phone),
+            'id_num' => preg_replace('/\D/', '', $this->id_num),
         ]);
     }
 
@@ -43,7 +44,7 @@ class UpdatePersonRequest extends FormRequest
             'family_name'             => ['required', 'string', 'regex:/^[\p{Arabic} ]+$/u', 'max:255'],
             'gender'                  => ['required', 'in:ذكر,أنثى'],
             'dob'                     => ['required', 'date'],
-            'phone'                   => ['required', 'string', 'regex:/^(059|056)\d{7}$/'],
+            'phone'                   => ['required', 'string', 'regex:/^0?(59|56)\d{7}$/'],
             'social_status'           => [ 'required', Rule::in(PersonSocialStatus::toValues())],
             'employment_status'       => ['required',Rule::in(['موظف', 'عامل', 'لا يعمل'])],
             'has_condition'           => ['required', 'boolean'],

@@ -18,7 +18,7 @@ class ProjectReportController extends Controller
     {
         $now = Carbon::now();
 
-        // 1. General Summary Stats (FIXED - بداية الأسبوع من السبت)
+        // 1. General Summary Stats (بداية الأسبوع من السبت)
         $stats = [
             'daily' => [
                 'count' => Project::whereDate('created_at', $now->toDateString())->count(),
@@ -53,11 +53,11 @@ class ProjectReportController extends Controller
                 $query->where('project_beneficiaries.status', 'غير مستلم');
             }
         ])
-        ->withSum(['beneficiaries as total_delivered_coupons' => function ($query) {
-            $query->where('project_beneficiaries.status', 'مستلم');
-        }], 'project_beneficiaries.quantity')
-        ->with('couponTypes')
-        ->latest()->get();
+            ->withSum(['beneficiaries as total_delivered_coupons' => function ($query) {
+                $query->where('project_beneficiaries.status', 'مستلم');
+            }], 'project_beneficiaries.quantity')
+            ->with('couponTypes')
+            ->latest()->get();
 
         // 3. Area-based Breakdown for Each Project
         $areaBreakdowns = DB::table('project_beneficiaries')
@@ -71,7 +71,8 @@ class ProjectReportController extends Controller
             ->select(
                 'project_beneficiaries.project_id',
                 DB::raw('COALESCE(persons.area_responsible_id, head.area_responsible_id) as area_id'),
-                DB::raw('count(*) as count')
+                DB::raw('count(*) as count'),
+                DB::raw('SUM(project_beneficiaries.quantity) as total_quantity')
             )
             ->groupBy('project_beneficiaries.project_id', 'area_id')
             ->get()
@@ -85,7 +86,8 @@ class ProjectReportController extends Controller
             ->select(
                 'project_id',
                 'sub_warehouse_id',
-                DB::raw('count(*) as count')
+                DB::raw('count(*) as count'),
+                DB::raw('SUM(quantity) as total_quantity')
             )
             ->groupBy('project_id', 'sub_warehouse_id')
             ->get()
@@ -109,9 +111,29 @@ class ProjectReportController extends Controller
             ->unique();
         $subWarehouses = SubWarehouse::whereIn('id', $allWarehouseIds)->get()->keyBy('id');
 
+        // ✅ تحويل stdClass إلى arrays
         foreach ($projects as $project) {
-            $project->area_breakdown = $areaBreakdowns->get($project->id, collect())->pluck('count', 'area_id')->toArray();
-            $project->warehouse_breakdown = $warehouseBreakdowns->get($project->id, collect())->pluck('count', 'sub_warehouse_id')->toArray();
+            // Area breakdown - استخدم متغير مؤقت
+            $areaData = $areaBreakdowns->get($project->id, collect())->keyBy('area_id');
+            $tempAreaBreakdown = [];
+            foreach ($areaData as $areaId => $data) {
+                $tempAreaBreakdown[$areaId] = [
+                    'count' => $data->count,
+                    'total_quantity' => $data->total_quantity
+                ];
+            }
+            $project->area_breakdown = $tempAreaBreakdown;
+
+            // Warehouse breakdown - استخدم متغير مؤقت
+            $warehouseData = $warehouseBreakdowns->get($project->id, collect())->keyBy('sub_warehouse_id');
+            $tempWarehouseBreakdown = [];
+            foreach ($warehouseData as $warehouseId => $data) {
+                $tempWarehouseBreakdown[$warehouseId] = [
+                    'count' => $data->count,
+                    'total_quantity' => $data->total_quantity
+                ];
+            }
+            $project->warehouse_breakdown = $tempWarehouseBreakdown;
         }
 
         return view('dashboard.reports.projects', compact('stats', 'projects', 'areas', 'subWarehouses'));
@@ -130,7 +152,7 @@ class ProjectReportController extends Controller
         ]);
 
         // Get area breakdown for this specific project
-        $areaBreakdown = DB::table('project_beneficiaries')
+        $areaBreakdownRaw = DB::table('project_beneficiaries')
             ->join('persons', 'project_beneficiaries.person_id', '=', 'persons.id')
             ->leftJoin('persons as head', function ($join) {
                 $join->on('persons.relative_id', '=', 'head.id_num')
@@ -140,27 +162,46 @@ class ProjectReportController extends Controller
             ->where('project_beneficiaries.status', 'مستلم')
             ->select(
                 DB::raw('COALESCE(persons.area_responsible_id, head.area_responsible_id) as area_id'),
-                DB::raw('count(*) as count')
+                DB::raw('count(*) as count'),
+                DB::raw('SUM(project_beneficiaries.quantity) as total_quantity')
             )
             ->groupBy('area_id')
-            ->pluck('count', 'area_id')
-            ->toArray();
+            ->get()
+            ->keyBy('area_id');
 
         // Get warehouse breakdown for this specific project
-        $warehouseBreakdown = DB::table('project_beneficiaries')
+        $warehouseBreakdownRaw = DB::table('project_beneficiaries')
             ->where('project_id', $project->id)
             ->where('status', 'مستلم')
             ->whereNotNull('sub_warehouse_id')
             ->select(
                 'sub_warehouse_id',
-                DB::raw('count(*) as count')
+                DB::raw('count(*) as count'),
+                DB::raw('SUM(quantity) as total_quantity')
             )
             ->groupBy('sub_warehouse_id')
-            ->pluck('count', 'sub_warehouse_id')
-            ->toArray();
+            ->get()
+            ->keyBy('sub_warehouse_id');
 
-        $project->area_breakdown = $areaBreakdown;
-        $project->warehouse_breakdown = $warehouseBreakdown;
+        // ✅ تحويل stdClass إلى arrays - استخدم متغير مؤقت
+        $tempAreaBreakdown = [];
+        foreach ($areaBreakdownRaw as $areaId => $data) {
+            $tempAreaBreakdown[$areaId] = [
+                'count' => $data->count,
+                'total_quantity' => $data->total_quantity
+            ];
+        }
+
+        $tempWarehouseBreakdown = [];
+        foreach ($warehouseBreakdownRaw as $warehouseId => $data) {
+            $tempWarehouseBreakdown[$warehouseId] = [
+                'count' => $data->count,
+                'total_quantity' => $data->total_quantity
+            ];
+        }
+
+        $project->area_breakdown = $tempAreaBreakdown;
+        $project->warehouse_breakdown = $tempWarehouseBreakdown;
 
         // Load coupon types
         $project->load('couponTypes');
@@ -171,8 +212,8 @@ class ProjectReportController extends Controller
             ->where('status', 'مستلم')
             ->sum('quantity');
 
-        $areas = AreaResponsible::whereIn('id', array_keys($areaBreakdown))->get()->keyBy('id');
-        $subWarehouses = SubWarehouse::whereIn('id', array_keys($warehouseBreakdown))->get()->keyBy('id');
+        $areas = AreaResponsible::whereIn('id', array_keys($tempAreaBreakdown))->get()->keyBy('id');
+        $subWarehouses = SubWarehouse::whereIn('id', array_keys($tempWarehouseBreakdown))->get()->keyBy('id');
 
         return view('dashboard.reports.project', compact('project', 'areas', 'subWarehouses', 'totalDeliveredCoupons'));
     }
@@ -180,7 +221,7 @@ class ProjectReportController extends Controller
     public function export(Request $request, Project $project)
     {
         // Reuse logic from show method to prepare data
-         $project->loadCount([
+        $project->loadCount([
             'beneficiaries as total_candidates',
             'beneficiaries as received_count' => function ($query) {
                 $query->where('project_beneficiaries.status', 'مستلم');
@@ -190,7 +231,7 @@ class ProjectReportController extends Controller
             }
         ]);
 
-        $areaBreakdown = DB::table('project_beneficiaries')
+        $areaBreakdownRaw = DB::table('project_beneficiaries')
             ->join('persons', 'project_beneficiaries.person_id', '=', 'persons.id')
             ->leftJoin('persons as head', function ($join) {
                 $join->on('persons.relative_id', '=', 'head.id_num')
@@ -200,26 +241,45 @@ class ProjectReportController extends Controller
             ->where('project_beneficiaries.status', 'مستلم')
             ->select(
                 DB::raw('COALESCE(persons.area_responsible_id, head.area_responsible_id) as area_id'),
-                DB::raw('count(*) as count')
+                DB::raw('count(*) as count'),
+                DB::raw('SUM(project_beneficiaries.quantity) as total_quantity')
             )
             ->groupBy('area_id')
-            ->pluck('count', 'area_id')
-            ->toArray();
+            ->get()
+            ->keyBy('area_id');
 
-        $warehouseBreakdown = DB::table('project_beneficiaries')
+        $warehouseBreakdownRaw = DB::table('project_beneficiaries')
             ->where('project_id', $project->id)
             ->where('status', 'مستلم')
             ->whereNotNull('sub_warehouse_id')
             ->select(
                 'sub_warehouse_id',
-                DB::raw('count(*) as count')
+                DB::raw('count(*) as count'),
+                DB::raw('SUM(quantity) as total_quantity')
             )
             ->groupBy('sub_warehouse_id')
-            ->pluck('count', 'sub_warehouse_id')
-            ->toArray();
+            ->get()
+            ->keyBy('sub_warehouse_id');
 
-        $project->area_breakdown = $areaBreakdown;
-        $project->warehouse_breakdown = $warehouseBreakdown;
+        // ✅ تحويل stdClass إلى arrays - استخدم متغير مؤقت
+        $tempAreaBreakdown = [];
+        foreach ($areaBreakdownRaw as $areaId => $data) {
+            $tempAreaBreakdown[$areaId] = [
+                'count' => $data->count,
+                'total_quantity' => $data->total_quantity
+            ];
+        }
+
+        $tempWarehouseBreakdown = [];
+        foreach ($warehouseBreakdownRaw as $warehouseId => $data) {
+            $tempWarehouseBreakdown[$warehouseId] = [
+                'count' => $data->count,
+                'total_quantity' => $data->total_quantity
+            ];
+        }
+
+        $project->area_breakdown = $tempAreaBreakdown;
+        $project->warehouse_breakdown = $tempWarehouseBreakdown;
         $project->load('couponTypes');
 
         $totalDeliveredCoupons = DB::table('project_beneficiaries')
@@ -227,8 +287,8 @@ class ProjectReportController extends Controller
             ->where('status', 'مستلم')
             ->sum('quantity');
 
-        $areas = AreaResponsible::whereIn('id', array_keys($areaBreakdown))->get()->keyBy('id');
-        $subWarehouses = SubWarehouse::whereIn('id', array_keys($warehouseBreakdown))->get()->keyBy('id');
+        $areas = AreaResponsible::whereIn('id', array_keys($tempAreaBreakdown))->get()->keyBy('id');
+        $subWarehouses = SubWarehouse::whereIn('id', array_keys($tempWarehouseBreakdown))->get()->keyBy('id');
 
         if ($request->type === 'pdf') {
             $html = view('dashboard.reports.project_pdf', [
@@ -283,7 +343,7 @@ class ProjectReportController extends Controller
                 }
                 break;
             case 'weekly':
-                // ✅ بداية الأسبوع من السبت
+                // بداية الأسبوع من السبت
                 $startDate = $today->copy()->startOfWeek(Carbon::SATURDAY);
                 $endDate = $today->copy()->endOfWeek(Carbon::FRIDAY);
                 $label = 'الأسبوعية';
@@ -341,7 +401,7 @@ class ProjectReportController extends Controller
                 ->where('status', 'مستلم')
                 ->whereBetween('delivery_date', [$startDate, $endDate])
                 ->count();
-            
+
             // Accumulate Item Quantities
             foreach ($project->couponTypes as $type) {
                 if (!isset($deliveredItemsSummary[$type->name])) {
@@ -372,7 +432,7 @@ class ProjectReportController extends Controller
             ->paginate(50);
 
         // 4. Area breakdown for this period
-        $areaBreakdown = DB::table('project_beneficiaries')
+        $areaBreakdownRaw = DB::table('project_beneficiaries')
             ->join('persons', 'project_beneficiaries.person_id', '=', 'persons.id')
             ->leftJoin('persons as head', function ($join) {
                 $join->on('persons.relative_id', '=', 'head.id_num')
@@ -382,24 +442,43 @@ class ProjectReportController extends Controller
             ->whereBetween('project_beneficiaries.delivery_date', [$startDate, $endDate])
             ->select(
                 DB::raw('COALESCE(persons.area_responsible_id, head.area_responsible_id) as area_id'),
-                DB::raw('count(*) as count')
+                DB::raw('count(*) as count'),
+                DB::raw('SUM(project_beneficiaries.quantity) as total_quantity')
             )
             ->groupBy('area_id')
-            ->pluck('count', 'area_id')
-            ->toArray();
+            ->get()
+            ->keyBy('area_id');
 
         // 5. Warehouse breakdown for this period
-        $warehouseBreakdown = DB::table('project_beneficiaries')
+        $warehouseBreakdownRaw = DB::table('project_beneficiaries')
             ->where('status', 'مستلم')
             ->whereBetween('delivery_date', [$startDate, $endDate])
             ->whereNotNull('sub_warehouse_id')
             ->select(
                 'sub_warehouse_id',
-                DB::raw('count(*) as count')
+                DB::raw('count(*) as count'),
+                DB::raw('SUM(quantity) as total_quantity')
             )
             ->groupBy('sub_warehouse_id')
-            ->pluck('count', 'sub_warehouse_id')
-            ->toArray();
+            ->get()
+            ->keyBy('sub_warehouse_id');
+
+        // ✅ تحويل stdClass إلى arrays
+        $areaBreakdown = [];
+        foreach ($areaBreakdownRaw as $areaId => $data) {
+            $areaBreakdown[$areaId] = [
+                'count' => $data->count,
+                'total_quantity' => $data->total_quantity
+            ];
+        }
+
+        $warehouseBreakdown = [];
+        foreach ($warehouseBreakdownRaw as $warehouseId => $data) {
+            $warehouseBreakdown[$warehouseId] = [
+                'count' => $data->count,
+                'total_quantity' => $data->total_quantity
+            ];
+        }
 
         $areas = AreaResponsible::whereIn('id', array_keys($areaBreakdown))->get()->keyBy('id');
         $subWarehouses = SubWarehouse::whereIn('id', array_keys($warehouseBreakdown))->get()->keyBy('id');
@@ -417,7 +496,7 @@ class ProjectReportController extends Controller
                 $query->whereDate('delivery_date', $date->toDateString());
                 break;
             case 'week':
-                // ✅ بداية الأسبوع من السبت
+                // بداية الأسبوع من السبت
                 $startOfWeek = $date->copy()->startOfWeek(Carbon::SATURDAY);
                 $endOfWeek = $date->copy()->endOfWeek(Carbon::FRIDAY);
 

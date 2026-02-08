@@ -329,19 +329,24 @@
             <tr>
                 <th>المنطقة</th>
                 <th>عدد المستفيدين</th>
-                <th>النسبة</th>
+                <th>إجمالي الكمية</th>
+                <th>النسبة (أشخاص)</th>
             </tr>
         </thead>
         <tbody>
-            @php $totalAreaCount = 0; @endphp
-            @forelse($project->area_breakdown as $areaId => $count)
-                @php $totalAreaCount += $count; @endphp
+            @php $totalAreaCount = 0; $totalAreaQuantity = 0; @endphp
+            @forelse($project->area_breakdown as $areaId => $stats)
+                @php 
+                    $totalAreaCount += ($stats['count'] ?? 0); 
+                    $totalAreaQuantity += ($stats['total_quantity'] ?? 0);
+                @endphp
                 <tr>
                     <td>{{ $areas[$areaId]->name ?? 'غير محدد' }}</td>
-                    <td>{{ $count }}</td>
+                    <td>{{ number_format($stats['count'] ?? 0) }}</td>
+                    <td>{{ number_format($stats['total_quantity'] ?? 0) }}</td>
                     <td>
                         @if($project->received_count > 0)
-                            {{ round(($count / $project->received_count) * 100, 1) }}%
+                            {{ round((($stats['count'] ?? 0) / $project->received_count) * 100, 1) }}%
                         @else
                             0%
                         @endif
@@ -349,14 +354,15 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="3" class="empty-row">لا يوجد بيانات متاحة.</td>
+                    <td colspan="4" class="empty-row">لا يوجد بيانات متاحة.</td>
                 </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr>
                 <th>الإجمالي</th>
-                <th>{{ $totalAreaCount }}</th>
+                <th>{{ number_format($totalAreaCount) }}</th>
+                <th>{{ number_format($totalAreaQuantity) }}</th>
                 <th>100%</th>
             </tr>
         </tfoot>
@@ -368,19 +374,24 @@
             <tr>
                 <th>المستودع الفرعي</th>
                 <th>عدد المستفيدين</th>
-                <th>النسبة</th>
+                <th>إجمالي الكمية</th>
+                <th>النسبة (أشخاص)</th>
             </tr>
         </thead>
         <tbody>
-            @php $totalWarehouseCount = 0; @endphp
-            @forelse($project->warehouse_breakdown as $subWarehouseId => $count)
-                @php $totalWarehouseCount += $count; @endphp
+            @php $totalWarehouseCount = 0; $totalWarehouseQuantity = 0; @endphp
+            @forelse($project->warehouse_breakdown as $subWarehouseId => $stats)
+                @php 
+                    $totalWarehouseCount += ($stats['count'] ?? 0); 
+                    $totalWarehouseQuantity += ($stats['total_quantity'] ?? 0);
+                @endphp
                 <tr>
                     <td>{{ $subWarehouses[$subWarehouseId]->name ?? 'غير محدد' }}</td>
-                    <td>{{ $count }}</td>
+                    <td>{{ number_format($stats['count'] ?? 0) }}</td>
+                    <td>{{ number_format($stats['total_quantity'] ?? 0) }}</td>
                     <td>
                         @if($project->received_count > 0)
-                            {{ round(($count / $project->received_count) * 100, 1) }}%
+                            {{ round((($stats['count'] ?? 0) / $project->received_count) * 100, 1) }}%
                         @else
                             0%
                         @endif
@@ -388,14 +399,15 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="3" class="empty-row">لا يوجد بيانات متاحة.</td>
+                    <td colspan="4" class="empty-row">لا يوجد بيانات متاحة.</td>
                 </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr>
                 <th>الإجمالي</th>
-                <th>{{ $totalWarehouseCount }}</th>
+                <th>{{ number_format($totalWarehouseCount) }}</th>
+                <th>{{ number_format($totalWarehouseQuantity) }}</th>
                 <th>100%</th>
             </tr>
         </tfoot>
