@@ -30,6 +30,12 @@
                         </div>
 
                         <div class="mr-2">
+                            <a href="{{ route('dashboard.area_responsibles.report') }}" 
+                               class="btn btn-outline-info">
+                                <i class="fas fa-chart-line"></i> لوحة التقارير
+                            </a>
+                        </div>
+                        <div class="mr-2">
                             <a href="{{ route('dashboard.area_responsibles.export_all') }}" 
                                class="btn btn-outline-success">
                                 <i class="fas fa-file-export"></i> تصدير الكل (ZIP)

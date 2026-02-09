@@ -79,8 +79,8 @@ class RegionController extends Controller
         $boundaries = json_decode($validated['boundaries'], true);
 
         // حساب مركز المنطقة تلقائياً
-        $centerLat = collect($boundaries)->avg('lat');
-        $centerLng = collect($boundaries)->avg('lng');
+        $centerLat = (float) collect($boundaries)->avg('lat');
+        $centerLng = (float) collect($boundaries)->avg('lng');
 
         // إنشاء المنطقة
         $region = Region::create([
@@ -93,6 +93,9 @@ class RegionController extends Controller
             'center_lng' => $centerLng,
             'is_active' => $validated['is_active'] ?? true
         ]);
+
+        // تعيين اللوكيشنات الموجودة داخل المنطقة
+        $this->assignLocationsToRegion($region);
 
         flash()->success(trans('regions.messages.created'));
 
@@ -148,8 +151,8 @@ class RegionController extends Controller
         $boundaries = json_decode($validated['boundaries'], true);
 
         // إعادة حساب المركز إذا تم تعديل الحدود
-        $centerLat = collect($boundaries)->avg('lat');
-        $centerLng = collect($boundaries)->avg('lng');
+        $centerLat = (float) collect($boundaries)->avg('lat');
+        $centerLng = (float) collect($boundaries)->avg('lng');
 
         // تحديث المنطقة
         $region->update([
@@ -162,6 +165,9 @@ class RegionController extends Controller
             'center_lng' => $centerLng,
             'is_active' => $validated['is_active'] ?? $region->is_active
         ]);
+
+        // تحديث اللوكيشنات بناءً على الحدود الجديدة
+        $this->assignLocationsToRegion($region);
 
         flash()->success(trans('regions.messages.updated'));
 
@@ -290,4 +296,90 @@ class RegionController extends Controller
         return redirect()->route('dashboard.regions.show', $region);
     }
 
+    /**
+     * تعيين اللوكيشنات للمنطقة بناءً على:
+     * 1. الموقع الجغرافي (Point-In-Polygon)
+     * 2. التبعية الإدارية (Area Responsible -> Blocks -> Locations)
+     */
+    /**
+     * تعيين اللوكيشنات للمنطقة بناءً على:
+     * 1. التبعية الإدارية: إنشاء/تحديث لوكيشنات لكل مندوب (Block) تابع لمسؤول المنطقة.
+     * 2. الموقع الجغرافي: ربط اللوكيشنات الموجودة مسبقاً التي تقع داخل الحدود.
+     */
+    private function assignLocationsToRegion(Region $region)
+    {
+        // 1. التبعية الإدارية: إنشاء/تحديث لوكيشن لكل مندوب
+        if ($region->area_responsible_id) {
+            $blocks = \App\Models\Block::where('area_responsible_id', $region->area_responsible_id)->get();
+
+            foreach ($blocks as $block) {
+                // ننشئ اللوكيشن فقط إذا كان للمندوب إحداثيات
+                if ($block->lat && $block->lan) {
+                    \App\Models\Location::updateOrCreate(
+                        ['block_id' => $block->id], // البحث عن لوكيشن لهذا المندوب
+                        [
+                            'region_id' => $region->id,
+                            'name' => $block->name,
+                            'latitude' => $block->lat,
+                            'longitude' => $block->lan,
+                            'phone' => $block->phone,
+                            'type' => 'other',
+                            'description' => $block->title . ' - ' . ($block->note ?? ''),
+                            'is_active' => true,
+                            'icon_color' => '#1976D2' // لون مميز لمناديب المنطقة
+                        ]
+                    );
+                }
+            }
+        }
+
+        // 2. الموقع الجغرافي: التعامل مع اللوكيشنات الأخرى (التي ليست مناديب) أو تم إنشاؤها يدوياً
+        if (!empty($region->boundaries)) {
+            // نستثني اللوكيشنات المرتبطة بمناديب لأننا عالجناها في الخطوة الأولى
+            $locations = \App\Models\Location::whereNull('block_id')->get();
+            $polygon = $region->boundaries;
+
+            foreach ($locations as $location) {
+                // إذا كان اللوكيشن مسجل مسبقاً لنفس المنطقة، لا داعي لتحديثه (إلا إذا أردنا التحقق من خروجه)
+                if ($location->region_id == $region->id) {
+                    continue;
+                }
+
+                if ($this->isPointInPolygon($location->getCoordinatesAttribute(), $polygon)) {
+                    $location->update(['region_id' => $region->id]);
+                }
+            }
+        }
+    }
+
+    /**
+     * التحقق مما إذا كانت النقطة داخل المضلع
+     */
+    private function isPointInPolygon($point, $polygon)
+    {
+        $x = $point['lat'];
+        $y = $point['lng'];
+
+        $inside = false;
+        $count = count($polygon);
+        $j = $count - 1;
+
+        for ($i = 0; $i < $count; $i++) {
+            $xi = $polygon[$i]['lat'];
+            $yi = $polygon[$i]['lng'];
+            $xj = $polygon[$j]['lat'];
+            $yj = $polygon[$j]['lng'];
+
+            $intersect = (($yi > $y) != ($yj > $y))
+                && ($x < ($xj - $xi) * ($y - $yi) / ($yj - $yi) + $xi);
+
+            if ($intersect) {
+                $inside = !$inside;
+            }
+
+            $j = $i;
+        }
+
+        return $inside;
+    }
 }

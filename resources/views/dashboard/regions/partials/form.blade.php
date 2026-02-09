@@ -135,41 +135,20 @@
 
 @push('styles')
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+    {{-- Leaflet.PM CSS --}}
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
 
     <style>
-        .leaflet-editing-icon {
-            position: relative;
-            margin-left: -4px !important;
-            margin-top: -4px !important;
-            width: 14px !important;
-            height: 14px !important;
-            background-color: #000000 !important;
-            border-radius: 50% !important;
-            border: 2px solid #ffffff !important;
-            box-shadow: 0 0 4px rgba(0,0,0,0.8) !important;
-        }
-
-        .leaflet-editing-icon::before {
-            content: '+';
-            color: #ffffff;
-            font-weight: bold;
-            font-size: 10px;
-            line-height: 10px;
-            position: absolute;
-            top: 1px;
-            left: 3px;
-        }
-
-        .leaflet-container.drawing-cursor {
-            cursor: crosshair !important;
+        .leaflet-pm-icon-marker {
+            z-index: 10000;
         }
     </style>
 @endpush
 
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    {{-- Leaflet.PM JS --}}
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -194,9 +173,7 @@
                 "Google Satellite": googleSat
             }).addTo(map);
 
-            const drawnItems = new L.FeatureGroup();
             const existingGroup = L.featureGroup().addTo(map);
-            map.addLayer(drawnItems);
 
             const allRegions = @json($regions ?? []);
             const regionsToShow = allRegions.filter(r => r.id !== currentRegionId);
@@ -208,81 +185,14 @@
                 const polygon = L.polygon(latlngs, {
                     color: region.color || '#FF0000',
                     fillColor: region.color || '#FF0000',
-                    fillOpacity: 0.3
+                    fillOpacity: 0.3,
+                    interactive: false // مناطق الآخرين غير قابلة للتفاعل
                 }).addTo(existingGroup).bindPopup(region.name);
             });
 
             let currentPolygon = null;
 
-            if (isEdit && existingBoundaries && existingBoundaries.length > 0) {
-                const latlngs = existingBoundaries.map(p => [parseFloat(p.lat), parseFloat(p.lng)]);
-                currentPolygon = L.polygon(latlngs, {
-                    color: document.getElementById('color').value,
-                    fillColor: document.getElementById('color').value,
-                    fillOpacity: 0.3
-                }).addTo(drawnItems);
-
-                saveBoundaries(currentPolygon);
-                map.fitBounds(currentPolygon.getBounds());
-            } else if (existingGroup.getLayers().length) {
-                map.fitBounds(existingGroup.getBounds());
-            }
-
-            const drawControl = new L.Control.Draw({
-                position: 'topright',
-                draw: {
-                    polygon: {
-                        allowIntersection: false,
-                        showArea: true,
-                        shapeOptions: {
-                            color: document.getElementById('color').value,
-                            fillOpacity: 0.3
-                        }
-                    },
-                    polyline: false,
-                    rectangle: false,
-                    circle: false,
-                    marker: false,
-                    circlemarker: false
-                },
-                edit: {
-                    featureGroup: drawnItems,
-                    remove: true
-                }
-            });
-            map.addControl(drawControl);
-
-            map.on(L.Draw.Event.DRAWSTART, function () {
-                map.getContainer().classList.add('drawing-cursor');
-            });
-
-            map.on(L.Draw.Event.DRAWSTOP, function () {
-                map.getContainer().classList.remove('drawing-cursor');
-            });
-
-            map.on(L.Draw.Event.CREATED, function (e) {
-                map.getContainer().classList.remove('drawing-cursor');
-
-                if (currentPolygon) {
-                    drawnItems.removeLayer(currentPolygon);
-                }
-
-                drawnItems.addLayer(e.layer);
-                currentPolygon = e.layer;
-                saveBoundaries(e.layer);
-            });
-
-            map.on(L.Draw.Event.EDITED, function (e) {
-                e.layers.eachLayer(layer => saveBoundaries(layer));
-            });
-
-            map.on(L.Draw.Event.DELETED, function () {
-                currentPolygon = null;
-                document.getElementById('boundaries').value = '';
-                document.getElementById('boundariesError').style.display = 'block';
-                document.getElementById('boundariesSuccess').style.display = 'none';
-            });
-
+            // دالة لحفظ الإحداثيات عند أي تغيير
             function saveBoundaries(layer) {
                 const latlngs = layer.getLatLngs()[0];
                 const boundaries = latlngs.map(ll => ({ lat: ll.lat, lng: ll.lng }));
@@ -291,6 +201,70 @@
                 document.getElementById('boundariesSuccess').style.display = 'block';
             }
 
+            // إعداد Leaflet.PM
+            map.pm.addControls({
+                position: 'topright',
+                drawCircle: false,
+                drawCircleMarker: false,
+                drawMarker: false,
+                drawPolyline: false,
+                drawRectangle: false,
+                drawText: false,
+                rotateMode: false,
+                cutPolygon: false,
+            });
+
+            // رسم المضلع الموجود إذا كان تعديل
+            if (isEdit && existingBoundaries && existingBoundaries.length > 0) {
+                const latlngs = existingBoundaries.map(p => [parseFloat(p.lat), parseFloat(p.lng)]);
+                
+                currentPolygon = L.polygon(latlngs, {
+                    color: document.getElementById('color').value,
+                    fillColor: document.getElementById('color').value,
+                    fillOpacity: 0.3,
+                    pmIgnore: false // السماح بتعديل هذا المضلع
+                }).addTo(map);
+
+                // حفظ الحدود للتأكد
+                saveBoundaries(currentPolygon);
+                map.fitBounds(currentPolygon.getBounds());
+                
+                // تفعيل التعديل والسحب للمضلع الحالي مباشرة
+                // currentPolygon.pm.enable(); // اختيارياً يمكن تفعيل وضع التعديل فوراً
+            } else if (existingGroup.getLayers().length) {
+                map.fitBounds(existingGroup.getBounds());
+            }
+
+            // الاستماع لأحداث الإنشاء (عند رسم مضلع جديد)
+            map.on('pm:create', (e) => {
+                // حذف المضلع القديم إذا وجد (لأننا نسمح بمنطقة واحدة فقط)
+                if (currentPolygon && currentPolygon !== e.layer) {
+                    map.removeLayer(currentPolygon);
+                }
+
+                currentPolygon = e.layer;
+                currentPolygon.setStyle({
+                    color: document.getElementById('color').value,
+                    fillColor: document.getElementById('color').value
+                });
+
+                saveBoundaries(currentPolygon);
+
+                // إضافة مستمعات الأحداث للمضلع الجديد
+                currentPolygon.on('pm:edit', (x) => saveBoundaries(x.layer));
+                currentPolygon.on('pm:dragend', (x) => saveBoundaries(x.layer));
+                currentPolygon.on('pm:rotateend', (x) => saveBoundaries(x.layer));
+                currentPolygon.on('pm:markerdragend', (x) => saveBoundaries(x.layer)); // عند تحريك نقطة
+            });
+
+            // إذا كان هناك مضلع حالي، أضف مستمعات الأحداث له أيضاً
+            if (currentPolygon) {
+                currentPolygon.on('pm:edit', (e) => saveBoundaries(e.layer));
+                currentPolygon.on('pm:dragend', (e) => saveBoundaries(e.layer));
+                currentPolygon.on('pm:markerdragend', (e) => saveBoundaries(e.layer));
+            }
+
+            // تحديث اللون عند تغييره من الإدخال
             const colorInput = document.getElementById('color');
             const colorPreview = document.getElementById('colorPreview');
             colorPreview.style.backgroundColor = colorInput.value;
@@ -302,15 +276,23 @@
                 if (currentPolygon) {
                     currentPolygon.setStyle({ color: color, fillColor: color });
                 }
-
-                drawControl.setDrawingOptions({
-                    polygon: {
-                        shapeOptions: {
-                            color: color,
-                            fillOpacity: 0.3
-                        }
-                    }
+                
+                map.pm.setGlobalOptions({ 
+                    pathOptions: { 
+                        color: color, 
+                        fillColor: color 
+                    } 
                 });
+            });
+            
+            // عند الحذف
+            map.on('pm:remove', (e) => {
+                if(e.layer === currentPolygon) {
+                    currentPolygon = null;
+                    document.getElementById('boundaries').value = '';
+                    document.getElementById('boundariesError').style.display = 'block';
+                    document.getElementById('boundariesSuccess').style.display = 'none';
+                }
             });
 
             const form = document.querySelector('form');

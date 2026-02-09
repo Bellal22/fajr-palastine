@@ -302,6 +302,9 @@ Route::get('trashed/area_responsibles', 'AreaResponsibleController@trashed')->na
 Route::get('trashed/area_responsibles/{trashed_area_responsible}', 'AreaResponsibleController@showTrashed')->name('area_responsibles.trashed.show');
 Route::post('area_responsibles/{trashed_area_responsible}/restore', 'AreaResponsibleController@restore')->name('area_responsibles.restore');
 Route::delete('area_responsibles/{trashed_area_responsible}/forceDelete', 'AreaResponsibleController@forceDelete')->name('area_responsibles.forceDelete');
+Route::get('area_responsibles/report', 'AreaResponsibleController@report')->name('area_responsibles.report');
+Route::get('area_responsibles/report/pdf', 'AreaResponsibleController@reportPdf')->name('area_responsibles.report.pdf');
+Route::get('area_responsibles/report/excel', 'AreaResponsibleController@reportExcel')->name('area_responsibles.report.excel');
 Route::resource('area_responsibles', 'AreaResponsibleController');
 Route::post('area_responsibles/{areaResponsible}/refresh-count','AreaResponsibleController@refreshCount')->name('area-responsibles.refresh-count');
 

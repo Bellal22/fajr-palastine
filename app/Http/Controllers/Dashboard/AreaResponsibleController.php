@@ -33,6 +33,89 @@ class AreaResponsibleController extends Controller
     }
 
     /**
+     * Display a comprehensive report of area responsibles and their delegates.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function report()
+    {
+        $areaResponsibles = AreaResponsible::with(['blocks'])->get();
+
+        foreach ($areaResponsibles as $area) {
+            foreach ($area->blocks as $block) {
+                // Count families (heads)
+                $block->families_count = $block->people()
+                    ->whereNull('relative_id')
+                    ->where('area_responsible_id', $area->id)
+                    ->count();
+
+                // Count individuals (sum of relatives_count + 1 for heads)
+                $block->individuals_count = $block->people()
+                    ->whereNull('relative_id')
+                    ->where('area_responsible_id', $area->id)
+                    ->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(NULLIF(relatives_count, 0), (SELECT COUNT(*) FROM persons AS p2 WHERE p2.relative_id = persons.id_num) + 1)'));
+            }
+        }
+
+        return view('dashboard.area_responsibles.report', compact('areaResponsibles'));
+    }
+
+    /**
+     * Export the report as PDF.
+     */
+    public function reportPdf()
+    {
+        $areaResponsibles = AreaResponsible::with(['blocks'])->get();
+
+        foreach ($areaResponsibles as $area) {
+            foreach ($area->blocks as $block) {
+                $block->families_count = $block->people()
+                    ->whereNull('relative_id')
+                    ->where('area_responsible_id', $area->id)
+                    ->count();
+
+                $block->individuals_count = $block->people()
+                    ->whereNull('relative_id')
+                    ->where('area_responsible_id', $area->id)
+                    ->sum(\Illuminate\Support\Facades\DB::raw('COALESCE(NULLIF(relatives_count, 0), (SELECT COUNT(*) FROM persons AS p2 WHERE p2.relative_id = persons.id_num) + 1)'));
+            }
+        }
+
+        $html = view('dashboard.area_responsibles.pdf', compact('areaResponsibles'))->render();
+
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'orientation' => 'P',
+            'margin_left' => 20,
+            'margin_right' => 20,
+            'margin_top' => 20,
+            'margin_bottom' => 20,
+            'default_font' => 'dejavusans'
+        ]);
+
+        $mpdf->autoScriptToLang = true;
+        $mpdf->autoLangToFont = true;
+
+        // إعادة تعيين خاصية التصغير لتكون متوافقة مع useSubstitutions
+        $mpdf->shrink_tables_to_fit = 0;
+
+        $mpdf->WriteHTML($html);
+
+        return $mpdf->Output('area_responsibles_report_' . date('Y-m-d_H-i-s') . '.pdf', 'D');
+    }
+
+    /**
+     * Export the report as Excel.
+     */
+    public function reportExcel()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\AreaResponsiblesReportExport, 'area_responsibles_report_' . date('Y-m-d') . '.xlsx');
+    }
+
+
+
+    /**
      * Show the form for creating a new resource.
      *
      * @return \Illuminate\Http\Response
@@ -229,7 +312,7 @@ class AreaResponsibleController extends Controller
             $zip = new \ZipArchive;
 
             if ($zip->open($zipFilePath, \ZipArchive::CREATE) === TRUE) {
-                
+
                 // التأكد من وجود المجلد في التخزين العام
                 if (!\Illuminate\Support\Facades\Storage::disk('public')->exists('temp')) {
                     \Illuminate\Support\Facades\Storage::disk('public')->makeDirectory('temp');
@@ -239,7 +322,7 @@ class AreaResponsibleController extends Controller
                     // تنظيف اسم الملف من الأحرف غير المسموح بها
                     $safeName = preg_replace('~[\\\\/:*?"<>|]~', '_', $areaResponsible->name);
                     $excelFileName = "{$safeName}.xlsx";
-                    
+
                     // استخدام التخزين على القرص العام
                     $stored = \Maatwebsite\Excel\Facades\Excel::store(
                         new \App\Exports\AreaResponsibleExport($areaResponsible),

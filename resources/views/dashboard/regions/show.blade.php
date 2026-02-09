@@ -220,6 +220,7 @@
                     boundaries: @json($region->boundaries ?? []),
                     responsible: @json(optional($region->areaResponsible)->name),
                     is_active: {{ $region->is_active ? 'true' : 'false' }},
+                    locations: @json($region->locations ?? [])
                 };
 
                 if (!regionData.boundaries || regionData.boundaries.length === 0) {
@@ -264,7 +265,7 @@
                     fillOpacity: 0.3
                 }).addTo(map);
 
-                // Build Simple Popup HTML
+                // Build Simple Popup HTML for Polygon
                 let popupHtml = `
                     <h6 style="color: ${regionData.color};">
                         <i class="fas fa-map-marked-alt"></i> ${regionData.name}
@@ -303,6 +304,91 @@
 
                 map.fitBounds(polygon.getBounds(), {
                     padding: [30, 30]
+                });
+
+                // Add Markers for Locations
+                regionData.locations.forEach(location => {
+                    if (location.latitude && location.longitude) {
+                        const marker = L.marker([parseFloat(location.latitude), parseFloat(location.longitude)], {
+                            icon: L.icon({
+                                iconUrl: "{{ asset('icons/person-marker.png') }}",
+                                iconSize: [40, 40],
+                                iconAnchor: [20, 40],
+                                popupAnchor: [0, -40],
+                                shadowSize: [41, 41]
+                            })
+                        }).addTo(map);
+
+                        const locName = location.name || '@lang("locations.singular")';
+                        const locType = location.type || 'other';
+                        const locColor = location.icon_color || '#9C27B0'; // Default purple if null
+
+                        // Build Detailed Popup HTML (Matching locations/show)
+                        let popupHtml = `
+                            <h6 style="color: ${locColor};">
+                                <i class="fas fa-map-marker-alt"></i> ${locName}
+                            </h6>
+                        `;
+
+                        if (location.address) {
+                            popupHtml += `
+                                <div class="popup-info-row">
+                                    <div class="popup-label">
+                                        <i class="fas fa-map-marker-alt text-danger"></i>
+                                        @lang('locations.attributes.address')
+                                    </div>
+                                    <div class="popup-value">${location.address}</div>
+                                </div>
+                            `;
+                        }
+
+                        if (location.phone) {
+                            popupHtml += `
+                                <div class="popup-info-row">
+                                    <div class="popup-label">
+                                        <i class="fas fa-phone text-success"></i>
+                                        @lang('locations.attributes.phone')
+                                    </div>
+                                    <div class="popup-value">
+                                        <a href="tel:${location.phone}">${location.phone}</a>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        // Type Badge
+                        const typeLabels = {
+                            'house': '@lang("locations.types.house")',
+                            'shelter': '@lang("locations.types.shelter")',
+                            'center': '@lang("locations.types.center")',
+                            'other': '@lang("locations.types.other")'
+                        };
+                        const typeLabel = typeLabels[locType] || locType;
+                        
+                        popupHtml += `
+                            <div class="popup-info-row">
+                                <div class="popup-label">
+                                    <i class="fas fa-tag text-info"></i>
+                                    @lang('locations.attributes.type')
+                                </div>
+                                <div class="popup-value">${typeLabel}</div>
+                            </div>
+                        `;
+
+                        if(location.description) {
+                             popupHtml += `
+                                <div class="popup-info-row">
+                                    <div class="popup-value text-muted">
+                                        <small>${location.description}</small>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        marker.bindPopup(popupHtml, {
+                            maxWidth: 300
+                        });
+                    }
                 });
             });
         </script>
