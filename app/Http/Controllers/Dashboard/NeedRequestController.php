@@ -108,6 +108,18 @@ class NeedRequestController extends Controller
 
         // Get supervisor's area responsible ID
         $user = auth()->user();
+
+        // Check for existing pending request for this supervisor
+        if ($user->isSupervisor()) {
+            $hasPending = NeedRequest::where('supervisor_id', $user->id)
+                ->where('status', 'pending')
+                ->exists();
+            if ($hasPending) {
+                flash()->error('لديك طلب احتياج قيد الانتظار بالفعل. لا يمكنك إضافة طلب جديد حتى يتم معالجة الطلب الحالي.');
+                return redirect()->back()->withInput();
+            }
+        }
+
         $supervisorAreaId = $user->isSupervisor() ? $user->id : null;
 
         // Add person IDs
@@ -172,6 +184,16 @@ class NeedRequestController extends Controller
                 session()->save();
             }
             flash()->error("فشل إرسال الطلب: لم يتم العثور على أي هويات صالحة.");
+            return redirect()->back()->withInput();
+        }
+
+        // Get allowed id count from project settings
+        $projectSettings = NeedRequestProject::where('project_id', $request->project_id)->first();
+        $allowedIdCount = $projectSettings ? $projectSettings->allowed_id_count : null;
+
+        // Check allowed id count limit if specified
+        if ($allowedIdCount && count($validIds) > $allowedIdCount) {
+            flash()->error("عذراً، لا يمكنك إضافة أكثر من {$allowedIdCount} هويات في هذا الطلب.");
             return redirect()->back()->withInput();
         }
 
@@ -254,7 +276,15 @@ class NeedRequestController extends Controller
         $projects = Project::active()->get();
         $need_request->load('items.person');
 
-        return view('dashboard.need_requests.edit', compact('need_request', 'projects'));
+        // Pre-populate person_ids for the textarea
+        $need_request->person_ids = $need_request->items->map(function ($item) {
+            return $item->person ? $item->person->id_num : null;
+        })->filter()->implode("\n");
+
+        // Get project setting for limit display
+        $projectSetting = NeedRequestProject::where('project_id', $need_request->project_id)->first();
+
+        return view('dashboard.need_requests.edit', compact('need_request', 'projects', 'projectSetting'));
     }
 
     /**
@@ -267,14 +297,156 @@ class NeedRequestController extends Controller
             return redirect()->route('dashboard.need_requests.show', $need_request);
         }
 
+        $user = auth()->user();
+        $supervisorAreaId = $user->isSupervisor() ? $user->id : null;
+        $project = Project::find($request->project_id);
+
+        // Process person IDs
+        $personIdsRaw = array_filter(array_map('trim', explode("\n", $request->input('person_ids', ''))));
+        $personIdsRaw = array_unique($personIdsRaw);
+
+        // Get allowed id count from project settings
+        $projectSettings = NeedRequestProject::where('project_id', $request->project_id)->first();
+        $limit = $projectSettings ? $projectSettings->allowed_id_count : null;
+
+        if ($limit && count($personIdsRaw) > $limit) {
+            flash()->error("عذراً، لا يمكنك تجاوز الحد المسموح ({$limit}) للهويات.");
+            return redirect()->back()->withInput();
+        }
+
+        $validIds = [];
+        $errors = [
+            'notFound' => [],
+            'unavailable' => [],
+            'processed' => [],
+        ];
+
+        foreach ($personIdsRaw as $idNum) {
+            $person = Person::where('id_num', $idNum)->first();
+
+            if (!$person) {
+                $errors['notFound'][] = "الهوية {$idNum}: عذراً، هذا الرقم غير مسجل في النظام.";
+                continue;
+            }
+
+            // 1. Check if already added to this project (as beneficiary)
+            if ($project->beneficiaries()->where('person_id', $person->id)->exists()) {
+                $errors['processed'][] = "الهوية {$idNum}: هذا الشخص مضاف مسبقاً كمستفيد في هذا المشروع.";
+                continue;
+            }
+
+            // 2. Check if already in a pending/approved request for this project (excluding current request items)
+            $alreadyRequested = NeedRequestItem::where('person_id', $person->id)
+                ->where('need_request_id', '!=', $need_request->id)
+                ->whereHas('needRequest', function($q) use ($project) {
+                    $q->where('project_id', $project->id)->whereIn('status', ['pending', 'approved']);
+                })->exists();
+            if ($alreadyRequested) {
+                $errors['processed'][] = "الهوية {$idNum}: هذا الشخص موجود حالياً في طلب احتياج آخر لهذا المشروع.";
+                continue;
+            }
+
+            // 3. Check if approved and has Area Responsible
+            if (!$person->area_responsible_id || !$person->block_id) {
+                $errors['unavailable'][] = "الهوية {$idNum} ({$person->name}): هذا الشخص غير معتمد أو لا يملك مسؤول منطقة.";
+                continue;
+            }
+
+            // 4. Check if in supervisor's area
+            if (!$user->isAdmin() && $supervisorAreaId && $person->area_responsible_id != $supervisorAreaId) {
+                $errors['unavailable'][] = "الهوية {$idNum} ({$person->name}): هذا الشخص خارج نطاق منطقتك المسؤول عنها.";
+                continue;
+            }
+
+            $validIds[] = $person->id;
+        }
+
+        if (empty($validIds) && !empty($personIdsRaw)) {
+            if (!empty($errors['notFound']) || !empty($errors['unavailable']) || !empty($errors['processed'])) {
+                session()->put('need_request_notFound', $errors['notFound']);
+                session()->put('need_request_unavailable', $errors['unavailable']);
+                session()->put('need_request_processed', $errors['processed']);
+                session()->save();
+            }
+            flash()->error("فشل تحديث الطلب: لم يتم العثور على أي هويات صالحة.");
+            return redirect()->back()->withInput();
+        }
+
+        // Sync items: Delete current and re-add valid ones
+        $need_request->items()->delete();
+        foreach ($validIds as $personId) {
+            NeedRequestItem::create([
+                'need_request_id' => $need_request->id,
+                'person_id' => $personId,
+                'status' => 'pending',
+            ]);
+        }
+
         $need_request->update([
             'project_id' => $request->project_id,
             'notes' => $request->notes,
         ]);
 
+        if (!empty($errors['notFound']) || !empty($errors['unavailable']) || !empty($errors['processed'])) {
+            session()->put('need_request_notFound', $errors['notFound']);
+            session()->put('need_request_unavailable', $errors['unavailable']);
+            session()->put('need_request_processed', $errors['processed']);
+            session()->save();
+        }
+
         flash()->success(trans('need_requests.messages.updated'));
 
         return redirect()->route('dashboard.need_requests.show', $need_request);
+    }
+
+    /**
+     * Show the form for bulk creating need requests (Admin only).
+     */
+    public function bulkCreate()
+    {
+        $this->authorize('create', NeedRequest::class);
+
+        $projects = Project::active()->get();
+        $supervisors = Supervisor::all();
+
+        return view('dashboard.need_requests.bulk_create', compact('projects', 'supervisors'));
+    }
+
+    /**
+     * Store bulk created need requests (Admin only).
+     */
+    public function bulkStore(Request $request)
+    {
+        $this->authorize('create', NeedRequest::class);
+
+        $request->validate([
+            'project_id' => 'required|exists:projects,id',
+            'supervisor_ids' => 'required|array',
+            'supervisor_ids.*' => 'exists:users,id',
+            'allowed_id_count' => 'required|integer|min:1',
+        ]);
+
+        // Automatically enable the project and supervisors for need requests
+        NeedRequestProject::updateOrCreate(
+            ['project_id' => $request->project_id],
+            [
+                'is_enabled' => true,
+                'allowed_id_count' => $request->allowed_id_count,
+            ]
+        );
+
+        $count = 0;
+        foreach ($request->supervisor_ids as $supervisorId) {
+            NeedRequestSetting::updateOrCreate(
+                ['supervisor_id' => $supervisorId],
+                ['is_enabled' => true]
+            );
+            $count++;
+        }
+
+        flash()->success("تم تفعيل طلبات الاحتياج لـ {$count} مشرفين بنجاح.");
+
+        return redirect()->route('dashboard.need_requests.index');
     }
 
     /**

@@ -83,26 +83,46 @@ class AreaResponsibleController extends Controller
 
         $html = view('dashboard.area_responsibles.pdf', compact('areaResponsibles'))->render();
 
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'orientation' => 'P',
-            'margin_left' => 20,
-            'margin_right' => 20,
-            'margin_top' => 20,
-            'margin_bottom' => 20,
-            'default_font' => 'dejavusans'
-        ]);
+        // إنشاء كائن TCPDF مع دعم العربية
+        $pdf = new \TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
 
-        $mpdf->autoScriptToLang = true;
-        $mpdf->autoLangToFont = true;
+        // إعدادات PDF الأساسية
+        $pdf->SetCreator('Area Responsibles System');
+        $pdf->SetAuthor('System');
+        $pdf->SetTitle('تقرير مسؤولي المناطق');
 
-        // إعادة تعيين خاصية التصغير لتكون متوافقة مع useSubstitutions
-        $mpdf->shrink_tables_to_fit = 0;
+        // تفعيل دعم اللغة العربية والاتجاه RTL
+        $pdf->setLanguageArray(array(
+            'a_meta_charset' => 'UTF-8',
+            'a_meta_dir' => 'rtl',
+            'a_meta_language' => 'ar',
+        ));
 
-        $mpdf->WriteHTML($html);
+        // إعدادات الهوامش - تقليل الهامش العلوي
+        $pdf->SetMargins(10, 5, 10);
+        $pdf->SetHeaderMargin(0);
+        $pdf->SetFooterMargin(5);
+        $pdf->SetAutoPageBreak(true, 10);
 
-        return $mpdf->Output('area_responsibles_report_' . date('Y-m-d_H-i-s') . '.pdf', 'D');
+        // تعطيل الهيدر والفوتر الافتراضيين
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+
+        // إضافة صفحة
+        $pdf->AddPage();
+
+        // تعيين الخط الرسمي (aealarabiya)
+        $pdf->SetFont('aealarabiya', '', 9);
+
+        // تعيين اتجاه RTL
+        $pdf->setRTL(true);
+
+        // كتابة HTML
+        $pdf->writeHTML($html, true, false, true, false, '');
+
+        // إخراج PDF
+        return response($pdf->Output('area_responsibles_report_' . date('Y-m-d_H-i-s') . '.pdf', 'D'))
+            ->header('Content-Type', 'application/pdf');
     }
 
     /**

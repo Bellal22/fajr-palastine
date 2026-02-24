@@ -173,32 +173,26 @@
     </style>
     @endpush
 
-    {{-- ========== رسائل الأخطاء والتحذيرات ========== --}}
+    {{-- ========== رسائل الأخطاء والتحذيرات (محمية من الإخفاء التلقائي) ========== --}}
     @if($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong><i class="fas fa-exclamation-triangle"></i> عذراً، حدثت بعض الأخطاء:</strong>
+        <div class="custom-static-alert alert-danger" style="padding: 1rem; border-radius: 0.4rem; margin-bottom: 1rem; border-right: 5px solid #ea5455; background-color: #ffefef; color: #333;">
+            <strong style="color: #ea5455;"><i class="fas fa-exclamation-triangle"></i> عذراً، حدثت بعض الأخطاء:</strong>
             <ul class="mb-0 mt-2">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
-            <button type="button" class="close" data-dismiss="alert">
-                <span>&times;</span>
-            </button>
         </div>
     @endif
 
     @if(session('import_errors'))
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <strong><i class="fas fa-exclamation-circle"></i> أخطاء الاستيراد ({{ count(session('import_errors')) }}):</strong>
+        <div class="custom-static-alert alert-warning" style="padding: 1rem; border-radius: 0.4rem; margin-bottom: 1rem; border-right: 5px solid #ff9f43; background-color: #fff8f0; color: #333;">
+            <strong style="color: #ff9f43;"><i class="fas fa-exclamation-circle"></i> أخطاء الاستيراد ({{ count(session('import_errors')) }}):</strong>
             <ul class="mb-0 mt-2" style="max-height: 300px; overflow-y: auto;">
                 @foreach(session('import_errors') as $error)
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
-            <button type="button" class="close" data-dismiss="alert">
-                <span>&times;</span>
-            </button>
         </div>
     @endif
 

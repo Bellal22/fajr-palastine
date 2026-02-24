@@ -1,23 +1,45 @@
 <x-layout :title="trans('dashboard.home')" :breadcrumbs="['dashboard.home']">
 
-    @push('styles')
-        <style>
-            .hover-shadow {
-                transition: all 0.3s ease-in-out;
-            }
-            .hover-shadow:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important;
-            }
-            .progress {
-                border-radius: 10px;
-                overflow: hidden;
-            }
-        </style>
-    @endpush
+    @if($isRegionalManager)
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm" style="border-radius: 12px; background: #fff;">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 60px; height: 60px;">
+                                <i class="fas fa-user-check fa-2x"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-1 text-primary">أهلاً بك مجدداً</h4>
+                                <h3 class="font-weight-bold mb-1">{{ auth()->user()->name }}</h3>
+                                <p class="text-muted mb-0">نتمنى لك يوماً سعيداً في خدمة أبناء شعبنا</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @else
+        @push('styles')
+            <style>
+                .hover-shadow {
+                    transition: all 0.3s ease-in-out;
+                }
+                .hover-shadow:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important;
+                }
+                .progress {
+                    border-radius: 10px;
+                    overflow: hidden;
+                }
+            </style>
+        @endpush
 
-    {{-- الرسم البياني أولاً (عمودين: مسجلين + مزامنين) --}}
-    <div class="row mb-5">
+        {{-- الرسم البياني أولاً (عمودين: مسجلين + مزامنين) --}}
+        {{-- ... (Rest of the original home.blade.php content) ... --}}
+        <div class="row mb-5">
+            {{-- content cut for brevity in replacement chunk but I'll include the actual lines --}}
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-gradient-primary text-white">
@@ -641,4 +663,5 @@
 
     </script>
 @endpush
+    @endif
 </x-layout>

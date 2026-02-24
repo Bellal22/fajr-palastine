@@ -1052,12 +1052,12 @@
                 </div>
 
                 @if($person->is_frozen)
-                    <div class="bg-red-100 border-r-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg shadow-sm" role="alert">
+                    <div class="bg-red-100 border-r-4 border-red-500 text-green-700 p-4 mb-6 rounded-lg shadow-sm" role="alert">
                         <div class="flex items-center">
                             <div class="py-1"><i class="fas fa-exclamation-triangle mr-3 text-xl"></i></div>
                             <div>
                                 <p class="font-bold">تنبيه: البيانات مجمّدة</p>
-                                <p class="text-sm">تم اعتماد بياناتك وتجميد التعديل على بيانات السكن تجنباً لفقدان حقك في الإدراج على بيانات المستفيدين. يرجى مراجعة الإدارة بهذا الخصوص.</p>
+                                <p class="text-sm">تم اعتماد بياناتك وتجميد التعديل على بيانات السكن تجنباً لفقدان حقك في الإدراج على بيانات المستفيدين.</p>
                             </div>
                         </div>
                     </div>
@@ -1424,7 +1424,7 @@
                             <label for="edit_grandfather_name">اسم الجد</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-user input-icon"></i>
-                                <input type="text" id="edit_grandfather_name" name="grandfather_name" value="{{ $person->grandfather_name }}" placeholder="اسم الجد" oninput="validateArabicInput('edit_grandfather_name')" onfocus="resetBorderAndError('grandfather_name')" required>
+                                <input type="text" id="edit_grandfather_name" name="grandfather_name" value="{{ $person->grandfather_name }}" placeholder="اسم الجد" oninput="validateArabicInput('edit_grandfather_name')" onfocus="resetBorderAndError('edit_grandfather_name')" required>
                             </div>
                             <div class="error-message" id="edit_grandfather_name_error"></div>
                         </div>
@@ -1453,9 +1453,17 @@
                                 <i class="fas fa-venus-mars input-icon"></i>
                                 <select id="edit_gender" name="gender" required oninput="validateEditGender()" onfocus="resetBorderAndError('edit_gender')">
                                     <option value="">اختر الجنس</option>
-                                    @foreach(['ذكر' => 'ذكر', 'أنثى' => 'أنثى', 'غير محدد' => 'غير محدد'] as $key => $gender)
-                                        <option value="{{ $key }}" {{ $person->gender == $key ? 'selected' : '' }}>{{ $gender }}</option>
+                                    @php
+                                        $genders = ['ذكر' => 'ذكر', 'أنثى' => 'أنثى', 'غير محدد' => 'غير محدد'];
+                                        $currentGender = $person->gender;
+                                        $genderExists = isset($genders[$currentGender]) || in_array($currentGender, $genders);
+                                    @endphp
+                                    @foreach($genders as $key => $gender)
+                                        <option value="{{ $key }}" {{ ($person->gender == $key || $person->gender == $gender) ? 'selected' : '' }}>{{ $gender }}</option>
                                     @endforeach
+                                    @if(!$genderExists && !empty($currentGender))
+                                        <option value="{{ $currentGender }}" selected>{{ $currentGender }}</option>
+                                    @endif
                                 </select>
                             </div>
                             <div class="error-message" id="edit_gender_error"></div>
@@ -1491,9 +1499,22 @@
                                 <i class="fas fa-heart input-icon"></i>
                                 <select id="edit_social_status" name="social_status" required oninput="validateSocialStatus()" onfocus="resetBorderAndError('edit_social_status')">
                                     <option value="">اختر الحالة</option>
+                                    @php
+                                        $currentSocialStatus = $person->social_status;
+                                        $socialStatusExists = false;
+                                        foreach($social_statuses as $key => $status) {
+                                            if ($currentSocialStatus == $key || $currentSocialStatus == $status) {
+                                                $socialStatusExists = true;
+                                                break;
+                                            }
+                                        }
+                                    @endphp
                                     @foreach($social_statuses as $key => $status)
-                                        <option value="{{ $key }}" {{ $person->social_status == $key ? 'selected' : '' }}>{{ $status }}</option>
+                                        <option value="{{ $key }}" {{ ($person->social_status == $key || $person->social_status == $status) ? 'selected' : '' }}>{{ $status }}</option>
                                     @endforeach
+                                    @if(!$socialStatusExists && !empty($currentSocialStatus))
+                                        <option value="{{ $currentSocialStatus }}" selected>{{ $currentSocialStatus }}</option>
+                                    @endif
                                 </select>
                             </div>
                             <div class="error-message" id="edit_social_status_error"></div>
@@ -1513,9 +1534,17 @@
                             <div class="input-wrapper">
                                 <i class="fas fa-briefcase input-icon"></i>
                                 <select id="edit_employment_status" name="employment_status" required oninput="validateEmploymentStatus()" onfocus="resetBorderAndError('edit_employment_status')">
-                                    <option value="لا يعمل" {{ old('employment_status', $person->employment_status) == 'لا يعمل' ? 'selected' : '' }}>لا يعمل</option>
-                                    <option value="موظف" {{ old('employment_status', $person->employment_status) == 'موظف' ? 'selected' : '' }}>موظف</option>
-                                    <option value="عامل" {{ old('employment_status', $person->employment_status) == 'عامل' ? 'selected' : '' }}>عامل</option>
+                                    @php
+                                        $employmentStatuses = ['لا يعمل', 'موظف', 'عامل'];
+                                        $currentEmpStatus = old('employment_status', $person->employment_status);
+                                        $empStatusExists = in_array($currentEmpStatus, $employmentStatuses);
+                                    @endphp
+                                    @foreach($employmentStatuses as $status)
+                                        <option value="{{ $status }}" {{ $currentEmpStatus == $status ? 'selected' : '' }}>{{ $status }}</option>
+                                    @endforeach
+                                    @if(!$empStatusExists && !empty($currentEmpStatus))
+                                        <option value="{{ $currentEmpStatus }}" selected>{{ $currentEmpStatus }}</option>
+                                    @endif
                                 </select>
                             </div>
                             <div class="error-message" id="edit_employment_status_error"></div>
@@ -1550,9 +1579,22 @@
                                 <i class="fas fa-map-marker-alt input-icon"></i>
                                 <select id="edit_city" name="city" required oninput="validateCity()" onfocus="resetBorderAndError('edit_city')">
                                     <option value="">اختر المحافظة الأصلية</option>
+                                    @php
+                                        $currentCityValue = $person->city;
+                                        $cityExists = false;
+                                        foreach($cities as $key => $city) {
+                                            if ($currentCityValue == $key || $currentCityValue == $city) {
+                                                $cityExists = true;
+                                                break;
+                                            }
+                                        }
+                                    @endphp
                                     @foreach($cities as $key => $city)
-                                        <option value="{{ $key }}" {{ $person->city == $key ? 'selected' : '' }}>{{ $city }}</option>
+                                        <option value="{{ $key }}" {{ ($person->city == $key || $person->city == $city) ? 'selected' : '' }}>{{ $city }}</option>
                                     @endforeach
+                                    @if(!$cityExists && !empty($currentCityValue))
+                                        <option value="{{ $currentCityValue }}" selected>{{ $currentCityValue }}</option>
+                                    @endif
                                 </select>
                             </div>
                             <div class="error-message" id="edit_city_error"></div>
@@ -1563,9 +1605,22 @@
                                 <i class="fas fa-house-damage input-icon"></i>
                                 <select id="edit_housing_damage_status" name="housing_damage_status" required oninput="validateHousingDamageStatus()" onfocus="resetBorderAndError('edit_housing_damage_status')">
                                     <option value="">اختر حالة السكن السابق</option>
+                                    @php
+                                        $currentDamageStatus = $person->housing_damage_status;
+                                        $damageStatusExists = false;
+                                        foreach($housing_damage_statuses as $key => $status) {
+                                            if ($currentDamageStatus == $key || $currentDamageStatus == $status) {
+                                                $damageStatusExists = true;
+                                                break;
+                                            }
+                                        }
+                                    @endphp
                                     @foreach($housing_damage_statuses as $key => $status)
-                                        <option value="{{ $key }}" {{ $person->housing_damage_status == $key ? 'selected' : '' }}>{{ $status }}</option>
+                                        <option value="{{ $key }}" {{ ($person->housing_damage_status == $key || $person->housing_damage_status == $status) ? 'selected' : '' }}>{{ $status }}</option>
                                     @endforeach
+                                    @if(!$damageStatusExists && !empty($currentDamageStatus))
+                                        <option value="{{ $currentDamageStatus }}" selected>{{ $currentDamageStatus }}</option>
+                                    @endif
                                 </select>
                             </div>
                             <div class="error-message" id="edit_housing_damage_status_error"></div>
@@ -1576,10 +1631,23 @@
                             <div class="input-wrapper">
                                 <i class="fas fa-map-marked-alt input-icon"></i>
                                 <select id="edit_current_city" name="current_city" required oninput="validateCurrentCity()" onfocus="resetBorderAndError('edit_current_city')" onchange="updateNeighborhoods(this.value, '{{ $person->neighborhood }}')">
-                                    <option value="">خان يونس</option> {{-- افتراض القيمة الأولى كما طلب، لكن سأبقي القائمة --}}
+                                    <option value="">اختر المحافظة التي تسكن فيها حالياً</option>
+                                    @php
+                                        $currentCityValueNow = $person->current_city;
+                                        $currentCityExists = false;
+                                        foreach($current_cities as $key => $city) {
+                                            if ($currentCityValueNow == $key || $currentCityValueNow == $city) {
+                                                $currentCityExists = true;
+                                                break;
+                                            }
+                                        }
+                                    @endphp
                                     @foreach($current_cities as $key => $city)
-                                        <option value="{{ $key }}" {{ $person->current_city == $key ? 'selected' : '' }}>{{ $city }}</option>
+                                        <option value="{{ $key }}" {{ ($person->current_city == $key || $person->current_city == $city) ? 'selected' : '' }}>{{ $city }}</option>
                                     @endforeach
+                                    @if(!$currentCityExists && !empty($currentCityValueNow))
+                                        <option value="{{ $currentCityValueNow }}" selected>{{ $currentCityValueNow }}</option>
+                                    @endif
                                 </select>
                             </div>
                             <div class="error-message" id="edit_current_city_error"></div>
@@ -1591,9 +1659,22 @@
                                 <i class="fas fa-building input-icon"></i>
                                 <select id="edit_housing_type" name="housing_type" required oninput="validateHousingType()" onfocus="resetBorderAndError('edit_housing_type')">
                                     <option value="">اختر نوع السكن الذي تعيش فيه حالياً</option>
+                                    @php
+                                        $currentHousingType = $person->housing_type;
+                                        $housingTypeExists = false;
+                                        foreach($housing_types as $key => $type) {
+                                            if ($currentHousingType == $key || $currentHousingType == $type) {
+                                                $housingTypeExists = true;
+                                                break;
+                                            }
+                                        }
+                                    @endphp
                                     @foreach($housing_types as $key => $type)
-                                        <option value="{{ $key }}" {{ $person->housing_type == $key ? 'selected' : '' }}>{{ $type }}</option>
+                                        <option value="{{ $key }}" {{ ($person->housing_type == $key || $person->housing_type == $type) ? 'selected' : '' }}>{{ $type }}</option>
                                     @endforeach
+                                    @if(!$housingTypeExists && !empty($currentHousingType))
+                                        <option value="{{ $currentHousingType }}" selected>{{ $currentHousingType }}</option>
+                                    @endif
                                 </select>
                             </div>
                             <div class="error-message" id="edit_housing_type_error"></div>
@@ -1605,9 +1686,22 @@
                                 <i class="fas fa-map-signs input-icon"></i>
                                 <select id="edit_neighborhood" name="neighborhood" required oninput="validateNeighborhood()" onfocus="resetBorderAndError('edit_neighborhood')">
                                     <option value="">اختر الحي</option>
-                                    @foreach($neighborhoods as $key => $neighborhood)
-                                        <option value="{{ $key }}" {{ $person->neighborhood == $key ? 'selected' : '' }}>{{ $neighborhood }}</option>
+                                    @php
+                                        $currentNeighborhood = $person->neighborhood;
+                                        $neighborhoodExists = false;
+                                        foreach($neighborhoods as $key => $neighborhoodOption) {
+                                            if ($currentNeighborhood == $key || $currentNeighborhood == $neighborhoodOption) {
+                                                $neighborhoodExists = true;
+                                                break;
+                                            }
+                                        }
+                                    @endphp
+                                    @foreach($neighborhoods as $key => $neighborhoodOption)
+                                        <option value="{{ $key }}" {{ ($person->neighborhood == $key || $person->neighborhood == $neighborhoodOption) ? 'selected' : '' }}>{{ $neighborhoodOption }}</option>
                                     @endforeach
+                                    @if(!$neighborhoodExists && !empty($currentNeighborhood))
+                                        <option value="{{ $currentNeighborhood }}" selected>{{ $currentNeighborhood }}</option>
+                                    @endif
                                 </select>
                             </div>
                             <div class="error-message" id="edit_neighborhood_error"></div>
@@ -1619,9 +1713,24 @@
                                 <i class="fas fa-user-tie input-icon"></i>
                                 <select class="form-control" name="area_responsible_id" id="edit_area_responsible_id" oninput="validateAreaResponsible()" onfocus="resetBorderAndError('edit_area_responsible_id')" {{ $person->is_frozen ? 'disabled' : '' }}>
                                     <option value="">اختر المسؤول</option>
-                                    @foreach (\App\Models\AreaResponsible::all() as $responsible)
-                                        <option value="{{ $responsible->id }}" {{ $person->area_responsible_id == $responsible->id ? 'selected' : '' }}>{{ $responsible->name }}</option>
+                                    @php
+                                        $allResponsibles = \App\Models\AreaResponsible::all();
+                                        $currentRespId = $person->area_responsible_id;
+                                        $respExists = $allResponsibles->contains('id', $currentRespId);
+                                    @endphp
+                                    @foreach ($allResponsibles as $responsible)
+                                        <option value="{{ $responsible->id }}" {{ $currentRespId == $responsible->id ? 'selected' : '' }}>{{ $responsible->name }}</option>
                                     @endforeach
+                                    @if(!$respExists && !empty($currentRespId))
+                                        @php
+                                            $fallbackResp = \App\Models\AreaResponsible::find($currentRespId);
+                                        @endphp
+                                        @if($fallbackResp)
+                                            <option value="{{ $fallbackResp->id }}" selected>{{ $fallbackResp->name }}</option>
+                                        @else
+                                            <option value="{{ $currentRespId }}" selected>مسؤول غير معروف (ID: {{ $currentRespId }})</option>
+                                        @endif
+                                    @endif
                                 </select>
                             </div>
                             <div class="error-message" id="edit_area_responsible_id_error"></div>
@@ -1929,10 +2038,10 @@
             <div class="popup-content">
                 <span class="close" id="close-complaint-popup">&times;</span>
                 <h1>إضافة شكوى جديدة</h1>
-                
+
                 <div class="popup-form-section">
                     <h3><i class="fas fa-comments"></i> تفاصيل الشكوى</h3>
-                    
+
                     <div class="form-group">
                         <label for="complaint_title">عنوان الشكوى <span style="color: red;">*</span></label>
                         <div class="input-wrapper">
@@ -2224,6 +2333,10 @@
             }
         });
 
+        function closePopup() {
+            document.getElementById("editPopup").classList.add("hidden");
+        }
+
         function openPopup() {
             document.getElementById("editPopup").classList.remove("hidden");
 
@@ -2241,15 +2354,20 @@
             setTimeout(function() {
                 if (areaResponsibleId) {
                     const areaResponsibleSelect = document.getElementById('edit_area_responsible_id');
-                    // التحقق من أن القيمة موجودة في الخيارات المتاحة
-                    const optionExists = Array.from(areaResponsibleSelect.options).some(opt => opt.value === areaResponsibleId);
-                    if (optionExists) {
-                        areaResponsibleSelect.value = areaResponsibleId;
+                    if (areaResponsibleSelect) {
+                        // التحقق من أن القيمة موجودة في الخيارات المتاحة
+                        const optionExists = Array.from(areaResponsibleSelect.options).some(opt => opt.value === areaResponsibleId.toString());
+                        if (optionExists) {
+                            areaResponsibleSelect.value = areaResponsibleId;
+                        }
                     }
                 }
 
                 // تشغيل حدث التغيير للحي لضبط الخيارات المناسبة
-                document.getElementById('edit_neighborhood').dispatchEvent(new Event('change'));
+                const editNeighborhood = document.getElementById('edit_neighborhood');
+                if (editNeighborhood) {
+                    editNeighborhood.dispatchEvent(new Event('change'));
+                }
             }, 100);
         }
 
@@ -2401,14 +2519,7 @@
                 $('#password-popup').addClass('hidden');
             };
 
-            window.closePopup = function() {
-                $('#editPopup').addClass('hidden');
-            };
 
-            window.openPopup = function() {
-                $('#editPopup').removeClass('hidden');
-                // resetValidationStyles();
-            };
 
             $('#open-form').click(function(event) {
                 event.preventDefault();
@@ -2490,7 +2601,7 @@
                         if (response.status === 'success' || response.success) {
                             showAlert('تم إرسال الشكوى بنجاح', 'success');
                             $('#complaint-popup').addClass('hidden');
-                            
+
                             // تحديث الصفحة بعد 1.5 ثانية
                             setTimeout(function() {
                                 location.reload();
@@ -2501,9 +2612,9 @@
                     },
                     error: function(xhr) {
                         console.error('❌ خطأ في الإرسال:', xhr.responseText);
-                        
+
                         let response = xhr.responseJSON || {};
-                        
+
                         if (response.errors) {
                             let errorMessages = [];
                             for (let field in response.errors) {
@@ -2650,9 +2761,8 @@
                     cancelButtonText: 'إلغاء'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // إرسال طلب AJAX لحذف العنصر
                         $.ajax({
-                            url: '/person/' + id,
+                            url: "{{ url('/person') }}/" + id,
                             method: 'DELETE',
                             headers: {
                                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') // أخذ توكن CSRF من الـ meta tag
@@ -2916,15 +3026,7 @@
             return true;  // السماح بإرسال النموذج إذا كان الرقم صالح
         }
 
-        function openPopup() {
-            document.getElementById("editPopup").classList.remove("hidden");
 
-            let current_city = "{{ $person->current_city }}"
-            let neighborhood = "{{ $person->neighborhood }}"
-
-            // تحديث قائمة الأحياء بناءً على المحافظة وتحديد الحي المخزن
-            updateNeighborhoods(current_city, neighborhood);
-        }
 
         function closeFamilyPopup() {
             document.getElementById("editFamilyMemberModal").classList.add("hidden");
@@ -3005,7 +3107,8 @@
                 housing_type: document.getElementById('edit_housing_type').value.trim(),
                 neighborhood: neighborhoodValue,
                 area_responsible_id: rawValue === '' ? null : rawValue,
-                landmark: document.getElementById('edit_landmark').value.trim()
+                landmark: document.getElementById('edit_landmark').value.trim(),
+                phone: (document.getElementById('edit_phone')?.value.trim() || "").replace(/-/g, '').replace(/^0/, '')
             };
 
             console.log('formData to send:', formData);
@@ -3018,16 +3121,24 @@
                 }
             }
 
-            fetch('/update-profile', {
+            fetch("{{ url('/update-profile') }}", {
                 method: 'POST',
                 headers: {
+                    'Accept': 'application/json',
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: JSON.stringify(formData)
             })
             .then(response => {
-                return response.json().then(data => {
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error("❌ Failed to parse JSON. Response text:", text);
+                        return Promise.reject({ status: response.status, text: text });
+                    }
+                }).then(data => {
                     if (!response.ok) {
                         return Promise.reject({ status: response.status, data: data });
                     }
@@ -3063,8 +3174,8 @@
                         showAlert(error.data.message || 'حدث خطأ أثناء التحديث', 'error');
                     }
                 } else {
-                    console.error("❌ خطأ في جلب البيانات:", error);
-                    showAlert('[translate:تعذر الاتصال بالخادم، يرجى التحقق من الاتصال بالإنترنت.]', 'error');
+                    console.error("❌ Error fetching data:", error);
+                    showAlert('Failed to connect to the server. Please check your internet connection.', 'error');
                 }
             });
         }
@@ -3096,8 +3207,8 @@
                 relationship: document.getElementById('edit_f_relationship')?.value.trim() || "",
                 has_condition: hasConditionElement?.value.trim() || "",
                 condition_description: conditionDescriptionElement?.value.trim() || "",
-                // التعديل الجديد: إضافة رقم الجوال
-                phone: document.getElementById('edit_f_phone')?.value.trim() || ""
+                // التعديل الجديد: إضافة رقم الجوال مع تنظيفه
+                phone: (document.getElementById('edit_f_phone')?.value.trim() || "").replace(/-/g, '').replace(/^0/, "")
             };
 
             // أرسل old_id_num فقط إذا اختلف عن الرقم الجديد وباي قيمة صالحة
@@ -3128,16 +3239,24 @@
 
             console.log("📌 البيانات المُرسلة:", formData);
 
-            fetch('/update-family-member', {
+            fetch("{{ url('/update-family-member') }}", {
                 method: 'POST',
                 headers: {
+                    'Accept': 'application/json',
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
                 },
                 body: JSON.stringify(formData)
             })
             .then(response => {
-                return response.json().then(data => {
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error("❌ Failed to parse JSON. Response text:", text);
+                        return Promise.reject({ status: response.status, text: text });
+                    }
+                }).then(data => {
                     if (!response.ok) {
                         return Promise.reject({ status: response.status, data: data });
                     }
@@ -3173,8 +3292,8 @@
                         showAlert(error.data.message || '[translate:حدث خطأ أثناء التحديث]', 'error');
                     }
                 } else {
-                    console.error("❌ خطأ في جلب البيانات:", error);
-                    showAlert('[translate:تعذر الاتصال بالخادم، يرجى التحقق من الاتصال بالإنترنت.]', 'error');
+                    console.error("❌ Error fetching data:", error);
+                    showAlert('Failed to connect to the server. Please check your internet connection.', 'error');
                 }
             });
         }
@@ -3238,9 +3357,10 @@
             let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
             // إرسال البيانات إلى السيرفر عبر fetch
-            fetch('/update-passkey', {
+            fetch("{{ url('/update-passkey') }}", {
                 method: 'POST',
                 headers: {
+                    'Accept': 'application/json',
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken // ✅ حماية Laravel عبر CSRF Token
                 },
@@ -3642,6 +3762,19 @@
         }
 
         function updateNeighborhoods(selectedCity, selectedNeighborhood = null, originalCity) {
+            // Mapping Arabic city names to slugs if needed
+            const cityMap = {
+                'خان يونس': 'khanYounis',
+                'رفح': 'rafah',
+                'غزة': 'gaza',
+                'شمال غزة': 'northGaza',
+                'الوسطى': 'alwsta'
+            };
+
+            if (cityMap[selectedCity]) {
+                selectedCity = cityMap[selectedCity];
+            }
+
             const neighborhoodSelect = document.getElementById("edit_neighborhood");
             neighborhoodSelect.innerHTML = '<option value="">اختر الحي السكني الحالي</option>';
 
@@ -3727,12 +3860,16 @@
             });
 
             // Preselect the neighborhood if passed and exists
-            if (selectedNeighborhood) {
-                const optionExists = [...neighborhoodSelect.options].some(opt => opt.value === selectedNeighborhood);
-                if (optionExists) {
-                    neighborhoodSelect.value = selectedNeighborhood;
+                if (option) {
+                    neighborhoodSelect.value = option.value;
+                } else if (selectedNeighborhood && selectedNeighborhood !== "") {
+                    // Fallback for neighborhood not in list
+                    const fallbackOption = document.createElement("option");
+                    fallbackOption.value = selectedNeighborhood;
+                    fallbackOption.textContent = selectedNeighborhood;
+                    fallbackOption.selected = true;
+                    neighborhoodSelect.appendChild(fallbackOption);
                 }
-            }
         }
 
         window.onload = function () {
@@ -4042,7 +4179,11 @@
 
 
         function editFamilyMember(familyMemberId) {
-            fetch(`/get-family-member-data/${familyMemberId}`)
+            fetch("{{ url('/get-family-member-data') }}/" + familyMemberId, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
@@ -4199,9 +4340,8 @@
                 cancelButtonText: 'إلغاء'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // إرسال طلب AJAX لحذف العنصر
                     $.ajax({
-                        url: '/person/' + id,
+                        url: "{{ url('/person') }}/" + id,
                         method: 'DELETE',
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') // أخذ توكن CSRF من الـ meta tag

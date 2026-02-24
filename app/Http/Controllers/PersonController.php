@@ -527,6 +527,13 @@ class PersonController extends Controller
             'old_id_num' => preg_replace('/\D/', '', $request->old_id_num),
         ]);
 
+        // Clean phone before validation/processing
+        if ($request->has('phone')) {
+            $request->merge([
+                'phone' => ltrim(str_replace('-', '', $request->phone), '0')
+            ]);
+        }
+
         // جلب المستخدم الحالي حسب رقم هويته القديمة (لو متوفرة) أو الجديدة
         $user = Person::where('id_num', $request->old_id_num ?? $request->id_num)->first();
 
@@ -590,21 +597,21 @@ class PersonController extends Controller
         // استبعاد old_id_num من بيانات التحديث لأنه ليس عمود
         $data = $request->except('old_id_num');
 
-
         $request->validate([
-            'phone' => ['nullable', 'string', 'regex:/^0?(59|56)[0-9]{7}$/'],
+            'phone' => ['nullable', 'string', 'regex:/^(59|56)[0-9]{7}$/'],
         ], [
-            'phone.regex' => 'رقم الجوال يجب أن يبدأ بـ 59 أو 56 ويتكون من 9 أرقام.'
+            'phone.regex' => 'رقم الجوال يجب أن يبدأ بـ 59 أو 56 ويتكون من 9 أرقام (بدون صفر البداية).'
         ]);
+
+        $data['phone'] = $request->phone;
 
         if (isset($data['area_responsible_id']) && ($data['area_responsible_id'] === 'null' || $data['area_responsible_id'] === '')) {
             $data['area_responsible_id'] = null;
         }
 
-        if (isset($data['phone'])) {
-            $cleanPhone = str_replace('-', '', $data['phone']);
-            $cleanPhone = ltrim($cleanPhone, '0');
-            $data['phone'] = $cleanPhone;
+        // Housing fields are already cleaned or unset if frozen line 611
+        if ($user->is_frozen) {
+            unset($data['area_responsible_id'], $data['block_id']);
         }
 
         // Remove housing fields from data if frozen to prevent any accidental backend update
@@ -612,12 +619,20 @@ class PersonController extends Controller
             unset($data['area_responsible_id'], $data['block_id']);
         }
 
-        $updated = $user->update($data);
+        try {
+            $updated = $user->update($this->mapSlugsToNames($data));
 
-        if ($updated) {
-            return response()->json(['success' => true, 'message' => 'تم تحديث الملف الشخصي بنجاح']);
-        } else {
-            return response()->json(['success' => false, 'message' => 'فشل تحديث البيانات. يرجى المحاولة مرة أخرى.'], 500);
+            if ($updated) {
+                return response()->json(['success' => true, 'message' => 'تم تحديث الملف الشخصي بنجاح']);
+            } else {
+                return response()->json(['success' => false, 'message' => 'فشل تحديث البيانات. يرجى المحاولة مرة أخرى.'], 500);
+            }
+        } catch (\Exception $e) {
+            Log::error('❌ Error updating profile: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ أثناء تحديث البيانات: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -626,6 +641,13 @@ class PersonController extends Controller
         $request->merge([
             'id_num' => preg_replace('/\D/', '', $request->id_num),
         ]);
+
+        // Clean phone before validation/processing
+        if ($request->has('phone')) {
+            $request->merge([
+                'phone' => ltrim(str_replace('-', '', $request->phone), '0')
+            ]);
+        }
 
         // ✅ استخدام id بدلاً من id_num للبحث عن المستخدم
         $user = Person::find($request->id);
@@ -707,6 +729,8 @@ class PersonController extends Controller
                 'message' => $validator->errors()->first()
             ], 422);
         }
+
+        $data['phone'] = $request->phone;
 
         $updated = $user->update($this->mapSlugsToNames($data));
 
@@ -796,6 +820,69 @@ class PersonController extends Controller
             'gender' => [
                 'male'   => 'ذكر',
                 'female' => 'أنثى',
+            ],
+            'city' => \App\Enums\Person\PersonCity::options(),
+            'current_city' => \App\Enums\Person\PersonCurrentCity::options(),
+            'neighborhood' => [
+                'qizanAlNajjar' => 'قيزان النجار',
+                'qizanAbuRashwan' => 'قيزان أبو رشوان',
+                'juraAlLoot' => 'جورة اللوت',
+                'sheikhNasser' => 'الشيخ ناصر',
+                'maAn' => 'معن',
+                'alManaraNeighborhood' => 'حي المنارة',
+                'easternLine' => 'السطر الشرقي',
+                'westernLine' => 'السطر الغربي',
+                'alMahatta' => 'المحطة',
+                'alKatiba' => 'الكتيبة',
+                'alBatanAlSameen' => 'البطن السمين',
+                'alQalaaSouth' => 'القلعة جنوباً',
+                'northJalalStreet' => 'شارع جلال شمالاً',
+                'alMaskar' => 'المعسكر',
+                'alMashroo' => 'المشروع',
+                'hamidCity' => 'مدينة حمد',
+                'alMawasi' => 'المواصي',
+                'alQarara' => 'القرارة',
+                'eastKhanYounis' => 'شرق خان يونس',
+                'downtown' => 'وسط البحر',
+                'mirage' => 'الميراح',
+                'european' => 'الأوروبي',
+                'alFakhari' => 'الفخاري',
+                'masbah' => 'مصباح',
+                'khirbetAlAdas' => 'خربة العدس',
+                'alJaninehNeighborhood' => 'حي الجنينة',
+                'alAwda' => 'العودة',
+                'alZohourNeighborhood' => 'حي الزهور',
+                'brazilianHousing' => 'الإسكان البرازيلي',
+                'telAlSultan' => 'تل السلطان',
+                'alShabouraNeighborhood' => 'حي الشابورة',
+                'rafahProject' => 'مشروع رفح',
+                'zararRoundabout' => 'دوار زعرب',
+                'jabalia' => 'جباليا',
+                'beitLahia' => 'بيت لاهيا',
+                'beitHanoun' => 'بيت حانون',
+                'omAlNasr' => 'أم النصر',
+                'nazla' => 'النزلة',
+                'alZahra' => 'الزهراء',
+                'alMughraqa' => 'المغراقة',
+                'alBureij' => 'البريج',
+                'alNuseirat' => 'النصيرات',
+                'alMaghazi' => 'المغازي',
+                'alZawaida' => 'الزوائدة',
+                'deirAlBalah' => 'دير البلح',
+                'shujaiya' => 'الشجاعية',
+                'alDaraj' => 'الدرج',
+                'alTuffah' => 'التفاح',
+                'alRimal' => 'الرمال',
+                'alZaytoun' => 'الزيتون',
+                'alNasr' => 'النصر',
+                'sheikhRadwan' => 'الشيخ رضوان',
+                'telAlHawa' => 'تل الهوا',
+                'sheikhAjleen' => 'الشيخ عجلين',
+                'alSabra' => 'الصبرة',
+                'alKaramah' => 'الكرامة',
+                'birAlNajah' => 'بئر النعجة',
+                'juhrAlDeek' => 'جحر الديك',
+                'shatiCamp' => 'مخيم الشاطئ',
             ],
             'relationship' => [
                 'father'      => 'أب',

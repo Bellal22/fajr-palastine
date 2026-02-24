@@ -10,10 +10,10 @@
             'can' => ['ability' => 'viewAnyOwn', 'model' => \App\Models\NeedRequest::class],
         ],
         [
-            'name' => trans('need_requests.actions.create'),
-            'url' => route('dashboard.need_requests.create'),
-            'can' => ['ability' => 'create', 'model' => \App\Models\NeedRequest::class],
-            'active' => request()->routeIs('*need_requests.create'),
+            'name' => 'تفعيل طلبات الاحتياج',
+            'url' => route('dashboard.need_requests.bulk_create'),
+            'can' => ['ability' => 'viewAny', 'model' => \App\Models\NeedRequest::class],
+            'active' => request()->routeIs('*need_requests.bulk_create'),
         ],
         [
             'name' => trans('need_requests.actions.list'),

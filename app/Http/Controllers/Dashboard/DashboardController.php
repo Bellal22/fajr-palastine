@@ -9,8 +9,15 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        $isRegionalManager = auth()->user()->isSupervisor();
+
+        if ($isRegionalManager) {
+            return view('dashboard.home', compact('isRegionalManager'));
+        }
+
         // إحصائيات رب الأسرة
         $familyHeadStats = Person::getFamilyHeadStats();
+        // ... (rest of the stats)
         $unapprovedCount = $familyHeadStats->unapproved_count;
         $approvedCount = $familyHeadStats->approved_count;
         $totalCount = $familyHeadStats->total_count;
@@ -99,6 +106,7 @@ class DashboardController extends Controller
         ];
 
         return view('dashboard.home', compact(
+            'isRegionalManager',
             'unapprovedCount',
             'approvedCount',
             'totalCount',

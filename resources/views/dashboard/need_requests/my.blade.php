@@ -6,6 +6,13 @@
 
         <thead>
         <tr>
+            <th colspan="100">
+                <div class="d-flex justify-content-end">
+                    @include('dashboard.need_requests.partials.actions.create')
+                </div>
+            </th>
+        </tr>
+        <tr>
             <th>@lang('need_requests.attributes.project_id')</th>
             <th>@lang('need_requests.attributes.status')</th>
             <th>@lang('need_requests.count')</th>

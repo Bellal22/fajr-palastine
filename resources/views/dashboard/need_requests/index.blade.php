@@ -15,7 +15,14 @@
                         :resource="trans('need_requests.plural')"></x-check-all-delete>
 
                 <div class="ml-2 d-flex justify-content-between flex-grow-1">
-                    @include('dashboard.need_requests.partials.actions.create')
+                    <div class="d-flex">
+                        @include('dashboard.need_requests.partials.actions.create')
+                        @if(auth()->user()->isAdmin())
+                            <a href="{{ route('dashboard.need_requests.bulk_create') }}" class="btn btn-info ml-2">
+                                <i class="fas fa-layer-group"></i> تفعيل طلبات الاحتياج
+                            </a>
+                        @endif
+                    </div>
                     @include('dashboard.need_requests.partials.actions.trashed')
                 </div>
             </div>

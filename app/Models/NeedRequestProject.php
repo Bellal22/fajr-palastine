@@ -12,10 +12,12 @@ class NeedRequestProject extends Model
     protected $fillable = [
         'project_id',
         'is_enabled',
+        'allowed_id_count',
     ];
 
     protected $casts = [
         'is_enabled' => 'boolean',
+        'allowed_id_count' => 'integer',
     ];
 
     // --- Relationships ---

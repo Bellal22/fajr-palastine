@@ -137,7 +137,7 @@ class PersonController extends Controller
                     $searchedIds = array_merge($searchedIds, $cachedIds);
                 }
             }
-            
+
             // Remove duplicates and trim
             $searchedIds = array_unique(array_map('trim', $searchedIds));
 
@@ -268,42 +268,38 @@ class PersonController extends Controller
     public function view()
     {
         try {
-            // بناء الاستعلام الأساسي بدون استخدام filter() أولاً
             $query = Person::query()
+                ->whereNull('relative_id') // مهم: استبعاد أفراد الأسرة
                 ->whereNotNull('area_responsible_id')
                 ->whereNotNull('block_id')
                 ->withCount('familyMembers')
                 ->with(['block', 'areaResponsible']);
 
-            // تطبيق فلتر مسؤول المنطقة أولاً
             if ($areaResponsibleId = request('area_responsible_id')) {
                 $query->where('area_responsible_id', $areaResponsibleId);
             } elseif (auth()->user()?->isSupervisor()) {
                 $query->where('area_responsible_id', auth()->user()->id);
             }
 
-            // تطبيق فلتر المندوب
             if ($blockId = request('block_id')) {
                 $query->where('block_id', $blockId);
             }
 
-            // الآن تطبيق باقي الفلاتر من PersonFilter
+            // خلي الفلتر يشتغل على نفس الـ query
             $query = $query->filter();
 
             $people = $query->latest()->paginate();
 
-            // جلب المندوبين بناءً على صلاحيات المستخدم
             $blocks = Block::query()
-                ->when(auth()->user()?->isSupervisor(), function ($query) {
-                    $query->where('area_responsible_id', auth()->user()->id);
+                ->when(auth()->user()?->isSupervisor(), function ($q) {
+                    $q->where('area_responsible_id', auth()->user()->id);
                 })
-                ->when(request('area_responsible_id') && auth()->user()?->isAdmin(), function ($query) {
-                    $query->where('area_responsible_id', request('area_responsible_id'));
+                ->when(request('area_responsible_id') && auth()->user()?->isAdmin(), function ($q) {
+                    $q->where('area_responsible_id', request('area_responsible_id'));
                 })
                 ->orderBy('name')
                 ->pluck('name', 'id');
 
-            // تسجيل عملية البحث للمراقبة
             logger()->info('تم عرض قائمة الأشخاص', [
                 'user_id' => auth()->id(),
                 'filters' => request()->all(),
@@ -340,7 +336,7 @@ class PersonController extends Controller
             if ($person) {
                 // جلب جميع أرقام الـ ID الخاصة بأفراد العائلة (لجلب كافة الكوبونات المرتبطة بالعائلة)
                 $familyIds = collect([$person->id]);
-                
+
                 if ($person->relative_id) {
                     // إذا كان الشخص تابعاً، نجلب رب الأسرة وكل أتباعه
                     $head = Person::where('id_num', $person->relative_id)->with('familyMembers')->first();
@@ -387,7 +383,7 @@ class PersonController extends Controller
                 foreach ($coupons as $coupon) {
                     $coupon->coupon_types = $allCouponTypes->get($coupon->project_id) ?? collect();
                 }
-                
+
                 $person->setRelation('familyCoupons', $coupons);
             }
 
@@ -567,8 +563,8 @@ class PersonController extends Controller
             'is_frozen' => !$person->is_frozen
         ]);
 
-        $message = $person->is_frozen 
-            ? 'تم تجميد بيانات الفرد بنجاح' 
+        $message = $person->is_frozen
+            ? 'تم تجميد بيانات الفرد بنجاح'
             : 'تم إلغاء تجميد بيانات الفرد بنجاح';
 
         flash()->success($message);

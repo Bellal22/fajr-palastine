@@ -52,7 +52,7 @@ class NeedRequestPolicy
     public function create(User $user)
     {
         if ($user->isAdmin()) {
-            return false;
+            return true;
         }
 
         return $user->hasPermissionTo('manage.need_requests') && \App\Models\NeedRequestSetting::isEnabledFor($user->id);
