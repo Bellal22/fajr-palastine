@@ -50,6 +50,10 @@
                                 <div class="mr-2">
                                     <x-check-all-freeze></x-check-all-freeze>
                                 </div>
+
+                                <div class="mr-2">
+                                    <x-check-all-multi-action></x-check-all-multi-action>
+                                </div>
                             @endif
 
                             @if (auth()->user()?->isSupervisor())
