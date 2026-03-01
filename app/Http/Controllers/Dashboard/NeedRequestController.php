@@ -29,12 +29,11 @@ class NeedRequestController extends Controller
         $this->authorizeResource(NeedRequest::class, 'need_request');
     }
 
-    /**
-     * Display a listing of the resource (Admin view - all requests).
-     */
     public function index()
     {
-        $need_requests = NeedRequest::with(['project', 'supervisor', 'items'])
+        NeedRequestProject::checkAndExpire();
+
+        $need_requests = NeedRequest::with(['project.needRequestProject', 'supervisor', 'items'])
             ->filter()
             ->latest()
             ->paginate();
@@ -51,7 +50,9 @@ class NeedRequestController extends Controller
     {
         $this->authorize('viewAnyOwn', NeedRequest::class);
 
-        $need_requests = NeedRequest::with(['project', 'items'])
+        NeedRequestProject::checkAndExpire();
+
+        $need_requests = NeedRequest::with(['project.needRequestProject', 'items'])
             ->where('supervisor_id', auth()->id())
             ->latest()
             ->paginate();
@@ -74,12 +75,34 @@ class NeedRequestController extends Controller
 
         $notifications = $this->getSkippedItems();
 
+        NeedRequestProject::checkAndExpire();
+
         // Get enabled projects for need requests
         $projects = Project::active()
-            ->whereDoesntHave('needRequestProject', function ($query) {
-                $query->where('is_enabled', false);
+            ->with('needRequestProject')
+            ->where(function ($query) {
+                $query->whereDoesntHave('needRequestProject')
+                    ->orWhereHas('needRequestProject', function ($q) {
+                        $q->where('is_enabled', true)
+                            ->where(function ($sq) {
+                                $sq->whereNull('deadline')
+                                    ->orWhere('deadline', '>', now());
+                            });
+                    });
             })
             ->get();
+
+        // Prepare deadlines for JS
+        $deadlines = $projects->mapWithKeys(function($project) {
+            $deadline = optional($project->needRequestProject)->deadline;
+            return [$project->id => $deadline ? $deadline->toIso8601String() : ''];
+        });
+
+        // Prepare limits for JS
+        $limits = $projects->mapWithKeys(function($project) {
+            $limit = optional($project->needRequestProject)->allowed_id_count;
+            return [$project->id => $limit ?? ''];
+        });
 
         // Get supervised people (if supervisor has area_responsible relation)
         $people = collect();
@@ -92,7 +115,7 @@ class NeedRequestController extends Controller
                 ->get();
         }
 
-        return view('dashboard.need_requests.create', array_merge(compact('projects', 'people'), $notifications));
+        return view('dashboard.need_requests.create', array_merge(compact('projects', 'people', 'deadlines', 'limits'), $notifications));
     }
 
     /**
@@ -100,6 +123,8 @@ class NeedRequestController extends Controller
      */
     public function store(NeedRequestRequest $request)
     {
+        NeedRequestProject::checkAndExpire();
+
         // Check if enabled
         if (!NeedRequestSetting::isEnabledFor(auth()->id())) {
             flash()->error(trans('need_requests.messages.not_enabled'));
@@ -112,10 +137,11 @@ class NeedRequestController extends Controller
         // Check for existing pending request for this supervisor
         if ($user->isSupervisor()) {
             $hasPending = NeedRequest::where('supervisor_id', $user->id)
+                ->where('project_id', $request->project_id)
                 ->where('status', 'pending')
                 ->exists();
             if ($hasPending) {
-                flash()->error('لديك طلب احتياج قيد الانتظار بالفعل. لا يمكنك إضافة طلب جديد حتى يتم معالجة الطلب الحالي.');
+                flash()->error('لديك طلب احتياج قيد الانتظار لهذا الكوبون بالفعل. لا يمكنك إضافة طلب جديد لنفس الكوبون حتى يتم معالجة الطلب الحالي.');
                 return redirect()->back()->withInput();
             }
         }
@@ -135,7 +161,13 @@ class NeedRequestController extends Controller
             'unavailable' => [],
             'processed' => [],
         ];
-        $project = Project::find($request->project_id);
+        $project = Project::with('needRequestProject')->find($request->project_id);
+
+        // Check deadline
+        if ($project && $project->needRequestProject && $project->needRequestProject->deadline && $project->needRequestProject->deadline->isPast()) {
+            flash()->error("عذراً، انتهى موعد الترشيح لهذا المشروع في " . $project->needRequestProject->deadline->format('Y-m-d H:i'));
+            return redirect()->back()->withInput();
+        }
 
         foreach ($personIdsRaw as $idNum) {
             $person = Person::where('id_num', $idNum)->first();
@@ -151,13 +183,9 @@ class NeedRequestController extends Controller
                 continue;
             }
 
-            // 2. Check if already in a pending/approved request for this project
-            $alreadyRequested = NeedRequestItem::where('person_id', $person->id)
-                ->whereHas('needRequest', function($q) use ($project) {
-                    $q->where('project_id', $project->id)->whereIn('status', ['pending', 'approved']);
-                })->exists();
-            if ($alreadyRequested) {
-                $errors['processed'][] = "الهوية {$idNum}: هذا الشخص موجود حالياً في طلب احتياج آخر لهذا المشروع.";
+            // 2. Check if already requested in the last 30 days
+            if (NeedRequestItem::isRequestedInLast30Days($person->id)) {
+                $errors['processed'][] = "الهوية {$idNum}: هذا الشخص موجود حالياً في طلب احتياج سابق في اخر 30 يوم";
                 continue;
             }
 
@@ -230,7 +258,7 @@ class NeedRequestController extends Controller
      */
     public function show(NeedRequest $need_request)
     {
-        $need_request->load(['project', 'supervisor', 'items.person', 'reviewedBy']);
+        $need_request->load(['project.needRequestProject', 'supervisor', 'items.person', 'reviewedBy']);
 
         $notifications = $this->getSkippedItems();
 
@@ -273,7 +301,16 @@ class NeedRequestController extends Controller
             return redirect()->route('dashboard.need_requests.show', $need_request);
         }
 
-        $projects = Project::active()->get();
+        // Get project setting for limit display and deadline
+        $projectSetting = NeedRequestProject::where('project_id', $need_request->project_id)->first();
+
+        // Check deadline for editing (Strict block)
+        if ($projectSetting && $projectSetting->deadline && $projectSetting->deadline->isPast()) {
+            flash()->error("عذراً، انتهى موعد الترشيح لهذا المشروع في " . $projectSetting->deadline->format('Y-m-d H:i') . " ولا يمكن تعديل الطلب حالياً.");
+            return redirect()->route('dashboard.need_requests.show', $need_request);
+        }
+
+        $projects = Project::active()->with('needRequestProject')->get();
         $need_request->load('items.person');
 
         // Pre-populate person_ids for the textarea
@@ -281,10 +318,17 @@ class NeedRequestController extends Controller
             return $item->person ? $item->person->id_num : null;
         })->filter()->implode("\n");
 
-        // Get project setting for limit display
-        $projectSetting = NeedRequestProject::where('project_id', $need_request->project_id)->first();
+        // Prepare deadlines and limits for JS
+        $deadlines = $projects->mapWithKeys(function($project) {
+            $deadline = optional($project->needRequestProject)->deadline;
+            return [$project->id => $deadline ? $deadline->toIso8601String() : ''];
+        });
+        $limits = $projects->mapWithKeys(function($project) {
+            $limit = optional($project->needRequestProject)->allowed_id_count;
+            return [$project->id => $limit ?? ''];
+        });
 
-        return view('dashboard.need_requests.edit', compact('need_request', 'projects', 'projectSetting'));
+        return view('dashboard.need_requests.edit', array_merge(compact('need_request', 'projects', 'projectSetting', 'deadlines', 'limits')));
     }
 
     /**
@@ -292,6 +336,8 @@ class NeedRequestController extends Controller
      */
     public function update(NeedRequestRequest $request, NeedRequest $need_request)
     {
+        NeedRequestProject::checkAndExpire();
+
         if (!$need_request->isPending()) {
             flash()->error(trans('need_requests.messages.cannot_edit'));
             return redirect()->route('dashboard.need_requests.show', $need_request);
@@ -299,7 +345,13 @@ class NeedRequestController extends Controller
 
         $user = auth()->user();
         $supervisorAreaId = $user->isSupervisor() ? $user->id : null;
-        $project = Project::find($request->project_id);
+        $project = Project::with('needRequestProject')->find($request->project_id);
+
+        // Check deadline
+        if ($project && $project->needRequestProject && $project->needRequestProject->deadline && $project->needRequestProject->deadline->isPast()) {
+            flash()->error("عذراً، انتهى موعد الترشيح لهذا المشروع في " . $project->needRequestProject->deadline->format('Y-m-d H:i'));
+            return redirect()->back()->withInput();
+        }
 
         // Process person IDs
         $personIdsRaw = array_filter(array_map('trim', explode("\n", $request->input('person_ids', ''))));
@@ -335,14 +387,9 @@ class NeedRequestController extends Controller
                 continue;
             }
 
-            // 2. Check if already in a pending/approved request for this project (excluding current request items)
-            $alreadyRequested = NeedRequestItem::where('person_id', $person->id)
-                ->where('need_request_id', '!=', $need_request->id)
-                ->whereHas('needRequest', function($q) use ($project) {
-                    $q->where('project_id', $project->id)->whereIn('status', ['pending', 'approved']);
-                })->exists();
-            if ($alreadyRequested) {
-                $errors['processed'][] = "الهوية {$idNum}: هذا الشخص موجود حالياً في طلب احتياج آخر لهذا المشروع.";
+            // 2. Check if already requested in the last 30 days (excluding current request items)
+            if (NeedRequestItem::isRequestedInLast30Days($person->id, $need_request->id)) {
+                $errors['processed'][] = "الهوية {$idNum}: هذا الشخص موجود حالياً في طلب احتياج سابق في اخر 30 يوم";
                 continue;
             }
 
@@ -432,6 +479,7 @@ class NeedRequestController extends Controller
             [
                 'is_enabled' => true,
                 'allowed_id_count' => $request->allowed_id_count,
+                'deadline' => $request->deadline,
             ]
         );
 

@@ -1,5 +1,47 @@
 @include('dashboard.errors')
 
+@push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        /* تحسين شكل حقل Select2 ليتناسب مع التصميم العصري */
+        .select2-container--default .select2-selection--multiple {
+            border: 1px solid #d8d6de !important;
+            border-radius: 0.357rem !important;
+            min-height: 40px !important;
+            padding: 2px !important;
+        }
+
+        /* ستايل "التاج" أو "الحبة" داخل الحقل */
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #f3f2f7 !important;
+            border: 1px solid #dcdcdc !important;
+            color: #5e5873 !important;
+            padding: 4px 12px !important;
+            margin: 4px !important;
+            font-weight: 500;
+            border-radius: 4px !important;
+            display: flex;
+            align-items: center;
+            float: right; /* لضمان الترتيب الصحيح في RTL */
+        }
+
+        /* تنسيق زر الحذف (x) */
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: #ea5455 !important;
+            margin-left: 8px !important;
+            margin-right: 0px !important;
+            order: 2;
+            border: none !important;
+            background: transparent !important;
+        }
+
+        .select2-container--default .select2-search--inline .select2-search__field {
+            margin-top: 7px !important;
+            margin-right: 8px !important;
+        }
+    </style>
+@endpush
+
 <div class="row">
     <div class="col-md-12">
         {{ BsForm::text('name')
@@ -161,63 +203,72 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
 
-<script>
-    let typeIndex = {{ isset($project) ? $project->couponTypes->count() : 1 }};
+    <script>
+        let typeIndex = {{ isset($project) ? $project->couponTypes->count() : 1 }};
 
-    function addTypeRow() {
-        const container = document.getElementById('coupon_types_container');
-        const firstRowSelect = document.querySelector('select[name^="coupon_types[0][coupon_type_id]"]');
-        const couponOptions = firstRowSelect ? firstRowSelect.innerHTML : '';
-
-        const newRow = `
-            <div class="row mb-2 type-row">
-                <div class="col-md-6">
-                    <select name="coupon_types[${typeIndex}][coupon_type_id]" class="form-control" required>
-                        ${couponOptions}
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <input type="number" name="coupon_types[${typeIndex}][quantity]" class="form-control" placeholder="الكمية" required>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger btn-block" onclick="removeTypeRow(this)"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', newRow);
-        typeIndex++;
-    }
-
-    function removeTypeRow(button) {
-        if(document.querySelectorAll('.type-row').length > 1) {
-             button.closest('.type-row').remove();
-        } else {
-            alert('يجب إضافة نوع واحد على الأقل');
-        }
-    }
-
-    $(document).ready(function() {
-        // Initialize Flatpickr
-        flatpickr('.datepicker', {
-            locale: 'ar',
-            dateFormat: 'Y-m-d',
-            allowInput: true,
-            altInput: true,
-            altFormat: 'F j, Y'
-        });
-
-        // Initialize Select2
-        if ($.fn.select2) {
-            $('.select2').select2({
+        // دالة تهيئة Select2 الموحدة
+        function initSelect2(selector) {
+            $(selector).select2({
+                dir: "rtl",
+                width: '100%',
                 placeholder: "-- اختر --",
                 allowClear: true,
-                width: '100%',
-                dir: 'rtl'
+                closeOnSelect: $(selector).attr('multiple') ? false : true // يترك القائمة مفتوحة فقط في الاختيار المتعدد
             });
         }
-    });
-</script>
+
+        function addTypeRow() {
+            const container = document.getElementById('coupon_types_container');
+            const firstRowSelect = document.querySelector('select[name^="coupon_types[0][coupon_type_id]"]');
+            const couponOptions = firstRowSelect ? firstRowSelect.innerHTML : '';
+
+            const newRow = `
+                <div class="row mb-2 type-row">
+                    <div class="col-md-6">
+                        <select name="coupon_types[${typeIndex}][coupon_type_id]" class="form-control select2-dynamic" required>
+                            ${couponOptions}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="number" name="coupon_types[${typeIndex}][quantity]" class="form-control" placeholder="الكمية" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-danger btn-block" onclick="removeTypeRow(this)"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', newRow);
+
+            // تفعيل Select2 للحقل الجديد فقط
+            initSelect2(`.select2-dynamic[name="coupon_types[${typeIndex}][coupon_type_id]"]`);
+
+            typeIndex++;
+        }
+
+        function removeTypeRow(button) {
+            if(document.querySelectorAll('.type-row').length > 1) {
+                button.closest('.type-row').remove();
+            } else {
+                alert('يجب إضافة نوع واحد على الأقل');
+            }
+        }
+
+        $(document).ready(function() {
+            // تفعيل Flatpickr
+            flatpickr('.datepicker', {
+                locale: 'ar',
+                dateFormat: 'Y-m-d',
+                allowInput: true,
+                altInput: true,
+                altFormat: 'F j, Y'
+            });
+
+            // تفعيل Select2 لجميع الحقول عند تحميل الصفحة
+            initSelect2('.select2');
+            initSelect2('select[name^="coupon_types"]'); // تفعيل لحقول أنواع الكوبونات الحالية
+        });
+    </script>
 @endpush

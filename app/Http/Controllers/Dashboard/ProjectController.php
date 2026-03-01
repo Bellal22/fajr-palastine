@@ -8,13 +8,16 @@ use App\Models\ReadyPackage;
 use App\Models\InternalPackage;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\ProjectRequest;
+use App\Jobs\ImportBeneficiariesJob;
 use App\Models\AreaResponsible;
 use App\Models\Block;
 use App\Models\SubWarehouse;
+use Exception;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ProjectController extends Controller
@@ -464,7 +467,7 @@ class ProjectController extends Controller
     public function importBeneficiaries(Request $request, Project $project)
     {
         $request->validate([
-            'file' => 'required_without:id_nums|nullable|mimes:xlsx,xls,csv|max:10240',
+            'file' => 'required_without:id_nums|nullable|mimes:xlsx,xls,csv|max:102400',
             'id_nums' => 'nullable|string',
             'manual_notes' => 'nullable|string',
             'sub_warehouse_id' => 'required|exists:sub_warehouses,id',
@@ -474,31 +477,27 @@ class ProjectController extends Controller
         ]);
 
         try {
-            DB::beginTransaction();
-
-            $subWarehouseId = $request->sub_warehouse_id;
-            $ignoreConflicts = $request->boolean('ignore_conflicts');
-            $conflictingProjectIds = $project->conflicts()->pluck('conflict_id')->toArray();
-
-            $imported = 0;
-            $errors = [];
-
             // Case 1: Manual Import via ID Numbers
             if ($request->filled('id_nums')) {
+                DB::beginTransaction();
+
+                $subWarehouseId = $request->sub_warehouse_id;
+                $ignoreConflicts = $request->boolean('ignore_conflicts');
+                $conflictingProjectIds = $project->conflicts()->pluck('conflict_id')->toArray();
+
                 $status = $request->status;
                 $deliveryDate = $request->delivery_date;
                 $notes = $request->filled('manual_notes') ? $request->manual_notes : 'إدخال يدوي';
 
                 $idNums = preg_split('/[\s,]+/', $request->id_nums, -1, PREG_SPLIT_NO_EMPTY);
-
+                $imported = 0;
+                $errors = [];
                 $batchData = [];
                 $mergedCount = 0;
 
-                foreach ($idNums as $index => $idNumber) {
+                foreach ($idNums as $idNumber) {
                     $idNumber = trim($idNumber);
-                    if (empty($idNumber)) {
-                        continue;
-                    }
+                    if (empty($idNumber)) continue;
 
                     $paddedId = str_pad($idNumber, 9, '0', STR_PAD_LEFT);
                     $person = Person::where('id_num', $paddedId)->first();
@@ -508,20 +507,15 @@ class ProjectController extends Controller
                         continue;
                     }
 
-                    // إذا لم يكن له رب أسرة، سجّله هو
                     $head = $person->findUltimateHead();
-                    if (!$head) {
-                        $head = $person;
-                    }
+                    if (!$head) $head = $person;
 
-                    // تجميع البيانات لرب الأسرة
                     if (isset($batchData[$head->id])) {
                         $batchData[$head->id]['quantity'] += 1;
                         $mergedCount++;
                         continue;
                     }
 
-                    // Check Conflicts
                     if (!$ignoreConflicts && !empty($conflictingProjectIds)) {
                         $hasConflict = DB::table('project_beneficiaries')
                             ->where('person_id', $head->id)
@@ -531,9 +525,7 @@ class ProjectController extends Controller
                         if ($hasConflict) {
                             $headIdNum = $head->id_num;
                             $errorMsg = "الرقم {$idNumber}: موجود مسبقاً في مشروع متعارض";
-                            if ($headIdNum != $idNumber) {
-                                $errorMsg .= " (رب الأسرة: {$headIdNum})";
-                            }
+                            if ($headIdNum != $idNumber) $errorMsg .= " (رب الأسرة: {$headIdNum})";
                             $errors[] = $errorMsg;
                             continue;
                         }
@@ -549,9 +541,7 @@ class ProjectController extends Controller
                     ];
                 }
 
-                // تنفيذ العمليات في قاعدة البيانات
                 foreach ($batchData as $data) {
-                    $person = $data['person'];
                     $pivotData = [
                         'quantity' => $data['quantity'],
                         'status' => $data['status'],
@@ -560,293 +550,48 @@ class ProjectController extends Controller
                         'sub_warehouse_id' => $data['sub_warehouse_id'],
                     ];
 
-                    if ($project->beneficiaries()->where('person_id', $person->id)->exists()) {
-                        $project->beneficiaries()->updateExistingPivot($person->id, $pivotData);
+                    if ($project->beneficiaries()->where('person_id', $data['person']->id)->exists()) {
+                        $project->beneficiaries()->updateExistingPivot($data['person']->id, $pivotData);
                     } else {
-                        $project->beneficiaries()->attach($person->id, $pivotData);
+                        $project->beneficiaries()->attach($data['person']->id, $pivotData);
                     }
                     $imported++;
+                }
+
+                DB::commit();
+
+                $skipped = count($errors);
+                $msg = "تم معالجة " . ($imported + $skipped + $mergedCount) . " طلب. ";
+                $msg .= "النتائج: {$imported} ناجح، ";
+                if ($skipped > 0) $msg .= "{$skipped} مستبعد، ";
+                if ($mergedCount > 0) $msg .= "{$mergedCount} دمج عائلات. ";
+
+                if ($skipped > 0) {
+                    flash()->warning($msg);
+                    session()->flash('import_errors', $errors);
+                } else {
+                    flash()->success($msg);
                 }
             }
             // Case 2: Excel Import
             elseif ($request->hasFile('file')) {
-                $file = $request->file('file');
-                $overrideDeliveryDate = $request->filled('delivery_date') ? $request->delivery_date : null;
+                $path = $request->file('file')->store('imports/temp');
 
-                $spreadsheet = IOFactory::load($file->getPathname());
-                $worksheet = $spreadsheet->getActiveSheet();
-                $rows = $worksheet->toArray();
+                // نمرر الـ ID فقط وليس كائن المشروع بالكامل
+                ImportBeneficiariesJob::dispatch(
+                    Storage::path($path),
+                    $project->id, // <--- هنا التعديل المهم
+                    $request->only(['sub_warehouse_id', 'ignore_conflicts', 'delivery_date'])
+                );
 
-                $header = $rows[0] ?? [];
-
-                // تهيئة الفهارس الافتراضية
-                $idIdx = 0;
-                $qtyIdx = 3;
-                $statusIdx = 5;
-                $dateIdx = 7;
-                $generalDateIdx = 4;
-                $notesIdx = 6;
-
-                // محاولة الكشف عن الفهارس من العناوين
-                $hasHeader = false;
-                foreach ($header as $i => $col) {
-                    $col = trim($col);
-                    if (empty($col)) continue;
-
-                    if (mb_strpos($col, 'هوية') !== false) {
-                        $idIdx = $i;
-                        $hasHeader = true;
-                    } elseif (mb_strpos($col, 'كمية') !== false) {
-                        $qtyIdx = $i;
-                        $hasHeader = true;
-                    } elseif (mb_strpos($col, 'حالة') !== false || mb_strpos($col, 'استلام') !== false) {
-                        $statusIdx = $i;
-                        $hasHeader = true;
-                    } elseif (mb_strpos($col, 'ملاحظات') !== false) {
-                        $notesIdx = $i;
-                        $hasHeader = true;
-                    } elseif (mb_strpos($col, 'تاريخ') !== false) {
-                        if (mb_strpos($col, 'تسليم') !== false) {
-                            $dateIdx = $i;
-                        } else {
-                            $generalDateIdx = $i;
-                        }
-                        $hasHeader = true;
-                    }
-                }
-
-                if ($hasHeader) {
-                    array_shift($rows);
-                } else {
-                    $firstId = trim($header[0] ?? '');
-                    if (is_numeric($firstId) && strlen($firstId) < 7 && !empty($header[1]) && strlen(trim($header[1])) >= 9) {
-                        $idIdx = 1;
-                        $qtyIdx = 5;
-                        $statusIdx = 6;
-                        $dateIdx = 7;
-                        $notesIdx = 8;
-                    }
-                }
-
-                $batchData = [];
-                $mergedCount = 0;
-                $emptyCount = 0;
-
-                foreach ($rows as $index => $row) {
-                    $rowNumber = $index + ($hasHeader ? 2 : 1);
-                    $idNumber = trim($row[$idIdx] ?? '');
-                    $quantityValue = is_numeric($row[$qtyIdx] ?? null) ? (int)$row[$qtyIdx] : 1;
-                    $statusValue = $row[$statusIdx] ?? '';
-                    $notesValue = ($row[$notesIdx] ?? '') == '-' ? '' : trim($row[$notesIdx] ?? '');
-
-                    if (empty($idNumber)) {
-                        $emptyCount++;
-                        continue;
-                    }
-
-                    // معالجة التاريخ المحسّنة
-                    $deliveryDate = null;
-
-                    if ($overrideDeliveryDate) {
-                        $deliveryDate = $overrideDeliveryDate;
-                    } else {
-                        // قراءة التاريخ من جميع الأعمدة المحتملة
-                        $possibleDateValues = [
-                            $row[$dateIdx] ?? '',
-                            $row[$generalDateIdx] ?? '',
-                        ];
-
-                        // إضافة أعمدة إضافية
-                        if (isset($row[3])) $possibleDateValues[] = $row[3];
-                        if (isset($row[4])) $possibleDateValues[] = $row[4];
-                        if (isset($row[7])) $possibleDateValues[] = $row[7];
-                        if (isset($row[8])) $possibleDateValues[] = $row[8];
-
-                        // البحث عن أول تاريخ صالح
-                        foreach ($possibleDateValues as $dateValue) {
-                            $rawDateValue = trim($dateValue);
-
-                            if (empty($rawDateValue) || $rawDateValue == '-') {
-                                continue;
-                            }
-
-                            try {
-                                // حالة 1: Excel Serial Date
-                                if (is_numeric($rawDateValue) && $rawDateValue > 30000 && $rawDateValue < 60000) {
-                                    $deliveryDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($rawDateValue)->format('Y-m-d');
-                                    break;
-                                }
-
-                                // حالة 2: نص يحتوي على تاريخ
-                                $cleanDate = preg_replace('/[^\d\-\/\s:.]/', '', $rawDateValue);
-                                $cleanDate = trim($cleanDate);
-
-                                // تجاهل أرقام الهويات
-                                if (is_numeric($cleanDate) && strlen($cleanDate) == 9) {
-                                    continue;
-                                }
-
-                                if (empty($cleanDate)) {
-                                    continue;
-                                }
-
-                                $parsedDate = null;
-
-                                // محاولة 1: YYYY-MM-DD
-                                if (preg_match('/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/', $cleanDate, $matches)) {
-                                    $year = $matches[1];
-                                    $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
-                                    $day = str_pad($matches[3], 2, '0', STR_PAD_LEFT);
-
-                                    if (checkdate($month, $day, $year)) {
-                                        $parsedDate = "{$year}-{$month}-{$day}";
-                                    }
-                                }
-                                // محاولة 2: DD-MM-YYYY
-                                elseif (preg_match('/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/', $cleanDate, $matches)) {
-                                    $day = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
-                                    $month = str_pad($matches[2], 2, '0', STR_PAD_LEFT);
-                                    $year = $matches[3];
-
-                                    if (checkdate($month, $day, $year)) {
-                                        $parsedDate = "{$year}-{$month}-{$day}";
-                                    }
-                                }
-                                // محاولة 3: Carbon
-                                else {
-                                    try {
-                                        $carbonDate = \Illuminate\Support\Carbon::parse($cleanDate);
-                                        if ($carbonDate->year >= 2000 && $carbonDate->year <= 2050) {
-                                            $parsedDate = $carbonDate->format('Y-m-d');
-                                        }
-                                    } catch (\Exception $carbonEx) {
-                                        // فشل Carbon
-                                    }
-                                }
-
-                                // محاولة 4: strtotime
-                                if (!$parsedDate) {
-                                    $timestamp = strtotime($cleanDate);
-                                    if ($timestamp && $timestamp > strtotime('2000-01-01') && $timestamp < strtotime('2050-12-31')) {
-                                        $parsedDate = date('Y-m-d', $timestamp);
-                                    }
-                                }
-
-                                if ($parsedDate) {
-                                    $deliveryDate = $parsedDate;
-                                    break;
-                                }
-                            } catch (\Exception $e) {
-                                continue;
-                            }
-                        }
-
-                        // تسجيل تحذير في حالة عدم العثور على تاريخ
-                        if (!$deliveryDate && !empty(array_filter($possibleDateValues))) {
-                            \Log::warning("الصف {$rowNumber}: لم يتم العثور على تاريخ صالح. القيم: " . json_encode($possibleDateValues));
-                        }
-                    }
-
-                    $paddedId = str_pad($idNumber, 9, '0', STR_PAD_LEFT);
-                    $person = Person::where('id_num', $paddedId)->first();
-
-                    if (!$person) {
-                        $errors[] = "الصف {$rowNumber}: لم يتم العثور على الشخص برقم الهوية {$idNumber}";
-                        continue;
-                    }
-
-                    // إذا لم يكن له رب أسرة، سجّله هو
-                    $head = $person->findUltimateHead();
-                    if (!$head) {
-                        $head = $person;
-                    }
-
-                    $status = trim($statusValue);
-                    if (mb_strpos($status, 'غير') !== false) {
-                        $status = 'غير مستلم';
-                    } elseif (mb_strpos($status, 'مستلم') !== false) {
-                        $status = 'مستلم';
-                    } else {
-                        $status = 'غير مستلم';
-                    }
-
-                    // تجميع البيانات لرب الأسرة
-                    if (isset($batchData[$head->id])) {
-                        $batchData[$head->id]['quantity'] += $quantityValue;
-                        if (!empty($notesValue) && strpos($batchData[$head->id]['notes'], $notesValue) === false) {
-                            $batchData[$head->id]['notes'] .= ' | ' . $notesValue;
-                        }
-                        $mergedCount++;
-                        continue;
-                    }
-
-                    // التحقق من التعارض
-                    if (!$ignoreConflicts && !empty($conflictingProjectIds)) {
-                        $hasConflict = DB::table('project_beneficiaries')
-                            ->where('person_id', $head->id)
-                            ->whereIn('project_id', $conflictingProjectIds)
-                            ->exists();
-
-                        if ($hasConflict) {
-                            $headIdNum = $head->id_num;
-                            $errorMsg = "الصف {$rowNumber}: الشخص برقم الهوية {$idNumber} موجود مسبقاً في مشروع متعارض";
-                            if ($headIdNum != $idNumber) {
-                                $errorMsg .= " (رب الأسرة: {$headIdNum})";
-                            }
-                            $errors[] = $errorMsg;
-                            continue;
-                        }
-                    }
-
-                    $batchData[$head->id] = [
-                        'person' => $head,
-                        'quantity' => $quantityValue,
-                        'status' => $status,
-                        'notes' => $notesValue,
-                        'delivery_date' => $deliveryDate,
-                        'sub_warehouse_id' => $subWarehouseId,
-                    ];
-                }
-
-                // تنفيذ العمليات في قاعدة البيانات
-                foreach ($batchData as $data) {
-                    $person = $data['person'];
-                    $pivotData = [
-                        'quantity' => $data['quantity'],
-                        'status' => $data['status'],
-                        'notes' => $data['notes'],
-                        'delivery_date' => $data['delivery_date'],
-                        'sub_warehouse_id' => $data['sub_warehouse_id'],
-                    ];
-
-                    if ($project->beneficiaries()->where('person_id', $person->id)->exists()) {
-                        $project->beneficiaries()->updateExistingPivot($person->id, $pivotData);
-                    } else {
-                        $project->beneficiaries()->attach($person->id, $pivotData);
-                    }
-                    $imported++;
-                }
-            }
-
-            $skipped = count($errors);
-            DB::commit();
-
-            $msg = "تم معالجة " . ($imported + $skipped + $mergedCount + $emptyCount) . " سطر. ";
-            $msg .= "النتائج: {$imported} ناجح، ";
-            if ($skipped > 0) $msg .= "{$skipped} مستبعد، ";
-            if ($mergedCount > 0) $msg .= "{$mergedCount} دمج عائلات مكررة، ";
-            if ($emptyCount > 0) $msg .= "{$emptyCount} أسطر فارغة. ";
-
-            if ($skipped > 0) {
-                flash()->warning($msg);
-                session()->flash('import_errors', $errors);
-                session()->flash('skipped_count', $skipped);
-            } else {
-                flash()->success($msg);
+                flash()->info('تم رفع الملف بنجاح، جاري المعالجة في الخلفية.');
+                // لا نحتاج لانتظار شيء
             }
         } catch (\Exception $e) {
-            DB::rollBack();
-            flash()->error('حدث خطأ أثناء الاستيراد: ' . $e->getMessage());
+            // في حال حدوث خطأ غير متوقع في الجزء اليدوي
+            if (isset($batchData)) DB::rollBack();
+
+            flash()->error('حدث خطأ: ' . $e->getMessage());
         }
 
         return redirect()->route('dashboard.projects.beneficiaries', $project);

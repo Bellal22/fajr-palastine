@@ -2,6 +2,7 @@
 
     {{-- تنسيقات مخصصة لتقليد ستايل الكبونات والتعارض --}}
     @push('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         /* تحسين شكل حقل Select2 ليتناسب مع الصورة */
         .select2-container--default .select2-selection--multiple {
@@ -52,7 +53,7 @@
         @include('dashboard.errors')
 
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 {{ BsForm::select('project_id')
                     ->options($projects->pluck('name', 'id'))
                     ->label(trans('need_requests.attributes.project_id'))
@@ -60,11 +61,18 @@
                     ->attribute('class', 'form-control select2')
                 }}
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 {{ BsForm::number('allowed_id_count')
                     ->label('الحد الأقصى للهويات المسموح به')
                     ->required()
                     ->min(1)
+                }}
+            </div>
+            <div class="col-md-4">
+                {{ BsForm::text('deadline')
+                    ->label('موعد انتهاء الترشيح')
+                    ->attribute('class', 'form-control datetime-picker')
+                    ->attribute('autocomplete', 'off')
                 }}
             </div>
         </div>
@@ -106,8 +114,18 @@
     {{ BsForm::close() }}
 
     @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
     <script>
         $(document).ready(function() {
+            // تفعيل Flatpickr للتاريخ والوقت
+            flatpickr('.datetime-picker', {
+                locale: 'ar',
+                enableTime: true,
+                dateFormat: 'Y-m-d H:i',
+                allowInput: true,
+            });
+
             // تفعيل الـ Select2 العادي للمشروع
             $('.select2').select2({
                 dir: "rtl",

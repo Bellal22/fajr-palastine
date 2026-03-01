@@ -13,11 +13,13 @@ class NeedRequestProject extends Model
         'project_id',
         'is_enabled',
         'allowed_id_count',
+        'deadline',
     ];
 
     protected $casts = [
         'is_enabled' => 'boolean',
         'allowed_id_count' => 'integer',
+        'deadline' => 'datetime',
     ];
 
     // --- Relationships ---
@@ -59,5 +61,16 @@ class NeedRequestProject extends Model
         $setting->update(['is_enabled' => !$setting->is_enabled]);
         
         return $setting->is_enabled;
+    }
+
+    /**
+     * Check and deactivate all projects that have passed their deadline
+     */
+    public static function checkAndExpire(): int
+    {
+        return self::where('is_enabled', true)
+            ->whereNotNull('deadline')
+            ->where('deadline', '<=', now())
+            ->update(['is_enabled' => false]);
     }
 }

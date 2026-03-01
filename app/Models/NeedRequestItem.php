@@ -44,4 +44,23 @@ class NeedRequestItem extends Model
     {
         return $query->where('status', 'rejected');
     }
+
+    /**
+     * Check if a person has been requested in the last 30 days.
+     *
+     * @param int $personId
+     * @param int|null $excludeRequestId
+     * @return bool
+     */
+    public static function isRequestedInLast30Days($personId, $excludeRequestId = null): bool
+    {
+        return self::where('person_id', $personId)
+            ->when($excludeRequestId, function ($query) use ($excludeRequestId) {
+                $query->where('need_request_id', '!=', $excludeRequestId);
+            })
+            ->whereHas('needRequest', function ($query) {
+                $query->where('created_at', '>=', now()->subDays(30));
+            })
+            ->exists();
+    }
 }

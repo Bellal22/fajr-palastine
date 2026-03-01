@@ -1,5 +1,106 @@
 <x-layout :title="$need_request->project->name ?? trans('need_requests.singular')" :breadcrumbs="['dashboard.need_requests.show', $need_request]">
     <div class="row">
+        @php
+            $deadline = optional($need_request->project->needRequestProject)->deadline;
+        @endphp
+        @if($need_request->isPending() && $deadline)
+        <div class="col-md-12">
+            @push('styles')
+            <style>
+                .show-countdown {
+                    background: #fff;
+                    border: 1px solid #7367f0;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin-bottom: 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    box-shadow: 0 4px 6px rgba(115, 103, 240, 0.05);
+                }
+                .show-countdown-text {
+                    font-weight: 600;
+                    color: #5e5873;
+                }
+                .show-countdown-display {
+                    display: flex;
+                    gap: 15px;
+                }
+                .show-countdown-item {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    min-width: 45px;
+                }
+                .show-countdown-val {
+                    font-size: 1.4rem;
+                    font-weight: 700;
+                    color: #7367f0;
+                    line-height: 1;
+                }
+                .show-countdown-lab {
+                    font-size: 0.7rem;
+                    color: #b9b9c3;
+                    margin-top: 2px;
+                }
+            </style>
+            @endpush
+            
+            <div class="show-countdown" id="show-view-countdown">
+                <div class="show-countdown-text">
+                    <i class="fas fa-hourglass-start text-primary mr-1"></i>
+                    متبقي على إغلاق الترشيح:
+                </div>
+                <div class="show-countdown-display">
+                    <div class="show-countdown-item">
+                        <span id="show-days" class="show-countdown-val">00</span>
+                        <span class="show-countdown-lab">يوم</span>
+                    </div>
+                    <div class="show-countdown-item">
+                        <span id="show-hours" class="show-countdown-val">00</span>
+                        <span class="show-countdown-lab">ساعة</span>
+                    </div>
+                    <div class="show-countdown-item">
+                        <span id="show-minutes" class="show-countdown-val">00</span>
+                        <span class="show-countdown-lab">دقيقة</span>
+                    </div>
+                    <div class="show-countdown-item">
+                        <span id="show-seconds" class="show-countdown-val">00</span>
+                        <span class="show-countdown-lab">ثانية</span>
+                    </div>
+                </div>
+            </div>
+
+            @push('scripts')
+            <script>
+                $(document).ready(function() {
+                    const deadlineDate = new Date("{{ $deadline->toIso8601String() }}").getTime();
+                    
+                    const interval = setInterval(function() {
+                        const now = new Date().getTime();
+                        const diff = deadlineDate - now;
+
+                        if (diff <= 0) {
+                            clearInterval(interval);
+                            $('#show-view-countdown').fadeOut();
+                            return;
+                        }
+
+                        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+                        $('#show-days').text(String(d).padStart(2, '0'));
+                        $('#show-hours').text(String(h).padStart(2, '0'));
+                        $('#show-minutes').text(String(m).padStart(2, '0'));
+                        $('#show-seconds').text(String(s).padStart(2, '0'));
+                    }, 1000);
+                });
+            </script>
+            @endpush
+        </div>
+        @endif
         <div class="col-md-6">
             @component('dashboard::components.box')
                 @slot('title', trans('need_requests.actions.show'))
