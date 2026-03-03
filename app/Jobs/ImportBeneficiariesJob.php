@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Models\Person;
 use App\Models\Project;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -10,7 +9,10 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 class ImportBeneficiariesJob implements ShouldQueue
@@ -32,10 +34,17 @@ class ImportBeneficiariesJob implements ShouldQueue
     {
         set_time_limit(0);
 
-        echo "\n--- STARTING JOB ---\n";
+        Log::info("--- STARTING IMPORT JOB for Project: {$this->projectId} ---");
 
         $project = Project::find($this->projectId);
-        if (!$project) return;
+        if (!$project) {
+            Log::error("Project not found: {$this->projectId}");
+            return;
+        }
+
+        // مسح ملف الأخطاء القديم عند بدء استيراد جديد
+        $project->update(['import_error_file' => null]);
+        Log::info("Cleared old error file path for project {$project->id}");
 
         $subWarehouseId = $this->requestData['sub_warehouse_id'];
         $ignoreConflicts = $this->requestData['ignore_conflicts'] ?? false;
@@ -44,14 +53,14 @@ class ImportBeneficiariesJob implements ShouldQueue
 
         $imported = 0;
         $csvPath = null;
+        $errors = []; // مصفوفة الأخطاء
 
         try {
             $extension = strtolower(pathinfo($this->filePath, PATHINFO_EXTENSION));
             $csvPath = $this->filePath;
 
-            // 1. تحويل إلى CSV
             if (in_array($extension, ['xlsx', 'xls'])) {
-                echo "Converting Excel to CSV...\n";
+                Log::info("Converting Excel to CSV: " . $this->filePath);
                 $tempDir = storage_path('app/imports/temp');
                 if (!is_dir($tempDir)) mkdir($tempDir, 0775, true);
 
@@ -75,13 +84,11 @@ class ImportBeneficiariesJob implements ShouldQueue
             $handle = fopen($csvPath, 'r');
             if ($handle === false) return;
 
-            // 2. إعدادات القراءة
             $line1 = fgets($handle);
             rewind($handle);
 
             $delimiter = (strpos($line1, ';') === false && strpos($line1, ',') !== false) ? ',' : ';';
 
-            // 3. قراءة العناوين
             $header = fgetcsv($handle, 0, $delimiter);
 
             $idIdx = 0;
@@ -94,6 +101,7 @@ class ImportBeneficiariesJob implements ShouldQueue
             if ($header) {
                 foreach ($header as $i => $col) {
                     $col = trim($col);
+                    if (empty($col)) continue;
                     if (mb_strpos($col, 'هوية') !== false) $idIdx = $i;
                     elseif (mb_strpos($col, 'كمية') !== false) $qtyIdx = $i;
                     elseif (mb_strpos($col, 'حالة') !== false || mb_strpos($col, 'استلام') !== false) $statusIdx = $i;
@@ -105,7 +113,6 @@ class ImportBeneficiariesJob implements ShouldQueue
                 }
             }
 
-            // 4. تحضير التعارضات
             $conflictPersonIds = [];
             if (!$ignoreConflicts && !empty($conflictingProjectIds)) {
                 $conflictPersonIds = DB::table('project_beneficiaries')
@@ -115,26 +122,15 @@ class ImportBeneficiariesJob implements ShouldQueue
                 $conflictPersonIds = array_flip($conflictPersonIds);
             }
 
-            echo "Loading people data into memory for fast access...\n";
-
-            // 5. تحميل كل الأشخاص مرة واحدة (لتجنب استعلامات داخل الحلقة)
-            // نستخدمpluck('id', 'id_num') لإنشاء مصفوفة [id_num => id]
+            echo "Loading people IDs...\n";
             $personsMap = DB::table('persons')->pluck('id', 'id_num')->toArray();
-            echo "Loaded " . count($personsMap) . " persons.\n";
-
-            // تحميل بيانات رب الأسرة (إذا كانت العلاقة تعتمد على عمود في جدول persons مثل 'head_id')
-            // إذا كان لديك عمود head_id في جدول persons:
-            // $headsMap = DB::table('persons')->pluck('head_id', 'id')->toArray();
-
-            // للتوضيح: سنفترض الآن أن الشخص هو نفسه رب الأسرة لتجنب الـ Segfault
-            // إذا كنت تريد منطق الربط، يجب أن يكون بسيطاً جداً هنا.
 
             $batchData = [];
             $rowNum = 0;
 
-            // 6. حلقة المعالجة (Optimized)
             while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
                 $rowNum++;
+                $rowNumberInFile = $rowNum + 1; // رقم الصف في الملف الأصلي
 
                 $idNumber = trim($row[$idIdx] ?? '');
 
@@ -144,23 +140,20 @@ class ImportBeneficiariesJob implements ShouldQueue
 
                 $paddedId = str_pad($idNumber, 9, '0', STR_PAD_LEFT);
 
-                // البحث في المصفوفة المحملة (سريع جداً)
-                if (!isset($personsMap[$paddedId])) continue;
-
-                // الحصول على ID الشخص
-                $personId = $personsMap[$paddedId];
-
-                // منطق رب الأسرة: مؤقتاً نعتبر الشخص نفسه رب الأسرة
-                // إذا كان لديك منطق الربط (Head)، يمكنك إضافة استعلام بسيط هنا
-                // ولكن لتجنب الـ Segfault، لا نستدعي دالة Model معقدة هنا.
-                $headId = $personId;
-
-                // التحقق من التعارضات (من المصفوفة المحملة سابقاً)
-                if (!$ignoreConflicts && isset($conflictPersonIds[$headId])) {
+                if (!isset($personsMap[$paddedId])) {
+                    Log::warning("Row {$rowNumberInFile}: Person not found for ID {$idNumber}");
+                    $errors[] = ['row' => $rowNumberInFile, 'id' => $idNumber, 'error' => "لم يتم العثور على الشخص"];
                     continue;
                 }
 
-                // البيانات
+                $personId = $personsMap[$paddedId];
+                $headId = $personId;
+
+                if (!$ignoreConflicts && isset($conflictPersonIds[$headId])) {
+                    $errors[] = ['row' => $rowNumberInFile, 'id' => $idNumber, 'error' => "موجود في مشروع متعارض"];
+                    continue;
+                }
+
                 $qty = is_numeric($row[$qtyIdx] ?? null) ? (int)$row[$qtyIdx] : 1;
                 $statVal = trim($row[$statusIdx] ?? '');
                 $notesVal = ($row[$notesIdx] ?? '') == '-' ? '' : trim($row[$notesIdx] ?? '');
@@ -178,7 +171,6 @@ class ImportBeneficiariesJob implements ShouldQueue
                     'sub_warehouse_id' => $subWarehouseId
                 ];
 
-                // إدخال كل 500 سطر
                 if (count($batchData) >= 500) {
                     $this->insertBatch($batchData);
                     $imported += count($batchData);
@@ -186,7 +178,6 @@ class ImportBeneficiariesJob implements ShouldQueue
                 }
             }
 
-            // إدخال المتبقي
             if (!empty($batchData)) {
                 $this->insertBatch($batchData);
                 $imported += count($batchData);
@@ -194,27 +185,67 @@ class ImportBeneficiariesJob implements ShouldQueue
 
             fclose($handle);
 
-            echo "--- JOB FINISHED ---\n";
-            echo "Total Imported: $imported\n";
+            // --- إنشاء ملف الأخطاء ---
+            if (!empty($errors)) {
+                Log::info("Generating Error Report for project {$project->id}. Error count: " . count($errors));
+                $errorFilePath = $this->generateErrorExcel($errors, $project->id);
+
+                // حفظ المسار في قاعدة البيانات
+                $project->update(['import_error_file' => $errorFilePath]);
+                Log::info("Saved error file path: {$errorFilePath}");
+            } else {
+                // تأكيد الانتهاء بنجاح بدون أخطاء
+                $project->update(['import_error_file' => 'completed']);
+                Log::info("Import completed with NO errors for project {$project->id}");
+            }
+
+            Log::info("--- JOB FINISHED for project {$project->id} ---");
 
             if ($csvPath !== $this->filePath) @unlink($csvPath);
             @unlink($this->filePath);
         } catch (\Exception $e) {
-            echo "CRITICAL ERROR: " . $e->getMessage() . "\n";
+            Log::error("CRITICAL ERROR in ImportJob: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
         }
     }
 
     private function insertBatch($data)
     {
-        // طريقة محسنة للإدخال (Upsert)
-        // تتطلب أن يكون لديك فهرس فريد على (project_id, person_id)
-        // إذا لم يكن موجوداً، استخدم الحلقة العادية
         foreach ($data as $item) {
             DB::table('project_beneficiaries')->updateOrInsert(
                 ['project_id' => $item['project_id'], 'person_id' => $item['person_id']],
                 $item
             );
         }
+    }
+
+    private function generateErrorExcel($errors, $projectId)
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->setCellValue('A1', 'رقم الصف');
+        $sheet->setCellValue('B1', 'رقم الهوية');
+        $sheet->setCellValue('C1', 'السبب');
+
+        $row = 2;
+        foreach ($errors as $error) {
+            $sheet->setCellValue('A' . $row, $error['row']);
+            $sheet->setCellValue('B' . $row, $error['id']);
+            $sheet->setCellValue('C' . $row, $error['error']);
+            $row++;
+        }
+
+        $fileName = "errors_project_{$projectId}_" . time() . ".xlsx";
+        $path = 'imports/errors/' . $fileName;
+
+        if (!is_dir(storage_path('app/imports/errors'))) {
+            mkdir(storage_path('app/imports/errors'), 0775, true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save(storage_path('app/' . $path));
+
+        return $path;
     }
 
     private function resolveDate($row, $dateIdx, $generalDateIdx, $override)

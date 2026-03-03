@@ -32,8 +32,8 @@ Route::apiResource('families', 'FamilyController');
 Route::get('/select/families', 'FamilyController@select')->name('families.select');
 
 // SubCities Routes.
-Route::apiResource('sub_cities', 'SubCityController');
-Route::get('/select/sub_cities', 'SubCityController@select')->name('sub_cities.select');
+// Route::apiResource('sub_cities', 'SubCityController');
+// Route::get('/select/sub_cities', 'SubCityController@select')->name('sub_cities.select');
 
 // Neighborhoods Routes.
 Route::apiResource('neighborhoods', 'NeighborhoodController');
@@ -128,11 +128,11 @@ Route::apiResource('chooses', 'ChooseController');
 Route::get('/select/chooses', 'ChooseController@select')->name('chooses.select');
 
 // GameWinnings Routes.
-Route::apiResource('game_winnings', 'GameWinningController');
-Route::get('/select/game_winnings', 'GameWinningController@select')->name('game_winnings.select');
+// Route::apiResource('game_winnings', 'GameWinningController');
+// Route::get('/select/game_winnings', 'GameWinningController@select')->name('game_winnings.select');
 
 // NeedRequests Routes.
-Route::apiResource('need_requests', 'NeedRequestController');
-Route::get('/select/need_requests', 'NeedRequestController@select')->name('need_requests.select');
+// Route::apiResource('need_requests', 'NeedRequestController');
+// Route::get('/select/need_requests', 'NeedRequestController@select')->name('need_requests.select');
 
 /*  The routes of generated crud will set here: Don't remove this line  */

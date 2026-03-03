@@ -397,9 +397,10 @@ Route::get('reports/projects/period/{period}', 'ProjectReportController@periodRe
 Route::get('reports/projects/{project}', 'ProjectReportController@show')->name('reports.projects.show');
 Route::get('reports/projects/{project}/export', 'ProjectReportController@export')->name('reports.projects.export');
 
+
 // Project Beneficiaries (قبل الـ Resource)
 Route::get('projects/{project}/beneficiaries', 'ProjectController@beneficiaries')->name('projects.beneficiaries');
-Route::get('projects/{project}/beneficiaries/export', 'ProjectController@exportBeneficiaries')->name('projects.beneficiaries.export'); // New Export Route
+Route::get('projects/{project}/beneficiaries/export', 'ProjectController@exportBeneficiaries')->name('projects.beneficiaries.export');
 Route::get('projects/{project}/beneficiaries/import', 'ProjectController@importForm')->name('projects.beneficiaries.import');
 Route::post('projects/{project}/beneficiaries/import', 'ProjectController@importBeneficiaries')->name('projects.beneficiaries.import.store');
 Route::delete('projects/{project}/beneficiaries/{person}', 'ProjectController@removeBeneficiary')->name('projects.beneficiaries.destroy');
@@ -408,7 +409,11 @@ Route::get('projects/{project}/beneficiaries/filter-areas', 'ProjectController@f
 Route::post('projects/{project}/beneficiaries/add-by-areas', 'ProjectController@addBeneficiariesByAreas')->name('projects.beneficiaries.add-by-areas');
 Route::post('projects/{project}/beneficiaries/bulk-actions', 'ProjectController@bulkBeneficiariesActions')->name('projects.beneficiaries.bulk-actions');
 
-// Project Resource (في الآخر)
+// ========== روابط الأخطاء (يجب أن تكون هنا قبل الـ Resource) ==========
+Route::get('projects/{project}/check-import-errors', 'ProjectController@checkImportErrors')->name('projects.check_import_errors');
+Route::get('projects/{project}/download-errors', 'ProjectController@downloadErrors')->name('projects.download_errors');
+
+// Project Resource (في الآخر دائماً)
 Route::resource('projects', 'ProjectController');
 
 

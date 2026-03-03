@@ -580,12 +580,14 @@ class ProjectController extends Controller
                 // نمرر الـ ID فقط وليس كائن المشروع بالكامل
                 ImportBeneficiariesJob::dispatch(
                     Storage::path($path),
-                    $project->id, // <--- هنا التعديل المهم
+                    $project->id,
                     $request->only(['sub_warehouse_id', 'ignore_conflicts', 'delivery_date'])
                 );
 
                 flash()->info('تم رفع الملف بنجاح، جاري المعالجة في الخلفية.');
-                // لا نحتاج لانتظار شيء
+
+                // التعديل المهم: إضافة with('importing', true) لتفعيل التحميل التلقائي
+                return redirect()->route('dashboard.projects.beneficiaries', $project)->with('importing', true);
             }
         } catch (\Exception $e) {
             // في حال حدوث خطأ غير متوقع في الجزء اليدوي
@@ -595,6 +597,59 @@ class ProjectController extends Controller
         }
 
         return redirect()->route('dashboard.projects.beneficiaries', $project);
+    }
+
+    public function checkImportErrors(Project $project)
+    {
+        // 1. التحقق إذا كان انتهى بنجاح (بدون أخطاء)
+        if ($project->import_error_file === 'completed') {
+            return response()->json([
+                'status' => 'finished',
+                'has_errors' => false
+            ]);
+        }
+
+        // 2. التحقق إذا كان يوجد ملف أخطاء
+        $path = $project->import_error_file;
+        if ($path && (Storage::disk('local')->exists($path) || file_exists(storage_path('app/' . $path)))) {
+            return response()->json([
+                'status' => 'finished',
+                'has_errors' => true,
+                'download_url' => route('dashboard.projects.download_errors', $project->id)
+            ]);
+        }
+
+        // 3. لم ينتهِ بعد
+        return response()->json([
+            'status' => 'pending',
+            'has_errors' => false
+        ]);
+    }
+
+    public function downloadErrors(Project $project)
+    {
+        // الحصول على المسار من قاعدة البيانات
+        $path = $project->import_error_file;
+
+        // التحقق 1: هل يوجد مسار؟
+        if (!$path) {
+            return redirect()->back()->with('error', 'لا يوجد تقرير أخطاء.');
+        }
+
+        // التحقق 2: هل الملف موجود فعلياً؟
+        if (!Storage::exists($path)) {
+            // في حال كان المسار مخزناً بشكل كامل (نادراً)، نحاول طريقة أخرى
+            if (file_exists(storage_path('app/' . $path))) {
+                return response()->download(storage_path('app/' . $path));
+            }
+            return redirect()->back()->with('error', 'ملف الأخطاء غير موجود في السيرفر.');
+        }
+
+        // تحميل الملف ثم تنظيف الحقل (اختياري)
+        // $project->import_error_file = null;
+        // $project->save();
+
+        return Storage::download($path, 'import_errors_project_' . $project->id . '.xlsx');
     }
 
     /**

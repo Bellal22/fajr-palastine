@@ -723,101 +723,142 @@
 
     {{-- ========== JavaScript ========== --}}
     @push('scripts')
-    <script>
-    $(document).ready(function() {
-        console.log('✅ Beneficiaries page loaded');
+            <script>
+            $(document).ready(function() {
+                console.log('✅ Beneficiaries page loaded');
 
-        // 1. Focus على حقل البحث
-        $('#search').focus();
+                // 1. Focus على حقل البحث
+                $('#search').focus();
 
-        // 2. تحديث واجهة الإجراءات الجماعية
-        function updateBulkUI() {
-            const selectedCheckboxes = $('.item-checkbox:checked');
-            const count = selectedCheckboxes.length;
+                // 2. تحديث واجهة الإجراءات الجماعية
+                function updateBulkUI() {
+                    const selectedCheckboxes = $('.item-checkbox:checked');
+                    const count = selectedCheckboxes.length;
 
-            if (count > 0) {
-                $('#bulk-actions-bar').removeClass('d-none').slideDown(200);
-                $('#selected-count, #bulk-selected-count-label').text(count);
-            } else {
-                $('#bulk-actions-bar').slideUp(200, function() {
-                    $(this).addClass('d-none');
+                    if (count > 0) {
+                        $('#bulk-actions-bar').removeClass('d-none').slideDown(200);
+                        $('#selected-count, #bulk-selected-count-label').text(count);
+                    } else {
+                        $('#bulk-actions-bar').slideUp(200, function() {
+                            $(this).addClass('d-none');
+                        });
+                    }
+                }
+
+                // التحديث عند تغيير Checkboxes
+                $(document).on('change', '.item-checkbox, input[data-children]', function() {
+                    setTimeout(updateBulkUI, 50);
                 });
+
+                // 3. فتح Modal التحديث الجماعي
+                $(document).on('click', '.open-bulk-modal', function(e) {
+                    e.preventDefault();
+                    const count = $('.item-checkbox:checked').length;
+
+                    if (count === 0) {
+                        alert('⚠️ الرجاء تحديد مستفيدين أولاً');
+                        return;
+                    }
+
+                    $('#bulk-selected-count-label').text(count);
+                    $('#bulkStatusModal').modal('show');
+                });
+
+                // 4. إرسال التحديث الجماعي
+                $(document).on('click', '#submit-bulk-modal', function(e) {
+                    e.preventDefault();
+
+                    const selectedItems = $('.item-checkbox:checked');
+                    const count = selectedItems.length;
+
+                    if (count === 0) {
+                        alert('⚠️ لم يتم تحديد عناصر');
+                        return;
+                    }
+
+                    const data = {
+                        action: 'update_status',
+                        status: $('#bulk_modal_status').val(),
+                        quantity: $('#bulk_modal_quantity').val(),
+                        delivery_date: $('#bulk_modal_delivery_date').val(),
+                        notes: $('#bulk_modal_notes').val()
+                    };
+
+                    if (!confirm(`هل أنت متأكد من تحديث ${count} مستفيدين؟`)) return;
+
+                    // ملء الحقول المخفية
+                    let fieldsHtml = '';
+                    for (const [key, value] of Object.entries(data)) {
+                        fieldsHtml += `<input type="hidden" name="${key}" value="${value}">`;
+                    }
+                    $('#bulk-hidden-fields').html(fieldsHtml);
+
+                    $('#bulkStatusModal').modal('hide');
+                    setTimeout(() => {
+                        $('#bulk-actions-form').submit();
+                    }, 300);
+                });
+
+                // 5. الحذف الجماعي
+                $(document).on('click', '.bulk-delete-btn', function(e) {
+                    e.preventDefault();
+                    const count = $('.item-checkbox:checked').length;
+
+                    if (count === 0) {
+                        alert('⚠️ الرجاء تحديد مستفيدين أولاً');
+                        return;
+                    }
+
+                    if (confirm(`⚠️ هل أنت متأكد من حذف ${count} مستفيدين؟ لا يمكن التراجع!`)) {
+                        $('#bulk-hidden-fields').html('<input type="hidden" name="action" value="delete">');
+                        $('#bulk-actions-form').submit();
+                    }
+                });
+
+                // التحقق الأولي
+                updateBulkUI();
+            });
+
+            // ========== كود التحميل التلقائي لملف الأخطاء ==========
+
+            function checkForErrors() {
+                const projectId = {{ $project->id ?? 0 }};
+                if (!projectId) return;
+
+                const url = "{{ route('dashboard.projects.check_import_errors', $project->id) }}";
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Check Status Response:', data);
+
+                        if (data.status === 'finished') {
+                            if (data.has_errors && data.download_url) {
+                                console.log('Finished with errors. downloading...');
+                                window.location.href = data.download_url;
+                                // تحديث الصفحة بعد ثانية لإظهار البيانات الجديدة وإيقاف الفحص
+                                setTimeout(() => window.location.reload(), 1000);
+                            } else {
+                                console.log('Finished with no errors.');
+                                window.location.reload();
+                            }
+                        } else if (data.status === 'pending') {
+                            console.log('Import still processing...');
+                            setTimeout(checkForErrors, 5000);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking status:', error);
+                        // محاولة مجددة في حال فشل الاتصال
+                        setTimeout(checkForErrors, 10000);
+                    });
             }
-        }
 
-        // التحديث عند تغيير Checkboxes
-        $(document).on('change', '.item-checkbox, input[data-children]', function() {
-            setTimeout(updateBulkUI, 50);
-        });
-
-        // 3. فتح Modal التحديث الجماعي
-        $(document).on('click', '.open-bulk-modal', function(e) {
-            e.preventDefault();
-            const count = $('.item-checkbox:checked').length;
-
-            if (count === 0) {
-                alert('⚠️ الرجاء تحديد مستفيدين أولاً');
-                return;
-            }
-
-            $('#bulk-selected-count-label').text(count);
-            $('#bulkStatusModal').modal('show');
-        });
-
-        // 4. إرسال التحديث الجماعي
-        $(document).on('click', '#submit-bulk-modal', function(e) {
-            e.preventDefault();
-
-            const selectedItems = $('.item-checkbox:checked');
-            const count = selectedItems.length;
-
-            if (count === 0) {
-                alert('⚠️ لم يتم تحديد عناصر');
-                return;
-            }
-
-            const data = {
-                action: 'update_status',
-                status: $('#bulk_modal_status').val(),
-                quantity: $('#bulk_modal_quantity').val(),
-                delivery_date: $('#bulk_modal_delivery_date').val(),
-                notes: $('#bulk_modal_notes').val()
-            };
-
-            if (!confirm(`هل أنت متأكد من تحديث ${count} مستفيدين؟`)) return;
-
-            // ملء الحقول المخفية
-            let fieldsHtml = '';
-            for (const [key, value] of Object.entries(data)) {
-                fieldsHtml += `<input type="hidden" name="${key}" value="${value}">`;
-            }
-            $('#bulk-hidden-fields').html(fieldsHtml);
-
-            $('#bulkStatusModal').modal('hide');
-            setTimeout(() => {
-                $('#bulk-actions-form').submit();
-            }, 300);
-        });
-
-        // 5. الحذف الجماعي
-        $(document).on('click', '.bulk-delete-btn', function(e) {
-            e.preventDefault();
-            const count = $('.item-checkbox:checked').length;
-
-            if (count === 0) {
-                alert('⚠️ الرجاء تحديد مستفيدين أولاً');
-                return;
-            }
-
-            if (confirm(`⚠️ هل أنت متأكد من حذف ${count} مستفيدين؟ لا يمكن التراجع!`)) {
-                $('#bulk-hidden-fields').html('<input type="hidden" name="action" value="delete">');
-                $('#bulk-actions-form').submit();
-            }
-        });
-
-        // التحقق الأولي
-        updateBulkUI();
-    });
-    </script>
+            // بدء التحقق عند تحميل الصفحة فقط إذا كان هناك جلسة 'importing'
+            @if(session('importing'))
+                console.log('Import session detected, starting checks...');
+                setTimeout(checkForErrors, 3000); // انتظر 3 ثواني ثم ابدأ التحقق
+            @endif
+        </script>
     @endpush
 </x-layout>
