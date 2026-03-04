@@ -14,12 +14,35 @@ class NeedRequestProject extends Model
         'is_enabled',
         'allowed_id_count',
         'deadline',
+        'min_family_members',
+        'max_family_members',
+        'gender',
+        'social_status',
+        'employment_status',
+        'housing_type',
+        'has_condition',
+        'min_age',
+        'max_age',
+        'child_min_age',
+        'child_max_age',
+        'child_count',
+        'has_disability',
+        'has_chronic_disease',
+        'target_neighborhoods',
+        'criteria_notes',
     ];
 
     protected $casts = [
         'is_enabled' => 'boolean',
         'allowed_id_count' => 'integer',
         'deadline' => 'datetime',
+        'social_status' => 'array',
+        'employment_status' => 'array',
+        'housing_type' => 'array',
+        'target_neighborhoods' => 'array',
+        'has_condition' => 'boolean',
+        'has_disability' => 'boolean',
+        'has_chronic_disease' => 'boolean',
     ];
 
     // --- Relationships ---

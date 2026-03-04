@@ -104,6 +104,26 @@ class NeedRequestController extends Controller
             return [$project->id => $limit ?? ''];
         });
 
+        // Prepare criteria for JS
+        $criteria = $projects->mapWithKeys(function($project) {
+            $p = $project->needRequestProject;
+            return [$project->id => $p ? [
+                'min_family' => $p->min_family_members,
+                'max_family' => $p->max_family_members,
+                'social_status' => $p->social_status,
+                'condition' => $p->has_condition,
+                'min_age' => $p->min_age,
+                'max_age' => $p->max_age,
+                'notes' => $p->criteria_notes,
+                'child_min_age' => $p->child_min_age,
+                'child_max_age' => $p->child_max_age,
+                'child_count' => $p->child_count,
+                'disability' => $p->has_disability,
+                'chronic' => $p->has_chronic_disease,
+                'neighborhoods' => $p->target_neighborhoods,
+            ] : null];
+        });
+
         // Get supervised people (if supervisor has area_responsible relation)
         $people = collect();
 
@@ -115,7 +135,7 @@ class NeedRequestController extends Controller
                 ->get();
         }
 
-        return view('dashboard.need_requests.create', array_merge(compact('projects', 'people', 'deadlines', 'limits'), $notifications));
+        return view('dashboard.need_requests.create', array_merge(compact('projects', 'people', 'deadlines', 'limits', 'criteria'), $notifications));
     }
 
     /**
@@ -195,9 +215,10 @@ class NeedRequestController extends Controller
                 continue;
             }
 
-            // 4. Check if in supervisor's area
-            if (!$user->isAdmin() && $supervisorAreaId && $person->area_responsible_id != $supervisorAreaId) {
-                $errors['unavailable'][] = "الهوية {$idNum} ({$person->name}): هذا الشخص خارج نطاق منطقتك المسؤول عنها.";
+            // 5. Check Nomination Criteria
+            $criteriaError = $this->validatePersonCriteria($person, $project->needRequestProject);
+            if ($criteriaError) {
+                $errors['unavailable'][] = "الهوية {$idNum} ({$person->name}): {$criteriaError}";
                 continue;
             }
 
@@ -328,7 +349,27 @@ class NeedRequestController extends Controller
             return [$project->id => $limit ?? ''];
         });
 
-        return view('dashboard.need_requests.edit', array_merge(compact('need_request', 'projects', 'projectSetting', 'deadlines', 'limits')));
+        // Prepare criteria for JS
+        $criteria = $projects->mapWithKeys(function($project) {
+            $p = $project->needRequestProject;
+            return [$project->id => $p ? [
+                'min_family' => $p->min_family_members,
+                'max_family' => $p->max_family_members,
+                'social_status' => $p->social_status,
+                'condition' => $p->has_condition,
+                'min_age' => $p->min_age,
+                'max_age' => $p->max_age,
+                'notes' => $p->criteria_notes,
+                'child_min_age' => $p->child_min_age,
+                'child_max_age' => $p->child_max_age,
+                'child_count' => $p->child_count,
+                'disability' => $p->has_disability,
+                'chronic' => $p->has_chronic_disease,
+                'neighborhoods' => $p->target_neighborhoods,
+            ] : null];
+        });
+
+        return view('dashboard.need_requests.edit', array_merge(compact('need_request', 'projects', 'projectSetting', 'deadlines', 'limits', 'criteria')));
     }
 
     /**
@@ -399,9 +440,10 @@ class NeedRequestController extends Controller
                 continue;
             }
 
-            // 4. Check if in supervisor's area
-            if (!$user->isAdmin() && $supervisorAreaId && $person->area_responsible_id != $supervisorAreaId) {
-                $errors['unavailable'][] = "الهوية {$idNum} ({$person->name}): هذا الشخص خارج نطاق منطقتك المسؤول عنها.";
+            // 5. Check Nomination Criteria
+            $criteriaError = $this->validatePersonCriteria($person, $project->needRequestProject);
+            if ($criteriaError) {
+                $errors['unavailable'][] = "الهوية {$idNum} ({$person->name}): {$criteriaError}";
                 continue;
             }
 
@@ -455,8 +497,14 @@ class NeedRequestController extends Controller
 
         $projects = Project::active()->get();
         $supervisors = Supervisor::all();
+        
+        // Fetch dynamic options from Choose table
+        $chooses = \App\Models\Choose::orderBy('order')->get()->groupBy('type');
+        
+        // Fetch all neighborhoods for suggestions
+        $neighborhoods = \App\Models\Neighborhood::orderBy('name')->pluck('name', 'name');
 
-        return view('dashboard.need_requests.bulk_create', compact('projects', 'supervisors'));
+        return view('dashboard.need_requests.bulk_create', compact('projects', 'supervisors', 'chooses', 'neighborhoods'));
     }
 
     /**
@@ -471,16 +519,38 @@ class NeedRequestController extends Controller
             'supervisor_ids' => 'required|array',
             'supervisor_ids.*' => 'exists:users,id',
             'allowed_id_count' => 'required|integer|min:1',
+            'min_family_members' => 'nullable|integer|min:0',
+            'social_status' => 'nullable|array',
+            'has_condition' => 'nullable|boolean',
+            'min_age' => 'nullable|integer|min:0',
+            'max_age' => 'nullable|integer|gt:min_age',
+            'child_min_age' => 'nullable|integer|min:0',
+            'child_max_age' => 'nullable|integer|gt:child_min_age',
+            'child_count' => 'nullable|integer|min:0',
+            'has_disability' => 'nullable|boolean',
+            'has_chronic_disease' => 'nullable|boolean',
+            'target_neighborhoods' => 'nullable|array',
+            'criteria_notes' => 'nullable|string',
         ]);
 
         // Automatically enable the project and supervisors for need requests
+        $data = $request->only([
+            'project_id', 'allowed_id_count', 'deadline', 'min_family_members', 'max_family_members',
+            'social_status', 'has_condition',
+            'min_age', 'max_age', 'child_min_age', 'child_max_age', 'child_count',
+            'has_disability', 'has_chronic_disease', 'target_neighborhoods', 'criteria_notes'
+        ]);
+
+        // Clean empty values to null for numeric/boolean fields
+        foreach ($data as $key => $value) {
+            if ($value === '') {
+                $data[$key] = null;
+            }
+        }
+
         NeedRequestProject::updateOrCreate(
-            ['project_id' => $request->project_id],
-            [
-                'is_enabled' => true,
-                'allowed_id_count' => $request->allowed_id_count,
-                'deadline' => $request->deadline,
-            ]
+            ['project_id' => $data['project_id']],
+            array_merge($data, ['is_enabled' => true])
         );
 
         $count = 0;
@@ -720,5 +790,84 @@ class NeedRequestController extends Controller
         flash()->success(trans('need_requests.messages.deleted'));
 
         return redirect()->route('dashboard.need_requests.trashed');
+    }
+
+    /**
+     * Validate a person against project nomination criteria.
+     * Returns error message if invalid, null if valid.
+     */
+    private function validatePersonCriteria($person, $projectProject)
+    {
+        if (!$projectProject) {
+            return null;
+        }
+
+        // 1. Family Size
+        if ($projectProject->min_family_members && $person->relatives_count < $projectProject->min_family_members) {
+            return "عدد أفراد العائلة ({$person->relatives_count}) أقل من الحد الأدنى المطلوب ({$projectProject->min_family_members}).";
+        }
+        if ($projectProject->max_family_members && $person->relatives_count > $projectProject->max_family_members) {
+            return "عدد أفراد العائلة ({$person->relatives_count}) أكبر من الحد الأقصى المسموح ({$projectProject->max_family_members}).";
+        }
+
+        // 3. Social Status
+        if ($projectProject->social_status && count($projectProject->social_status) > 0) {
+            if (!in_array($person->social_status, $projectProject->social_status)) {
+                return "الحالة الاجتماعية غير مطابقة للمواصفات المطلوبة.";
+            }
+        }
+
+        // 6. Medical Condition
+        if ($projectProject->has_condition !== null) {
+            if ($person->has_condition != $projectProject->has_condition) {
+                return $projectProject->has_condition ? "هذا المشروع يشترط وجود حالة مرضية." : "هذا المشروع يشترط خلو الأسرة من الأمراض الصعبة.";
+            }
+        }
+
+        // 7. Age Range
+        if ($person->dob && ($projectProject->min_age || $projectProject->max_age)) {
+            $age = $person->dob->age;
+            if ($projectProject->min_age && $age < $projectProject->min_age) {
+                return "عمر رب الأسرة ({$age}) أقل من السن المطلوب ({$projectProject->min_age}).";
+            }
+            if ($projectProject->max_age && $age > $projectProject->max_age) {
+                return "عمر رب الأسرة ({$age}) أكبر من السن المسموح ({$projectProject->max_age}).";
+            }
+        }
+
+        // 8. Target Neighborhoods
+        if ($projectProject->target_neighborhoods && count($projectProject->target_neighborhoods) > 0) {
+            if (!in_array($person->neighborhood, $projectProject->target_neighborhoods)) {
+                return "الحي السكني ({$person->neighborhood}) غير مدرج ضمن الأحياء المستهدفة.";
+            }
+        }
+
+        // 9. Children Criteria
+        if ($projectProject->child_count || $projectProject->child_min_age || $projectProject->child_max_age) {
+            $children = $person->familyMembers()->whereNotNull('dob')->get();
+            
+            if ($projectProject->child_count && $children->count() < $projectProject->child_count) {
+                return "عدد الأطفال ({$children->count()}) أقل من الحد الأدنى ({$projectProject->child_count}).";
+            }
+
+            if ($projectProject->child_min_age || $projectProject->child_max_age) {
+                $hasMatchingChild = false;
+                foreach ($children as $child) {
+                    $childAge = $child->dob->age;
+                    $minOk = !$projectProject->child_min_age || $childAge >= $projectProject->child_min_age;
+                    $maxOk = !$projectProject->child_max_age || $childAge <= $projectProject->child_max_age;
+                    
+                    if ($minOk && $maxOk) {
+                        $hasMatchingChild = true;
+                        break;
+                    }
+                }
+                if (!$hasMatchingChild) {
+                    return "لا يوجد أطفال ضمن الفئة العمرية المطلوبة.";
+                }
+            }
+        }
+
+        return null;
     }
 }

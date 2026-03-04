@@ -80,6 +80,105 @@
         <hr>
 
         <div class="row">
+            <div class="col-md-12 mb-2">
+                <h5 class="text-primary"><i class="fa fa-filter"></i> معايير الترشيح المطلوبة (اختياري)</h5>
+                <p class="text-muted small">اترك الحقول فارغة إذا لم يكن هناك شرط محدد. هذه المعايير ستظهر للمشرفين كموجهات للترشيح.</p>
+            </div>
+            
+            {{-- قسم العائلة --}}
+            <div class="col-md-6 mb-2">
+                <div class="card border border-primary shadow-none" style="background: #f8f9fa;">
+                    <div class="card-header p-2 bg-primary text-white">
+                        <h6 class="mb-0 small font-weight-bold"><i class="fa fa-users mr-1"></i> معايير العائلة والمنزل</h6>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ BsForm::number('min_family_members')->label('أدنى أفراد عائلة')->placeholder('مثلاً 5') }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ BsForm::number('max_family_members')->label('أقصى أفراد عائلة') }}
+                            </div>
+                            <div class="col-md-12 mt-1 py-1">
+                                <label class="small font-weight-bold">الأحياء المستهدفة (اترك فارغاً للكل)</label>
+                                {{ BsForm::select('target_neighborhoods[]')
+                                    ->options($neighborhoods ?? [])
+                                    ->multiple()->attribute('class', 'form-control select2-tags')
+                                    ->attribute('data-placeholder', 'اكتب اسم الحي واضغط Enter...')
+                                }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- قسم رب الأسرة --}}
+            <div class="col-md-6 mb-2">
+                <div class="card border border-info shadow-none" style="background: #f0f7f9;">
+                    <div class="card-header p-2 bg-info text-white">
+                        <h6 class="mb-0 small font-weight-bold"><i class="fa fa-user mr-1"></i> معايير رب الأسرة</h6>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ BsForm::select('has_condition')->label('حالة مرضية')->options(['' => 'لا يشترط', '1' => 'نعم (يوجد)', '0' => 'لا (لا يوجد)']) }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ BsForm::number('min_age')->label('أدنى عمر لرب الأسرة') }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ BsForm::number('max_age')->label('أقصى عمر لرب الأسرة') }}
+                            </div>
+                            <div class="col-md-12">
+                                <label class="small font-weight-bold">الحالة الاجتماعية</label>
+                                {{ BsForm::select('social_status[]')
+                                    ->options(isset($chooses['social_status']) ? $chooses['social_status']->pluck('name', 'name') : [])
+                                    ->multiple()->attribute('class', 'form-control select2-multiple')
+                                }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- قسم الأطفال والوضع الصحي --}}
+            <div class="col-md-12">
+                <div class="card border border-warning shadow-none" style="background: #fffcf5;">
+                    <div class="card-header p-2 bg-warning text-dark">
+                        <h6 class="mb-0 small font-weight-bold"><i class="fa fa-baby mr-1"></i> معايير الأطفال والوضع الصحي المتخصص</h6>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="row">
+                            <div class="col-md-3">
+                                {{ BsForm::number('child_count')->label('أدنى عدد أطفال') }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ BsForm::number('child_min_age')->label('عمر الطفل (من)') }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ BsForm::number('child_max_age')->label('عمر الطفل (إلى)') }}
+                            </div>
+                            <div class="col-md-3">
+                                <!-- empty -->
+                            </div>
+                            <div class="col-md-3 mt-1">
+                                {{ BsForm::select('has_disability')->label('وجود إعاقة')->options([''=>'لا يشترط','1'=>'نعم','0'=>'لا']) }}
+                            </div>
+                            <div class="col-md-3 mt-1">
+                                {{ BsForm::select('has_chronic_disease')->label('مرض مزمن')->options([''=>'لا يشترط','1'=>'نعم','0'=>'لا']) }}
+                            </div>
+                            <div class="col-md-6 mt-1">
+                                {{ BsForm::textarea('criteria_notes')->label('ملاحظات ومعايير إضافية')->rows(1) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="row">
             <div class="col-md-12">
                 <label class="form-label">المشرفين (مسؤولي المناطق)</label>
                 {{-- استخدام الحقل المتعدد --}}
@@ -138,7 +237,17 @@
                 width: '100%',
                 placeholder: $(this).data('placeholder'),
                 allowClear: true,
-                closeOnSelect: false {{-- يترك القائمة مفتوحة لاختيار أكثر من شخص بسهولة --}}
+                closeOnSelect: false
+            });
+
+            // تفعيل الـ Select2 للتاجات (الأحياء)
+            $('.select2-tags').select2({
+                dir: "rtl",
+                width: '100%',
+                tags: true,
+                placeholder: $(this).data('placeholder'),
+                allowClear: true,
+                closeOnSelect: false
             });
         });
     </script>

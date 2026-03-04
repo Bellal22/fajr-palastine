@@ -111,6 +111,21 @@
     <span>الحد الأقصى للهويات المسموح به لهذا المشروع هو: <strong id="limit-value"></strong></span>
 </div>
 
+<div id="project-criteria-info" class="card mt-2 border-primary mb-2" style="display: none; border-radius: 12px; border-width: 2px; background-color: #f8f9fa;">
+    <div class="card-header bg-primary text-white p-1" style="border-radius: 10px 10px 0 0;">
+        <h6 class="mb-0 mx-1"><i class="fas fa-clipboard-list mr-1"></i> معايير الترشيح المطلوبة لهذا المشروع:</h6>
+    </div>
+    <div class="card-body p-2">
+        <div id="criteria-list" class="row">
+            <!-- سيتم تعبئتها بواسطة JS -->
+        </div>
+        <div id="criteria-notes-div" class="mt-1 border-top pt-1" style="display: none;">
+            <strong class="text-primary small">ملاحظات إضافية:</strong>
+            <p id="criteria-notes-text" class="mb-0 small"></p>
+        </div>
+    </div>
+</div>
+
 @if(isset($need_request))
     @if($need_request->isPending())
         {{ BsForm::textarea('person_ids')->value($need_request->person_ids)->label(trans('need_requests.attributes.person_ids'))->placeholder("أدخل أرقام الهويات هنا، رقم في كل سطر...") }}
@@ -125,6 +140,113 @@
 <script>
     $(document).ready(function() {
         let timerInterval;
+        window.projectCriteria = {!! isset($criteria) ? json_encode($criteria) : '{}' !!};
+
+        // Removing gender translation as it is no longer used in criteria
+        // function translateGender(g) { ... }
+
+        function displayCriteria(projectId) {
+            const c = window.projectCriteria[projectId];
+            const $container = $('#project-criteria-info');
+            const $list = $('#criteria-list');
+            const $notesDiv = $('#criteria-notes-div');
+            
+            $list.empty();
+            $notesDiv.hide();
+
+            console.log("Displaying criteria for project:", projectId, c);
+
+            if (!c) {
+                $container.hide();
+                return;
+            }
+
+            let hasCriteria = false;
+            const items = [];
+
+            // Helper to handle both single strings and arrays
+            const formatList = (val) => {
+                if (Array.isArray(val)) return val.length > 0 ? val.join('، ') : null;
+                return val || null;
+            };
+
+            if (c.min_family || c.max_family) {
+                let text = '';
+                if (c.min_family && c.max_family) text = `من ${c.min_family} إلى ${c.max_family}`;
+                else if (c.min_family) text = `${c.min_family} أفراد فأكثر`;
+                else text = `بحد أقصى ${c.max_family} أفراد`;
+                items.push({ label: 'أفراد العائلة', val: text, icon: 'users' });
+            }
+
+            const social = formatList(c.social_status);
+            if (social) items.push({ label: 'الحالة الاجتماعية', val: social, icon: 'heart' });
+
+            const neighborhoods = formatList(c.neighborhoods);
+            if (neighborhoods) items.push({ label: 'الأحياء المستهدفة', val: neighborhoods, icon: 'map-marker-alt' });
+
+            if (c.min_age || c.max_age) {
+                let text = '';
+                if (c.min_age && c.max_age) text = `بين ${c.min_age} و ${c.max_age} سنة`;
+                else if (c.min_age) text = `${c.min_age} سنة فأكثر`;
+                else text = `أصغر من ${c.max_age} سنة`;
+                items.push({ label: 'عمر رب الأسرة', val: text, icon: 'calendar-alt' });
+            }
+
+            if (c.condition !== null && c.condition !== "") {
+                items.push({ label: 'حالة مرضية', val: c.condition == 1 ? 'نعم (يوجد)' : 'لا (لا يوجد)', icon: 'stethoscope' });
+            }
+
+            if (c.child_count) {
+                items.push({ label: 'أدنى عدد أطفال', val: c.child_count, icon: 'baby' });
+            }
+
+            if (c.child_min_age || c.child_max_age) {
+                let text = '';
+                if (c.child_min_age && c.child_max_age) text = `من ${c.child_min_age} إلى ${c.child_max_age} سنة`;
+                else if (c.child_min_age) text = `${c.child_min_age} سنة فأكثر`;
+                else text = `أصغر من ${c.child_max_age} سنة`;
+                items.push({ label: 'عمر الأطفال', val: text, icon: 'child' });
+            }
+
+            if (c.disability !== null && c.disability !== "") {
+                items.push({ label: 'وجود إعاقة', val: c.disability == 1 ? 'نعم' : 'لا يشترط', icon: 'wheelchair' });
+            }
+
+            if (c.chronic !== null && c.chronic !== "") {
+                items.push({ label: 'مرض مزمن', val: c.chronic == 1 ? 'نعم' : 'لا يشترط', icon: 'pills' });
+            }
+
+            if (items.length > 0) {
+                items.forEach(item => {
+                    $list.append(`
+                        <div class="col-md-4 mb-2">
+                            <div class="d-flex align-items-center p-1 border rounded bg-white shadow-sm" style="min-height: 48px;">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mr-2" style="width: 28px; height: 28px; flex-shrink: 0;">
+                                    <i class="fas fa-${item.icon}" style="font-size: 0.8rem;"></i>
+                                </div>
+                                <div style="overflow: hidden;">
+                                    <div class="text-muted" style="font-size: 0.65rem; font-weight: bold; line-height: 1;">${item.label}</div>
+                                    <div class="text-dark font-weight-bold text-truncate" style="font-size: 0.75rem;" title="${item.val}">${item.val}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                });
+                hasCriteria = true;
+            }
+
+            if (c.notes) {
+                $('#criteria-notes-text').text(c.notes);
+                $notesDiv.show();
+                hasCriteria = true;
+            }
+
+            if (hasCriteria) {
+                $container.fadeIn();
+            } else {
+                $container.hide();
+            }
+        }
 
         function startTimer(deadlineISO) {
             clearInterval(timerInterval);
@@ -178,6 +300,7 @@
             const limit = window.projectLimits && window.projectLimits[projectId] ? window.projectLimits[projectId] : null;
 
             startTimer(deadline);
+            displayCriteria(projectId);
 
             if (limit) {
                 $('#project-limit-info').fadeIn();
