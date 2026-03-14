@@ -17,13 +17,13 @@
                     ->placeholder(trans('blocks.placeholders.name'))
                     ->required() }}
 
-                @if(auth()->user()->isAdmin())
-                {{ BsForm::select('area_responsible_id')
-                    ->label(trans('blocks.attributes.area_responsible'))
-                    ->options($areaResponsibles ?? [])
-                    ->value(isset($block) ? $block->area_responsible_id : request('area_responsible_id'))
-                    ->placeholder(trans('blocks.placeholders.select_area_responsible'))
-                    ->required() }}
+               @if(auth()->user()->isAdmin())
+                    {{ BsForm::select('area_responsible_id')
+                        ->label(trans('blocks.attributes.area_responsible'))
+                        ->options($areaResponsibles ?? [])
+                        ->value(old('area_responsible_id', isset($block) ? $block->area_responsible_id : request('area_responsible_id')))
+                        ->placeholder(trans('blocks.placeholders.select_area_responsible'))
+                        ->required() }}
                 @endif
 
                 {{ BsForm::text('title')

@@ -34,6 +34,9 @@
                                 <i class="fas fa-layer-group"></i> تفعيل طلبات الاحتياج
                             </a>
                         @endif
+                        <a href="{{ route('dashboard.need_requests.available') }}" class="btn btn-primary ml-2">
+                            <i class="fas fa-bullhorn"></i> فرص الترشيح المتاحة
+                        </a>
                     </div>
                     @include('dashboard.need_requests.partials.actions.trashed')
                 </div>
@@ -73,6 +76,8 @@
                     @endphp
                     <span class="badge badge-{{ $color }}">
                         {{ trans('need_requests.statuses.'.$need_request->status) }}
+                    </span>
+                </td>
                 <td>
                     @if($need_request->isPending() && optional($need_request->project->needRequestProject)->deadline)
                         @php

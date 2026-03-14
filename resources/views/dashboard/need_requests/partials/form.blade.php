@@ -96,6 +96,7 @@
 
 {{ BsForm::select('project_id')
     ->options($projects->pluck('name', 'id'))
+    ->value($selected_project_id ?? null)
     ->label(trans('need_requests.attributes.project_id'))
     ->placeholder(trans('need_requests.select'))
     ->attribute('id', 'project-selector')

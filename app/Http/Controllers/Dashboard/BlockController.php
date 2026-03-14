@@ -52,10 +52,14 @@ class BlockController extends Controller
     {
         $areaResponsibles = AreaResponsible::query()
             ->when(auth()->user()?->isSupervisor(), function ($query) {
+                // أي شروط إضافية للمشرف
             })
             ->orderBy('name')
-            ->pluck('name', 'id')
-            ->toArray();
+            ->get() // نجلب البيانات أولاً كـ Collection
+            ->mapWithKeys(function ($item) {
+                // نحدد بوضوح أن الـ ID هو المفتاح والاسم هو القيمة
+                return [$item->id => $item->name];
+            });
 
         return view('dashboard.blocks.create', compact('areaResponsibles'));
     }
@@ -95,7 +99,16 @@ class BlockController extends Controller
     public function edit(Block $block)
     {
         // جلب مسؤولي المناطق: aid_id كـ key والاسم (name) كـ value
-        $areaResponsibles = AreaResponsible::pluck('name')->toArray();
+        $areaResponsibles = AreaResponsible::query()
+            ->when(auth()->user()?->isSupervisor(), function ($query) {
+                // أي شروط إضافية للمشرف
+            })
+            ->orderBy('name')
+            ->get() // نجلب البيانات أولاً كـ Collection
+            ->mapWithKeys(function ($item) {
+                // نحدد بوضوح أن الـ ID هو المفتاح والاسم هو القيمة
+                return [$item->id => $item->name];
+            });
 
         return view('dashboard.blocks.edit', compact('block', 'areaResponsibles'));
     }

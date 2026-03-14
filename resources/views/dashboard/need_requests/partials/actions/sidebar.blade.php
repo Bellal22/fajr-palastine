@@ -4,6 +4,12 @@
     @slot('active', request()->routeIs('*need_requests*'))
     @slot('tree', [
         [
+            'name' => 'طلبات الاحتياج المتاحة',
+            'url' => route('dashboard.need_requests.available'),
+            'active' => request()->routeIs('*need_requests.available'),
+            'can' => ['ability' => 'viewAnyOwn', 'model' => \App\Models\NeedRequest::class],
+        ],
+        [
             'name' => trans('need_requests.actions.my_requests'),
             'url' => route('dashboard.need_requests.my'),
             'active' => request()->routeIs('*need_requests.my'),

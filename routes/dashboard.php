@@ -486,6 +486,7 @@ Route::post('need_requests/settings/projects/{project}/toggle', 'NeedRequestCont
 
 // Need Request Actions
 Route::get('need_requests/my', 'NeedRequestController@myRequests')->name('need_requests.my');
+Route::get('need_requests/available', 'NeedRequestController@available')->name('need_requests.available');
 Route::get('need_requests/bulk-create', 'NeedRequestController@bulkCreate')->name('need_requests.bulk_create');
 Route::post('need_requests/bulk-store', 'NeedRequestController@bulkStore')->name('need_requests.bulk_store');
 Route::post('need_requests/{need_request}/review', 'NeedRequestController@review')->name('need_requests.review');

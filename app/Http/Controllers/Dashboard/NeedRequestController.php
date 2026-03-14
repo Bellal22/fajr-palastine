@@ -63,12 +63,39 @@ class NeedRequestController extends Controller
     }
 
     /**
+     * Display projects enabled for need requests.
+     */
+    public function available()
+    {
+        $this->authorize('viewAnyOwn', NeedRequest::class);
+
+        NeedRequestProject::checkAndExpire();
+
+        // Get enabled projects with their settings and supervisor's current requests
+        $projects = Project::active()
+            ->whereHas('needRequestProject', function ($query) {
+                $query->where('is_enabled', true)
+                    ->where(function ($q) {
+                        $q->whereNull('deadline')
+                            ->orWhere('deadline', '>', now());
+                    });
+            })
+            ->with(['needRequestProject', 'needRequests' => function ($query) {
+                $query->where('supervisor_id', auth()->id());
+            }])
+            ->get();
+
+        return view('dashboard.need_requests.available', compact('projects'));
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        // Check if need requests are enabled for this supervisor
-        if (!NeedRequestSetting::isEnabledFor(auth()->id())) {
+        $user = auth()->user();
+        // Check if need requests are enabled (Suderpsivors only, Admins always bypass)
+        if (!$user->isAdmin() && !NeedRequestSetting::isEnabledFor($user->id)) {
             flash()->error(trans('need_requests.messages.not_enabled'));
             return redirect()->route('dashboard.home');
         }
@@ -135,7 +162,9 @@ class NeedRequestController extends Controller
                 ->get();
         }
 
-        return view('dashboard.need_requests.create', array_merge(compact('projects', 'people', 'deadlines', 'limits', 'criteria'), $notifications));
+        $selected_project_id = $request->query('project_id');
+
+        return view('dashboard.need_requests.create', array_merge(compact('projects', 'people', 'deadlines', 'limits', 'criteria', 'selected_project_id'), $notifications));
     }
 
     /**
@@ -145,8 +174,10 @@ class NeedRequestController extends Controller
     {
         NeedRequestProject::checkAndExpire();
 
-        // Check if enabled
-        if (!NeedRequestSetting::isEnabledFor(auth()->id())) {
+        $user = auth()->user();
+
+        // Check if enabled (Supervisors only, Admins always bypass)
+        if (!$user->isAdmin() && !NeedRequestSetting::isEnabledFor($user->id)) {
             flash()->error(trans('need_requests.messages.not_enabled'));
             return redirect()->route('dashboard.home');
         }
@@ -154,16 +185,13 @@ class NeedRequestController extends Controller
         // Get supervisor's area responsible ID
         $user = auth()->user();
 
-        // Check for existing pending request for this supervisor
+        // Check for existing pending request for this supervisor to merge into
+        $need_request = null;
         if ($user->isSupervisor()) {
-            $hasPending = NeedRequest::where('supervisor_id', $user->id)
+            $need_request = NeedRequest::where('supervisor_id', $user->id)
                 ->where('project_id', $request->project_id)
                 ->where('status', 'pending')
-                ->exists();
-            if ($hasPending) {
-                flash()->error('لديك طلب احتياج قيد الانتظار لهذا الكوبون بالفعل. لا يمكنك إضافة طلب جديد لنفس الكوبون حتى يتم معالجة الطلب الحالي.');
-                return redirect()->back()->withInput();
-            }
+                ->first();
         }
 
         $supervisorAreaId = $user->isSupervisor() ? $user->id : null;
@@ -240,19 +268,35 @@ class NeedRequestController extends Controller
         $projectSettings = NeedRequestProject::where('project_id', $request->project_id)->first();
         $allowedIdCount = $projectSettings ? $projectSettings->allowed_id_count : null;
 
+        $existingCount = $need_request ? $need_request->items()->count() : 0;
+        $totalRequested = $existingCount + count($validIds);
+
         // Check allowed id count limit if specified
-        if ($allowedIdCount && count($validIds) > $allowedIdCount) {
-            flash()->error("عذراً، لا يمكنك إضافة أكثر من {$allowedIdCount} هويات في هذا الطلب.");
+        if ($allowedIdCount && $totalRequested > $allowedIdCount) {
+            if ($existingCount > 0) {
+                flash()->error("عذراً، لديك {$existingCount} هويات سابقة مضافة لهذا الطلب. لا يمكنك إضافة أكثر من " . ($allowedIdCount - $existingCount) . " هويات إضافية.");
+            } else {
+                flash()->error("عذراً، لا يمكنك إضافة أكثر من {$allowedIdCount} هويات في هذا الطلب.");
+            }
             return redirect()->back()->withInput();
         }
 
-        // Create the main request
-        $need_request = NeedRequest::create([
-            'project_id' => $request->project_id,
-            'supervisor_id' => auth()->id(),
-            'notes' => $request->notes,
-            'status' => 'pending',
-        ]);
+        // Create or Update the request
+        if (!$need_request) {
+            $need_request = NeedRequest::create([
+                'project_id' => $request->project_id,
+                'supervisor_id' => auth()->id(),
+                'notes' => $request->notes,
+                'status' => 'pending',
+            ]);
+        } else {
+            // Update notes if provided
+            if ($request->filled('notes')) {
+                $need_request->update([
+                    'notes' => ($need_request->notes ? $need_request->notes . "\n---\n" : "") . $request->notes,
+                ]);
+            }
+        }
 
         foreach ($validIds as $personId) {
             NeedRequestItem::create([
@@ -504,7 +548,26 @@ class NeedRequestController extends Controller
         // Fetch all neighborhoods for suggestions
         $neighborhoods = \App\Models\Neighborhood::orderBy('name')->pluck('name', 'name');
 
-        return view('dashboard.need_requests.bulk_create', compact('projects', 'supervisors', 'chooses', 'neighborhoods'));
+        $selected_project_id = request('project_id');
+        $activatedProject = null;
+        $selected_supervisor_ids = [];
+
+        if ($selected_project_id) {
+            $activatedProject = \App\Models\NeedRequestProject::where('project_id', $selected_project_id)->first();
+            // Since it's global for now, we'll just pull all enabled supervisors
+            // In a better design, this would be per project.
+            $selected_supervisor_ids = \App\Models\NeedRequestSetting::where('is_enabled', true)->pluck('supervisor_id')->toArray();
+        }
+
+        return view('dashboard.need_requests.bulk_create', compact(
+            'projects', 
+            'supervisors', 
+            'chooses', 
+            'neighborhoods', 
+            'selected_project_id', 
+            'activatedProject',
+            'selected_supervisor_ids'
+        ));
     }
 
     /**

@@ -28,7 +28,7 @@ class NeedRequestPolicy
      */
     public function viewAnyOwn(User $user)
     {
-        return $user->isSupervisor();
+        return $user->isAdmin() || $user->isSupervisor();
     }
 
     /**

@@ -46,7 +46,11 @@
     </style>
     @endpush
 
-    {{ BsForm::post(route('dashboard.need_requests.bulk_store')) }}
+    @if($activatedProject)
+        {{ BsForm::model($activatedProject, route('dashboard.need_requests.bulk_store')) }}
+    @else
+        {{ BsForm::post(route('dashboard.need_requests.bulk_store')) }}
+    @endif
     @component('dashboard::components.box')
         @slot('title', 'تفعيل أدوات طلب الاحتياج للمشرفين')
 
@@ -56,6 +60,7 @@
             <div class="col-md-4">
                 {{ BsForm::select('project_id')
                     ->options($projects->pluck('name', 'id'))
+                    ->value($selected_project_id ?? null)
                     ->label(trans('need_requests.attributes.project_id'))
                     ->placeholder(trans('need_requests.select'))
                     ->attribute('class', 'form-control select2')
@@ -71,6 +76,7 @@
             <div class="col-md-4">
                 {{ BsForm::text('deadline')
                     ->label('موعد انتهاء الترشيح')
+                    ->value($activatedProject && $activatedProject->deadline ? $activatedProject->deadline->format('Y-m-d H:i') : null)
                     ->attribute('class', 'form-control datetime-picker')
                     ->attribute('autocomplete', 'off')
                 }}
@@ -184,6 +190,7 @@
                 {{-- استخدام الحقل المتعدد --}}
                 {{ BsForm::select('supervisor_ids[]')
                     ->options($supervisors->pluck('name', 'id'))
+                    ->value($selected_supervisor_ids ?? [])
                     ->multiple()
                     ->required()
                     ->attribute('class', 'form-control select2-multiple')
