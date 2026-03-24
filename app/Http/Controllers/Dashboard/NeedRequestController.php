@@ -315,6 +315,10 @@ class NeedRequestController extends Controller
 
         flash()->success(trans('need_requests.messages.created'));
 
+        // Notify Admins
+        $admins = \App\Models\User::where('type', \App\Models\User::ADMIN_TYPE)->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\NeedRequestUpdatedNotification($need_request, 'store'));
+
         return redirect()->route('dashboard.need_requests.show', $need_request);
     }
 
@@ -529,6 +533,10 @@ class NeedRequestController extends Controller
 
         flash()->success(trans('need_requests.messages.updated'));
 
+        // Notify Admins
+        $admins = \App\Models\User::where('type', \App\Models\User::ADMIN_TYPE)->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\NeedRequestUpdatedNotification($need_request, 'update'));
+
         return redirect()->route('dashboard.need_requests.show', $need_request);
     }
 
@@ -626,6 +634,13 @@ class NeedRequestController extends Controller
         }
 
         flash()->success("تم تفعيل طلبات الاحتياج لـ {$count} مشرفين بنجاح.");
+
+        // Notify Supervisors
+        $supervisors = \App\Models\User::whereIn('id', $request->supervisor_ids)->get();
+        $project = Project::find($request->project_id);
+        if ($project) {
+            \Illuminate\Support\Facades\Notification::send($supervisors, new \App\Notifications\NeedRequestActivatedNotification($project));
+        }
 
         return redirect()->route('dashboard.need_requests.index');
     }

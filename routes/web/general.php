@@ -206,3 +206,9 @@ Route::get('/map', function () {
 
     return view('map', compact('regions', 'locations'));
 })->name('public.map');
+
+Route::get('/ajax/responsibles-by-neighborhood', [PersonController::class, 'getResponsiblesByNeighborhood'])
+    ->name('area-responsibles.by-neighborhood');
+
+Route::get('/ajax/blocks-by-responsible', [PersonController::class, 'getBlocksByResponsible'])
+    ->name('blocks.by-responsible');

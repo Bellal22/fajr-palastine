@@ -97,7 +97,7 @@
     @endpush
 
     <!-- Page Header -->
-    <div class="mb-4">
+    <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap">
         <h3 class="mb-0 font-weight-bold">
             <i class="fas fa-chart-bar text-primary ml-2"></i>
             تقارير الكوبونات
@@ -106,6 +106,14 @@
                 {{ now()->translatedFormat('d F Y') }}
             </span>
         </h3>
+        <div class="d-flex mt-3 mt-md-0">
+            <a href="{{ route('dashboard.reports.projects.beneficiaries_by_date') }}" class="btn btn-success shadow-sm ml-2">
+                <i class="fas fa-file-excel mr-1"></i> تقرير المستلمين حسب الفترة
+            </a>
+            <a href="{{ route('dashboard.reports.sub_warehouses.distribution') }}" class="btn btn-primary shadow-sm">
+                <i class="fas fa-warehouse mr-1"></i> تقرير توزيع المخازن
+            </a>
+        </div>
     </div>
 
     <!-- General Summary Section -->
@@ -288,7 +296,6 @@
                         </div>
                     </div>
                     @endforelse
-                </div>
                 </div>
 
                 <!-- Submitted Items Analysis (NEW) -->

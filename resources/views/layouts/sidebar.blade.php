@@ -5,6 +5,17 @@
     @slot('active', request()->routeIs('dashboard.home'))
 @endcomponent
 
+@component('dashboard::components.sidebarItem')
+    @slot('url', route('dashboard.notifications.index'))
+    @slot('name', 'الإشعارات')
+    @slot('icon', 'fas fa-bell')
+    @slot('active', request()->routeIs('dashboard.notifications.*'))
+    @if(auth()->user()->unreadNotifications->count() > 0)
+        @slot('badge', auth()->user()->unreadNotifications->count())
+        @slot('badge_class', 'badge-warning')
+    @endif
+@endcomponent
+
  @include('dashboard.accounts.sidebar')
 {{-- @include('dashboard.families.partials.actions.sidebar') --}}
 @include('dashboard.cities.partials.actions.sidebar')

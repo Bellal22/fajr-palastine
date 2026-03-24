@@ -393,6 +393,13 @@ Route::delete('projects/{trashed_project}/forceDelete', 'ProjectController@force
 
 // Project Reports
 Route::get('reports/projects', 'ProjectReportController@index')->name('reports.projects');
+Route::get('reports/projects/beneficiaries-by-date', 'ProjectReportController@beneficiariesByDateForm')->name('reports.projects.beneficiaries_by_date');
+Route::post('reports/projects/beneficiaries-by-date/export', 'ProjectReportController@exportBeneficiariesByDate')->name('reports.projects.beneficiaries_by_date.export');
+
+// Sub-warehouse Distribution Reports
+Route::get('reports/sub-warehouses/distribution', 'ProjectReportController@subWarehouseDistributionForm')->name('reports.sub_warehouses.distribution');
+Route::post('reports/sub-warehouses/distribution/export', 'ProjectReportController@exportSubWarehouseDistribution')->name('reports.sub_warehouses.distribution.export');
+
 Route::get('reports/projects/period/{period}', 'ProjectReportController@periodReport')->name('reports.projects.period');
 Route::get('reports/projects/{project}', 'ProjectReportController@show')->name('reports.projects.show');
 Route::get('reports/projects/{project}/export', 'ProjectReportController@export')->name('reports.projects.export');
@@ -488,7 +495,7 @@ Route::post('need_requests/settings/projects/{project}/toggle', 'NeedRequestCont
 Route::get('need_requests/my', 'NeedRequestController@myRequests')->name('need_requests.my');
 Route::get('need_requests/available', 'NeedRequestController@available')->name('need_requests.available');
 Route::get('need_requests/bulk-create', 'NeedRequestController@bulkCreate')->name('need_requests.bulk_create');
-Route::post('need_requests/bulk-store', 'NeedRequestController@bulkStore')->name('need_requests.bulk_store');
+Route::match(['POST', 'PUT'], 'need_requests/bulk-store', 'NeedRequestController@bulkStore')->name('need_requests.bulk_store');
 Route::post('need_requests/{need_request}/review', 'NeedRequestController@review')->name('need_requests.review');
 Route::get('need_requests/{need_request}/export', 'NeedRequestController@export')->name('need_requests.export');
 Route::post('need_requests/{need_request}/nominate', 'NeedRequestController@nominate')->name('need_requests.nominate');
@@ -496,5 +503,11 @@ Route::post('need_requests/{need_request}/items/{item}/nominate', 'NeedRequestCo
 
 Route::post('need_requests/clear', 'NeedRequestController@clearSession')->name('need_requests.clear');
 Route::resource('need_requests', 'NeedRequestController');
+
+// Notifications
+Route::get('notifications', 'NotificationController@index')->name('notifications.index');
+Route::get('notifications/latest', 'NotificationController@latest')->name('notifications.latest');
+Route::post('notifications/{id}/read', 'NotificationController@markAsRead')->name('notifications.mark_as_read');
+Route::post('notifications/mark-all-read', 'NotificationController@markAllAsRead')->name('notifications.mark_all_read');
 
 /*  The routes of generated crud will set here: Don't remove this line  */

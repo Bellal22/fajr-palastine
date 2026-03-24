@@ -87,7 +87,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
                 </div>
             </li>
             <!-- Messages Dropdown Menu -->
-            <adminte3-notification-dropdown></adminte3-notification-dropdown>
+            @include('dashboard.layouts.adminlte3.partials.notifications')
             <li class="nav-item dropdown user-menu">
                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
                     <img src="{{ auth()->user()->getAvatar() }}"

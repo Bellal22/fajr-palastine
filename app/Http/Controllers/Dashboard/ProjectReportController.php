@@ -516,4 +516,68 @@ class ProjectReportController extends Controller
 
         return $query->count();
     }
+
+    public function beneficiariesByDateForm()
+    {
+        $projects = Project::latest()->get(['id', 'name', 'start_date']);
+        return view('dashboard.reports.beneficiaries_by_date', compact('projects'));
+    }
+
+    public function exportBeneficiariesByDate(Request $request)
+    {
+        $request->validate([
+            'date_from' => 'required|date',
+            'date_to' => 'required|date|after_or_equal:date_from',
+            'project_id' => 'nullable|exists:projects,id'
+        ], [
+            'date_from.required' => 'حقل تاريخ البداية مطلوب',
+            'date_to.required' => 'حقل تاريخ النهاية مطلوب',
+            'date_to.after_or_equal' => 'تاريخ النهاية يجب أن يكون بعد أو مساوي لتاريخ البداية',
+            'project_id.exists' => 'المشروع المحدد غير موجود'
+        ]);
+
+        $project = null;
+        if ($request->filled('project_id')) {
+            $project = Project::find($request->project_id);
+        }
+
+        $dateFrom = Carbon::parse($request->date_from)->startOfDay();
+        $dateTo = Carbon::parse($request->date_to)->endOfDay();
+
+        $fileName = 'beneficiaries_report_' . $dateFrom->format('Y-m-d') . '_to_' . $dateTo->format('Y-m-d');
+        if ($project) {
+            $fileName .= '_project_' . $project->id;
+        }
+        $fileName .= '.xlsx';
+
+        return Excel::download(
+            new \App\Exports\BeneficiariesByDateExport($request->all(), $project),
+            $fileName
+        );
+    }
+
+    public function subWarehouseDistributionForm()
+    {
+        $subWarehouses = SubWarehouse::orderBy('name')->get(['id', 'name']);
+        return view('dashboard.reports.subwarehouse_distribution', compact('subWarehouses'));
+    }
+
+    public function exportSubWarehouseDistribution(Request $request)
+    {
+        $request->validate([
+            'date_from' => 'required|date',
+            'date_to' => 'required|date|after_or_equal:date_from',
+            'sub_warehouse_id' => 'nullable|exists:sub_warehouses,id',
+        ]);
+
+        $dateFrom = Carbon::parse($request->date_from)->startOfDay();
+        $dateTo = Carbon::parse($request->date_to)->endOfDay();
+
+        $fileName = 'sub_warehouse_distribution_' . $dateFrom->format('Y-m-d') . '_to_' . $dateTo->format('Y-m-d') . '.xlsx';
+
+        return Excel::download(
+            new \App\Exports\SubWarehouseDistributionExport($request->all()),
+            $fileName
+        );
+    }
 }

@@ -613,7 +613,7 @@ class PersonController extends Controller
         try {
             DB::beginTransaction();
 
-            if ($person->is_frozen) {
+            if ($person->is_frozen && !auth()->user()?->isAdmin()) {
                 $housingFields = [
                     'area_responsible_id', 'block_id'
                 ];

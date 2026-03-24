@@ -10,8 +10,11 @@ use App\Enums\Person\PersonNeighborhood;
 use App\Enums\Person\PersonRelationship;
 use App\Enums\Person\PersonSocialStatus;
 use App\Models\AreaResponsible;
+use App\Models\Neighborhood;
 use App\Models\Complaint;
 use App\Models\Person;
+use App\Models\Choose;
+use App\Models\City;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -96,29 +99,29 @@ class AuthController extends Controller
         // جلب الشكاوى المرتبطة بهذا الشخص
         $complaints = Complaint::where('id_num', $id_num)->get();
 
-        // جلب القيم المطلوبة
-        $social_statuses = collect(PersonSocialStatus::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
+        // جلب القيم من قاعدة البيانات (كما في لوحة التحكم)
+        $chooses = Choose::orderBy('order')->get()->groupBy('type');
+        $cities_list = City::orderBy('name')->pluck('name', 'name');
+        
+        $neighborhoodsGroupedByCity = City::with('neighborhoods')->get()->mapWithKeys(function ($city) {
+            return [$city->name => $city->neighborhoods->pluck('name', 'name')];
+        });
 
-        $relationships = collect(PersonRelationship::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
+        $responsiblesGroupedByNeighborhood = Neighborhood::with('areaResponsibles')->get()->mapWithKeys(function ($neighborhood) {
+            return [$neighborhood->name => $neighborhood->areaResponsibles->pluck('name', 'id')];
+        });
 
-        $cities = collect(PersonCity::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
+        $blocksGroupedByResponsible = AreaResponsible::with('blocks')->get()->mapWithKeys(function ($responsible) {
+            return [$responsible->id => $responsible->blocks->pluck('name', 'id')];
+        });
 
-        $current_cities = collect(PersonCurrentCity::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
-
-        $neighborhoods = collect(PersonNeighborhood::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
-
-        $areaResponsibles = AreaResponsible::all();
-
-        $housing_types = collect(PersonHousingType::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
-
-        $housing_damage_statuses = collect(PersonDamageHousingStatus::toValues())
-            ->mapWithKeys(fn($value) => [$value => __($value)]);
+        // استخراج القيم للقوائم المنسدلة الأخرى
+        $social_statuses = isset($chooses['social_status']) ? $chooses['social_status']->mapWithKeys(fn($i) => [$i->slug ?: $i->name => $i->name]) : collect();
+        $relationships = isset($chooses['relationship']) ? $chooses['relationship']->mapWithKeys(fn($i) => [$i->slug ?: $i->name => $i->name]) : collect();
+        $housing_types = isset($chooses['housing_type']) ? $chooses['housing_type']->mapWithKeys(fn($i) => [$i->slug ?: $i->name => $i->name]) : collect();
+        $housing_damage_statuses = isset($chooses['housing_damage_status']) ? $chooses['housing_damage_status']->mapWithKeys(fn($i) => [$i->slug ?: $i->name => $i->name]) : collect();
+        $employment_statuses = isset($chooses['employment_status']) ? $chooses['employment_status']->mapWithKeys(fn($i) => [$i->slug ?: $i->name => $i->name]) : collect();
+        $gender_options = isset($chooses['gender']) ? $chooses['gender']->mapWithKeys(fn($i) => [$i->slug ?: $i->name => $i->name]) : collect();
 
         // عرض الصفحة
         return view('profile', compact(
@@ -126,12 +129,14 @@ class AuthController extends Controller
             'complaints',
             'social_statuses',
             'relationships',
-            'cities',
-            'current_cities',
-            'neighborhoods',
-            'areaResponsibles',
+            'cities_list',
+            'neighborhoodsGroupedByCity',
+            'responsiblesGroupedByNeighborhood',
+            'blocksGroupedByResponsible',
             'housing_types',
-            'housing_damage_statuses'
+            'housing_damage_statuses',
+            'employment_statuses',
+            'gender_options'
         ));
     }
 

@@ -29,11 +29,10 @@ class Item extends Model
      * @var array
      */
     protected $fillable = [
-        'inbound_shipment_id',
-        'name',
-        'description',
         'weight',
         'quantity',
+        'remaining_quantity',
+        'min_stock',
     ];
 
     /**
@@ -44,7 +43,17 @@ class Item extends Model
     protected $casts = [
         'weight' => 'float',
         'quantity' => 'integer',
+        'remaining_quantity' => 'integer',
+        'min_stock' => 'integer',
     ];
+
+    /**
+     * Scope for low stock items.
+     */
+    public function scopeLowStock($query)
+    {
+        return $query->whereColumn('remaining_quantity', '<=', 'min_stock');
+    }
 
     /**
      * Inbound shipments relation (many-to-many).

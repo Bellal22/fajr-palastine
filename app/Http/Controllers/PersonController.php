@@ -555,16 +555,16 @@ class PersonController extends Controller
             ], 404);
         }
 
-        if ($user->is_frozen) {
+        if ($user->is_frozen && !auth()->user()?->isAdmin()) {
             $frozenFields = [
-                'area_responsible_id', 'block_id'
+                'area_responsible_id', 'block_id', 'neighborhood', 'city'
             ];
 
             foreach ($frozenFields as $field) {
                 if ($request->has($field) && $request->input($field) != $user->$field) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'تم اعتماد بياناتك وتجميد التعديل على بيانات السكن تجنباً لفقدان حقه في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا للخصوص'
+                        'message' => 'تم اعتماد بيانات السكن لهذه العائلة وتجميد التعديل عليها تجنباً لفقدان حقكم في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
                     ], 422);
                 }
             }
@@ -609,14 +609,13 @@ class PersonController extends Controller
             $data['area_responsible_id'] = null;
         }
 
-        // Housing fields are already cleaned or unset if frozen line 611
-        if ($user->is_frozen) {
-            unset($data['area_responsible_id'], $data['block_id']);
+        if (isset($data['block_id']) && ($data['block_id'] === 'null' || $data['block_id'] === '')) {
+            $data['block_id'] = null;
         }
 
-        // Remove housing fields from data if frozen to prevent any accidental backend update
-        if ($user->is_frozen) {
-            unset($data['area_responsible_id'], $data['block_id']);
+        // Housing fields are already cleaned or unset if frozen
+        if ($user->is_frozen && !auth()->user()?->isAdmin()) {
+            unset($data['area_responsible_id'], $data['block_id'], $data['neighborhood'], $data['city']);
         }
 
         try {
@@ -659,12 +658,30 @@ class PersonController extends Controller
             ], 404);
         }
 
-        if ($user->is_frozen) {
+        if ($user->is_frozen && !auth()->user()?->isAdmin()) {
             // Check if restricted fields are being updated
-             if ($request->has('area_responsible_id') || $request->has('block_id')) {
+             if ($request->has('area_responsible_id') && $request->input('area_responsible_id') != $user->area_responsible_id) {
                  return response()->json([
                     'success' => false,
-                    'message' => 'تم اعتماد بيانات هذا الفرد وتجميد التعديل على المنطقة والمربع السكني تجنباً لفقدان حقه في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
+                    'message' => 'تم اعتماد بيانات السكن لهذه العائلة وتجميد التعديل عليها تجنباً لفقدان حقكم في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
+                ], 422);
+             }
+             if ($request->has('block_id') && $request->input('block_id') != $user->block_id) {
+                 return response()->json([
+                    'success' => false,
+                    'message' => 'تم اعتماد بيانات السكن لهذه العائلة وتجميد التعديل عليها تجنباً لفقدان حقكم في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
+                ], 422);
+             }
+             if ($request->has('neighborhood') && $request->input('neighborhood') != $user->neighborhood) {
+                 return response()->json([
+                    'success' => false,
+                    'message' => 'تم اعتماد بيانات السكن لهذه العائلة وتجميد التعديل عليها تجنباً لفقدان حقكم في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
+                ], 422);
+             }
+             if ($request->has('city') && $request->input('city') != $user->city) {
+                 return response()->json([
+                    'success' => false,
+                    'message' => 'تم اعتماد بيانات السكن لهذه العائلة وتجميد التعديل عليها تجنباً لفقدان حقكم في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
                 ], 422);
              }
         }
@@ -792,119 +809,117 @@ class PersonController extends Controller
         // إذا لم يتم العثور على الشخص
         return response()->json(['error' => 'الشخص غير موجود.'], 404);
     }
+
     private function mapSlugsToNames(array $data)
     {
+        $chooses = Choose::all()->groupBy('type');
+        
         $mapping = [
-            'employment_status' => [
-                'employee'   => 'موظف',
-                'worker'     => 'عامل',
-                'unemployed' => 'لا يعمل',
-            ],
-            'social_status' => [
-                'single'     => 'أعزب/ة',
-                'married'    => 'متزوج/ة',
-                'polygamous' => 'متعدد/ة',
-                'divorced'   => 'مطلق/ة',
-                'widowed'    => 'أرمل/ة',
-            ],
-            'housing_type' => [
-                'tent'     => 'خيمة',
-                'zinc'     => 'زينكو',
-                'concrete' => 'باطون',
-            ],
-            'housing_damage_status' => [
-                'total'        => 'كلي',
-                'partial'      => 'جزئي',
-                'notAffected'  => 'غير متضرر',
-            ],
-            'gender' => [
-                'male'   => 'ذكر',
-                'female' => 'أنثى',
-            ],
-            'city' => \App\Enums\Person\PersonCity::options(),
-            'current_city' => \App\Enums\Person\PersonCurrentCity::options(),
-            'neighborhood' => [
-                'qizanAlNajjar' => 'قيزان النجار',
-                'qizanAbuRashwan' => 'قيزان أبو رشوان',
-                'juraAlLoot' => 'جورة اللوت',
-                'sheikhNasser' => 'الشيخ ناصر',
-                'maAn' => 'معن',
-                'alManaraNeighborhood' => 'حي المنارة',
-                'easternLine' => 'السطر الشرقي',
-                'westernLine' => 'السطر الغربي',
-                'alMahatta' => 'المحطة',
-                'alKatiba' => 'الكتيبة',
-                'alBatanAlSameen' => 'البطن السمين',
-                'alQalaaSouth' => 'القلعة جنوباً',
-                'northJalalStreet' => 'شارع جلال شمالاً',
-                'alMaskar' => 'المعسكر',
-                'alMashroo' => 'المشروع',
-                'hamidCity' => 'مدينة حمد',
-                'alMawasi' => 'المواصي',
-                'alQarara' => 'القرارة',
-                'eastKhanYounis' => 'شرق خان يونس',
-                'downtown' => 'وسط البحر',
-                'mirage' => 'الميراح',
-                'european' => 'الأوروبي',
-                'alFakhari' => 'الفخاري',
-                'masbah' => 'مصباح',
-                'khirbetAlAdas' => 'خربة العدس',
-                'alJaninehNeighborhood' => 'حي الجنينة',
-                'alAwda' => 'العودة',
-                'alZohourNeighborhood' => 'حي الزهور',
-                'brazilianHousing' => 'الإسكان البرازيلي',
-                'telAlSultan' => 'تل السلطان',
-                'alShabouraNeighborhood' => 'حي الشابورة',
-                'rafahProject' => 'مشروع رفح',
-                'zararRoundabout' => 'دوار زعرب',
-                'jabalia' => 'جباليا',
-                'beitLahia' => 'بيت لاهيا',
-                'beitHanoun' => 'بيت حانون',
-                'omAlNasr' => 'أم النصر',
-                'nazla' => 'النزلة',
-                'alZahra' => 'الزهراء',
-                'alMughraqa' => 'المغراقة',
-                'alBureij' => 'البريج',
-                'alNuseirat' => 'النصيرات',
-                'alMaghazi' => 'المغازي',
-                'alZawaida' => 'الزوائدة',
-                'deirAlBalah' => 'دير البلح',
-                'shujaiya' => 'الشجاعية',
-                'alDaraj' => 'الدرج',
-                'alTuffah' => 'التفاح',
-                'alRimal' => 'الرمال',
-                'alZaytoun' => 'الزيتون',
-                'alNasr' => 'النصر',
-                'sheikhRadwan' => 'الشيخ رضوان',
-                'telAlHawa' => 'تل الهوا',
-                'sheikhAjleen' => 'الشيخ عجلين',
-                'alSabra' => 'الصبرة',
-                'alKaramah' => 'الكرامة',
-                'birAlNajah' => 'بئر النعجة',
-                'juhrAlDeek' => 'جحر الديك',
-                'shatiCamp' => 'مخيم الشاطئ',
-            ],
-            'relationship' => [
-                'father'      => 'أب',
-                'mother'      => 'أم',
-                'brother'     => 'أخ',
-                'sister'      => 'أخت',
-                'husband'     => 'زوج',
-                'wife'        => 'زوجة',
-                'son'         => 'ابن',
-                'daughter'    => 'ابنة',
-                'grandparent' => 'جد/ة',
-                'grandchild'  => 'حفيد/ة',
-                'others'      => 'اخرون',
-            ],
+            'employment_status' => isset($chooses['employment_status']) ? $chooses['employment_status']->pluck('name', 'slug')->toArray() : [],
+            'social_status' => isset($chooses['social_status']) ? $chooses['social_status']->pluck('name', 'slug')->toArray() : [],
+            'housing_type' => isset($chooses['housing_type']) ? $chooses['housing_type']->pluck('name', 'slug')->toArray() : [],
+            'housing_damage_status' => isset($chooses['housing_damage_status']) ? $chooses['housing_damage_status']->pluck('name', 'slug')->toArray() : [],
+            'gender' => isset($chooses['gender']) ? $chooses['gender']->pluck('name', 'slug')->toArray() : [],
+            'relationship' => isset($chooses['relationship']) ? $chooses['relationship']->pluck('name', 'slug')->toArray() : [],
         ];
 
         foreach ($mapping as $key => $map) {
-            if (isset($data[$key]) && isset($map[$data[$key]])) {
-                $data[$key] = $map[$data[$key]];
+            if (isset($data[$key])) {
+                // Try slug first, then fallback to current value
+                $data[$key] = $map[$data[$key]] ?? $data[$key];
             }
         }
 
         return $data;
+    }
+
+    /**
+     * AJAX Method لجلب مسؤولي المنطقة حسب الحي السكني
+     */
+    public function getResponsiblesByNeighborhood(Request $request)
+    {
+        try {
+            $neighborhoodName = trim($request->get('neighborhood_name'));
+            Log::info('🔍 AJAX: getResponsiblesByNeighborhood called', ['neighborhood_name' => $neighborhoodName]);
+
+            if (!$neighborhoodName) {
+                return response()->json(['responsibles' => []]);
+            }
+
+            // البحث عن الحي
+            $neighborhood = Neighborhood::where('name', $neighborhoodName)->first();
+
+            if (!$neighborhood) {
+                Log::warning('⚠️ AJAX: Neighborhood not found', ['name' => $neighborhoodName]);
+                return response()->json([
+                    'responsibles' => [],
+                    'message' => 'الحي غير موجود'
+                ], 404);
+            }
+
+            // تبسيط الاستعلام لتجنب أخطاء Ambiguous column
+            $responsibles = $neighborhood->areaResponsibles()
+                ->get(['area_responsibles.id', 'area_responsibles.name']);
+
+            Log::info('✅ AJAX: Found responsibles', ['count' => $responsibles->count()]);
+
+            return response()->json([
+                'responsibles' => $responsibles,
+                'message' => 'تم جلب المسؤولين بنجاح'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ AJAX Error: getResponsiblesByNeighborhood', [
+                'neighborhood_name' => $request->get('neighborhood_name'),
+                'error' => $e->getMessage(),
+                'line' => $e->getLine()
+            ]);
+
+            return response()->json([
+                'responsibles' => [],
+                'message' => 'حدث خطأ في جلب المسؤولين'
+            ], 500);
+        }
+    }
+
+    /**
+     * AJAX Method لجلب المندوبين حسب مسؤول المنطقة
+     */
+    public function getBlocksByResponsible(Request $request)
+    {
+        try {
+            $responsibleId = $request->get('responsible_id');
+
+            if (!$responsibleId) {
+                return response()->json(['blocks' => []]);
+            }
+
+            $areaResponsible = AreaResponsible::find($responsibleId);
+            if (!$areaResponsible) {
+                return response()->json([
+                    'blocks' => [],
+                    'message' => 'مسؤول المنطقة غير موجود'
+                ], 404);
+            }
+
+            $blocks = Block::where('area_responsible_id', $responsibleId)
+                ->select('id', 'name')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'blocks' => $blocks,
+                'message' => 'تم جلب المندوبين بنجاح'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('خطأ في جلب المندوبين', [
+                'responsible_id' => $request->get('responsible_id'),
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'blocks' => [],
+                'message' => 'حدث خطأ في جلب المندوبين'
+            ], 500);
+        }
     }
 }

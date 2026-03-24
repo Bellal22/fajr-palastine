@@ -27,16 +27,25 @@ class InternalPackage extends Model
      * @var array
      */
     protected $fillable = [
-        'name',
-        'description',
-        'weight',
         'quantity',
+        'remaining_quantity',
+        'min_stock',
         'created_by',
     ];
     protected $casts = [
         'weight' => 'float',
         'quantity' => 'integer',
+        'remaining_quantity' => 'integer',
+        'min_stock' => 'integer',
     ];
+
+    /**
+     * Scope for low stock packages.
+     */
+    public function scopeLowStock($query)
+    {
+        return $query->whereColumn('remaining_quantity', '<=', 'min_stock');
+    }
     // العلاقات
     public function creator()
     {

@@ -36,4 +36,9 @@ class SubWarehouse extends Model
     {
         return $this->hasMany(OutboundShipment::class);
     }
+
+    public function beneficiaries()
+    {
+        return $this->belongsToMany(Person::class, 'project_beneficiaries', 'sub_warehouse_id', 'person_id');
+    }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Models\InboundShipment;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\InboundShipmentRequest;
+use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -53,45 +54,45 @@ class InboundShipmentController extends Controller
      */
     public function store(InboundShipmentRequest $request)
     {
-        $inboundShipment = InboundShipment::create([
-            'supplier_id' => $request->supplier_id,
-            'shipment_number' => $request->shipment_number,
-            'inbound_type' => $request->inbound_type,
-            'notes' => $request->notes,
-        ]);
-        // إذا كان النوع "صنف مفرد"
-        if ($request->inbound_type === 'single_item' && $request->has('items')) {
-            foreach ($request->items as $itemData) {
-                $inboundShipment->items()->create([
-                    'name' => $itemData['name'],
-                    'description' => $itemData['description'] ?? null,
-                    'weight' => $itemData['weight'] ?? null,
-                    'quantity' => $itemData['quantity'],
-                ]);
+        return DB::transaction(function () use ($request) {
+            $inboundShipment = InboundShipment::create([
+                'supplier_id' => $request->supplier_id,
+                'shipment_number' => $request->shipment_number,
+                'inbound_type' => $request->inbound_type,
+                'notes' => $request->notes,
+            ]);
+            // إذا كان النوع "صنف مفرد"
+            if ($request->inbound_type === 'single_item' && $request->has('items')) {
+                foreach ($request->items as $itemData) {
+                    $inboundShipment->items()->create([
+                        'weight' => $itemData['weight'] ?? null,
+                        'quantity' => $itemData['quantity'],
+                        'remaining_quantity' => $itemData['quantity'],
+                    ]);
+                }
             }
-        }
-        // إذا كان النوع "طرد جاهز"
-        if ($request->inbound_type === 'ready_package' && $request->has('packages')) {
-            foreach ($request->packages as $packageData) {
-                $package = $inboundShipment->readyPackages()->create([
-                    'name' => $packageData['name'],
-                    'description' => $packageData['description'] ?? null,
-                    'weight' => $packageData['weight'] ?? null,
-                    'quantity' => $packageData['quantity'] ?? 1,
-                ]);
-                // إذا كان للطرد محتويات
-                if (isset($packageData['contents'])) {
-                    foreach ($packageData['contents'] as $content) {
-                        $package->contents()->create([
-                            'item_id' => $content['item_id'],
-                            'quantity' => $content['quantity'],
-                        ]);
+            // إذا كان النوع "طرد جاهز"
+            if ($request->inbound_type === 'ready_package' && $request->has('packages')) {
+                foreach ($request->packages as $packageData) {
+                    $package = $inboundShipment->readyPackages()->create([
+                        'weight' => $packageData['weight'] ?? null,
+                        'quantity' => $packageData['quantity'] ?? 1,
+                        'remaining_quantity' => $packageData['quantity'] ?? 1,
+                    ]);
+                    // إذا كان للطرد محتويات
+                    if (isset($packageData['contents'])) {
+                        foreach ($packageData['contents'] as $content) {
+                            $package->contents()->create([
+                                'item_id' => $content['item_id'],
+                                'quantity' => $content['quantity'],
+                            ]);
+                        }
                     }
                 }
             }
-        }
-        flash()->success(trans('inbound_shipments.messages.created'));
-        return redirect()->route('dashboard.inbound_shipments.show', $inboundShipment);
+            flash()->success(trans('inbound_shipments.messages.created'));
+            return redirect()->route('dashboard.inbound_shipments.show', $inboundShipment);
+        });
     }
 
     /**
@@ -141,11 +142,17 @@ class InboundShipmentController extends Controller
      */
     public function destroy(InboundShipment $inbound_shipment)
     {
-        $inbound_shipment->delete();
+        return DB::transaction(function () use ($inbound_shipment) {
+            // Soft delete children
+            $inbound_shipment->items()->delete();
+            $inbound_shipment->readyPackages()->delete();
 
-        flash()->success(trans('inbound_shipments.messages.deleted'));
+            $inbound_shipment->delete();
 
-        return redirect()->route('dashboard.inbound_shipments.index');
+            flash()->success(trans('inbound_shipments.messages.deleted'));
+
+            return redirect()->route('dashboard.inbound_shipments.index');
+        });
     }
 
     /**
@@ -185,11 +192,17 @@ class InboundShipmentController extends Controller
     {
         $this->authorize('restore', $inbound_shipment);
 
-        $inbound_shipment->restore();
+        return DB::transaction(function () use ($inbound_shipment) {
+            // Restore children
+            $inbound_shipment->items()->withTrashed()->restore();
+            $inbound_shipment->readyPackages()->withTrashed()->restore();
 
-        flash()->success(trans('inbound_shipments.messages.restored'));
+            $inbound_shipment->restore();
 
-        return redirect()->route('dashboard.inbound_shipments.trashed');
+            flash()->success(trans('inbound_shipments.messages.restored'));
+
+            return redirect()->route('dashboard.inbound_shipments.trashed');
+        });
     }
 
     /**
@@ -203,11 +216,17 @@ class InboundShipmentController extends Controller
     {
         $this->authorize('forceDelete', $inbound_shipment);
 
-        $inbound_shipment->forceDelete();
+        return DB::transaction(function () use ($inbound_shipment) {
+            // Force delete children
+            $inbound_shipment->items()->withTrashed()->forceDelete();
+            $inbound_shipment->readyPackages()->withTrashed()->forceDelete();
 
-        flash()->success(trans('inbound_shipments.messages.deleted'));
+            $inbound_shipment->forceDelete();
 
-        return redirect()->route('dashboard.inbound_shipments.trashed');
+            flash()->success(trans('inbound_shipments.messages.deleted'));
+
+            return redirect()->route('dashboard.inbound_shipments.trashed');
+        });
     }
 
     /**

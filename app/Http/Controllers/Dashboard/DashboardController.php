@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Person;
+use App\Models\Item;
+use App\Models\ReadyPackage;
+use App\Models\InternalPackage;
 
 class DashboardController extends Controller
 {
@@ -105,6 +108,13 @@ class DashboardController extends Controller
             'disability_unapproved' => $medicalStats->disability_unapproved,
         ];
 
+        // تنبيهات نقص المخزون
+        $lowStockItems = Item::lowStock()->get();
+        $lowStockReadyPackages = ReadyPackage::lowStock()->get();
+        $lowStockInternalPackages = InternalPackage::lowStock()->get();
+        
+        $hasLowStock = $lowStockItems->isNotEmpty() || $lowStockReadyPackages->isNotEmpty() || $lowStockInternalPackages->isNotEmpty();
+
         return view('dashboard.home', compact(
             'isRegionalManager',
             'unapprovedCount',
@@ -126,7 +136,11 @@ class DashboardController extends Controller
             'injuredPatientsStats',
             'kidneyPatientsStats',
             'incontinenceStats',
-            'disabilityPatientsStats'
+            'disabilityPatientsStats',
+            'lowStockItems',
+            'lowStockReadyPackages',
+            'lowStockInternalPackages',
+            'hasLowStock'
         ));
     }
 }

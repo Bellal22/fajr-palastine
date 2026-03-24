@@ -7,6 +7,7 @@ use App\Models\OutboundShipmentItem;
 use App\Models\ReadyPackage;
 use App\Models\InternalPackage;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use App\Http\Requests\Dashboard\OutboundShipmentRequest;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -55,33 +56,45 @@ class OutboundShipmentController extends Controller
      */
     public function store(OutboundShipmentRequest $request)
     {
-        $outbound_shipment = OutboundShipment::create([
-            'shipment_number' => $request->shipment_number,
-            'project_id' => $request->project_id,
-            'sub_warehouse_id' => $request->sub_warehouse_id,
-            'notes' => $request->notes,
-            'driver_name' => $request->driver_name,
-        ]);
+        return DB::transaction(function () use ($request) {
+            $outbound_shipment = OutboundShipment::create([
+                'shipment_number' => $request->shipment_number,
+                'project_id' => $request->project_id,
+                'sub_warehouse_id' => $request->sub_warehouse_id,
+                'notes' => $request->notes,
+                'driver_name' => $request->driver_name,
+            ]);
 
-        // إضافة بنود الإرسالية
-        if ($request->has('shipment_items')) {
-            foreach ($request->shipment_items as $item) {
-                $shippableType = $item['type'] === 'ready_package'
-                    ? ReadyPackage::class
-                    : InternalPackage::class;
+            // إضافة بنود الإرسالية
+            if ($request->has('shipment_items')) {
+                foreach ($request->shipment_items as $item) {
+                    $shippableType = $item['type'] === 'ready_package'
+                        ? \App\Models\ReadyPackage::class
+                        : \App\Models\InternalPackage::class;
 
-                $outbound_shipment->items()->create([
-                    'shippable_type' => $shippableType,
-                    'shippable_id' => $item['package_id'],
-                    'quantity' => $item['quantity'],
-                    'weight' => $item['weight'] ?? null,
-                ]);
+                    $shippable = $shippableType::find($item['package_id']);
+                    
+                    if (!$shippable || $shippable->remaining_quantity < $item['quantity']) {
+                        $name = $shippable ? $shippable->name : ($item['package_id']);
+                        throw new \Exception("الكمية المطلوبة من ($name) غير متوفرة. الرصيد المتاح: " . ($shippable ? $shippable->remaining_quantity : 0));
+                    }
+
+                    $outbound_shipment->items()->create([
+                        'shippable_type' => $shippableType,
+                        'shippable_id' => $item['package_id'],
+                        'quantity' => $item['quantity'],
+                        'weight' => $item['weight'] ?? null,
+                    ]);
+
+                    // Deduct from stock
+                    $shippable->decrement('remaining_quantity', $item['quantity']);
+                }
             }
-        }
 
-        flash()->success(trans('outbound_shipments.messages.created'));
+            flash()->success(trans('outbound_shipments.messages.created'));
 
-        return redirect()->route('dashboard.outbound_shipments.show', $outbound_shipment);
+            return redirect()->route('dashboard.outbound_shipments.show', $outbound_shipment);
+        });
     }
 
     /**
@@ -115,35 +128,58 @@ class OutboundShipmentController extends Controller
      */
     public function update(OutboundShipmentRequest $request, OutboundShipment $outbound_shipment)
     {
-        $outbound_shipment->update([
-            'shipment_number' => $request->shipment_number,
-            'project_id' => $request->project_id,
-            'sub_warehouse_id' => $request->sub_warehouse_id,
-            'notes' => $request->notes,
-            'driver_name' => $request->driver_name,
-        ]);
-
-        // حذف البنود القديمة وإضافة الجديدة
-        $outbound_shipment->items()->delete();
-
-        if ($request->has('shipment_items')) {
-            foreach ($request->shipment_items as $item) {
-                $shippableType = $item['type'] === 'ready_package'
-                    ? ReadyPackage::class
-                    : InternalPackage::class;
-
-                $outbound_shipment->items()->create([
-                    'shippable_type' => $shippableType,
-                    'shippable_id' => $item['package_id'],
-                    'quantity' => $item['quantity'],
-                    'weight' => $item['weight'] ?? null,
+        try {
+            return DB::transaction(function () use ($request, $outbound_shipment) {
+                $outbound_shipment->update([
+                    'shipment_number' => $request->shipment_number,
+                    'project_id' => $request->project_id,
+                    'sub_warehouse_id' => $request->sub_warehouse_id,
+                    'notes' => $request->notes,
+                    'driver_name' => $request->driver_name,
                 ]);
-            }
+
+                // Restore old stock before deleting items
+                foreach ($outbound_shipment->items as $oldItem) {
+                    if ($oldItem->shippable) {
+                        $oldItem->shippable->increment('remaining_quantity', $oldItem->quantity);
+                    }
+                }
+
+                // حذف البنود القديمة وإضافة الجديدة
+                $outbound_shipment->items()->delete();
+
+                if ($request->has('shipment_items')) {
+                    foreach ($request->shipment_items as $item) {
+                        $shippableType = $item['type'] === 'ready_package'
+                            ? \App\Models\ReadyPackage::class
+                            : \App\Models\InternalPackage::class;
+
+                        $shippable = $shippableType::find($item['package_id']);
+
+                        if (!$shippable || $shippable->remaining_quantity < $item['quantity']) {
+                            $name = $shippable ? $shippable->name : ($item['package_id']);
+                            throw new \Exception("الكمية المطلوبة من ($name) غير متوفرة. الرصيد المتاح: " . ($shippable ? $shippable->remaining_quantity : 0));
+                        }
+
+                        $outbound_shipment->items()->create([
+                            'shippable_type' => $shippableType,
+                            'shippable_id' => $item['package_id'],
+                            'quantity' => $item['quantity'],
+                            'weight' => $item['weight'] ?? null,
+                        ]);
+
+                        // Deduct from new stock
+                        $shippable->decrement('remaining_quantity', $item['quantity']);
+                    }
+                }
+
+                flash()->success(trans('outbound_shipments.messages.updated'));
+
+                return redirect()->route('dashboard.outbound_shipments.show', $outbound_shipment);
+            });
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors(['shipment_items' => $e->getMessage()]);
         }
-
-        flash()->success(trans('outbound_shipments.messages.updated'));
-
-        return redirect()->route('dashboard.outbound_shipments.show', $outbound_shipment);
     }
 
     /**
@@ -155,11 +191,20 @@ class OutboundShipmentController extends Controller
      */
     public function destroy(OutboundShipment $outbound_shipment)
     {
-        $outbound_shipment->delete();
+        return DB::transaction(function () use ($outbound_shipment) {
+            // Restore stock before soft deleting
+            foreach ($outbound_shipment->items as $item) {
+                if ($item->shippable) {
+                    $item->shippable->increment('remaining_quantity', $item->quantity);
+                }
+            }
 
-        flash()->success(trans('outbound_shipments.messages.deleted'));
+            $outbound_shipment->delete();
 
-        return redirect()->route('dashboard.outbound_shipments.index');
+            flash()->success(trans('outbound_shipments.messages.deleted'));
+
+            return redirect()->route('dashboard.outbound_shipments.index');
+        });
     }
 
     /**
@@ -199,11 +244,28 @@ class OutboundShipmentController extends Controller
     {
         $this->authorize('restore', $outbound_shipment);
 
-        $outbound_shipment->restore();
+        try {
+            return DB::transaction(function () use ($outbound_shipment) {
+                // Deduct stock when restoring (and validate!)
+                foreach ($outbound_shipment->items as $item) {
+                    if ($item->shippable) {
+                        if ($item->shippable->remaining_quantity < $item->quantity) {
+                            throw new \Exception("لا يمكن استعادة الإرسالية: الكمية المطلوبة من (" . $item->shippable->name . ") غير متوفرة حالياً.");
+                        }
+                        $item->shippable->decrement('remaining_quantity', $item->quantity);
+                    }
+                }
 
-        flash()->success(trans('outbound_shipments.messages.restored'));
+                $outbound_shipment->restore();
 
-        return redirect()->route('dashboard.outbound_shipments.trashed');
+                flash()->success(trans('outbound_shipments.messages.restored'));
+
+                return redirect()->route('dashboard.outbound_shipments.trashed');
+            });
+        } catch (\Exception $e) {
+            flash()->error($e->getMessage());
+            return back();
+        }
     }
 
     /**

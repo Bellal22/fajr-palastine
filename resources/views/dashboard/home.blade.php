@@ -20,6 +20,48 @@
             </div>
         </div>
     @else
+        @if($hasLowStock)
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-warning border-0 shadow-sm" style="border-radius: 12px;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle fa-2x me-3 text-warning"></i>
+                            <div>
+                                <h5 class="alert-heading mb-1 fw-bold">تنبيه: أصناف على وشك النفاذ</h5>
+                                <p class="mb-0">يوجد بعض الأصناف/الطرود التي اقترب رصيدها من الانتهاء، يرجى مراجعة المخزن.</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row g-2">
+                            @foreach($lowStockItems as $item)
+                                <div class="col-sm-6 col-md-4 col-lg-3">
+                                    <div class="badge bg-white text-dark p-2 w-100 border shadow-xs d-flex justify-content-between align-items-center">
+                                        <span>{{ $item->name }}</span>
+                                        <span class="badge bg-danger ms-2">{{ $item->remaining_quantity }}</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                            @foreach($lowStockReadyPackages as $package)
+                                <div class="col-sm-6 col-md-4 col-lg-3">
+                                    <div class="badge bg-white text-dark p-2 w-100 border shadow-xs d-flex justify-content-between align-items-center">
+                                        <span>طرد: {{ $package->name }}</span>
+                                        <span class="badge bg-danger ms-2">{{ $package->remaining_quantity }}</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                            @foreach($lowStockInternalPackages as $package)
+                                <div class="col-sm-6 col-md-4 col-lg-3">
+                                    <div class="badge bg-white text-dark p-2 w-100 border shadow-xs d-flex justify-content-between align-items-center">
+                                        <span>داخلي: {{ $package->name }}</span>
+                                        <span class="badge bg-danger ms-2">{{ $package->remaining_quantity }}</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
         @push('styles')
             <style>
                 .hover-shadow {
@@ -37,9 +79,7 @@
         @endpush
 
         {{-- الرسم البياني أولاً (عمودين: مسجلين + مزامنين) --}}
-        {{-- ... (Rest of the original home.blade.php content) ... --}}
         <div class="row mb-5">
-            {{-- content cut for brevity in replacement chunk but I'll include the actual lines --}}
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-gradient-primary text-white">

@@ -26,6 +26,10 @@ class Kernel extends ConsoleKernel
         // تشغيل يومياً في منتصف الليل
         $schedule->command('projects:update-expired')->daily();
 
+        // تنبيهات المخزون اليومية
+        $schedule->command('stock:alerts')->dailyAt('09:00');
+        $schedule->command('need-requests:check-deadlines')->dailyAt('10:00');
+
         // $schedule->command('inspire')
         //          ->hourly();
     }
