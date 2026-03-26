@@ -54,9 +54,10 @@ class Supplier extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this
-            ->addMediaCollection('default')
+            ->addMediaCollection('image')
             ->useFallbackPath(public_path('images/placeholder.png'))
-            ->useFallbackUrl(url('images/placeholder.png'));
+            ->useFallbackUrl(url('images/placeholder.png'))
+            ->singleFile();
 
         $this
             ->addMediaCollection('document')

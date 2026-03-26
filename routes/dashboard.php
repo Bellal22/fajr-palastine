@@ -269,6 +269,8 @@ Route::post('people/assign-supervisor-block', 'PersonController@assignToUsers')-
 Route::get('ajax/blocks-by-responsible', 'PersonController@getBlocksByResponsible')->name('ajax.getBlocksByResponsible');
 Route::get('ajax/responsibles-by-neighborhood', 'PersonController@getResponsiblesByNeighborhood')->name('ajax.getResponsiblesByNeighborhood');
 Route::get('people/view', 'PersonController@view')->name('people.view');
+Route::get('people/updated', 'PersonController@updatedIndex')->name('people.updated');
+Route::get('people/unsynced', 'PersonController@unsyncedIndex')->name('people.unsynced');
 Route::get('people/general-search', 'PersonController@generalSearch')->name('people.general_search');
 Route::get('people/search', 'PersonController@search')->name('people.search');
 Route::post('people/upload-filter-file', 'PersonController@uploadFilterFile')->name('people.uploadFilterFile');
@@ -277,6 +279,7 @@ Route::put('people/bulk-toggle-freeze', 'PersonController@bulkToggleFreeze')->na
 Route::put('people/toggle-freeze/{person}', 'PersonController@toggleFreeze')->name('people.toggleFreeze');
 Route::resource('people', 'PersonController');
 
+Route::post('people/sync-notify', 'PersonController@syncNotify')->name('people.sync.notify');
 Route::get('people/aid/api/{person}', 'PersonController@api')->name('people.aid.api');
 Route::post('people/aid/bulk-sync', 'PersonController@bulkApiSync')->name('people.aid.bulk-sync');
 Route::get('people/aid/sync-status', 'PersonController@syncStatus')->name('people.aid.sync-status');
@@ -484,6 +487,9 @@ Route::get('trashed/need_requests', 'NeedRequestController@trashed')->name('need
 Route::get('trashed/need_requests/{trashed_need_request}', 'NeedRequestController@showTrashed')->name('need_requests.trashed.show');
 Route::post('need_requests/{trashed_need_request}/restore', 'NeedRequestController@restore')->name('need_requests.restore');
 Route::delete('need_requests/{trashed_need_request}/forceDelete', 'NeedRequestController@forceDelete')->name('need_requests.forceDelete');
+Route::get('need_requests/export-all', 'NeedRequestController@exportAll')->name('need_requests.export_all');
+Route::get('need_requests/export-selected', 'NeedRequestController@exportSelected')->name('need_requests.export_selected');
+Route::post('need_requests/bulk-update-status', 'NeedRequestController@bulkUpdateStatus')->name('need_requests.bulk_update_status');
 
 // Need Request Settings (Admin)
 Route::get('need_requests/settings/supervisors', 'NeedRequestController@settings')->name('need_requests.settings');
@@ -507,6 +513,7 @@ Route::resource('need_requests', 'NeedRequestController');
 // Notifications
 Route::get('notifications', 'NotificationController@index')->name('notifications.index');
 Route::get('notifications/latest', 'NotificationController@latest')->name('notifications.latest');
+Route::get('notifications/{id}', 'NotificationController@show')->name('notifications.show');
 Route::post('notifications/{id}/read', 'NotificationController@markAsRead')->name('notifications.mark_as_read');
 Route::post('notifications/mark-all-read', 'NotificationController@markAllAsRead')->name('notifications.mark_all_read');
 

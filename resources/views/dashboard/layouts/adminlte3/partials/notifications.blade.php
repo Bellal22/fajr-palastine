@@ -1,6 +1,7 @@
 @php
-    $unreadCount = auth()->user()->unreadNotifications->count();
-    $latestNotifications = auth()->user()->unreadNotifications()->take(5)->get();
+    $user = auth()->user();
+    $unreadCount = $user ? $user->unreadNotifications->count() : 0;
+    $latestNotifications = $user ? $user->unreadNotifications()->take(5)->get() : collect();
 @endphp
 
 <li class="nav-item dropdown">
@@ -19,10 +20,10 @@
             @endif
         </span>
         <div class="dropdown-divider"></div>
-        
+
         <div class="notification-items-container" style="max-height: 300px; overflow-y: auto;">
             @forelse($latestNotifications as $notification)
-                <a href="{{ route('dashboard.notifications.index') }}" class="dropdown-item py-3">
+                <a href="{{ route('dashboard.notifications.show', $notification->id) }}" class="dropdown-item py-3">
                     <div class="d-flex align-items-center">
                         <div class="icon-circle bg-warning mr-3" style="min-width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                             <i class="fas fa-exclamation-triangle text-white"></i>
@@ -40,7 +41,7 @@
                 </div>
             @endforelse
         </div>
-        
+
         <div class="dropdown-divider"></div>
         <a href="{{ route('dashboard.notifications.index') }}" class="dropdown-item dropdown-footer text-primary font-weight-bold">عرض الكل</a>
     </div>

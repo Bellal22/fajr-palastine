@@ -325,6 +325,92 @@ class PersonController extends Controller
         }
     }
 
+    public function updatedIndex()
+    {
+        try {
+            $query = Person::query()
+                ->whereNull('relationship')
+                ->whereNotNull('area_responsible_id')
+                ->whereNotNull('block_id')
+                ->where('is_frozen', true)
+                ->where('updated_at', '>', DB::raw('created_at'))
+                ->where(function ($q) {
+                    $q->whereNull('api_synced_at')
+                        ->orWhereColumn('updated_at', '>', 'api_synced_at');
+                })
+                ->withCount('familyMembers')
+                ->with(['block', 'areaResponsible']);
+
+            if ($areaResponsibleId = request('area_responsible_id')) {
+                $query->where('area_responsible_id', $areaResponsibleId);
+            } elseif (auth()->user()?->isSupervisor()) {
+                $query->where('area_responsible_id', auth()->user()->id);
+            }
+
+            if ($blockId = request('block_id')) {
+                $query->where('block_id', $blockId);
+            }
+
+            $query = $query->filter();
+
+            $people = $query->latest('updated_at')->paginate();
+
+            $blocks = Block::query()
+                ->when(auth()->user()?->isSupervisor(), function ($q) {
+                    $q->where('area_responsible_id', auth()->user()->id);
+                })
+                ->orderBy('name')
+                ->pluck('name', 'id');
+
+            return view('dashboard.people.updated', compact('people', 'blocks'));
+        } catch (\Exception $e) {
+            flash()->error('حدث خطأ في تحميل البيانات المحدثة.');
+            return back();
+        }
+    }
+
+    public function unsyncedIndex()
+    {
+        try {
+            $query = Person::query()
+                ->whereNull('relationship')
+                ->whereNotNull('area_responsible_id')
+                ->whereNotNull('block_id')
+                ->where(function ($q) {
+                    $q->whereNull('api_synced_at')
+                        ->orWhere('api_sync_status', 'failed');
+                })
+                ->withCount('familyMembers')
+                ->with(['block', 'areaResponsible']);
+
+            if ($areaResponsibleId = request('area_responsible_id')) {
+                $query->where('area_responsible_id', $areaResponsibleId);
+            } elseif (auth()->user()?->isSupervisor()) {
+                $query->where('area_responsible_id', auth()->user()->id);
+            }
+
+            if ($blockId = request('block_id')) {
+                $query->where('block_id', $blockId);
+            }
+
+            $query = $query->filter();
+
+            $people = $query->latest('updated_at')->paginate();
+
+            $blocks = Block::query()
+                ->when(auth()->user()?->isSupervisor(), function ($q) {
+                    $q->where('area_responsible_id', auth()->user()->id);
+                })
+                ->orderBy('name')
+                ->pluck('name', 'id');
+
+            return view('dashboard.people.unsynced', compact('people', 'blocks'));
+        } catch (\Exception $e) {
+            flash()->error('حدث خطأ في تحميل البيانات الغير مزامنة.');
+            return back();
+        }
+    }
+
     public function generalSearch(Request $request)
     {
         $person = null;
@@ -1209,6 +1295,20 @@ class PersonController extends Controller
 
             UpdateBlockPeopleCount::dispatch($request->block_id);
 
+            if ($updatedCount > 0) {
+                $admins = \App\Models\User::where('type', \App\Models\User::ADMIN_TYPE)->get();
+                $areaResp = \App\Models\AreaResponsible::find($request->area_responsible_id);
+                $blockModel = \App\Models\Block::find($request->block_id);
+                if ($areaResp) {
+                    // إشعار مسؤولي المناطق - اعتماد الأفراد
+                    \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\PeopleApprovedNotification($areaResp, $updatedCount, $blockModel));
+                }
+                // إشعار تحديث المندوب
+                if ($blockModel) {
+                    \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\DelegateUpdatedNotification(auth()->user()->name, $updatedCount, $blockModel->name));
+                }
+            }
+
             $message = 'تم تخصيص مسؤول المنطقة والمندوب بنجاح';
             if ($frozenCount > 0) {
                 $message .= " (تم استثناء {$frozenCount} شخص لأن بياناتهم مجمّدة)";
@@ -1388,6 +1488,16 @@ class PersonController extends Controller
                 'error' => 'An error occurred: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function syncNotify(Request $request)
+    {
+        $count = $request->input('count', 0);
+        if ($count > 0) {
+            $admins = \App\Models\User::where('type', \App\Models\User::ADMIN_TYPE)->get();
+            \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\BulkSyncCompletedNotification(auth()->user()->name, $count));
+        }
+        return response()->json(['success' => true]);
     }
 
     public function bulkApiSync()

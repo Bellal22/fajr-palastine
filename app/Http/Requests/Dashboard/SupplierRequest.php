@@ -26,7 +26,9 @@ class SupplierRequest extends FormRequest
         return [
             'name'         => ['required', 'string', 'max:255'],
             'description'  => ['required', 'string', 'max:1024'],
-            'type' => 'required|in:donor,operator',
+            'type'         => 'required|in:donor,operator',
+            'image'        => ['nullable', 'array'],
+            'document'     => ['nullable', 'array'],
         ];
     }
 

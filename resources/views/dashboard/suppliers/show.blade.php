@@ -6,8 +6,8 @@
             <div class="card mb-4 shadow-sm">
                 <div class="card-body text-center p-4">
                     <div class="mb-4">
-                        @if($supplier->getFirstMediaUrl('default'))
-                            <img src="{{ $supplier->getFirstMediaUrl('default') }}"
+                        @if($supplier->getFirstMediaUrl('image'))
+                            <img src="{{ $supplier->getFirstMediaUrl('image') }}"
                                  alt="{{ $supplier->name }}"
                                  class="rounded-circle shadow"
                                  style="width: 150px; height: 150px; object-fit: cover; border: 4px solid #ddd;">
@@ -99,12 +99,12 @@
                                     @lang('suppliers.attributes.image')
                                 </th>
                                 <td>
-                                    @if($supplier->hasMedia('default'))
+                                    @if($supplier->hasMedia('image'))
                                         <div class="mb-2">
-                                            <a href="{{ $supplier->getFirstMediaUrl('default') }}"
+                                            <a href="{{ $supplier->getFirstMediaUrl('image') }}"
                                                target="_blank"
                                                data-toggle="lightbox">
-                                                <img src="{{ $supplier->getFirstMediaUrl('default') }}"
+                                                <img src="{{ $supplier->getFirstMediaUrl('image') }}"
                                                      alt="{{ $supplier->name }}"
                                                      style="max-width: 200px; max-height: 200px;"
                                                      class="img-thumbnail">
@@ -189,7 +189,7 @@
                             <div class="p-3 border rounded">
                                 <i class="fas fa-image fa-2x text-warning mb-2"></i>
                                 <h6 class="mb-1">@lang('suppliers.attributes.image')</h6>
-                                @if($supplier->hasMedia('default'))
+                                @if($supplier->hasMedia('image'))
                                     <span class="badge badge-success">@lang('suppliers.status.has_image')</span>
                                 @else
                                     <span class="badge badge-secondary">@lang('suppliers.status.no_image')</span>

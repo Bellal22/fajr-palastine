@@ -53,7 +53,8 @@ class SupplierController extends Controller
     {
         $supplier = Supplier::create($request->all());
 
-        $supplier->addAllMediaFromTokens();
+        $supplier->addAllMediaFromTokens('image', 'image');
+        $supplier->addAllMediaFromTokens('document', 'document');
 
         flash()->success(trans('suppliers.messages.created'));
         return redirect()->route('dashboard.suppliers.show', $supplier);
@@ -92,7 +93,8 @@ class SupplierController extends Controller
     {
         $supplier->update($request->all());
 
-        $supplier->addAllMediaFromTokens();
+        $supplier->addAllMediaFromTokens('image', 'image');
+        $supplier->addAllMediaFromTokens('document', 'document');
 
         flash()->success(trans('suppliers.messages.updated'));
 

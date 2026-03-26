@@ -59,9 +59,9 @@
                     <i class="fas fa-image text-warning"></i> @lang('suppliers.attributes.image')
                 </label>
                 @isset($supplier)
-                    {{ BsForm::image('image')->collection('default')->files($supplier->getMediaResource('default'))->label(false) }}
+                    {{ BsForm::image('image')->collection('image')->files($supplier->getMediaResource('image'))->label(false) }}
                 @else
-                    {{ BsForm::image('image')->collection('default')->label(false) }}
+                    {{ BsForm::image('image')->collection('image')->label(false) }}
                 @endisset
             </div>
 

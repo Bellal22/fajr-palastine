@@ -39,5 +39,21 @@
             'active' => request()->routeIs('*people.search'),
             'icon' => 'fa-search',
         ],
+        ...(auth()->user()?->isAdmin() ? [
+            [
+                'name' => 'البيانات المحدثة',
+                'url' => route('dashboard.people.updated'),
+                'can' => ['ability' => 'viewAny', 'model' => \App\Models\Person::class],
+                'active' => request()->routeIs('*people.updated'),
+                'icon' => 'fa-sync-alt',
+            ],
+            [
+                'name' => 'الأشخاص غير المزامنين',
+                'url' => route('dashboard.people.unsynced'),
+                'can' => ['ability' => 'viewAny', 'model' => \App\Models\Person::class],
+                'active' => request()->routeIs('*people.unsynced'),
+                'icon' => 'fa-clock',
+            ],
+        ] : []),
     ])
 @endcomponent

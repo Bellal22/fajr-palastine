@@ -73,9 +73,17 @@ class NeedRequestPolicy
     }
 
     /**
-     * Determine whether the user can review the request.
+     * Determine whether the user can review any request.
      */
     public function review(User $user, NeedRequest $need_request)
+    {
+        return $user->isAdmin();
+    }
+
+    /**
+     * Determine whether the user can bulk review requests.
+     */
+    public function reviewAny(User $user)
     {
         return $user->isAdmin();
     }

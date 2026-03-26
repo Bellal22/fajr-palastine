@@ -32,3 +32,4 @@ Breadcrumbs::for('people.export', function ($breadcrumb) {
     $breadcrumb->parent('dashboard.people.index');  // يمكنك تغيير هذا إلى الـ parent الذي يناسبك
     $breadcrumb->push(trans('people.actions.export'), route('people.export'));
 });
+

@@ -227,6 +227,12 @@
                         successHtml += `<li>${item.person} - حالة: ${item.status}</li>`;
                     });
                     $('#success-list').html(successHtml);
+
+                    // إرسال إشعار للمشرفين
+                    $.post('{{ route('dashboard.people.sync.notify') }}', {
+                        _token: $('meta[name="csrf-token"]').attr('content'),
+                        count: successCount
+                    });
                 }
 
                 if (errorCount > 0) {

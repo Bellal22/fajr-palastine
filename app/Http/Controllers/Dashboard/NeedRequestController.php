@@ -9,6 +9,7 @@ use App\Models\NeedRequest;
 use App\Models\NeedRequestItem;
 use App\Models\NeedRequestProject;
 use App\Models\NeedRequestSetting;
+use App\Exports\NeedRequestsExport;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\NeedRequestRequest;
@@ -88,9 +89,64 @@ class NeedRequestController extends Controller
         return view('dashboard.need_requests.available', compact('projects'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    public function exportAll(Request $request)
+    {
+        $this->authorize('export', NeedRequest::class);
+        
+        $need_requests = NeedRequest::with(['project', 'supervisor', 'items'])
+            ->filter()
+            ->latest()
+            ->get();
+
+        return Excel::download(new NeedRequestsExport($need_requests), 'need_requests_all_' . now()->format('Y-m-d') . '.xlsx');
+    }
+
+    public function exportSelected(Request $request)
+    {
+        $this->authorize('export', NeedRequest::class);
+
+        $ids = explode(',', $request->selected_ids);
+        
+        // Fetch all ITEMS belonging to the selected NEED REQUESTS
+        $items = NeedRequestItem::with(['person.areaResponsible', 'person.block', 'needRequest.project'])
+            ->whereIn('need_request_id', $ids)
+            ->get();
+
+        return Excel::download(new NeedRequestsExport($items), 'need_request_people_' . now()->format('Y-m-d') . '.xlsx');
+    }
+
+    public function bulkUpdateStatus(Request $request)
+    {
+        $this->authorize('reviewAny', NeedRequest::class);
+
+        $request->validate([
+            'selected_ids' => 'required|string',
+            'status' => 'required|in:approved,rejected',
+        ]);
+
+        $ids = explode(',', $request->selected_ids);
+        
+        $need_requests = NeedRequest::whereIn('id', $ids)->get();
+
+        foreach ($need_requests as $need_request) {
+            $need_request->update([
+                'status' => $request->status,
+                'reviewed_at' => now(),
+                'reviewed_by' => auth()->id(),
+            ]);
+
+            // If approved, update all items status
+            if ($request->status === 'approved') {
+                $need_request->items()->update(['status' => 'approved']);
+            }
+        }
+
+        flash()->success(trans('need_requests.messages.reviewed'));
+
+        return redirect()->route('dashboard.need_requests.index');
+    }
+
+
     public function create(Request $request)
     {
         $user = auth()->user();

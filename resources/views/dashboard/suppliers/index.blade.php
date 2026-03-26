@@ -108,7 +108,7 @@
                     {{-- Name with Logo --}}
                     <td title="{{ $supplier->name }}">
                         <div class="d-flex align-items-center">
-                            <img src="{{ $supplier->getFirstMediaUrl() ?: asset('images/default-supplier.png') }}"
+                            <img src="{{ $supplier->getFirstMediaUrl('image') ?: asset('images/default-supplier.png') }}"
                                  alt="{{ $supplier->name }}"
                                  class="img-circle supplier-logo {{ app()->isLocale('ar') ? 'ml-2' : 'mr-2' }}"
                                  onerror="this.src='{{ asset('images/default-supplier.png') }}'">

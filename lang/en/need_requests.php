@@ -22,6 +22,7 @@ return [
         'options' => 'Options',
         'save' => 'Save',
         'filter' => 'Filter',
+        'empty_filters' => 'Clear Filters',
     ],
     'messages' => [
         'created' => 'The need request has been created successfully.',
@@ -31,6 +32,23 @@ return [
     ],
     'attributes' => [
         'name' => 'Need request name',
+        'project_id' => 'Project',
+        'supervisor_id' => 'Supervisor',
+        'status' => 'Status',
+        'notes' => 'Notes',
+        'person_ids' => 'ID Numbers',
+        'reviewed_at' => 'Review Date',
+        'reviewed_by' => 'Reviewed By',
+        'created_at' => 'Request Date',
+    ],
+    'placeholders' => [
+        'select_project' => '--- Select Project ---',
+        'name' => 'Search by name...',
+    ],
+    'statuses' => [
+        'pending' => 'Pending',
+        'approved' => 'Approved',
+        'rejected' => 'Rejected',
     ],
     'dialogs' => [
         'delete' => [

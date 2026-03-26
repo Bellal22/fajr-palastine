@@ -8,7 +8,7 @@
 @component('dashboard::components.sidebarItem')
     @slot('url', route('dashboard.notifications.index'))
     @slot('name', 'الإشعارات')
-    @slot('icon', 'fas fa-bell')
+    @slot('icon', 'far fa-bell')
     @slot('active', request()->routeIs('dashboard.notifications.*'))
     @if(auth()->user()->unreadNotifications->count() > 0)
         @slot('badge', auth()->user()->unreadNotifications->count())

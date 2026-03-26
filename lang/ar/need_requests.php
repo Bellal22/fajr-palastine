@@ -11,18 +11,6 @@ return [
     'trashed' => 'طلبات الاحتياج المحذوفة',
     'perPage' => 'عدد النتائج بالصفحة',
     'filter' => 'ابحث عن طلب احتياج',
-    'actions' => [
-        'list' => 'عرض الكل',
-        'create' => 'اضافة طلب احتياج',
-        'show' => 'عرض طلب الاحتياج',
-        'edit' => 'تعديل طلب الاحتياج',
-        'delete' => 'حذف طلب الاحتياج',
-        'restore' => 'استعادة',
-        'forceDelete' => 'حذف نهائي',
-        'options' => 'خيارات',
-        'save' => 'حفظ',
-        'filter' => 'بحث',
-    ],
     'attributes' => [
         'project_id' => 'المشروع',
         'supervisor_id' => 'المشرف',
@@ -32,6 +20,10 @@ return [
         'reviewed_at' => 'تاريخ المراجعة',
         'reviewed_by' => 'تمت المراجعة بواسطة',
         'created_at' => 'تاريخ الطلب',
+    ],
+    'placeholders' => [
+        'select_project' => '--- اختر المشروع ---',
+        'name' => 'بحث بالاسم...',
     ],
     'statuses' => [
         'pending' => 'قيد الانتظار',
@@ -60,6 +52,7 @@ return [
         'options' => 'خيارات',
         'save' => 'حفظ الطلب',
         'filter' => 'بحث',
+        'empty_filters' => 'مسح الفلاتر',
         'review' => 'مراجعة الطلب',
         'approve' => 'موافقة',
         'reject' => 'رفض',

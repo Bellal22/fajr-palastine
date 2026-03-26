@@ -31,9 +31,33 @@ class PersonObserver
     {
         Person::clearAllCache();
 
+        $changes = $person->getChanges();
+        unset($changes['updated_at']);
+        
+        // منع إرسال إشعار إذا كان التعديل فقط لحقول المزامنة (لتجنب الإزعاج أثناء مزامنة المشرفين)
+        $syncFieldsOnly = count(array_diff(array_keys($changes), ['api_synced_at', 'api_sync_status', 'api_sync_error'])) === 0;
+        if ($syncFieldsOnly) {
+            return;
+        }
+
+        $changesText = null;
+        if (!empty($changes)) {
+            $translatedFields = [];
+            foreach (array_keys($changes) as $field) {
+                // If translation exists in people.attributes
+                $transKey = "people.attributes.$field";
+                if (\Illuminate\Support\Facades\Lang::has($transKey)) {
+                    $translatedFields[] = trans($transKey);
+                }
+            }
+            if (!empty($translatedFields)) {
+                $changesText = implode('، ', $translatedFields);
+            }
+        }
+
         // Notify Admins
         $admins = \App\Models\User::where('type', \App\Models\User::ADMIN_TYPE)->get();
-        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\PersonUpdatedNotification($person));
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\PersonUpdatedNotification($person, $changesText));
     }
 
     /**
