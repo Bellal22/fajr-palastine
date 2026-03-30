@@ -10,6 +10,7 @@ return [
         'admin' => 'مسئول',
         'supervisor' => 'مشرف',
         'customer' => 'عميل',
+        'mobile_worker' => 'موزع',
     ],
     'impersonate' => [
         'go' => 'الذهاب للوحة التحكم',

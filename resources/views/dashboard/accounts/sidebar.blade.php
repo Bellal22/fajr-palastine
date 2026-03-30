@@ -18,7 +18,12 @@
                 'url' => route('dashboard.supervisors.index'),
                 'can' => ['ability' => 'viewAny', 'model' => \App\Models\Supervisor::class],
                 'active' => request()->routeIs('*supervisors*'),
-            ]
+            ],
+            [
+                'name' => 'الموزعين',
+                'url' => route('dashboard.distributors.index'),
+                'active' => request()->routeIs('*distributors.index*'),
+            ],
         //  ,
         // [
         //     'name' => trans('customers.plural'),

@@ -48,7 +48,9 @@ class SubWarehouseDataSheet implements FromCollection, WithHeadings, WithTitle, 
                 'pb.project_id',
                 'prj.name as project_name',
                 'prj.description as project_description',
-                DB::raw('SUM(pb.quantity) as distributed_count')
+                DB::raw('SUM(pb.quantity) as distributed_count'),
+                'pb.captured_qty',
+                'pb.external_notes'
             )
             ->where('pb.status', 'مستلم')
             ->whereBetween('pb.delivery_date', [$dateFrom, $dateTo]);
@@ -58,7 +60,7 @@ class SubWarehouseDataSheet implements FromCollection, WithHeadings, WithTitle, 
         }
 
         $distributions = $distributionsQuery
-            ->groupBy('pb.delivery_date', 'pb.sub_warehouse_id', 'sw.name', 'pb.project_id', 'prj.name', 'prj.description')
+            ->groupBy('pb.delivery_date', 'pb.sub_warehouse_id', 'sw.name', 'pb.project_id', 'prj.name', 'prj.description', 'pb.captured_qty', 'pb.external_notes')
             ->orderBy('pb.delivery_date')
             ->get();
 
@@ -95,6 +97,8 @@ class SubWarehouseDataSheet implements FromCollection, WithHeadings, WithTitle, 
                 ->sum('quantity');
 
             $remaining = $inboundCount - $totalDistributedSoFar;
+            $recordedMahrouz = $row->captured_qty ?? 0;
+            $diff = $remaining - $recordedMahrouz;
 
             $data[] = [
                 'serial' => $i++,
@@ -105,7 +109,9 @@ class SubWarehouseDataSheet implements FromCollection, WithHeadings, WithTitle, 
                 'inbound' => $inboundCount ?: 0,
                 'distributed' => $row->distributed_count,
                 'remaining' => $remaining < 0 ? 0 : $remaining,
-                'notes' => '', // Placeholder for manual notes if needed
+                'recorded_mahrouz' => $recordedMahrouz,
+                'match' => $diff == 0 ? 'مطابق' : 'فرق: ' . $diff,
+                'notes' => $row->external_notes ?? '-',
             ];
         }
 
@@ -122,8 +128,10 @@ class SubWarehouseDataSheet implements FromCollection, WithHeadings, WithTitle, 
             'محتوى الطرد',
             'وارد النقاط',
             'عدد المستلمين',
-            'محرز',
-            'ملاحظات',
+            'محرز (تلقائي)',
+            'محرز (مسجل)',
+            'المطابقة',
+            'ملاحظات الميدان',
         ];
     }
 

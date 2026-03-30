@@ -57,6 +57,12 @@ class User extends Authenticatable implements HasMedia, NotificationTarget
      * @var string
      */
     const CUSTOMER_TYPE = 'customer';
+    /**
+     * The code of mobile worker type.
+     *
+     * @var string
+     */
+    const MOBILE_WORKER_TYPE = 'mobile_worker';
 
     /**
      * The guard name of the user permissions.
@@ -118,6 +124,7 @@ class User extends Authenticatable implements HasMedia, NotificationTarget
         self::ADMIN_TYPE => Admin::class,
         self::SUPERVISOR_TYPE => Supervisor::class,
         self::CUSTOMER_TYPE => Customer::class,
+        self::MOBILE_WORKER_TYPE => Distributor::class,
     ];
 
     /**

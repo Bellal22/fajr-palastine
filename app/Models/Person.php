@@ -29,7 +29,7 @@ class Person extends Model
         return $this->hasMany(Person::class, 'relative_id', 'id_num');
     }
 
-    public function familyHead(): BelongsTo
+    public function head(): BelongsTo
     {
         return $this->belongsTo(Person::class, 'relative_id', 'id_num');
     }

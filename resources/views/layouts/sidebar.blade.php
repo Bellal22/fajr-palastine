@@ -44,6 +44,37 @@
 
 @include('dashboard.game_winnings.partials.actions.sidebar')
 @include('dashboard.need_requests.partials.actions.sidebar')
-{{-- The sidebar of generated crud will set here: Don't remove this line --}}
-{{-- @include('dashboard.feedback.partials.actions.sidebar') --}}
+
+{{-- للأدمن فقط --}}
+@if(auth()->check() && auth()->user()->isAdmin())
+@component('dashboard::components.sidebarItem')
+    @slot('url', route('dashboard.mobile_app.index'))
+    @slot('name', 'تكليفات التوزيع')
+    @slot('icon', 'fas fa-mobile-alt')
+    @slot('active', request()->routeIs('dashboard.mobile_app.*'))
+    @slot('tree', [
+        [
+            'name' => 'لوحة التحكم',
+            'url' => route('dashboard.mobile_app.index'),
+            'active' => request()->routeIs('dashboard.mobile_app.index'),
+        ],
+        [
+            'name' => 'قائمة الموزعين',
+            'url' => route('dashboard.mobile_app.users'),
+            'active' => request()->routeIs('dashboard.mobile_app.users*'),
+        ],
+        [
+            'name' => 'تكليف الموزعين',
+            'url' => route('dashboard.mobile_app.nominate'),
+            'active' => request()->routeIs('dashboard.mobile_app.nominate'),
+        ],
+        [
+            'name' => 'تقارير الإنجاز',
+            'url' => route('dashboard.mobile_app.report'),
+            'active' => request()->routeIs('dashboard.mobile_app.report'),
+        ],
+    ])
+@endcomponent
+@endif
+
 @include('dashboard.settings.sidebar')

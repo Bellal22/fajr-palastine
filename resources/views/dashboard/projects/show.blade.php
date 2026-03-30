@@ -141,6 +141,37 @@
                 </div>
             @endcomponent
         </div>
+
+        {{-- قسم ترشيحات الموبايل --}}
+        <div class="col-md-12 mt-5">
+            @component('dashboard::components.box')
+                @slot('title', 'ترشيحات وتكليفات الموبايل')
+
+                <div class="text-center py-3">
+                    <div class="d-flex justify-content-center align-items-center mb-4">
+                        <div class="mx-4 text-center">
+                            <i class="fas fa-tablet-alt fa-2x text-info mb-2"></i>
+                            <div class="text-muted small">إجمالي المكلفين</div>
+                            <h4 class="mb-0">{{ $project->beneficiaries()->whereNotNull('user_id')->count() }}</h4>
+                        </div>
+                        <div class="mx-4 text-center border-left pl-4">
+                            <i class="fas fa-check-double fa-2x text-success mb-2"></i>
+                            <div class="text-muted small">تم الاستلام</div>
+                            <h4 class="mb-0">{{ $project->beneficiaries()->whereNotNull('user_id')->where('status', 'مستلم')->count() }}</h4>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <a href="{{ route('dashboard.mobile_app.nominate', ['project_id' => $project->id]) }}" class="btn btn-info px-8 py-3 shadow-sm">
+                            <i class="fas fa-user-plus me-2"></i> إضافة ترشيحات جديدة للموزعين
+                        </a>
+                        <a href="{{ route('dashboard.mobile_app.report', ['project_id' => $project->id]) }}" class="btn btn-outline-info px-8 py-3 shadow-sm">
+                            <i class="fas fa-file-invoice me-2"></i> عرض تقرير ترشيحات المشروع
+                        </a>
+                    </div>
+                </div>
+            @endcomponent
+        </div>
     </div>
 
     <div class="row">
