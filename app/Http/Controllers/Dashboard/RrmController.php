@@ -387,9 +387,21 @@ class RrmController extends Controller
                 ? \Carbon\Carbon::parse($row->delivery_date)->format('Y-m-d') 
                 : ($batch->delivery_date ? $batch->delivery_date->format('Y-m-d') : date('Y-m-d'));
 
+            $rowNote = '';
+            if (!empty($row->notes)) {
+                if (preg_match('/\[ملاحظة:([^\]]+)\]/u', $row->notes, $m)) {
+                    $rowNote = trim($m[1]);
+                } else {
+                    $clean = preg_replace('/\[[^\]]+\]/u', '', $row->notes);
+                    $clean = trim(str_replace(['تسليم عبر واجهة تسليم الطرود', '|', '(إضافة وتسليم)'], '', $clean));
+                    $rowNote = $clean;
+                }
+            }
+
             if (!$grouped->has($key)) {
                 $grouped->put($key, [
                     'key' => $key,
+                    'row_ids' => [$row->id],
                     'name' => $name,
                     'id_num' => $idNum,
                     'phone' => $phone,
@@ -397,11 +409,19 @@ class RrmController extends Controller
                     'warehouse_name' => $whName,
                     'delivery_date' => $bDeliveryDate,
                     'status' => $row->status ?? 'مستلم',
+                    'notes' => $rowNote,
                     'profile_url' => $profileUrl,
                     'parcels' => [],
                     'total_quantity' => 0,
                     'parcels_summary' => '',
                 ]);
+            } else {
+                $current = $grouped->get($key);
+                $current['row_ids'][] = $row->id;
+                if (!empty($rowNote) && empty($current['notes'])) {
+                    $current['notes'] = $rowNote;
+                }
+                $grouped->put($key, $current);
             }
 
             $current = $grouped->get($key);
@@ -485,10 +505,52 @@ class RrmController extends Controller
                 return str_contains($item['id_num'], $s)
                     || str_contains($item['name'], $s)
                     || str_contains($item['phone'], $s)
-                    || str_contains($item['area_name'], $s);
+                    || str_contains($item['area_name'], $s)
+                    || str_contains($item['notes'] ?? '', $s);
             })->values();
         }
 
         return $result;
+    }
+
+    /**
+     * Update a specific beneficiary note inside this batch.
+     */
+    public function updateBeneficiaryNote(Request $request, $id)
+    {
+        $this->checkPermission();
+
+        $request->validate([
+            'row_ids' => 'required|string',
+            'note' => 'nullable|string|max:500',
+        ]);
+
+        $rowIds = array_filter(array_map('intval', explode(',', $request->row_ids)));
+        if (empty($rowIds)) {
+            return response()->json(['success' => false, 'message' => 'لم يتم العثور على سجلات المستفيد.'], 422);
+        }
+
+        $note = trim($request->input('note', ''));
+        $tag = !empty($note) ? "[ملاحظة:{$note}]" : '';
+
+        $rows = DB::table('project_beneficiaries')->whereIn('id', $rowIds)->get();
+        foreach ($rows as $row) {
+            $existing = $row->notes ?? '';
+            if (preg_match('/\[ملاحظة:[^\]]+\]/u', $existing)) {
+                $newNotes = preg_replace('/\[ملاحظة:[^\]]+\]/u', $tag, $existing);
+            } else {
+                $newNotes = trim($existing . ' ' . $tag);
+            }
+            DB::table('project_beneficiaries')->where('id', $row->id)->update([
+                'notes' => trim($newNotes) ?: null,
+                'updated_at' => now(),
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حفظ ملاحظة المستفيد بنجاح.',
+            'note' => $note ?: '-',
+        ]);
     }
 }

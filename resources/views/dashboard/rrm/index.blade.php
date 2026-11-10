@@ -238,6 +238,7 @@
                                     <button type="button" class="btn btn-xs btn-outline-secondary btn-edit-batch ml-2" 
                                             data-id="{{ $batch->id }}" 
                                             data-name="{{ $batch->name }}"
+                                            data-delivery-date="{{ $batch->delivery_date ? \Carbon\Carbon::parse($batch->delivery_date)->format('Y-m-d') : '' }}"
                                             data-notes="{{ $batch->notes }}"
                                             title="تعديل اسم وملاحظات الكشف">
                                         <i class="fas fa-edit"></i>
@@ -315,6 +316,14 @@
                                     <a href="{{ route('dashboard.rrm.show', $batch->id) }}" class="btn btn-sm btn-info" title="عرض تفاصيل كشف المستفيدين">
                                         <i class="fas fa-eye"></i>
                                     </a>
+                                    <button type="button" class="btn btn-sm btn-primary btn-edit-batch" 
+                                            data-id="{{ $batch->id }}" 
+                                            data-name="{{ $batch->name }}"
+                                            data-delivery-date="{{ $batch->delivery_date ? \Carbon\Carbon::parse($batch->delivery_date)->format('Y-m-d') : '' }}"
+                                            data-notes="{{ $batch->notes }}" 
+                                            title="تعديل بيانات الكشف">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
                                     <a href="{{ route('dashboard.rrm.export', $batch->id) }}" class="btn btn-sm btn-success" title="تصدير كشف المستفيدين إلى Excel">
                                         <i class="fas fa-file-excel"></i>
                                     </a>
@@ -370,6 +379,12 @@
                                 <i class="fas fa-tag text-muted mr-1"></i> اسم الكشف / التوزيعة <span class="text-danger">*</span>
                             </label>
                             <input type="text" name="name" id="modalBatchName" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="font-weight-bold">
+                                <i class="fas fa-calendar-alt text-muted mr-1"></i> تاريخ التسليم / التوزيع:
+                            </label>
+                            <input type="date" name="delivery_date" id="modalBatchDeliveryDate" class="form-control">
                         </div>
                         <div class="form-group mb-0">
                             <label class="font-weight-bold">
@@ -437,9 +452,11 @@
             $('.btn-edit-batch').on('click', function() {
                 var id = $(this).data('id');
                 var name = $(this).data('name');
+                var deliveryDate = $(this).data('delivery-date') || '';
                 var notes = $(this).data('notes') || '';
 
                 $('#modalBatchName').val(name);
+                $('#modalBatchDeliveryDate').val(deliveryDate);
                 $('#modalBatchNotes').val(notes);
                 $('#editBatchForm').attr('action', "{{ url('dashboard/rrm') }}/" + id);
                 $('#editBatchModal').modal('show');

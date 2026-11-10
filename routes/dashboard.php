@@ -468,6 +468,7 @@ Route::get('rrm/{id}', 'RrmController@show')->name('rrm.show');
 Route::get('rrm/{id}/export', 'RrmController@export')->name('rrm.export');
 Route::get('rrm/{id}/print', 'RrmController@print')->name('rrm.print');
 Route::match(['post', 'put', 'patch'], 'rrm/{id}', 'RrmController@update')->name('rrm.update');
+Route::post('rrm/{id}/beneficiary-note', 'RrmController@updateBeneficiaryNote')->name('rrm.beneficiary_note');
 Route::delete('rrm/{id}', 'RrmController@destroy')->name('rrm.destroy');
 
 // ========== روابط الأخطاء (يجب أن تكون هنا قبل الـ Resource) ==========

@@ -52,6 +52,7 @@ class RrmBatchBeneficiariesExport implements FromCollection, WithHeadings, WithM
             $row['total_quantity'] ?? 1,
             $row['delivery_date'] ?? '-',
             $row['status'] ?? 'مستلم',
+            $row['notes'] ?? '-',
         ];
     }
 
@@ -69,6 +70,7 @@ class RrmBatchBeneficiariesExport implements FromCollection, WithHeadings, WithM
             'إجمالي الكمية',
             'تاريخ الاستلام',
             'الحالة',
+            'ملاحظات المستفيد',
         ];
     }
 
@@ -92,7 +94,7 @@ class RrmBatchBeneficiariesExport implements FromCollection, WithHeadings, WithM
                     'vertical' => Alignment::VERTICAL_CENTER,
                 ],
             ],
-            'A1:K' . ($this->rows->count() + 1) => [
+            'A1:L' . ($this->rows->count() + 1) => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,

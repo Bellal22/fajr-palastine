@@ -98,6 +98,14 @@
         </div>
     </div>
 
+    {{-- Batch General Notes --}}
+    @if(!empty($batch->notes))
+        <div class="p-2 mb-3 bg-light border rounded small">
+            <strong><i class="fas fa-comment-dots mr-1"></i> ملاحظات الكشف العامة:</strong>
+            <span>{{ $batch->notes }}</span>
+        </div>
+    @endif
+
     {{-- Parcel Bundle Info --}}
     @if(!empty($parcelsSummary))
         <div class="p-2 mb-3 bg-light border rounded small">
@@ -131,12 +139,13 @@
         <thead>
             <tr>
                 <th width="4%">#</th>
-                <th width="14%">رقم الهوية</th>
-                <th width="24%">اسم المستفيد الرباعي</th>
-                <th width="13%">رقم الجوال</th>
-                <th width="15%">المندوب / المنطقة</th>
-                <th width="15%">الطرود المستلمة</th>
-                <th width="15%">توقيع المستلم / البصمة</th>
+                <th width="13%">رقم الهوية</th>
+                <th width="21%">اسم المستفيد الرباعي</th>
+                <th width="11%">رقم الجوال</th>
+                <th width="13%">المندوب / المنطقة</th>
+                <th width="13%">الطرود المستلمة</th>
+                <th width="13%">ملاحظات المستفيد</th>
+                <th width="12%">توقيع المستلم / البصمة</th>
             </tr>
         </thead>
         <tbody>
@@ -148,13 +157,14 @@
                     <td class="text-center">{{ $b['phone'] }}</td>
                     <td>{{ $b['area_name'] }}</td>
                     <td class="small">{{ $b['parcels_summary'] }}</td>
+                    <td class="small font-weight-bold text-center">{{ $b['notes'] ?: '-' }}</td>
                     <td></td>
                 </tr>
             @endforeach
         </tbody>
         <tfoot>
             <tr class="font-weight-bold" style="background: #f9f9f9;">
-                <td colspan="5" class="text-right">
+                <td colspan="6" class="text-right">
                     إجمالي المستفيدين: {{ $beneficiaries->count() }} مستفيد
                     @if(optional($batch->customProject)->is_cash && optional($batch->customProject)->cash_amount)
                         <span class="mr-3 text-success">

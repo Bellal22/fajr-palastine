@@ -71,17 +71,21 @@
             </div>
 
             {{-- Delivery user and notes --}}
-            <div class="d-flex flex-wrap align-items-center justify-content-between p-2 bg-light border rounded mb-3 small">
-                <div>
+            <div class="d-flex flex-wrap align-items-center justify-content-between p-3 bg-light border rounded mb-3">
+                <div class="font-weight-bold">
                     <i class="fas fa-user-check text-success mr-1"></i>
                     القائم بالتسليم: <strong class="text-dark">{{ $batch->user ? $batch->user->name : '-' }}</strong>
                 </div>
-                @if(!empty($batch->notes))
-                    <div class="mt-1 mt-md-0">
-                        <i class="fas fa-comment-dots text-info mr-1"></i>
-                        ملاحظات الكشف: <span class="batch-notes-text font-weight-bold text-dark">{{ $batch->notes }}</span>
-                    </div>
-                @endif
+                <div class="mt-2 mt-md-0 d-inline-flex align-items-center flex-wrap" style="gap: 8px;">
+                    <i class="fas fa-comment-dots text-primary mr-1"></i>
+                    <span class="font-weight-bold">ملاحظات الكشف:</span>
+                    <span class="batch-notes-text badge badge-light border px-2 py-1 text-dark font-weight-bold" style="font-size: 13px;">
+                        {{ $batch->notes ?: 'لا توجد ملاحظات مسجلة لهذا الكشف' }}
+                    </span>
+                    <button type="button" class="btn btn-xs btn-outline-primary ml-1 btn-open-edit-modal" title="تعديل اسم وملاحظات الكشف">
+                        <i class="fas fa-edit mr-1"></i> تعديل الملاحظة
+                    </button>
+                </div>
             </div>
 
             {{-- Breakdown of parcel bundle --}}
@@ -165,26 +169,29 @@
                 <thead class="thead-light">
                     <tr>
                         <th width="4%" class="text-center font-weight-bold">#</th>
-                        <th width="13%" class="text-center font-weight-bold">
+                        <th width="12%" class="text-center font-weight-bold">
                             <i class="fas fa-id-card text-muted ml-1"></i> رقم الهوية
                         </th>
-                        <th width="20%" class="font-weight-bold">
+                        <th width="18%" class="font-weight-bold">
                             <i class="fas fa-user text-muted ml-1"></i> الاسم رباعي
                         </th>
-                        <th width="12%" class="text-center font-weight-bold">
+                        <th width="11%" class="text-center font-weight-bold">
                             <i class="fas fa-phone-alt text-muted ml-1"></i> رقم الجوال
                         </th>
-                        <th width="15%" class="font-weight-bold">
+                        <th width="13%" class="font-weight-bold">
                             <i class="fas fa-map-marker-alt text-muted ml-1"></i> المندوب / المنطقة
                         </th>
-                        <th width="20%" class="font-weight-bold">
-                            <i class="fas fa-boxes text-muted ml-1"></i> الطرود المستلمة والكميات
+                        <th width="16%" class="font-weight-bold">
+                            <i class="fas fa-boxes text-muted ml-1"></i> الطرود والكميات
                         </th>
-                        <th width="8%" class="text-center font-weight-bold">
-                            <i class="fas fa-calculator text-muted ml-1"></i> إجمالي الكمية
+                        <th width="6%" class="text-center font-weight-bold">
+                            <i class="fas fa-calculator text-muted ml-1"></i> الكمية
                         </th>
-                        <th width="8%" class="text-center font-weight-bold">
-                            <i class="fas fa-check-circle text-muted ml-1"></i> حالة الاستلام
+                        <th width="6%" class="text-center font-weight-bold">
+                            <i class="fas fa-check-circle text-muted ml-1"></i> الحالة
+                        </th>
+                        <th width="14%" class="text-center font-weight-bold">
+                            <i class="fas fa-comment-dots text-primary ml-1"></i> ملاحظة المستفيد
                         </th>
                     </tr>
                 </thead>
@@ -251,10 +258,28 @@
                                     </span>
                                 @endif
                             </td>
+                            <td class="text-center">
+                                <div class="d-inline-flex align-items-center justify-content-center" style="gap: 5px;">
+                                    <span class="beneficiary-note-display-{{ $b['key'] }} small font-weight-bold {{ !empty($b['notes']) && $b['notes'] !== '-' ? 'text-dark' : 'text-muted' }}" 
+                                          style="max-width: 130px; display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+                                          title="{{ $b['notes'] ?: 'لا توجد ملاحظة لهذا المستفيد' }}">
+                                        {{ $b['notes'] ?: '-' }}
+                                    </span>
+                                    <button type="button" 
+                                            class="btn btn-xs btn-outline-info btn-edit-beneficiary-note" 
+                                            data-key="{{ $b['key'] }}"
+                                            data-row-ids="{{ implode(',', $b['row_ids'] ?? []) }}"
+                                            data-name="{{ $b['name'] }}"
+                                            data-note="{{ $b['notes'] !== '-' ? $b['notes'] : '' }}"
+                                            title="تعديل ملاحظة المستفيد">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center py-5 text-muted">
+                            <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="fas fa-user-slash fa-3x mb-3 text-secondary d-block"></i>
                                 <h6 class="font-weight-bold">لا توجد سجلات تطابق معايير البحث في هذا الكشف</h6>
                             </td>
@@ -326,10 +351,47 @@
         </div>
     </div>
 
+    {{-- Modal to edit beneficiary note --}}
+    <div class="modal fade" id="editBeneficiaryNoteModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title font-weight-bold">
+                        <i class="fas fa-comment-dots mr-1"></i> تعديل ملاحظة المستفيد
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <form id="editBeneficiaryNoteForm" method="POST" action="{{ route('dashboard.rrm.beneficiary_note', $batch->id) }}">
+                    @csrf
+                    <input type="hidden" name="row_ids" id="modalBeneficiaryRowIds">
+                    <input type="hidden" id="modalBeneficiaryKey">
+                    <div class="modal-body">
+                        <div class="alert alert-light border mb-3">
+                            <i class="fas fa-user mr-1 text-primary"></i>
+                            المستفيد: <strong id="modalBeneficiaryName" class="text-dark"></strong>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="font-weight-bold">
+                                <i class="fas fa-pencil-alt text-muted mr-1"></i> ملاحظة المستفيد:
+                            </label>
+                            <textarea name="note" id="modalBeneficiaryNoteText" class="form-control" rows="3" placeholder="أدخل أي ملاحظة خاصة بهذا المستفيد في هذا الكشف..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-info font-weight-bold" id="btnSaveBeneficiaryNote">
+                            <i class="fas fa-save mr-1"></i> حفظ ملاحظة المستفيد
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
     <script>
         $(document).ready(function() {
-            // Open Edit Modal
+            // Open Edit Modal for Batch
             $('.btn-open-edit-modal').on('click', function() {
                 $('#editBatchModal').modal('show');
             });
@@ -364,6 +426,58 @@
                     error: function(xhr) {
                         btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> حفظ التعديل');
                         alert('حدث خطأ أثناء حفظ التعديل.');
+                    }
+                });
+            });
+
+            // Open Edit Beneficiary Note Modal
+            $('.btn-edit-beneficiary-note').on('click', function() {
+                var key = $(this).data('key');
+                var name = $(this).data('name');
+                var rowIds = $(this).data('row-ids');
+                var note = $(this).data('note') || '';
+
+                $('#modalBeneficiaryKey').val(key);
+                $('#modalBeneficiaryName').text(name);
+                $('#modalBeneficiaryRowIds').val(rowIds);
+                $('#modalBeneficiaryNoteText').val(note);
+                $('#editBeneficiaryNoteModal').modal('show');
+            });
+
+            $('#editBeneficiaryNoteForm').on('submit', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var url = form.attr('action');
+                var key = $('#modalBeneficiaryKey').val();
+                var btn = $('#btnSaveBeneficiaryNote');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> جاري الحفظ...');
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function(res) {
+                        btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> حفظ ملاحظة المستفيد');
+                        if (res.success) {
+                            var updatedNote = res.note;
+                            $('.beneficiary-note-display-' + key).text(updatedNote).attr('title', updatedNote !== '-' ? updatedNote : 'لا توجد ملاحظة لهذا المستفيد');
+                            if (updatedNote !== '-') {
+                                $('.beneficiary-note-display-' + key).removeClass('text-muted').addClass('text-dark');
+                            } else {
+                                $('.beneficiary-note-display-' + key).removeClass('text-dark').addClass('text-muted');
+                            }
+                            // Update data-note on the button
+                            $('button[data-key="' + key + '"]').data('note', updatedNote !== '-' ? updatedNote : '');
+
+                            $('#editBeneficiaryNoteModal').modal('hide');
+                            alert('✅ ' + res.message);
+                        } else {
+                            alert('حدث خطأ: ' + res.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        btn.prop('disabled', false).html('<i class="fas fa-save mr-1"></i> حفظ ملاحظة المستفيد');
+                        alert('حدث خطأ أثناء حفظ الملاحظة.');
                     }
                 });
             });
