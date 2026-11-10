@@ -16,9 +16,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-
-class FamilyChildrenExport implements FromQuery, WithHeadings, WithChunkReading, WithStyles, WithMapping, ShouldQueue, ShouldAutoSize
+class FamilyChildrenExport implements FromQuery, WithHeadings, WithChunkReading, WithStyles, WithMapping
 {
     use Exportable;
 
@@ -34,7 +32,8 @@ class FamilyChildrenExport implements FromQuery, WithHeadings, WithChunkReading,
      */
     public function query()
     {
-        $query = DB::table('persons AS child')
+        $query = Person::query()
+            ->from('persons AS child')
             ->select([
                 // بيانات رب الأسرة
                 'parent.id as parent_id',
@@ -58,10 +57,10 @@ class FamilyChildrenExport implements FromQuery, WithHeadings, WithChunkReading,
                 'area.name as area_responsible_name',
                 'block.name as block_name',
 
-                // ✅ جلب جميع الزوجات (سيتم تقسيمهم لاحقاً)
-                DB::raw("GROUP_CONCAT(DISTINCT CASE WHEN wife.relationship = 'wife' THEN wife.id_num END ORDER BY wife.id SEPARATOR '|||') as wives_id_nums"),
-                DB::raw("GROUP_CONCAT(DISTINCT CASE WHEN wife.relationship = 'wife' THEN CONCAT_WS(' ', wife.first_name, wife.father_name, wife.grandfather_name, wife.family_name) END ORDER BY wife.id SEPARATOR '|||') as wives_full_names"),
-                DB::raw("GROUP_CONCAT(DISTINCT CASE WHEN wife.relationship = 'wife' THEN wife.phone END ORDER BY wife.id SEPARATOR '|||') as wives_phones"),
+                // ✅ جلب بيانات الزوجات عبر استعلامات فرعية (أسرع بكثير من Join + GroupBy)
+                DB::raw("(SELECT GROUP_CONCAT(w.id_num SEPARATOR '|||') FROM persons w WHERE w.relative_id = parent.id_num AND w.relationship IN ('wife', 'زوجة')) as wives_id_nums"),
+                DB::raw("(SELECT GROUP_CONCAT(CONCAT_WS(' ', w.first_name, w.father_name, w.grandfather_name, w.family_name) SEPARATOR '|||') FROM persons w WHERE w.relative_id = parent.id_num AND w.relationship IN ('wife', 'زوجة')) as wives_full_names"),
+                DB::raw("(SELECT GROUP_CONCAT(w.phone SEPARATOR '|||') FROM persons w WHERE w.relative_id = parent.id_num AND w.relationship IN ('wife', 'زوجة')) as wives_phones"),
 
                 // بيانات الطفل
                 'child.id as child_id',
@@ -80,88 +79,89 @@ class FamilyChildrenExport implements FromQuery, WithHeadings, WithChunkReading,
                 DB::raw('TIMESTAMPDIFF(DAY, child.dob, CURDATE()) as child_age_days'),
             ])
             ->join('persons AS parent', 'child.relative_id', '=', 'parent.id_num')
-            ->leftJoin('persons AS wife', function ($join) {
-                $join->on('wife.relative_id', '=', 'parent.id_num')
-                    ->where('wife.relationship', '=', 'wife');
-            })
             ->leftJoin('area_responsibles AS area', 'parent.area_responsible_id', '=', 'area.id')
             ->leftJoin('blocks AS block', 'parent.block_id', '=', 'block.id')
             ->whereNotNull('child.relative_id')
-            ->whereNull('parent.relationship')
-            ->whereNotNull('parent.phone')
-            ->whereNotNull('parent.block_id')
-            ->whereNotIn('child.relationship', ['wife', 'father', 'mother'])
-            // ✅ Group by الطفل (كل طفل صف منفصل)
-            ->groupBy(
-                'child.id',
-                'child.id_num',
-                'child.first_name',
-                'child.father_name',
-                'child.grandfather_name',
-                'child.family_name',
-                'child.gender',
-                'child.dob',
-                'child.relationship',
-                'child.has_condition',
-                'child.condition_description',
-                'child.block_id',
-                'child.relative_id',
-                'parent.id',
-                'parent.id_num',
-                'parent.first_name',
-                'parent.father_name',
-                'parent.grandfather_name',
-                'parent.family_name',
-                'parent.gender',
-                'parent.phone',
-                'parent.dob',
-                'parent.social_status',
-                'parent.city',
-                'parent.current_city',
-                'parent.neighborhood',
-                'parent.employment_status',
-                'parent.housing_type',
-                'parent.housing_damage_status',
-                'parent.relative_id',
-                'parent.block_id',
-                'parent.area_responsible_id',
-                'area.name',
-                'block.name'
-            )
+            ->where(function ($q) {
+                $q->whereIn('child.relationship', ['ابن', 'ابنة', 'أخ', 'أخت', 'son', 'daughter', 'brother', 'sister', 'حفيد', 'حفيدة', 'تابع', 'تابعية', 'ولد', 'بنت', 'بنات', 'أبناء', 'اخ', 'اخت', 'ابنه', 'بنت/ابنه', 'صغير', 'مرافق', 'قريب'])
+                  ->orWhere('child.relationship', 'LIKE', 'ابن%')
+                  ->orWhereNull('child.relationship')
+                  ->orWhere('child.relationship', '');
+            })
             ->orderBy('child.relative_id')
-            ->orderBy('parent.dob', 'asc')
             ->orderBy('child.dob', 'desc');
 
-        // ==========================================
-        // تطبيق فلاتر رب الأسرة
-        // ==========================================
-
-        if ($areaId = $this->request->get('area_responsible_id')) {
-            $query->where('parent.area_responsible_id', $areaId);
-        } elseif (auth()->user()?->isSupervisor()) {
-            $query->where('parent.area_responsible_id', auth()->id());
+        $exportSource = $this->request->get('export_source');
+        if ($exportSource === 'view') {
+            $query->whereNotNull('parent.area_responsible_id')
+                  ->whereNotNull('parent.block_id');
+        } elseif ($exportSource === 'index') {
+            $query->whereNull('parent.block_id');
         }
 
-        if ($blockId = $this->request->get('block_id')) {
-            $query->where('parent.block_id', $blockId);
+        if ($search = $this->request->get('search')) {
+            $ids = preg_split('/[\s,]+/', $search, -1, PREG_SPLIT_NO_EMPTY);
+            $query->where(function ($q) use ($ids, $search) {
+                if (count($ids) > 1) {
+                    $q->whereIn('parent.id_num', $ids)
+                      ->orWhereIn('child.id_num', $ids);
+                } else {
+                    $q->where('parent.id_num', 'like', "%{$search}%")
+                      ->orWhere('child.id_num', 'like', "%{$search}%");
+                }
+            });
+        }
+
+        if ($idNum = $this->request->get('id_num')) {
+            $ids = preg_split('/[\s,]+/', $idNum, -1, PREG_SPLIT_NO_EMPTY);
+            $query->where(function($q) use ($ids, $idNum) {
+                if (count($ids) > 1) {
+                    $q->whereIn('parent.id_num', $ids)
+                      ->orWhereIn('child.id_num', $ids);
+                } else {
+                    $q->where('parent.id_num', 'like', "%{$idNum}%")
+                      ->orWhere('child.id_num', 'like', "%{$idNum}%");
+                }
+            });
         }
 
         if ($name = $this->request->get('name')) {
             $query->where(function ($q) use ($name) {
                 $q->where('parent.first_name', 'like', "%{$name}%")
-                    ->orWhere('parent.father_name', 'like', "%{$name}%")
-                    ->orWhere('parent.grandfather_name', 'like', "%{$name}%")
-                    ->orWhere('parent.family_name', 'like', "%{$name}%")
-                    ->orWhereRaw("CONCAT_WS(' ', parent.first_name, parent.father_name, parent.grandfather_name, parent.family_name) LIKE ?", ["%{$name}%"]);
+                  ->orWhere('parent.father_name', 'like', "%{$name}%")
+                  ->orWhere('parent.grandfather_name', 'like', "%{$name}%")
+                  ->orWhere('parent.family_name', 'like', "%{$name}%")
+                  ->orWhere('child.first_name', 'like', "%{$name}%")
+                  ->orWhere('child.father_name', 'like', "%{$name}%")
+                  ->orWhere('child.grandfather_name', 'like', "%{$name}%")
+                  ->orWhere('child.family_name', 'like', "%{$name}%");
             });
         }
 
-        if ($idNum = $this->request->get('id_num')) {
-            $query->where('parent.id_num', 'like', "%{$idNum}%");
+        if ($areaId = $this->request->get('area_responsible_id')) {
+            $query->where(function($q) use ($areaId) {
+                $q->where('parent.area_responsible_id', $areaId)
+                  ->orWhere('child.area_responsible_id', $areaId);
+            });
+        } elseif (auth()->user()?->isSupervisor()) {
+            $query->where(function($q) {
+                $q->where('parent.area_responsible_id', auth()->id())
+                  ->orWhere('child.area_responsible_id', auth()->id());
+            });
+        }
+
+        if ($blockId = $this->request->get('block_id')) {
+            $query->where(function($q) use ($blockId) {
+                $q->where('parent.block_id', $blockId)
+                  ->orWhere('child.block_id', $blockId);
+            });
         }
 
         if ($phone = $this->request->get('phone')) {
-            $query->where('parent.phone', 'like', "%{$phone}%");
+            $query->where(function($q) use ($phone) {
+                $q->where('parent.phone', 'like', "%{$phone}%")
+                  ->orWhere('child.phone', 'like', "%{$phone}%");
+            });
         }
 
         if ($gender = $this->request->get('gender')) {

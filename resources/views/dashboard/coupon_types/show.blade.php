@@ -13,6 +13,20 @@
                         <td><strong>{{ $coupon_type->name }}</strong></td>
                     </tr>
                     <tr>
+                        <th>طبيعة الكوبون</th>
+                        <td>
+                            @if($coupon_type->is_cash)
+                                <span class="badge badge-success px-2 py-1">
+                                    <i class="fas fa-money-bill-wave mr-1"></i> نقدي ({{ $coupon_type->formatted_cash_value }} - {{ $coupon_type->currency_label }})
+                                </span>
+                            @else
+                                <span class="badge badge-info px-2 py-1">
+                                    <i class="fas fa-box-open mr-1"></i> عيني
+                                </span>
+                            @endif
+                        </td>
+                    </tr>
+                    <tr>
                         <th>@lang('coupon_types.attributes.created_at')</th>
                         <td>{{ $coupon_type->created_at->format('Y-m-d h:i A') }}</td>
                     </tr>

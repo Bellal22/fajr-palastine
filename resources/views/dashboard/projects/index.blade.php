@@ -56,6 +56,8 @@
             <th class="d-none d-md-table-cell"><i class="fas fa-calendar-alt"></i> تاريخ البدء</th>
             <th class="d-none d-md-table-cell"><i class="fas fa-calendar-check"></i> تاريخ الانتهاء</th>
             <th class="d-none d-lg-table-cell text-center"><i class="fas fa-users"></i> المستفيدين</th>
+            <th class="d-none d-lg-table-cell text-center"><i class="fas fa-hand-holding-usd text-success"></i> المانحين</th>
+            <th class="d-none d-lg-table-cell text-center"><i class="fas fa-tools text-primary"></i> الشركاء</th>
             <th class="text-center"><i class="fas fa-user-check"></i> المستلمين</th>
             <th class="text-center"><i class="fas fa-cubes"></i> الكميات</th>
             <th><i class="fas fa-info-circle"></i> الحالة</th>
@@ -77,6 +79,14 @@
                         <i class="fas fa-project-diagram text-muted"></i>
                         {{ $project->name }}
                     </a>
+                    @if($project->is_cash)
+                        <div class="mt-1">
+                            <span class="badge badge-success px-2 py-1">
+                                <i class="fas fa-money-bill-wave mr-1"></i>
+                                نقدي: {{ $project->formatted_cash_value }}
+                            </span>
+                        </div>
+                    @endif
                     <small class="text-muted d-md-none d-block mt-1">
                         {{ Str::limit($project->description, 30) ?? '-' }}
                     </small>
@@ -112,6 +122,28 @@
                         <i class="fas fa-users"></i>
                         {{ number_format($project->beneficiaries_count ?? 0) }}
                     </span>
+                </td>
+
+                {{-- Granting Entities (Donors) --}}
+                <td class="d-none d-lg-table-cell text-center">
+                    @forelse($project->grantingEntities as $entity)
+                        <span class="badge badge-outline-success border border-success text-success d-block mb-1 py-1 px-2" style="font-size: 0.75rem;">
+                            {{ $entity->name }}
+                        </span>
+                    @empty
+                        <span class="text-muted small">-</span>
+                    @endforelse
+                </td>
+
+                {{-- Executing Entities (Partners) --}}
+                <td class="d-none d-lg-table-cell text-center">
+                    @forelse($project->executingEntities as $entity)
+                        <span class="badge badge-outline-primary border border-primary text-primary d-block mb-1 py-1 px-2" style="font-size: 0.75rem;">
+                            {{ $entity->name }}
+                        </span>
+                    @empty
+                        <span class="text-muted small">-</span>
+                    @endforelse
                 </td>
 
                 {{-- Received Count --}}

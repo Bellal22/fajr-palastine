@@ -24,3 +24,33 @@ Breadcrumbs::for('dashboard.complaints.edit', function ($breadcrumb, $complaint)
     $breadcrumb->parent('dashboard.complaints.show', $complaint);
     $breadcrumb->push(trans('complaints.actions.edit'), route('dashboard.complaints.edit', $complaint));
 });
+
+Breadcrumbs::for('dashboard.complaint_response_templates.index', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.complaints.index');
+    $breadcrumb->push('الردود الجاهزة', route('dashboard.complaint_response_templates.index'));
+});
+
+Breadcrumbs::for('dashboard.complaint_response_templates.create', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.complaint_response_templates.index');
+    $breadcrumb->push('إضافة رد جاهز', route('dashboard.complaint_response_templates.create'));
+});
+
+Breadcrumbs::for('dashboard.complaint_response_templates.edit', function ($breadcrumb, $template = null) {
+    $breadcrumb->parent('dashboard.complaint_response_templates.index');
+    $breadcrumb->push('تعديل الرد الجاهز', $template ? route('dashboard.complaint_response_templates.edit', $template) : '#');
+});
+
+Breadcrumbs::for('dashboard.complaint_types.index', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.complaints.index');
+    $breadcrumb->push('أنواع الشكاوى', route('dashboard.complaint_types.index'));
+});
+
+Breadcrumbs::for('dashboard.complaint_types.create', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.complaint_types.index');
+    $breadcrumb->push('إضافة نوع جديد', route('dashboard.complaint_types.create'));
+});
+
+Breadcrumbs::for('dashboard.complaint_types.edit', function ($breadcrumb, $type = null) {
+    $breadcrumb->parent('dashboard.complaint_types.index');
+    $breadcrumb->push('تعديل نوع الشكوى', $type ? route('dashboard.complaint_types.edit', $type) : '#');
+});

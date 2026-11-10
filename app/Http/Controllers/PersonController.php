@@ -196,6 +196,25 @@ class PersonController extends Controller
         $peopleList = $session->get('peopleList', []);
         $person     = $session->get('person'); // بيانات رب الأسرة من الخطوة السابقة
 
+        // التحقق مما إذا كان أحد أفراد الأسرة مسجلاً مسبقاً في قاعدة البيانات (لحاله أو ضمن عائلة)
+        $memberIds = array_values(array_filter(array_map(fn($p) => preg_replace('/\D/', '', $p['id_num'] ?? ''), $peopleList)));
+        if (!empty($memberIds)) {
+            $existingPersons = Person::whereIn('id_num', $memberIds)->get();
+            if ($existingPersons->isNotEmpty()) {
+                $messages = [];
+                foreach ($existingPersons as $existing) {
+                    $fullName = trim("{$existing->first_name} {$existing->family_name}");
+                    $namePart = $fullName ? " ({$fullName})" : "";
+                    $regStatus = empty($existing->relative_id) ? 'مسجل لحاله كرب أسرة' : 'مسجل ضمن عائلة';
+                    $messages[] = "الفرد صاحب رقم الهوية ({$existing->id_num}){$namePart} مسجل مسبقاً لحاله أو ضمن عائلة ({$regStatus}).";
+                }
+                return response()->json([
+                    'success' => false,
+                    'message' => implode('<br>', $messages),
+                ]);
+            }
+        }
+
         // لرئيس الأسرة المحظور
         if ($banned = BanList::where('id_num', $id_num)->first()) {
             return response()->json([
@@ -357,9 +376,12 @@ class PersonController extends Controller
         // ✅ التحقق من عدم تكرار رقم الهوية
         $existingPerson = Person::where('id_num', $validatedData['id_num'])->first();
         if ($existingPerson) {
+            $fullName = trim("{$existingPerson->first_name} {$existingPerson->family_name}");
+            $namePart = $fullName ? " ({$fullName})" : "";
+            $regStatus = empty($existingPerson->relative_id) ? 'مسجل لحاله كرب أسرة' : 'مسجل ضمن عائلة';
             return response()->json([
                 'success' => false,
-                'message' => "رقم الهوية {$validatedData['id_num']} مسجل مسبقاً في النظام."
+                'message' => "الفرد صاحب رقم الهوية ({$validatedData['id_num']}){$namePart} مسجل مسبقاً لحاله أو ضمن عائلة ({$regStatus})."
             ], 422);
         }
 
@@ -555,20 +577,7 @@ class PersonController extends Controller
             ], 404);
         }
 
-        if ($user->is_frozen && !auth()->user()?->isAdmin()) {
-            $frozenFields = [
-                'area_responsible_id', 'block_id', 'neighborhood', 'city'
-            ];
 
-            foreach ($frozenFields as $field) {
-                if ($request->has($field) && $request->input($field) != $user->$field) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'تم اعتماد بيانات السكن لهذه العائلة وتجميد التعديل عليها تجنباً لفقدان حقكم في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
-                    ], 422);
-                }
-            }
-        }
 
         // التحقق من تكرار رقم الهوية الجديد
         if ($request->id_num !== $request->old_id_num) {
@@ -613,10 +622,15 @@ class PersonController extends Controller
             $data['block_id'] = null;
         }
 
-        // Housing fields are already cleaned or unset if frozen
-        if ($user->is_frozen && !auth()->user()?->isAdmin()) {
-            unset($data['area_responsible_id'], $data['block_id'], $data['neighborhood'], $data['city']);
+        // التحقق من وجود مسؤول المنطقة في حال تم تحديده
+        if (!empty($data['area_responsible_id'])) {
+            $exists = AreaResponsible::where('id', $data['area_responsible_id'])->exists();
+            if (!$exists) {
+                unset($data['area_responsible_id']);
+            }
         }
+
+
 
         try {
             $updated = $user->update($this->mapSlugsToNames($data));
@@ -658,33 +672,7 @@ class PersonController extends Controller
             ], 404);
         }
 
-        if ($user->is_frozen && !auth()->user()?->isAdmin()) {
-            // Check if restricted fields are being updated
-             if ($request->has('area_responsible_id') && $request->input('area_responsible_id') != $user->area_responsible_id) {
-                 return response()->json([
-                    'success' => false,
-                    'message' => 'تم اعتماد بيانات السكن لهذه العائلة وتجميد التعديل عليها تجنباً لفقدان حقكم في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
-                ], 422);
-             }
-             if ($request->has('block_id') && $request->input('block_id') != $user->block_id) {
-                 return response()->json([
-                    'success' => false,
-                    'message' => 'تم اعتماد بيانات السكن لهذه العائلة وتجميد التعديل عليها تجنباً لفقدان حقكم في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
-                ], 422);
-             }
-             if ($request->has('neighborhood') && $request->input('neighborhood') != $user->neighborhood) {
-                 return response()->json([
-                    'success' => false,
-                    'message' => 'تم اعتماد بيانات السكن لهذه العائلة وتجميد التعديل عليها تجنباً لفقدان حقكم في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
-                ], 422);
-             }
-             if ($request->has('city') && $request->input('city') != $user->city) {
-                 return response()->json([
-                    'success' => false,
-                    'message' => 'تم اعتماد بيانات السكن لهذه العائلة وتجميد التعديل عليها تجنباً لفقدان حقكم في الإدراج على بيانات المستفيدين يرجى مراجعة الإدارة بهذا الخصوص'
-                ], 422);
-             }
-        }
+
 
         $oldId = $user->id_num; // ✅ الرقم القديم من قاعدة البيانات
         $newId = $request->id_num;
@@ -747,7 +735,15 @@ class PersonController extends Controller
             ], 422);
         }
 
-        $data['phone'] = $request->phone;
+        // التحقق من وجود مسؤول المنطقة في حال تم تحديده
+        if (!empty($data['area_responsible_id'])) {
+            $exists = AreaResponsible::where('id', $data['area_responsible_id'])->exists();
+            if (!$exists) {
+                unset($data['area_responsible_id']);
+            }
+        }
+
+
 
         $updated = $user->update($this->mapSlugsToNames($data));
 

@@ -95,9 +95,13 @@ class RegionController extends Controller
         ]);
 
         // تعيين اللوكيشنات الموجودة داخل المنطقة
-        $this->assignLocationsToRegion($region);
+        $outsideBlocks = $this->assignLocationsToRegion($region);
 
         flash()->success(trans('regions.messages.created'));
+
+        if (!empty($outsideBlocks)) {
+            flash()->warning('تنبيه: المناديب التاليين تقع إحداثياتهم خارج نطاق حدود المنطقة: ' . implode('، ', $outsideBlocks));
+        }
 
         return redirect()->route('dashboard.regions.show', $region);
     }
@@ -167,9 +171,13 @@ class RegionController extends Controller
         ]);
 
         // تحديث اللوكيشنات بناءً على الحدود الجديدة
-        $this->assignLocationsToRegion($region);
+        $outsideBlocks = $this->assignLocationsToRegion($region);
 
         flash()->success(trans('regions.messages.updated'));
+
+        if (!empty($outsideBlocks)) {
+            flash()->warning('تنبيه: المناديب التاليين تقع إحداثياتهم خارج نطاق حدود المنطقة: ' . implode('، ', $outsideBlocks));
+        }
 
         return redirect()->route('dashboard.regions.show', $region);
     }
@@ -308,6 +316,8 @@ class RegionController extends Controller
      */
     private function assignLocationsToRegion(Region $region)
     {
+        $outsideBlocks = [];
+
         // 1. التبعية الإدارية: إنشاء/تحديث لوكيشن لكل مندوب
         if ($region->area_responsible_id) {
             $blocks = \App\Models\Block::where('area_responsible_id', $region->area_responsible_id)->get();
@@ -329,18 +339,30 @@ class RegionController extends Controller
                             'icon_color' => '#1976D2' // لون مميز لمناديب المنطقة
                         ]
                     );
+
+                    // التحقق مما إذا كان المندوب يقع خارج حدود مضلع المنطقة
+                    if (!empty($region->boundaries) && is_array($region->boundaries) && count($region->boundaries) >= 3) {
+                        $isInside = $this->isPointInPolygon([
+                            'lat' => (float) $block->lat,
+                            'lng' => (float) $block->lan
+                        ], $region->boundaries);
+
+                        if (!$isInside) {
+                            $outsideBlocks[] = $block->name . ($block->title ? ' (' . $block->title . ')' : '');
+                        }
+                    }
                 }
             }
         }
 
         // 2. الموقع الجغرافي: التعامل مع اللوكيشنات الأخرى (التي ليست مناديب) أو تم إنشاؤها يدوياً
-        if (!empty($region->boundaries)) {
+        if (!empty($region->boundaries) && is_array($region->boundaries) && count($region->boundaries) >= 3) {
             // نستثني اللوكيشنات المرتبطة بمناديب لأننا عالجناها في الخطوة الأولى
             $locations = \App\Models\Location::whereNull('block_id')->get();
             $polygon = $region->boundaries;
 
             foreach ($locations as $location) {
-                // إذا كان اللوكيشن مسجل مسبقاً لنفس المنطقة، لا داعي لتحديثه (إلا إذا أردنا التحقق من خروجه)
+                // إذا كان اللوكيشن مسجل مسبقاً لنفس المنطقة، لا داعي لتحديثه
                 if ($location->region_id == $region->id) {
                     continue;
                 }
@@ -350,6 +372,8 @@ class RegionController extends Controller
                 }
             }
         }
+
+        return $outsideBlocks;
     }
 
     /**
@@ -357,18 +381,29 @@ class RegionController extends Controller
      */
     private function isPointInPolygon($point, $polygon)
     {
-        $x = $point['lat'];
-        $y = $point['lng'];
+        $x = (float) ($point['lat'] ?? 0);
+        $y = (float) ($point['lng'] ?? $point['lan'] ?? 0);
+
+        if ($x == 0 && $y == 0) {
+            return false;
+        }
 
         $inside = false;
         $count = count($polygon);
+        if ($count < 3) {
+            return false;
+        }
+
         $j = $count - 1;
 
         for ($i = 0; $i < $count; $i++) {
-            $xi = $polygon[$i]['lat'];
-            $yi = $polygon[$i]['lng'];
-            $xj = $polygon[$j]['lat'];
-            $yj = $polygon[$j]['lng'];
+            $p_i = (array) $polygon[$i];
+            $p_j = (array) $polygon[$j];
+
+            $xi = (float) ($p_i['lat'] ?? $p_i[0] ?? 0);
+            $yi = (float) ($p_i['lng'] ?? $p_i[1] ?? 0);
+            $xj = (float) ($p_j['lat'] ?? $p_j[0] ?? 0);
+            $yj = (float) ($p_j['lng'] ?? $p_j[1] ?? 0);
 
             $intersect = (($yi > $y) != ($yj > $y))
                 && ($x < ($xj - $xi) * ($y - $yi) / ($yj - $yi) + $xi);

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>جمعية الفجر الشبابي الفلسطيني FPYA - نظام التدقيق والتحليل الذكي</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Outfit:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <!-- صفحة التحميل التمهيدية (Preloader) -->
+    <div id="preloader">
+        <div class="preloader-content">
+            <div class="logo-wrapper">
+                <div class="loader-spinner"></div>
+                <img src="logo.jpg" alt="الشعار" class="preloader-logo"
+                    onerror="this.src='https://home.fpya.ps/logo/image.jpg'">
+            </div>
+        </div>
+    </div>
+
+    <!-- الفقاعات الخلفية الملونة -->
+    <div class="bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <!-- الموجات الخلفية -->
+    <div class="wave-container">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+
+    <div class="page-container">
+        <!-- الهيدر العلوي المقتبس من تصميم صورة المستخدم -->
+        <div class="top-bar">
+            <img src="logo.jpg" alt="الشعار" class="logo-small"
+                onerror="this.src='https://home.fpya.ps/logo/image.jpg'">
+            <h1>جمعية <span>الفجر الشبابي الفلسطيني FPYA</span></h1>
+        </div>
+
+        <div class="main-row">
+            <!-- العمود الأيمن (السايد بار الجانبي كالبوابة تماماً) -->
+            <aside class="sidebar">
+                <h2>أقسام النظام الإلكتروني</h2>
+
+                <div class="info-item active nav-item" data-target="connection-tab">
+                    <h3><i class="fas fa-plug"></i> إعدادات الاتصال</h3>
+                    <p>ضبط إعدادات السيرفر والاتصال الآمن بقاعدة البيانات.</p>
+                </div>
+
+                <div class="info-item nav-item" data-target="scoring-tab" id="nav-scoring">
+                    <h3><i class="fas fa-search"></i> التدقيق والتقييم</h3>
+                    <p>احتساب نقاط الأسر وتصنيف الحالات حسب المعايير الصحية والاجتماعية.</p>
+                </div>
+
+                <div class="info-item nav-item" data-target="outliers-tab" id="nav-outliers">
+                    <h3><i class="fas fa-exclamation-triangle"></i> القيم الشاذة والمهمشة</h3>
+                    <p>رصد حالات التكرار الشاذة والعائلات الأكثر استحقاقاً والمهمشة.</p>
+                </div>
+
+                <div class="info-item nav-item" data-target="analytics-tab" id="nav-analytics">
+                    <h3><i class="fas fa-chart-bar"></i> الرسوم البيانية والتحليل</h3>
+                    <p>لوحة تحليلات توزيع المساعدات ومؤشر المساواة والعدالة.</p>
+                </div>
+
+                <!-- فلتر المناطق المضاف للجنب -->
+                <div class="sidebar-filter-box" style="margin-top: 20px;">
+                    <div class="glass-card"
+                        style="padding: 15px; border-top: 3px solid #FF6F00; background: #fff8f5; border-radius: 8px;">
+                        <h3
+                            style="font-size: 0.9rem; font-weight: bold; color: #FF6F00; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-map-marker-alt"></i> تصفية المناطق الجغرافية
+                        </h3>
+                        <div class="form-group">
+                            <label
+                                style="font-size: 0.75rem; font-weight: bold; color: #666; margin-bottom: 6px;">المنطقة
+                                المسؤولة (اضغط Ctrl لتحديد متعدد):</label>
+                            <select id="filter-areas" class="multi-select" multiple
+                                style="height: 160px; width: 100%; font-family: 'Cairo', sans-serif; font-size: 0.85rem; border: 2px solid #cbd5e0; border-radius: 6px; padding: 6px;"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-footer">
+                    <span class="version">إصدار 1.0.0 (متصل)</span>
+                </div>
+            </aside>
+
+            <!-- العمود الأيسر (المحتوى والأنظمة) -->
+            <main class="main-content">
+
+                <!-- Audit Results Full Screen Overlay -->
+                <div id="audit-results-overlay" class="overlay hidden">
+                    <div class="glass-card"
+                        style="width: 100vw; height: 100vh; display: flex; flex-direction: column; padding: 25px; border-radius: 0;">
+                        <div class="modal-header" style="margin-bottom: 20px;">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <button type="button" id="btn-back-to-audit" class="btn btn-secondary"><i
+                                        class="fas fa-arrow-right"></i> رجوع للوحة التحكم</button>
+                                <h2><i class="fas fa-table"></i> نتائج التدقيق والتحليل</h2>
+                            </div>
+                            <button type="button" id="btn-export-all-results" class="btn btn-accent"><i
+                                    class="fas fa-file-excel"></i> تصدير كل النتائج</button>
+                        </div>
+
+                        <div class="results-table-container glass-card"
+                            style="flex: 1; min-height: 0; display: flex; flex-direction: column; box-shadow: none;">
+                            <div class="table-header-row">
+                                <input type="text" id="table-search" placeholder="بحث بالاسم أو رقم الهوية...">
+                                <span class="results-count" id="results-count">العائلات المطابقة: 0</span>
+                            </div>
+
+                            <div class="scrollable-table" style="flex: 1; overflow: auto;">
+                                <table style="min-width: 1200px;">
+                                    <thead>
+                                        <tr style="white-space: nowrap;">
+                                            <th style="width: 50px; white-space: nowrap;">#</th>
+                                            <th style="white-space: nowrap; min-width: 100px;">رقم الهوية</th>
+                                            <th style="white-space: nowrap; min-width: 150px;">الاسم الكامل</th>
+                                            <th style="white-space: nowrap; min-width: 100px;">أفراد الأسرة</th>
+                                            <th style="white-space: nowrap; min-width: 80px;">النقاط</th>
+                                            <th style="white-space: nowrap; min-width: 100px;">التصنيف</th>
+                                            <th style="white-space: nowrap; min-width: 250px;">المسوغات والتحليل</th>
+                                            <th style="white-space: nowrap; min-width: 150px;">آخر استلام</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="audit-table-body">
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted"
+                                                style="padding: 40px; font-size: 1.1rem;">
+                                                قم بتحديد المعايير وتفعيل فحص المنطقة لعرض النتائج هنا.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="pagination-controls"
+                                style="display: flex; justify-content: center; align-items: center; gap: 15px; padding: 12px 0; border-top: 1px solid rgba(255, 111, 0, 0.08);">
+                                <button id="btn-prev-page" class="btn btn-secondary"
+                                    style="padding: 5px 15px; font-size: 0.85rem;" disabled>السابق</button>
+                                <span id="page-info" style="font-weight: 700; color: #666; font-size: 0.9rem;">صفحة 1 من
+                                    1</span>
+                                <button id="btn-next-page" class="btn btn-secondary"
+                                    style="padding: 5px 15px; font-size: 0.85rem;" disabled>التالي</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Overlay -->
+                <div id="loading-overlay" class="overlay hidden">
+                    <div class="spinner-container">
+                        <div class="spinner"></div>
+                        <p id="loading-text">جاري معالجة البيانات وتحليلها...</p>
+                    </div>
+                </div>
+
+                <!-- البانر البرتقالي المخطط كالبوابة تماماً -->
+                <div class="welcome-box">
+                    <h2>بوابة التدقيق والتحليل الذكي لبيانات المستفيدين</h2>
+                    <p>شريك جمعية الفجر الشبابي الفلسطيني FPYA في تحقيق العدالة والشفافية وتوجيه المساعدات للمستحقين.
+                    </p>
+                </div>
+
+                <!-- Tab 1: Connection Settings -->
+                <section id="connection-tab" class="tab-content active">
+                    <div class="tab-header">
+                        <h1>الاتصال بقاعدة البيانات أونلاين</h1>
+                        <p>قم بضبط إعدادات الاتصال بسيرفر MySQL للوصول إلى بيانات المستفيدين الحية.</p>
+                    </div>
+
+                    <div class="card glass-card form-card">
+                        <form id="connection-form">
+                            <h3>إعدادات قاعدة البيانات (MySQL)</h3>
+                            <div class="form-grid" style="margin-bottom: 20px;">
+                                <div class="form-group">
+                                    <label for="db-host">عنوان السيرفر (Host)</label>
+                                    <input type="text" id="db-host" placeholder="localhost أو IP السيرفر" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="db-port">المنفذ (Port)</label>
+                                    <input type="number" id="db-port" value="3306" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="db-database">اسم قاعدة البيانات (Database)</label>
+                                    <input type="text" id="db-database" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="db-username">اسم المستخدم (Username)</label>
+                                    <input type="text" id="db-username" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="db-password">كلمة المرور (Password)</label>
+                                    <input type="password" id="db-password">
+                                </div>
+                            </div>
+
+                            <div class="form-group toggle-group" style="margin-bottom: 20px;">
+                                <label class="switch-label">
+                                    <input type="checkbox" id="use-ssh-tunnel">
+                                    <span>استخدام نفق SSH للاتصال الآمن (SSH Tunnel)</span>
+                                </label>
+                            </div>
+
+                            <div id="ssh-fields" class="hidden-fields hidden">
+                                <h3>إعدادات نفق SSH</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="ssh-host">عنوان سيرفر SSH (Host)</label>
+                                        <input type="text" id="ssh-host" value="46.202.158.78">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ssh-port">منفذ SSH (Port)</label>
+                                        <input type="number" id="ssh-port" value="22">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ssh-username">اسم مستخدم SSH (Username)</label>
+                                        <input type="text" id="ssh-username" value="root">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ssh-password">كلمة مرور SSH (Password)</label>
+                                        <input type="password" id="ssh-password">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions" style="margin-top: 20px;">
+                                <button type="button" id="btn-test-connection" class="btn btn-secondary">فحص
+                                    الاتصال</button>
+                                <button type="submit" id="btn-save-connection" class="btn btn-primary">حفظ الإعدادات
+                                    والبدء</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="connection-status-alert" class="alert hidden"></div>
+                </section>
+
+                <!-- Tab 2: Scoring & Auditing -->
+                <section id="scoring-tab" class="tab-content">
+                    <div class="tab-header-actions">
+                        <div class="tab-header">
+                            <h1>نظام التقييم والفلترة الذكي</h1>
+                            <p>تصفية العائلات حسب المعايير وتحديث النتائج والترتيب فورياً.</p>
+                        </div>
+                        <button class="btn btn-primary" id="btn-export-all">تصدير التقرير لإكسل</button>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card category-a">
+                            <div class="stat-icon"><i class="fas fa-bell" style="color: var(--color-danger)"></i></div>
+                            <div class="stat-info">
+                                <h3>أولوية قصوى (A)</h3>
+                                <span class="stat-number" id="stat-cat-a">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card category-b">
+                            <div class="stat-icon"><i class="fas fa-exclamation-triangle"
+                                    style="color: var(--color-warning)"></i></div>
+                            <div class="stat-info">
+                                <h3>أولوية مرتفعة (B)</h3>
+                                <span class="stat-number" id="stat-cat-b">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card category-c">
+                            <div class="stat-icon"><i class="fas fa-info" style="color: var(--color-info)"></i></div>
+                            <div class="stat-info">
+                                <h3>أولوية متوسطة (C)</h3>
+                                <span class="stat-number" id="stat-cat-c">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card category-d">
+                            <div class="stat-icon"><i class="fas fa-check" style="color: var(--color-success)"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3>حالات مستقرة (D)</h3>
+                                <span class="stat-number" id="stat-cat-d">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="audit-workspace">
+                        <div class="audit-workspace">
+                            <!-- Filters and Rules Control Panel (Top inside workspace) -->
+                            <div class="control-panel glass-card">
+                                <div class="control-panel-header">
+                                    <h3><i class="fas fa-cogs"></i> إعدادات وقواعد الاحتساب الذكي</h3>
+                                </div>
+
+                                <div class="rules-grid">
+                                    <div class="form-group">
+                                        <label>سن المعيل العاجز (أكبر من):</label>
+                                        <div class="range-container">
+                                            <input type="range" id="rule-age-threshold" min="40" max="80" value="60">
+                                            <span class="range-val" id="val-age-threshold">60</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>نقاط الرضيع (دون سن سنتين):</label>
+                                        <div class="range-container">
+                                            <input type="range" id="rule-infant-score" min="5" max="30" value="18">
+                                            <span class="range-val" id="val-infant-score">18</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>نقاط الطفل (2 - 5 سنوات):</label>
+                                        <div class="range-container">
+                                            <input type="range" id="rule-child-score" min="2" max="20" value="10">
+                                            <span class="range-val" id="val-child-score">10</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>نقاط السكن في خيمة/إيواء:</label>
+                                        <div class="range-container">
+                                            <input type="range" id="rule-tent-score" min="5" max="30" value="15">
+                                            <span class="range-val" id="val-tent-score">15</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>نقاط السكن المدمر كلياً:</label>
+                                        <div class="range-container">
+                                            <input type="range" id="rule-destroyed-score" min="5" max="40" value="20">
+                                            <span class="range-val" id="val-destroyed-score">20</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group toggle-group" style="margin-top: 10px;">
+                                        <label class="switch-label">
+                                            <input type="checkbox" id="rule-force-incapacitated" checked>
+                                            <span>فرض الفئة A لعجز المعيلين</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-group toggle-group" style="margin-top: 10px;">
+                                        <label class="switch-label">
+                                            <input type="checkbox" id="rule-check-adult-son" checked>
+                                            <span>البحث عن ابن بالغ كمعيل بديل</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="rule-custom-keywords">كلمات طبية إضافية (مفصولة بـ |):</label>
+                                        <input type="text" id="rule-custom-keywords"
+                                            placeholder="مثال: بتر|اعصاب|بلاتين">
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <div class="control-panel-footer">
+                                    <div class="filters-row">
+                                        <div class="form-group">
+                                            <label for="filter-category">تصفية حسب الأولوية:</label>
+                                            <select id="filter-category" style="min-width: 200px;">
+                                                <option value="">كل الفئات</option>
+                                                <option value="A">أولوية قصوى (A)</option>
+                                                <option value="B">أولوية مرتفعة (B)</option>
+                                                <option value="C">أولوية متوسطة (C)</option>
+                                                <option value="D">حالات مستقرة (D)</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group toggle-group"
+                                            style="align-self: flex-end; padding-bottom: 12px; margin-right: 15px;">
+                                            <label class="switch-label">
+                                                <input type="checkbox" id="filter-unserved">
+                                                <span>عائلات لم تستلم أي مساعدة بعد</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="actions-row">
+                                        <button type="button" id="btn-open-batch" class="btn btn-secondary"
+                                            style="margin-left: 10px;"><i class="fas fa-users"></i> فحص هويات متعدد
+                                            (Batch)</button>
+                                        <button id="btn-run-audit" class="btn btn-accent"><i class="fas fa-play"></i>
+                                            تطبيق الاحتساب والتحليل للمنطقة</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal for Batch Lookup -->
+                            <div id="batch-modal" class="overlay hidden">
+                                <div class="glass-card batch-modal-content">
+                                    <div class="modal-header">
+                                        <h2><i class="fas fa-search-plus"></i> فحص واستعلام الهويات المتعددة</h2>
+                                        <button type="button" class="close-modal" id="btn-close-batch">&times;</button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="form-group">
+                                            <label>أدخل أرقام الهويات (رقم في كل سطر أو مفصولة بفاصلة):</label>
+                                            <textarea id="batch-id-nums" rows="4" placeholder="مثال: 
+902834712
+907735567" style="width: 100%; border: 2px solid #cbd5e0; border-radius: 6px; padding: 10px; font-family: 'Cairo', sans-serif; resize: vertical;"></textarea>
+                                        </div>
+                                        <button type="button" id="btn-run-batch" class="btn btn-primary w-100"
+                                            style="margin-top: 15px;"><i class="fas fa-calculator"></i> تحليل هويات
+                                            الدفعة</button>
+
+                                        <div id="batch-results-container" class="hidden"
+                                            style="margin-top: 20px; display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                                            <div
+                                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                                <h3>نتائج الفحص</h3>
+                                            </div>
+                                            <div class="scrollable-table" style="flex: 1; min-height: 0;">
+                                                <table class="batch-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>الهوية</th>
+                                                            <th>الاسم المعيل</th>
+                                                            <th>المنطقة</th>
+                                                            <th>النقاط</th>
+                                                            <th>التصنيف</th>
+                                                            <th>المسوغات</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="batch-results-body">
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+        </div>
+    </div>
+    </section>
+
+    <!-- Tab 3: Outliers & Neglected -->
+    <section id="outliers-tab" class="tab-content">
+        <div class="tab-header-actions">
+            <div class="tab-header">
+                <h1>تحليل القيم الشاذة والعائلات المهمشة</h1>
+                <p>كشف دقيق ومبكر للعائلات التي تتلقى مساعدات متكررة جداً مقابل العائلات الأكثر استحقاقاً
+                    والمهمشة تماماً.</p>
+            </div>
+            <button class="btn btn-primary" id="btn-export-outliers">تصدير تقرير المخاطر</button>
+        </div>
+
+        <div class="outliers-container">
+            <!-- Over-served outliers -->
+            <div class="outliers-column glass-card">
+                <div class="column-header status-danger">
+                    <h2>عائلات مستفيدة بشكل شاذ (تجاوزت الحد الطبيعي)</h2>
+                    <p>عائلات معدل استلامها للمساعدات أعلى بـ 2.5 انحراف معياري من المتوسط العام للمنطقة.
+                    </p>
+                </div>
+                <div class="scrollable-list">
+                    <table class="outlier-table">
+                        <thead>
+                            <tr>
+                                <th>الهوية</th>
+                                <th>الاسم</th>
+                                <th>النقاط/الفئة</th>
+                                <th>مرات الاستلام</th>
+                                <th>الكمية الكلية</th>
+                                <th>آخر استلام</th>
+                            </tr>
+                        </thead>
+                        <tbody id="over-served-body">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">لم يتم تشغيل التدقيق بعد</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Under-served/Neglected families -->
+            <div class="outliers-column glass-card">
+                <div class="column-header status-warning">
+                    <h2>عائلات منسية ومهمشة عالية الاستحقاق</h2>
+                    <p>عائلات في فئة (A) أو (B) لم تستلم أي مساعدة منذ 5 أشهر أو أكثر (أو لم تستلم أبداً).
+                    </p>
+                </div>
+                <div class="scrollable-list">
+                    <table class="outlier-table">
+                        <thead>
+                            <tr>
+                                <th>الهوية</th>
+                                <th>الاسم</th>
+                                <th>النقاط/الفئة</th>
+                                <th>المسوغات</th>
+                                <th>آخر استلام</th>
+                            </tr>
+                        </thead>
+                        <tbody id="neglected-body">
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">لم يتم تشغيل التدقيق بعد</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tab 4: Analytics -->
+    <section id="analytics-tab" class="tab-content">
+        <div class="tab-header">
+            <h1>لوحة تحليلات توزيع المساعدات والعدالة</h1>
+            <p>رسوم بيانية حية ومقاييس إحصائية متطورة لقياس مدى عدالة التوزيع واكتشاف الفجوات.</p>
+        </div>
+
+        <div class="analytics-dashboard">
+            <!-- Stats highlights -->
+            <div class="metrics-grid">
+                <div class="metric-box">
+                    <span class="metric-label">مؤشر المساواة والعدالة (Gini Coefficient)</span>
+                    <span class="metric-value" id="val-gini">0.00</span>
+                    <span class="metric-desc">0 = عدالة تامة في التوزيع، 1 = انعدام عدالة التوزيع.</span>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-label">متوسط كمية المساعدات للعائلة</span>
+                    <span class="metric-value" id="val-avg-qty">0.0</span>
+                    <span class="metric-desc">متوسط إجمالي المساعدات للعائلة المستفيدة.</span>
+                </div>
+                <div class="metric-box">
+                    <span class="metric-label">نسبة تغطية العائلات ذات الاحتياج الحرج</span>
+                    <span class="metric-value" id="val-critical-coverage">0%</span>
+                    <span class="metric-desc">نسبة العائلات في الفئة A التي استلمت مساعدة مؤخراً.</span>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card glass-card">
+                    <h3>توزيع الفئات الاستحقاقية (A, B, C, D)</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-categories"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card glass-card">
+                    <h3>متوسط كمية المساعدات المستلمة لكل فئة أولوية</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-scoring-vs-aid"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    </main>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+
+</html>

@@ -17,7 +17,12 @@ class UserPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->isAdmin();
+        return $user->hasPermission('manage.admins')
+            || $user->hasPermission('manage.supervisors')
+            || $user->hasPermission('manage.distributors')
+            || $user->hasPermission('manage.customers')
+            || $user->hasPermission('manage.researchers')
+            || $user->hasPermission('manage.kitchen_monitors');
     }
 
     /**

@@ -16,10 +16,12 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 class AreaResponsibleStatsSheet implements FromCollection, WithHeadings, WithTitle, WithStyles
 {
     protected $areaResponsible;
+    protected $unserved;
 
-    public function __construct(AreaResponsible $areaResponsible)
+    public function __construct(AreaResponsible $areaResponsible, bool $unserved = false)
     {
         $this->areaResponsible = $areaResponsible;
+        $this->unserved = $unserved;
     }
 
     public function collection()
@@ -39,6 +41,15 @@ class AreaResponsibleStatsSheet implements FromCollection, WithHeadings, WithTit
                 ->familyHead()
                 ->approved()
                 ->where('area_responsible_id', $this->areaResponsible->id); // Strict
+
+            if ($this->unserved) {
+                $headsQuery->whereNotExists(function($sub) {
+                    $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                      ->from('project_beneficiaries')
+                      ->whereColumn('project_beneficiaries.person_id', 'persons.id')
+                      ->where('project_beneficiaries.status', 'مستلم');
+                });
+            }
 
             // 1. Approved Families Count
             $approvedCount = $headsQuery->count();

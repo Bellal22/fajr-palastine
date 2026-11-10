@@ -68,6 +68,7 @@
                     <span class="text-muted">{{ $admin->created_at->format('Y-m-d') }}</span>
                 </td>
                 <td style="width: 160px">
+                    @include('dashboard.accounts.admins.partials.actions.impersonate')
                     @include('dashboard.accounts.admins.partials.actions.show')
                     @include('dashboard.accounts.admins.partials.actions.edit')
                     @include('dashboard.accounts.admins.partials.actions.delete')

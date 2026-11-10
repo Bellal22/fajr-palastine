@@ -20,7 +20,7 @@ class AdminPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->hasPermissionTo('manage.admins');
     }
 
     /**
@@ -32,7 +32,7 @@ class AdminPolicy
      */
     public function view(User $user, Admin $admin)
     {
-        return $user->isAdmin() || $user->is($admin);
+        return $user->isAdmin() || $user->hasPermissionTo('manage.admins') || $user->is($admin);
     }
 
     /**
@@ -43,7 +43,7 @@ class AdminPolicy
      */
     public function create(User $user)
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->hasPermissionTo('manage.admins');
     }
 
     /**
@@ -55,7 +55,7 @@ class AdminPolicy
      */
     public function update(User $user, Admin $admin)
     {
-        return ($user->isAdmin() || $user->is($admin)) && ! $this->trashed($admin);
+        return ($user->isAdmin() || $user->hasPermissionTo('manage.admins') || $user->is($admin)) && ! $this->trashed($admin);
     }
 
     /**
@@ -67,7 +67,7 @@ class AdminPolicy
      */
     public function updateType(User $user, Admin $admin)
     {
-        return $user->isAdmin() && $user->isNot($admin);
+        return ($user->isAdmin() || $user->hasPermissionTo('manage.admins')) && $user->isNot($admin);
     }
 
     /**
@@ -79,7 +79,7 @@ class AdminPolicy
      */
     public function delete(User $user, Admin $admin)
     {
-        return ($user->isAdmin() && $user->isNot($admin)) && ! $this->trashed($admin);
+        return (($user->isAdmin() || $user->hasPermissionTo('manage.admins')) && $user->isNot($admin)) && ! $this->trashed($admin);
     }
 
     /**

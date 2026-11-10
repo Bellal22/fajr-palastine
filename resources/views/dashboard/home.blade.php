@@ -1,6 +1,47 @@
 <x-layout :title="trans('dashboard.home')" :breadcrumbs="['dashboard.home']">
 
-    @if($isRegionalManager)
+    @if(isset($isKitchenMonitor) && $isKitchenMonitor)
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm" style="border-radius: 12px; background: #fff;">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 60px; height: 60px;">
+                                <i class="fas fa-utensils fa-2x"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-1 text-primary">أهلاً بك مجدداً</h4>
+                                <h3 class="font-weight-bold mb-1">{{ auth()->user()->name }}</h3>
+                                <p class="text-muted mb-0">نتمنى لك يوماً سعيداً في متابعة المطابخ</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="fas fa-campground fa-3x text-primary mb-3"></i>
+                        <h4 class="font-weight-bold">{{ $campsCount }}</h4>
+                        <p class="text-muted">مخيم مضاف</p>
+                        <a href="{{ route('dashboard.kitchen_cards.index') }}" class="btn btn-primary">عرض المخيمات</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                        <h4 class="font-weight-bold">{{ $complaintsCount }}</h4>
+                        <p class="text-muted">شكوى مطبخ</p>
+                        <a href="{{ route('dashboard.kitchen_complaints.index') }}" class="btn btn-danger">عرض الشكاوى</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @elseif($isRegionalManager || (isset($hasStatisticsPermission) && !$hasStatisticsPermission))
         <div class="row">
             <div class="col-12">
                 <div class="card border-0 shadow-sm" style="border-radius: 12px; background: #fff;">
@@ -10,9 +51,9 @@
                                 <i class="fas fa-user-check fa-2x"></i>
                             </div>
                             <div>
-                                <h4 class="mb-1 text-primary">أهلاً بك مجدداً</h4>
+                                <h4 class="mb-1 text-primary">أهلاً بك</h4>
                                 <h3 class="font-weight-bold mb-1">{{ auth()->user()->name }}</h3>
-                                <p class="text-muted mb-0">نتمنى لك يوماً سعيداً في خدمة أبناء شعبنا</p>
+                                <p class="text-muted mb-0">نتمنى لك يوماً مثمراً في خدمة أبناء شعبنا</p>
                             </div>
                         </div>
                     </div>
@@ -36,7 +77,6 @@
             </style>
         @endpush
 
-        {{-- الرسم البياني أولاً (عمودين: مسجلين + مزامنين) --}}
         <div class="row mb-5">
         <div class="col-12">
             <div class="card shadow-sm">

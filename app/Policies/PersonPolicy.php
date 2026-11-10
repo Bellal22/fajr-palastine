@@ -21,7 +21,7 @@ class PersonPolicy
     public function viewAny(User $user)
     {
         return $user->isAdmin() || $user->hasPermissionTo('manage.people')
-            || $user->isSupervisor();
+            || $user->isSupervisor() || $user->isGeneralSearchOnly();
     }
 
     /**

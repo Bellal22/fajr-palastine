@@ -20,7 +20,7 @@ class CouponTypePolicy
      */
     public function viewAny(User $user)
     {
-        return $user->isAdmin() || $user->hasPermissionTo('manage.coupon_types');
+        return $user->isAdmin() || $user->isKitchenMonitor() || $user->hasPermissionTo('manage.coupon_types');
     }
 
     /**
@@ -32,7 +32,7 @@ class CouponTypePolicy
      */
     public function view(User $user, CouponType $coupon_type)
     {
-        return $user->isAdmin() || $user->hasPermissionTo('manage.coupon_types');
+        return $user->isAdmin() || $user->isKitchenMonitor() || $user->hasPermissionTo('manage.coupon_types');
     }
 
     /**

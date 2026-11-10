@@ -3,6 +3,7 @@
 return [
     'plural' => 'الموزعين',
     'singular' => 'موزع',
+    'permission' => 'إدارة الموزعين',
     'empty' => 'لا يوجد موزعين حتى الآن.',
     'profile_details' => 'بيانات الحساب',
     'trashed' => 'المحذوفين مؤقتاً',

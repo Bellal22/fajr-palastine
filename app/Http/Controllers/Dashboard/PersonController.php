@@ -24,6 +24,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Client\Response;
 use Maatwebsite\Excel\Facades\Excel;
+use Rap2hpoutre\FastExcel\FastExcel;
 use Illuminate\Support\Facades\Cache;
 
 class PersonController extends Controller
@@ -100,6 +101,10 @@ class PersonController extends Controller
      */
     public function index()
     {
+        if (auth()->user()?->isGeneralSearchOnly()) {
+            abort(403, 'غير مصرح لك بالوصول لهذه الصفحة.');
+        }
+
         try {
             $baseQuery = Person::filter()
                 ->whereNull('relationship')
@@ -142,7 +147,7 @@ class PersonController extends Controller
             $searchedIds = array_unique(array_map('trim', $searchedIds));
 
             if (!empty($searchedIds)) {
-                $allExistingIds = Person::pluck('id_num')->toArray();
+                $allExistingIds = Person::whereIn('id_num', $searchedIds)->pluck('id_num')->toArray();
                 $availableIds = $people->pluck('id_num')->toArray();
 
                 // الحصول على الأشخاص الموجودين ولكن ليسوا في النتائج المتاحة
@@ -212,6 +217,10 @@ class PersonController extends Controller
      */
     public function search(Request $request)
     {
+        if (auth()->user()?->isGeneralSearchOnly()) {
+            abort(403, 'غير مصرح لك بالوصول لهذه الصفحة.');
+        }
+
         $people = Person::filter()
             ->whereNull('relationship')
             ->withCount('familyMembers');
@@ -219,38 +228,91 @@ class PersonController extends Controller
         $notFoundIds = [];
         $unavailableIds = [];
 
+        // --- Search Incomplete People ---
+        $incompleteQuery = \App\Models\IncompletePerson::query();
+
         if ($request->filled('id_num')) {
             $searchedIds = array_filter(
                 preg_split("/\r\n|\n|\r/", $request->input('id_num')),
                 fn($id) => !empty(trim($id))
             );
+            $searchedIds = array_map('trim', $searchedIds);
+            
+            $incompleteQuery->where(function($query) use ($searchedIds) {
+                foreach ($searchedIds as $id) {
+                    $query->orWhere('id_num', 'like', '%' . $id . '%');
+                }
+            });
 
-            $availableIds = $people->pluck('id_num')->toArray();
-
-            $notFoundIds = array_values(array_diff($searchedIds, Person::pluck('id_num')->toArray()));
-
+            // Logic for main table summary (notFound/unavailable)
+            $existingInPerson = Person::whereIn('id_num', $searchedIds)->pluck('id_num')->toArray();
+            $notFoundIds = array_values(array_diff($searchedIds, $existingInPerson));
+            $availableIds = $people->clone()->pluck('id_num')->toArray(); 
             $unavailableIds = array_values(array_diff(
-                array_intersect($searchedIds, $availableIds),
-                $people->pluck('id_num')->toArray()
+                array_intersect($searchedIds, $existingInPerson),
+                $availableIds
             ));
         }
 
-        $people = $people->latest()->paginate(
-            $request->input('perPage', 1000)
-        );
+        if ($request->filled('first_name')) {
+            $incompleteQuery->where('first_name', 'like', $request->first_name . '%');
+        }
+        if ($request->filled('father_name')) {
+            $incompleteQuery->where('father_name', 'like', $request->father_name . '%');
+        }
+        if ($request->filled('grandfather_name')) {
+            $incompleteQuery->where('grandfather_name', 'like', $request->grandfather_name . '%');
+        }
+        if ($request->filled('family_name')) {
+            $incompleteQuery->where('family_name', 'like', $request->family_name . '%');
+        }
+        if ($request->filled('phone')) {
+            $incompleteQuery->where('phone', 'like', '%' . $request->phone . '%');
+        }
+        if ($request->filled('gender')) {
+            $incompleteQuery->where('gender', $request->gender);
+        }
+        if ($request->filled('social_status')) {
+            $incompleteQuery->where('social_status', $request->social_status);
+        }
+        if ($request->filled('current_city')) {
+            $incompleteQuery->where('current_city', $request->current_city);
+        }
+        if ($request->filled('neighborhood')) {
+            $incompleteQuery->where('neighborhood', 'like', '%' . $request->neighborhood . '%');
+        }
+        if ($request->filled('block_id')) {
+            $incompleteQuery->where('block_id', $request->block_id);
+        }
+        if ($request->filled('area_responsible_id')) {
+            $incompleteQuery->where('area_responsible_id', $request->area_responsible_id);
+        }
 
+        $incompletePeople = $incompleteQuery->latest()->get();
+
+        // Update notFoundIds if we found any in incomplete (for the status modal)
+        if (!empty($notFoundIds)) {
+            $foundInIncomplete = $incompletePeople->pluck('id_num')->toArray();
+            $notFoundIds = array_values(array_diff($notFoundIds, $foundInIncomplete));
+        }
+
+        $people = $people->latest()->paginate($request->input('perPage', 1000));
+        
         $blocks = Block::orderBy('name')->pluck('name', 'id');
-        $areaResponsibles = AreaResponsible::query()
+        $areaResponsibles = \App\Models\AreaResponsible::query()
             ->orderBy('name')
             ->pluck('name', 'id')
             ->toArray();
 
-        if ($people->isEmpty()) {
-            return view('dashboard.people.search', compact('people', 'blocks', 'areaResponsibles', 'notFoundIds', 'unavailableIds'))
-                ->with('message', 'لا توجد نتائج للبحث.');
+        $processedIds = [];
+
+        // If searching and nothing found anywhere
+        if ($request->filled('id_num') && $people->isEmpty() && $incompletePeople->isEmpty()) {
+             return view('dashboard.people.search', compact('people', 'incompletePeople', 'blocks', 'areaResponsibles', 'notFoundIds', 'unavailableIds', 'processedIds'))
+                ->with('message', 'لا توجد نتائج للبحث في أي من الجداول.');
         }
 
-        return view('dashboard.people.search', compact('people', 'blocks', 'areaResponsibles', 'notFoundIds', 'unavailableIds'));
+        return view('dashboard.people.search', compact('people', 'incompletePeople', 'blocks', 'areaResponsibles', 'notFoundIds', 'unavailableIds', 'processedIds'));
     }
 
     public function clearSession()
@@ -267,6 +329,10 @@ class PersonController extends Controller
      */
     public function view()
     {
+        if (!auth()->user()?->isAdmin() && !auth()->user()?->isSupervisor()) {
+            abort(403, 'غير مصرح لك بالوصول إلى هذه الصفحة');
+        }
+
         try {
             $query = Person::query()
                 ->whereNull('relative_id') // مهم: استبعاد أفراد الأسرة
@@ -415,11 +481,70 @@ class PersonController extends Controller
     {
         $person = null;
         if ($request->filled('q')) {
-            $person = Person::where('id_num', $request->q)
-                ->with(['areaResponsible', 'block', 'wife', 'spouse', 'familyHead'])
+            $q = str_pad(trim($request->q), 9, '0', STR_PAD_LEFT);
+
+            $person = Person::where('id_num', 'like', '%' . $q . '%')
+                ->with(['areaResponsible', 'block', 'wife', 'spouse', 'familyHeadRelation', 'familyMembers'])
                 ->first();
 
-            if ($person) {
+            // Always check incomplete_people if not found in Person
+            if (!$person) {
+                // البحث في السجلات المؤقتة (غير المكتملة)
+                $incomplete = \App\Models\IncompletePerson::where('id_num', 'like', '%' . $q . '%')
+                    ->with(['areaResponsible', 'block', 'wife', 'children'])
+                    ->first();
+
+                if ($incomplete) {
+                    $person = new Person([
+                        'id_num' => $incomplete->id_num,
+                        'first_name' => $incomplete->first_name,
+                        'father_name' => $incomplete->father_name,
+                        'grandfather_name' => $incomplete->grandfather_name,
+                        'family_name' => $incomplete->family_name,
+                        'phone' => $incomplete->phone,
+                        'relationship' => $incomplete->relationship ?? 'سجل مؤقت',
+                        'notes' => $incomplete->notes,
+                    ]);
+                    $person->id = $incomplete->id;
+                    $person->is_incomplete = true;
+                    
+                    // Set relations if they exist
+                    if ($incomplete->area_responsible_id) {
+                        $person->setRelation('areaResponsible', $incomplete->areaResponsible);
+                    }
+                    if ($incomplete->block_id) {
+                        $person->setRelation('block', $incomplete->block);
+                    }
+
+                    $coupons = \DB::table('project_beneficiaries')
+                        ->join('projects', 'project_beneficiaries.project_id', '=', 'projects.id')
+                        ->leftJoin('sub_warehouses', 'project_beneficiaries.sub_warehouse_id', '=', 'sub_warehouses.id')
+                        ->where('project_beneficiaries.incomplete_person_id', $incomplete->id)
+                        ->select(
+                            'projects.id as project_id',
+                            'projects.name',
+                            'projects.description as project_description',
+                            'project_beneficiaries.quantity',
+                            'project_beneficiaries.status',
+                            'project_beneficiaries.delivery_date',
+                            \DB::raw("IFNULL(project_beneficiaries.created_at, project_beneficiaries.delivery_date) as nomination_date"),
+                            'sub_warehouses.name as warehouse_name',
+                            'project_beneficiaries.notes'
+                        )
+                        ->get()
+                        ->map(function($c) {
+                            $c->coupon_types = collect();
+                            $c->person_id = null;
+                            $c->recipient_name = 'سجل مؤقت';
+                            return $c;
+                        });
+                    
+                    $person->setRelation('familyCoupons', $coupons);
+                }
+            } else {
+                // Found in main table
+                $person->is_incomplete = false;
+
                 // جلب جميع أرقام الـ ID الخاصة بأفراد العائلة (لجلب كافة الكوبونات المرتبطة بالعائلة)
                 $familyIds = collect([$person->id]);
 
@@ -432,11 +557,11 @@ class PersonController extends Controller
                     }
                 } else {
                     // إذا كان الشخص رب أسرة، نجلب كل أتباعه
-                    $person->load('familyMembers');
                     $familyIds = $familyIds->merge($person->familyMembers->pluck('id'));
                 }
 
                 $familyIds = $familyIds->unique();
+                
                 // تحميل المشاريع لجميع أفراد العائلة
                 $coupons = \DB::table('project_beneficiaries')
                     ->join('projects', 'project_beneficiaries.project_id', '=', 'projects.id')
@@ -450,6 +575,7 @@ class PersonController extends Controller
                         'project_beneficiaries.quantity',
                         'project_beneficiaries.status',
                         'project_beneficiaries.delivery_date',
+                        \DB::raw("IFNULL(project_beneficiaries.created_at, DATE_SUB(project_beneficiaries.delivery_date, INTERVAL 1 DAY)) as nomination_date"),
                         'project_beneficiaries.person_id',
                         'project_beneficiaries.notes',
                         'sub_warehouses.name as warehouse_name',
@@ -459,22 +585,24 @@ class PersonController extends Controller
 
                 // جلب أنواع الكوبونات لكل مشروع
                 $projectIds = $coupons->pluck('project_id')->unique();
-                $allCouponTypes = \DB::table('project_coupon_types')
-                    ->join('coupon_types', 'project_coupon_types.coupon_type_id', '=', 'coupon_types.id')
-                    ->whereIn('project_coupon_types.project_id', $projectIds)
-                    ->select('project_coupon_types.project_id', 'coupon_types.name', 'project_coupon_types.quantity')
-                    ->get()
-                    ->groupBy('project_id');
+                if ($projectIds->isNotEmpty()) {
+                    $allCouponTypes = \DB::table('project_coupon_types')
+                        ->join('coupon_types', 'project_coupon_types.coupon_type_id', '=', 'coupon_types.id')
+                        ->whereIn('project_coupon_types.project_id', $projectIds)
+                        ->select('project_coupon_types.project_id', 'coupon_types.name', 'project_coupon_types.quantity')
+                        ->get()
+                        ->groupBy('project_id');
 
-                foreach ($coupons as $coupon) {
-                    $coupon->coupon_types = $allCouponTypes->get($coupon->project_id) ?? collect();
+                    foreach ($coupons as $coupon) {
+                        $coupon->coupon_types = $allCouponTypes->get($coupon->project_id) ?? collect();
+                    }
                 }
 
                 $person->setRelation('familyCoupons', $coupons);
             }
 
             if (!$person) {
-                flash()->error('لم يتم العثور على شخص برقم الهوية المدخل.');
+                flash()->error('لم يتم العثور على شخص برقم الهوية المدخل في أي من قواعد البيانات.');
             }
         }
 
@@ -534,6 +662,28 @@ class PersonController extends Controller
             $data = $request->validated();
             $familyMembersData = $data['family_members'] ?? [];
             unset($data['family_members']);
+
+            // التحقق من عدم وجود رب الأسرة أو أي فرد من أفراد العائلة مسجل مسبقاً
+            $allIdNums = array_filter(array_merge(
+                [$data['id_num'] ?? null],
+                array_column($familyMembersData, 'id_num')
+            ));
+
+            if (!empty($allIdNums)) {
+                $existingPeople = Person::whereIn('id_num', $allIdNums)->get();
+                if ($existingPeople->isNotEmpty()) {
+                    DB::rollBack();
+                    $duplicateMessages = $existingPeople->map(function ($existing) {
+                        $statusText = is_null($existing->relative_id)
+                            ? 'مسجل لحاله (رب أسرة)'
+                            : 'مسجل ضمن عائلة';
+                        $fullName = trim("{$existing->first_name} {$existing->father_name} {$existing->family_name}");
+                        return "الفرد صاحب رقم الهوية ({$existing->id_num}" . ($fullName ? " - {$fullName}" : "") . ") مسجل مسبقاً لحاله أو ضمن عائلة ({$statusText}).";
+                    })->implode(' | ');
+
+                    return back()->withInput()->withErrors(['error' => $duplicateMessages]);
+                }
+            }
 
             // Map slugs to names for DB compatibility (No migration)
             $data = $this->mapSlugsToNames($data);
@@ -717,6 +867,35 @@ class PersonController extends Controller
             $familyMembersData = $data['family_members'] ?? [];
             unset($data['family_members']);
 
+            // التحقق من عدم وجود رقم هوية مسجل لشخص آخر خارج هذه العائلة
+            $allIdNums = array_filter(array_merge(
+                [$data['id_num'] ?? null],
+                array_column($familyMembersData, 'id_num')
+            ));
+
+            if (!empty($allIdNums)) {
+                $existingPeople = Person::whereIn('id_num', $allIdNums)
+                    ->where('id', '!=', $person->id)
+                    ->where(function ($q) use ($oldIdNum) {
+                        $q->whereNull('relative_id')
+                          ->orWhere('relative_id', '!=', $oldIdNum);
+                    })
+                    ->get();
+
+                if ($existingPeople->isNotEmpty()) {
+                    DB::rollBack();
+                    $duplicateMessages = $existingPeople->map(function ($existing) {
+                        $statusText = is_null($existing->relative_id)
+                            ? 'مسجل لحاله (رب أسرة)'
+                            : 'مسجل ضمن عائلة';
+                        $fullName = trim("{$existing->first_name} {$existing->father_name} {$existing->family_name}");
+                        return "الفرد صاحب رقم الهوية ({$existing->id_num}" . ($fullName ? " - {$fullName}" : "") . ") مسجل مسبقاً لحاله أو ضمن عائلة ({$statusText}).";
+                    })->implode(' | ');
+
+                    return back()->withInput()->withErrors(['error' => $duplicateMessages]);
+                }
+            }
+
             // Map slugs to names for DB compatibility (No migration)
             $data = $this->mapSlugsToNames($data);
 
@@ -777,6 +956,159 @@ class PersonController extends Controller
         flash()->success(trans('people.messages.deleted'));
 
         return redirect()->route('dashboard.people.index');
+    }
+
+    /**
+     * تبديل الأدوار: جعل الزوجة هي ربة الأسرة بدلاً من الزوج (في حالة وفاة الزوج)
+     * ونقل جميع أفراد الأسرة وبيانات السكن والكوبونات والشكاوى تحت رقم هويتها وحذف سجل الزوج القديم.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Person $person
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function swapRoleToWife(Request $request, Person $person)
+    {
+        try {
+            DB::beginTransaction();
+
+            // تحديد رب الأسرة الحالي والزوجة المراد ترقيتها
+            if (!is_null($person->relative_id)) {
+                $head = Person::where('id_num', $person->relative_id)->first();
+                $wife = $person;
+            } else {
+                $head = $person;
+                $wifeIdInput = $request->input('wife_id');
+
+                if ($wifeIdInput) {
+                    $wife = Person::where('relative_id', $head->id_num)
+                        ->where(function ($q) use ($wifeIdInput) {
+                            $q->where('id', $wifeIdInput)
+                              ->orWhere('id_num', $wifeIdInput);
+                        })
+                        ->first();
+                } else {
+                    $wife = Person::where('relative_id', $head->id_num)
+                        ->whereIn('relationship', ['زوجة', 'wife', 'الزوجة', 'spouse'])
+                        ->first();
+                }
+            }
+
+            if (!$head) {
+                DB::rollBack();
+                return back()->withErrors(['error' => 'لم يتم العثور على سجل رب الأسرة الحالي.']);
+            }
+
+            if (!$wife || $wife->relative_id !== $head->id_num) {
+                DB::rollBack();
+                return back()->withErrors(['error' => 'لم يتم العثور على سجل الزوجة المرتبطة برب الأسرة لتبديل الدور معها.']);
+            }
+
+            $oldHeadId = $head->id;
+            $oldHeadIdNum = $head->id_num;
+            $newHeadIdNum = $wife->id_num;
+
+            // جلب باقي أفراد الأسرة (باستثناء الزوج والزوجة المختارة)
+            $otherFamilyMembers = Person::where('relative_id', $oldHeadIdNum)
+                ->where('id', '!=', $wife->id)
+                ->get();
+
+            // تحديد مسمى الحالة الاجتماعية "أرمل/ة" من جدول الخيارات إن وجد
+            $widowStatus = Choose::where('type', 'social_status')
+                ->where(function ($q) {
+                    $q->where('name', 'like', '%أرمل%')
+                      ->orWhere('slug', 'widowed');
+                })
+                ->value('name') ?: 'أرمل/ة';
+
+            // 1. ترقية الزوجة لتصبح هي ربة الأسرة ونقل بيانات السكن والمنطقة والحساب إليها
+            $wife->update([
+                'relative_id' => null,
+                'relationship' => 'رب الأسرة',
+                'social_status' => $widowStatus,
+                'gender' => $wife->gender ?: 'أنثى',
+                'employment_status' => $wife->employment_status ?: ($head->employment_status ?: 'لا يعمل'),
+                'city' => $wife->city ?: $head->city,
+                'current_city' => $wife->current_city ?: $head->current_city,
+                'neighborhood' => $wife->neighborhood ?: $head->neighborhood,
+                'housing_type' => $wife->housing_type ?: $head->housing_type,
+                'housing_damage_status' => $wife->housing_damage_status ?: $head->housing_damage_status,
+                'area_responsible_id' => $wife->area_responsible_id ?: $head->area_responsible_id,
+                'block_id' => $wife->block_id ?: $head->block_id,
+                'landmark' => $wife->landmark ?: $head->landmark,
+                'case_description' => $wife->case_description ?: $head->case_description,
+                'phone' => $wife->phone ?: $head->phone,
+                'passkey' => $wife->passkey ?: $head->passkey,
+                'is_frozen' => (bool) $head->is_frozen,
+                'relatives_count' => $otherFamilyMembers->count() + 1,
+            ]);
+
+            // 2. نقل تبعية جميع أفراد الأسرة الآخرين إلى رقم هوية الزوجة (ربة الأسرة الجديدة)
+            foreach ($otherFamilyMembers as $member) {
+                $updateMemberData = [
+                    'relative_id' => $newHeadIdNum,
+                    'city' => $wife->city,
+                    'current_city' => $wife->current_city,
+                    'neighborhood' => $wife->neighborhood,
+                    'block_id' => $wife->block_id,
+                    'area_responsible_id' => $wife->area_responsible_id,
+                ];
+
+                // إذا كان هناك زوجة أخرى ضمن العائلة يمكن تحديث صلة القرابة أو إبقاؤها كفرد تابع
+                $member->update($updateMemberData);
+            }
+
+            // 3. نقل سجل الكوبونات والطرود المستلمة (project_beneficiaries) إلى الزوجة
+            if (\Illuminate\Support\Facades\Schema::hasTable('project_beneficiaries')) {
+                DB::table('project_beneficiaries')
+                    ->where('person_id', $oldHeadId)
+                    ->update(['person_id' => $wife->id]);
+            }
+
+            // 4. نقل الشكاوى المرتبطة برقم هوية الزوج إلى رقم هوية الزوجة
+            if (\Illuminate\Support\Facades\Schema::hasTable('complaints')) {
+                DB::table('complaints')
+                    ->where('id_num', $oldHeadIdNum)
+                    ->update(['id_num' => $newHeadIdNum]);
+            }
+
+            // 5. نقل طلبات الاحتياج (need_request_items) إن وجدت إلى الزوجة قبل حذف سجل الزوج
+            if (\Illuminate\Support\Facades\Schema::hasTable('need_request_items')) {
+                $needItems = DB::table('need_request_items')->where('person_id', $oldHeadId)->get();
+                foreach ($needItems as $item) {
+                    $alreadyExists = DB::table('need_request_items')
+                        ->where('need_request_id', $item->need_request_id)
+                        ->where('person_id', $wife->id)
+                        ->exists();
+
+                    if (!$alreadyExists) {
+                        DB::table('need_request_items')
+                            ->where('id', $item->id)
+                            ->update(['person_id' => $wife->id]);
+                    } else {
+                        DB::table('need_request_items')->where('id', $item->id)->delete();
+                    }
+                }
+            }
+
+            // 6. نقل جوائز الألعاب (game_winnings) إن وجدت إلى الزوجة
+            if (\Illuminate\Support\Facades\Schema::hasTable('game_winnings')) {
+                DB::table('game_winnings')
+                    ->where('person_id', $oldHeadId)
+                    ->update(['person_id' => $wife->id]);
+            }
+
+            // 7. حذف سجل الزوج القديم نهائياً
+            $head->delete();
+
+            DB::commit();
+
+            flash()->success("تم تبديل الأدوار بنجاح: أصبحت الزوجة ({$wife->getFullQuadName()} - {$wife->id_num}) هي ربة الأسرة بحالة 'أرمل/ة'، وتم نقل كافة أفراد الأسرة والبيانات إليها وحذف سجل الزوج السابق.");
+
+            return redirect()->route('dashboard.people.show', $wife);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'حدث خطأ أثناء تبديل الأدوار: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -867,7 +1199,14 @@ class PersonController extends Controller
      */
     public function export(Request $request)
     {
+        if (!auth()->user()?->isAdmin()) {
+            abort(403, 'غير مصرح لك بالتصدير');
+        }
+
         try {
+            ini_set('memory_limit', '1024M');
+            set_time_limit(0);
+
             // التحقق من صحة البيانات
             $request->validate([
                 'area_responsible_id' => 'nullable|exists:area_responsibles,id',
@@ -884,7 +1223,8 @@ class PersonController extends Controller
             $filters = $request->all();
             $export = new PeopleExport($request, $filters);
 
-            return Excel::download($export, 'filtered_people.xlsx');
+            $fileName = $request->has('unserved') ? 'unserved_people.csv' : 'filtered_people.csv';
+            return $this->streamQueryExport($export, $fileName);
         } catch (\Illuminate\Validation\ValidationException $e) {
             logger()->warning('بيانات غير صحيحة في التصدير', [
                 'errors' => $e->errors(),
@@ -911,7 +1251,14 @@ class PersonController extends Controller
      */
     public function exportView(Request $request)
     {
+        if (!auth()->user()?->isAdmin()) {
+            abort(403, 'غير مصرح لك بالتصدير');
+        }
+
         try {
+            ini_set('memory_limit', '1024M');
+            set_time_limit(0);
+
             $request->validate([
                 'area_responsible_id' => 'nullable|exists:area_responsibles,id',
                 'block_id' => 'nullable|exists:blocks,id',
@@ -928,7 +1275,8 @@ class PersonController extends Controller
 
             $export = new PeopleExport($request);
 
-            return Excel::download($export, 'people_view_filtered.xlsx');
+            $fileName = $request->has('unserved') ? 'unserved_people.csv' : 'people_view_filtered.csv';
+            return $this->streamQueryExport($export, $fileName);
         } catch (\Exception $e) {
             logger()->error('خطأ في تصدير البيانات من صفحة العرض', [
                 'error' => $e->getMessage(),
@@ -936,7 +1284,7 @@ class PersonController extends Controller
                 'filters' => $request->all()
             ]);
 
-            flash()->error('حدث خطأ أثناء تصدير الملف. يرجى المحاولة مرة أخرى.');
+            flash()->error('حدث خطأ أثناء تصدير البيانات. يرجى المحاولة مرة أخرى.');
             return back();
         }
 
@@ -970,7 +1318,7 @@ class PersonController extends Controller
             ini_set('memory_limit', '1024M');
             set_time_limit(0);
 
-            $filename = 'children_data_' . now()->format('Y_m_d_His') . '.xlsx';
+            $filename = 'children_data_' . now()->format('Y_m_d_His') . '.csv';
             $export = new FamilyChildrenExport($request);
 
             logger()->info('تم تصدير بيانات الأطفال بنجاح', [
@@ -978,10 +1326,7 @@ class PersonController extends Controller
                 'filename' => $filename,
             ]);
 
-            // ✅ إشعار نجاح (يظهر في الصفحة التالية)
-            session()->flash('success', 'تم تصدير بيانات الأطفال بنجاح!');
-
-            return Excel::download($export, $filename);
+            return $this->streamQueryExport($export, $filename);
         } catch (\Illuminate\Validation\ValidationException $e) {
             logger()->warning('فشل التحقق من البيانات', [
                 'user_id' => auth()->id(),
@@ -1001,6 +1346,51 @@ class PersonController extends Controller
             flash()->error('حدث خطأ أثناء التصدير. يرجى المحاولة مرة أخرى.');
             return back();
         }
+    }
+
+    /**
+     * البث المتدفق الفوري للبيانات إلى المتصفح كملف Excel حقيقي (.xlsx) باستخدام FastExcel
+     * يتوافق 100% مع جميع إصدارات Microsoft Excel ولغاته ويمنع مشاكل الترميز والعمود الواحد
+     */
+    private function streamQueryExport($export, string $fileName)
+    {
+        ini_set('memory_limit', '2048M');
+        set_time_limit(0);
+
+        if (str_ends_with(strtolower($fileName), '.csv')) {
+            $fileName = substr($fileName, 0, -4) . '.xlsx';
+        } elseif (!str_ends_with(strtolower($fileName), '.xlsx')) {
+            $fileName .= '.xlsx';
+        }
+
+        $query = $export->query();
+
+        $headings = method_exists($export, 'headings') ? $export->headings() : [];
+
+        $generator = function () use ($query, $export, $headings) {
+            foreach ($query->cursor() as $row) {
+                $mappedRow = method_exists($export, 'map') ? $export->map($row) : (array)$row;
+                
+                $rowWithHeadings = [];
+                foreach (array_values($mappedRow) as $index => $val) {
+                    $columnName = $headings[$index] ?? ("ملاحظة_" . ($index + 1));
+
+                    if ($val === null) {
+                        $rowWithHeadings[$columnName] = '';
+                    } elseif (is_bool($val)) {
+                        $rowWithHeadings[$columnName] = $val ? 'نعم' : 'لا';
+                    } elseif (is_object($val) || is_array($val)) {
+                        $rowWithHeadings[$columnName] = json_encode($val, JSON_UNESCAPED_UNICODE);
+                    } else {
+                        $rowWithHeadings[$columnName] = (string)$val;
+                    }
+                }
+
+                yield $rowWithHeadings;
+            }
+        };
+
+        return (new FastExcel($generator()))->download($fileName);
     }
 
     public function assignToSupervisor(Person $person)
@@ -1739,5 +2129,53 @@ class PersonController extends Controller
             'person' => $person->getFullName(),
             'coupons' => $personCoupons->values(),
         ]);
+    }
+    public function bulkHistoryForm()
+    {
+        return view('dashboard.people.bulk_history');
+    }
+
+    public function exportBulkHistory(Request $request)
+    {
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+
+        $request->validate([
+            'id_nums' => 'required|string',
+        ]);
+
+        $idNumbers = preg_split('/[\s,\n\r]+/', $request->id_nums, -1, PREG_SPLIT_NO_EMPTY);
+        
+        if (empty($idNumbers)) {
+            flash()->error('يرجى إدخال أرقام هويات صحيحة');
+            return redirect()->back();
+        }
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\BulkHistoryExport($idNumbers), 
+            'bulk_history_' . now()->format('Y-m-d_H-i') . '.xlsx'
+        );
+    }
+
+    public function verifyIdsForm()
+    {
+        return view('dashboard.people.verify_ids');
+    }
+
+    public function exportVerifyIds(Request $request)
+    {
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+
+        $request->validate([
+            'id_nums' => 'required',
+        ]);
+
+        $idNumbers = preg_split('/[\s,\n\r]+/', $request->id_nums, -1, PREG_SPLIT_NO_EMPTY);
+        
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\IDVerificationExport($idNumbers), 
+            'verify_ids_' . now()->format('Y-m-d_H-i') . '.xlsx'
+        );
     }
 }

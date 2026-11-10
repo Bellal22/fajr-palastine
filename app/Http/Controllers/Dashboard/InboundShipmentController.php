@@ -65,6 +65,8 @@ class InboundShipmentController extends Controller
             if ($request->inbound_type === 'single_item' && $request->has('items')) {
                 foreach ($request->items as $itemData) {
                     $inboundShipment->items()->create([
+                        'name' => $itemData['name'],
+                        'description' => $itemData['description'] ?? null,
                         'weight' => $itemData['weight'] ?? null,
                         'quantity' => $itemData['quantity'],
                         'remaining_quantity' => $itemData['quantity'],
@@ -75,6 +77,8 @@ class InboundShipmentController extends Controller
             if ($request->inbound_type === 'ready_package' && $request->has('packages')) {
                 foreach ($request->packages as $packageData) {
                     $package = $inboundShipment->readyPackages()->create([
+                        'name' => $packageData['name'],
+                        'description' => $packageData['description'] ?? null,
                         'weight' => $packageData['weight'] ?? null,
                         'quantity' => $packageData['quantity'] ?? 1,
                         'remaining_quantity' => $packageData['quantity'] ?? 1,

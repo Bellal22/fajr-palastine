@@ -52,6 +52,11 @@ class NeedRequestProject extends Model
         return $this->belongsTo(Project::class);
     }
 
+    public function supervisors()
+    {
+        return $this->belongsToMany(User::class, 'need_request_project_supervisor', 'need_request_project_id', 'user_id');
+    }
+
     // --- Scopes ---
 
     public function scopeEnabled($query)
@@ -66,9 +71,13 @@ class NeedRequestProject extends Model
      */
     public static function getEnabledProjects()
     {
-        return Project::whereHas('needRequestProject', function ($query) {
-            $query->where('is_enabled', true);
-        })->orWhereDoesntHave('needRequestProject')->get();
+        return Project::active()->whereHas('needRequestProject', function ($query) {
+            $query->where('is_enabled', true)
+                ->where(function ($q) {
+                    $q->whereNull('deadline')
+                        ->orWhere('deadline', '>', now());
+                });
+        })->get();
     }
 
     /**
@@ -76,14 +85,26 @@ class NeedRequestProject extends Model
      */
     public static function toggleFor($projectId): bool
     {
-        $setting = self::firstOrCreate(
-            ['project_id' => $projectId],
-            ['is_enabled' => true]
-        );
-        
-        $setting->update(['is_enabled' => !$setting->is_enabled]);
-        
-        return $setting->is_enabled;
+        // Get the latest activation
+        $latest = self::where('project_id', $projectId)->latest()->first();
+
+        // If currently enabled, disable it (toggle logic)
+        if ($latest && $latest->is_enabled) {
+            $latest->update(['is_enabled' => false]);
+            return false;
+        }
+
+        // If none exists or latest is disabled, create a NEW activation
+        $data = $latest ? $latest->toArray() : ['project_id' => $projectId];
+        unset($data['id'], $data['created_at'], $data['updated_at']);
+        $data['is_enabled'] = true;
+        // Reset deadline if it was previously expired to allow "extension"
+        if (isset($data['deadline']) && Carbon::parse($data['deadline'])->isPast()) {
+            $data['deadline'] = now()->addDays(7); // Default extension
+        }
+
+        self::create($data);
+        return true;
     }
 
     /**
@@ -91,9 +112,9 @@ class NeedRequestProject extends Model
      */
     public static function checkAndExpire(): int
     {
-        return self::where('is_enabled', true)
-            ->whereNotNull('deadline')
-            ->where('deadline', '<=', now())
-            ->update(['is_enabled' => false]);
+        // We no longer automatically set is_enabled to false.
+        // The expiration is handled by query logic (deadline > now())
+        // This keeps the request visible for admins/supervisors as "Expired".
+        return 0;
     }
 }

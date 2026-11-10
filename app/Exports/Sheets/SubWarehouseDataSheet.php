@@ -37,7 +37,7 @@ class SubWarehouseDataSheet implements FromCollection, WithHeadings, WithTitle, 
         $dateFrom = Carbon::parse($this->filters['date_from'])->startOfDay();
         $dateTo = Carbon::parse($this->filters['date_to'])->endOfDay();
 
-        // 1. Get Distribution Data (عدد المستلمين)
+        // 1. جلب البيانات موزعة حسب الدفعات (لأخذ المحرز والملاحظات بشكل دقيق)
         $distributionsQuery = DB::table('project_beneficiaries as pb')
             ->join('projects as prj', 'pb.project_id', '=', 'prj.id')
             ->join('sub_warehouses as sw', 'pb.sub_warehouse_id', '=', 'sw.id')
@@ -48,9 +48,11 @@ class SubWarehouseDataSheet implements FromCollection, WithHeadings, WithTitle, 
                 'pb.project_id',
                 'prj.name as project_name',
                 'prj.description as project_description',
+                'pb.user_id',
+                'pb.created_at',
                 DB::raw('SUM(pb.quantity) as distributed_count'),
-                'pb.captured_qty',
-                'pb.external_notes'
+                DB::raw('MAX(pb.captured_qty) as captured_qty'),
+                DB::raw('MAX(pb.external_notes) as external_notes')
             )
             ->where('pb.status', 'مستلم')
             ->whereBetween('pb.delivery_date', [$dateFrom, $dateTo]);
@@ -59,36 +61,59 @@ class SubWarehouseDataSheet implements FromCollection, WithHeadings, WithTitle, 
             $distributionsQuery->where('pb.sub_warehouse_id', $this->warehouse->id);
         }
 
-        $distributions = $distributionsQuery
-            ->groupBy('pb.delivery_date', 'pb.sub_warehouse_id', 'sw.name', 'pb.project_id', 'prj.name', 'prj.description', 'pb.captured_qty', 'pb.external_notes')
+        $rawDistributions = $distributionsQuery
+            ->groupBy('pb.delivery_date', 'pb.sub_warehouse_id', 'sw.name', 'pb.project_id', 'prj.name', 'prj.description', 'pb.user_id', 'pb.created_at')
             ->orderBy('pb.delivery_date')
             ->get();
+
+        // 2. تجميع الدفعات في سطر واحد لكل (تاريخ، نقطة، مشروع)
+        $aggregated = [];
+        foreach ($rawDistributions as $row) {
+            $date = Carbon::parse($row->delivery_date)->toDateString();
+            $key = $date . '_' . $row->sub_warehouse_id . '_' . $row->project_id;
+            
+            if (!isset($aggregated[$key])) {
+                $aggregated[$key] = (object) [
+                    'delivery_date' => $date,
+                    'sub_warehouse_id' => $row->sub_warehouse_id,
+                    'warehouse_name' => $row->warehouse_name,
+                    'project_id' => $row->project_id,
+                    'project_name' => $row->project_name,
+                    'project_description' => $row->project_description,
+                    'distributed_count' => 0,
+                    'captured_qty' => 0,
+                    'notes_array' => [],
+                ];
+            }
+            
+            $aggregated[$key]->distributed_count += $row->distributed_count;
+            $aggregated[$key]->captured_qty += ($row->captured_qty ?? 0);
+            
+            if ($row->external_notes && $row->external_notes != '-' && !in_array($row->external_notes, $aggregated[$key]->notes_array)) {
+                $aggregated[$key]->notes_array[] = $row->external_notes;
+            }
+        }
 
         $data = [];
         $i = 1;
 
-        foreach ($distributions as $row) {
-            // 2. Get Package Type (CouponType names)
+        foreach ($aggregated as $row) {
+            // 3. جلب أنواع الطرود
             $packageTypes = DB::table('coupon_types as ct')
                 ->join('project_coupon_types as pct', 'ct.id', '=', 'pct.coupon_type_id')
                 ->where('pct.project_id', $row->project_id)
                 ->pluck('ct.name')
                 ->implode(', ');
 
-            // 3. Get Inbound Data (وارد النقاط)
-            // Note: We sum up ALL items sent for this project to this warehouse up to this date
-            // OR specifically on this date? The user example seems to imply a cumulative or daily "Inbound" value.
-            // "الوارد بيتاخد من إرسالية الصادر"
-            
+            // 4. جلب الوارد (تراكمي حتى ذلك التاريخ)
             $inboundCount = DB::table('outbound_shipment_items as osi')
                 ->join('outbound_shipments as os', 'osi.outbound_shipment_id', '=', 'os.id')
                 ->where('os.sub_warehouse_id', $row->sub_warehouse_id)
                 ->where('os.project_id', $row->project_id)
-                ->whereDate('os.created_at', '<=', $row->delivery_date) // Cumulative
+                ->whereDate('os.created_at', '<=', $row->delivery_date)
                 ->sum('osi.quantity');
 
-            // Calculation of "Mahrouz" (محرز)
-            // Remaining = Total Inbound - Total Distributed up to that date
+            // 5. حساب المتبقي (الوارد - إجمالي المنصرف التراكمي)
             $totalDistributedSoFar = DB::table('project_beneficiaries')
                 ->where('sub_warehouse_id', $row->sub_warehouse_id)
                 ->where('project_id', $row->project_id)
@@ -97,7 +122,7 @@ class SubWarehouseDataSheet implements FromCollection, WithHeadings, WithTitle, 
                 ->sum('quantity');
 
             $remaining = $inboundCount - $totalDistributedSoFar;
-            $recordedMahrouz = $row->captured_qty ?? 0;
+            $recordedMahrouz = $row->captured_qty;
             $diff = $remaining - $recordedMahrouz;
 
             $data[] = [
@@ -111,7 +136,7 @@ class SubWarehouseDataSheet implements FromCollection, WithHeadings, WithTitle, 
                 'remaining' => $remaining < 0 ? 0 : $remaining,
                 'recorded_mahrouz' => $recordedMahrouz,
                 'match' => $diff == 0 ? 'مطابق' : 'فرق: ' . $diff,
-                'notes' => $row->external_notes ?? '-',
+                'notes' => count($row->notes_array) > 0 ? implode(' | ', $row->notes_array) : '-',
             ];
         }
 
@@ -171,5 +196,14 @@ class SubWarehouseDataSheet implements FromCollection, WithHeadings, WithTitle, 
         }
 
         return [];
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                // يتم استدعاؤه بعد الانتهاء من تعبئة الورقة
+            },
+        ];
     }
 }

@@ -48,6 +48,11 @@ Breadcrumbs::for('dashboard.projects.beneficiaries.filter-areas', function ($bre
     $breadcrumb->parent('dashboard.projects.beneficiaries', $project);
     $breadcrumb->push('ترشيح حسب المناطق', route('dashboard.projects.beneficiaries.filter-areas', $project));
 });
+Breadcrumbs::for('dashboard.projects.deliveries', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.projects.index');
+    $breadcrumb->push('تسليم الطرود والكوبونات', route('dashboard.projects.deliveries'));
+});
+
 Breadcrumbs::for('dashboard.reports.projects', function ($breadcrumb) {
     $breadcrumb->parent('dashboard.projects.index');
     $breadcrumb->push('تقارير الكوبونات', route('dashboard.reports.projects'));
@@ -68,3 +73,29 @@ Breadcrumbs::for('dashboard.reports.projects.period', function ($breadcrumb, $pe
     ];
     $breadcrumb->push('التقارير ' . ($labels[$period] ?? ''), route('dashboard.reports.projects.period', $period));
 });
+
+Breadcrumbs::for('dashboard.custom_projects.index', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.home');
+    $breadcrumb->push('المشاريع المخصصة', route('dashboard.custom_projects.index'));
+});
+
+Breadcrumbs::for('dashboard.custom_projects.create', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.custom_projects.index');
+    $breadcrumb->push('إضافة مشروع مخصص جديد', route('dashboard.custom_projects.create'));
+});
+
+Breadcrumbs::for('dashboard.custom_projects.edit', function ($breadcrumb, $customProject) {
+    $breadcrumb->parent('dashboard.custom_projects.index');
+    $breadcrumb->push('تعديل وتخصيص: ' . ($customProject->name ?? ''), route('dashboard.custom_projects.edit', $customProject));
+});
+
+Breadcrumbs::for('dashboard.rrm.index', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.custom_projects.index');
+    $breadcrumb->push('كشوفات وتوزيعات المشاريع المخصصة', route('dashboard.rrm.index'));
+});
+
+Breadcrumbs::for('dashboard.rrm.show', function ($breadcrumb, $batch) {
+    $breadcrumb->parent('dashboard.rrm.index');
+    $breadcrumb->push($batch->name ?? 'كشف المستفيدين', route('dashboard.rrm.show', is_object($batch) ? $batch->id : $batch));
+});
+

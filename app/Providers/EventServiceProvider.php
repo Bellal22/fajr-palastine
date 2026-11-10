@@ -37,6 +37,8 @@ class EventServiceProvider extends ServiceProvider
         // تسجيل Observers
         Customer::observe(PhoneVerificationObserver::class);
         Person::observe(PersonObserver::class);
+        \App\Models\Project::observe(\App\Observers\ProjectObserver::class);
+        \App\Models\Supplier::observe(\App\Observers\SupplierObserver::class);
     }
 
     /**

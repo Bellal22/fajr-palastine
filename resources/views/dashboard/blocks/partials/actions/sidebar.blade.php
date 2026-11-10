@@ -12,7 +12,7 @@
             'active' => request()->routeIs('*blocks.index')
                 || request()->routeIs('*blocks.show'),
         ],
-        auth()->user()->isAdmin() ? [
+        auth()->user()?->isAdmin() ? [
             'name' => trans('blocks.actions.create'),
             'url' => route('dashboard.blocks.create'),
             'can' => ['ability' => 'create', 'model' => \App\Models\Block::class],

@@ -7,7 +7,8 @@ Route::group([
     'prefix' => 'mobile-app',
     'as' => 'mobile_app.',
     'middleware' => function ($request, $next) {
-        if (! auth()->user()->isAdmin()) {
+        $user = auth()->user();
+        if (! $user->isAdmin() && ! $user->hasPermission('manage.admins') && ! $user->hasPermission('manage.mobile_app') && ! $user->hasPermission('manage.outbound_shipments')) {
             abort(403);
         }
         return $next($request);
@@ -22,8 +23,10 @@ Route::group([
     Route::get('/nominate', [MobileAppController::class, 'nominate'])->name('nominate');
     Route::post('/nominate/store', [MobileAppController::class, 'storeNominations'])->name('nominate.store');
     Route::post('/nominate/unassign/{id}', [MobileAppController::class, 'unassign'])->name('nominate.unassign');
+    Route::post('/nominate/bulk-action', [MobileAppController::class, 'bulkAction'])->name('nominate.bulk_action');
     Route::get('/nominate/export', [MobileAppController::class, 'exportNominations'])->name('nominate.export');
     Route::get('/report', [MobileAppController::class, 'projectReport'])->name('report');
     Route::post('/report/delete-batch', [MobileAppController::class, 'deleteBatch'])->name('report.delete_batch');
     Route::post('/report/update-batch', [MobileAppController::class, 'updateBatch'])->name('report.update_batch');
+    Route::post('/projects/{id}/refresh', [MobileAppController::class, 'refreshProject'])->name('projects.refresh');
 });

@@ -29,6 +29,7 @@ class ProjectController extends Controller
      */
     public function __construct()
     {
+        Project::ensureCashColumnsExist();
         $this->authorizeResource(Project::class, 'project');
 
         $this->middleware('auth')->only([
@@ -50,6 +51,7 @@ class ProjectController extends Controller
     public function index()
     {
         $projects = Project::filter()
+            ->with(['grantingEntities', 'executingEntities'])
             ->withCount([
                 'beneficiaries as beneficiaries_count',
                 'beneficiaries as received_count' => function ($query) {
@@ -93,13 +95,23 @@ class ProjectController extends Controller
             return redirect()->back()->withInput();
         }
 
-        $project = Project::create($request->only([
-            'name',
-            'description',
-            'start_date',
-            'end_date',
-            'status'
-        ]));
+        Project::ensureCashColumnsExist();
+
+        $isCash = $request->boolean('is_cash');
+        $cashAmountType = $isCash ? $request->input('cash_amount_type', 'fixed') : 'fixed';
+
+        $project = Project::create([
+            'name' => $request->name,
+            'description' => $request->description,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'status' => $request->status ?? 'active',
+            'is_cash' => $isCash,
+            'cash_amount_type' => $cashAmountType,
+            'cash_amount' => ($isCash && $cashAmountType === 'fixed') ? $request->cash_amount : null,
+            'cash_currency' => $isCash ? $request->cash_currency : null,
+            'default_delivery_method' => $isCash ? $request->default_delivery_method : null,
+        ]);
 
         $this->syncRelations($project, $request);
 
@@ -132,6 +144,12 @@ class ProjectController extends Controller
                 $query->where('project_beneficiaries.status', 'غير مستلم');
             }
         ]);
+
+        $project->loadSum([
+            'beneficiaries as total_quantity' => function ($query) {
+                $query->where('project_beneficiaries.status', 'مستلم');
+            }
+        ], 'project_beneficiaries.quantity');
 
         // Get area breakdown for the integrated report panel
         $project->area_breakdown = DB::table('project_beneficiaries')
@@ -193,13 +211,23 @@ class ProjectController extends Controller
             return redirect()->back()->withInput();
         }
 
-        $project->update($request->only([
-            'name',
-            'description',
-            'start_date',
-            'end_date',
-            'status'
-        ]));
+        Project::ensureCashColumnsExist();
+
+        $isCash = $request->boolean('is_cash');
+        $cashAmountType = $isCash ? $request->input('cash_amount_type', 'fixed') : 'fixed';
+
+        $project->update([
+            'name' => $request->name,
+            'description' => $request->description,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'status' => $request->status ?? $project->status,
+            'is_cash' => $isCash,
+            'cash_amount_type' => $cashAmountType,
+            'cash_amount' => ($isCash && $cashAmountType === 'fixed') ? $request->cash_amount : null,
+            'cash_currency' => $isCash ? $request->cash_currency : null,
+            'default_delivery_method' => $isCash ? $request->default_delivery_method : null,
+        ]);
 
         $this->syncRelations($project, $request);
 
@@ -245,10 +273,10 @@ class ProjectController extends Controller
 
         // 2. Sync Coupon Types
         $couponTypesData = [];
-        if ($request->filled('coupon_types')) {
+        if (!$request->boolean('is_cash') && $request->filled('coupon_types')) {
             foreach ($request->coupon_types as $item) {
-                if (isset($item['coupon_type_id']) && isset($item['quantity'])) {
-                    $couponTypesData[$item['coupon_type_id']] = ['quantity' => $item['quantity']];
+                if (!empty($item['coupon_type_id']) && !empty($item['quantity'])) {
+                    $couponTypesData[$item['coupon_type_id']] = ['quantity' => (int) $item['quantity']];
                 }
             }
         }
@@ -257,27 +285,29 @@ class ProjectController extends Controller
         // 3. Sync Packages (Polymorphic)
         DB::table('project_packages')->where('project_id', $project->id)->delete();
 
-        if ($request->filled('ready_packages')) {
-            foreach ($request->ready_packages as $id) {
-                DB::table('project_packages')->insert([
-                    'project_id' => $project->id,
-                    'packageable_id' => $id,
-                    'packageable_type' => 'App\Models\ReadyPackage',
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+        if (!$request->boolean('is_cash')) {
+            if ($request->filled('ready_packages')) {
+                foreach ($request->ready_packages as $id) {
+                    DB::table('project_packages')->insert([
+                        'project_id' => $project->id,
+                        'packageable_id' => $id,
+                        'packageable_type' => 'App\Models\ReadyPackage',
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
             }
-        }
 
-        if ($request->filled('internal_packages')) {
-            foreach ($request->internal_packages as $id) {
-                DB::table('project_packages')->insert([
-                    'project_id' => $project->id,
-                    'packageable_id' => $id,
-                    'packageable_type' => 'App\Models\InternalPackage',
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+            if ($request->filled('internal_packages')) {
+                foreach ($request->internal_packages as $id) {
+                    DB::table('project_packages')->insert([
+                        'project_id' => $project->id,
+                        'packageable_id' => $id,
+                        'packageable_type' => 'App\Models\InternalPackage',
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
             }
         }
 
@@ -384,63 +414,87 @@ class ProjectController extends Controller
      */
     public function beneficiaries(Request $request, Project $project)
     {
-        $query = $project->beneficiaries()
-            ->withPivot('status', 'notes', 'delivery_date', 'quantity', 'sub_warehouse_id');
+        $perPage = $request->get('per_page', 50);
 
-        // البحث برقم الهوية
+        $query = DB::table('project_beneficiaries')
+            ->where('project_id', $project->id)
+            ->leftJoin('persons', 'project_beneficiaries.person_id', '=', 'persons.id')
+            ->leftJoin('incomplete_people', 'project_beneficiaries.incomplete_person_id', '=', 'incomplete_people.id')
+            ->leftJoin('employees', 'project_beneficiaries.employee_id', '=', 'employees.id')
+            ->select(
+                'project_beneficiaries.*',
+                'project_beneficiaries.id as beneficiary_pivot_id',
+                DB::raw('COALESCE(persons.id_num, incomplete_people.id_num, employees.id_num) as id_num'),
+                DB::raw('COALESCE(persons.first_name, incomplete_people.first_name, employees.first_name) as first_name'),
+                DB::raw('COALESCE(persons.father_name, incomplete_people.father_name, employees.father_name) as father_name'),
+                DB::raw('COALESCE(persons.grandfather_name, incomplete_people.grandfather_name, employees.grandfather_name) as grandfather_name'),
+                DB::raw('COALESCE(persons.family_name, incomplete_people.family_name, employees.family_name) as family_name'),
+                DB::raw('COALESCE(persons.phone, incomplete_people.phone, employees.phone) as phone'),
+                DB::raw('COALESCE(persons.current_city, incomplete_people.current_city, "غير محدد") as current_city'),
+                DB::raw('COALESCE(persons.neighborhood, incomplete_people.neighborhood, "غير محدد") as neighborhood'),
+                DB::raw('CASE WHEN persons.id IS NOT NULL THEN "person" WHEN incomplete_people.id IS NOT NULL THEN "incomplete" ELSE "employee" END as entity_type')
+            );
+
+        // البحث برقم الهوية (يبحث في الجداول الثلاثة عبر id_num المشترك)
         if ($request->filled('search')) {
             $searchValue = $request->search;
             $ids = preg_split('/[\s,]+/', $searchValue, -1, PREG_SPLIT_NO_EMPTY);
-
-            if (count($ids) > 1) {
-                $query->whereIn('persons.id_num', $ids);
-            } else {
-                $query->where('persons.id_num', 'LIKE', "%{$searchValue}%");
-            }
+            
+            $query->where(function($q) use ($ids, $searchValue) {
+                if (count($ids) > 1) {
+                    $q->whereIn('persons.id_num', $ids)
+                      ->orWhereIn('incomplete_people.id_num', $ids)
+                      ->orWhereIn('employees.id_num', $ids);
+                } else {
+                    $q->where('persons.id_num', 'LIKE', "%{$searchValue}%")
+                      ->orWhere('incomplete_people.id_num', 'LIKE', "%{$searchValue}%")
+                      ->orWhere('employees.id_num', 'LIKE', "%{$searchValue}%");
+                }
+            });
         }
 
-        // فلتر حسب الحالة
+        // الفلاتر الأخرى
         if ($request->filled('status')) {
-            $query->wherePivot('status', $request->status);
+            $query->where('project_beneficiaries.status', $request->status);
         }
 
-        // فلتر حسب تاريخ التسليم (من)
         if ($request->filled('date_from')) {
-            $query->wherePivot('delivery_date', '>=', $request->date_from);
+            $query->whereDate(DB::raw('COALESCE(project_beneficiaries.delivery_date, project_beneficiaries.created_at)'), '>=', $request->date_from);
         }
 
-        // فلتر حسب تاريخ التسليم (إلى)
         if ($request->filled('date_to')) {
-            $query->wherePivot('delivery_date', '<=', $request->date_to);
+            $query->whereDate(DB::raw('COALESCE(project_beneficiaries.delivery_date, project_beneficiaries.created_at)'), '<=', $request->date_to);
         }
 
-        // فلتر مطابقة تاريخ التسليم (تاريخ محدد)
         if ($request->filled('exact_date')) {
-            $query->wherePivot('delivery_date', $request->exact_date);
+            $query->whereDate(DB::raw('COALESCE(project_beneficiaries.delivery_date, project_beneficiaries.created_at)'), '=', $request->exact_date);
         }
 
-        // فلتر حسب الكمية (من)
         if ($request->filled('quantity_from')) {
-            $query->wherePivot('quantity', '>=', $request->quantity_from);
+            $query->where('project_beneficiaries.quantity', '>=', $request->quantity_from);
         }
 
-        // فلتر حسب الكمية (إلى)
         if ($request->filled('quantity_to')) {
-            $query->wherePivot('quantity', '<=', $request->quantity_to);
+            $query->where('project_beneficiaries.quantity', '<=', $request->quantity_to);
         }
 
-        // فلتر حسب كمية محددة (مطابقة تامة)
+        if ($request->filled('sub_warehouse_id')) {
+            $query->where('project_beneficiaries.sub_warehouse_id', $request->sub_warehouse_id);
+        }
+
         if ($request->filled('exact_quantity')) {
-            $query->wherePivot('quantity', $request->exact_quantity);
+            $query->where('project_beneficiaries.quantity', $request->exact_quantity);
         }
 
-        $perPage = $request->get('per_page', 50);
-        $beneficiaries = $query->paginate($perPage)->appends($request->all());
+        $beneficiaries = $query->latest('project_beneficiaries.created_at')
+            ->paginate($perPage)
+            ->appends($request->all());
 
-        $totalQuantity = $project->beneficiaries()->sum('project_beneficiaries.quantity');
+        $totalQuantity = DB::table('project_beneficiaries')
+            ->where('project_id', $project->id)
+            ->sum('quantity');
 
-        $subWarehouseIds = $beneficiaries->pluck('pivot.sub_warehouse_id')->filter()->unique();
-        $subWarehouses = SubWarehouse::whereIn('id', $subWarehouseIds)->get()->keyBy('id');
+        $subWarehouses = \App\Models\SubWarehouse::all()->keyBy('id');
 
         return view('dashboard.projects.beneficiaries.index', compact('project', 'beneficiaries', 'subWarehouses', 'totalQuantity'));
     }
@@ -466,11 +520,17 @@ class ProjectController extends Controller
      */
     public function importBeneficiaries(Request $request, Project $project)
     {
+        Project::ensureCashColumnsExist();
+
         $request->validate([
             'file' => 'required_without:id_nums|nullable|mimes:xlsx,xls,csv|max:102400',
             'id_nums' => 'nullable|string',
             'manual_notes' => 'nullable|string',
-            'sub_warehouse_id' => 'required|exists:sub_warehouses,id',
+            'sub_warehouse_id' => $project->is_cash ? 'nullable|exists:sub_warehouses,id' : 'required|exists:sub_warehouses,id',
+            'delivery_method' => 'nullable|string|max:50',
+            'cash_amount' => 'nullable|numeric|min:0',
+            'cash_currency' => 'nullable|string|max:10',
+            'delivery_details' => 'nullable|string|max:255',
             'ignore_conflicts' => 'nullable|boolean',
             'delivery_date' => 'nullable|date|required_with:id_nums',
             'status' => 'nullable|in:مستلم,غير مستلم|required_with:id_nums',
@@ -488,6 +548,10 @@ class ProjectController extends Controller
                 $status = $request->status;
                 $deliveryDate = $request->delivery_date;
                 $notes = $request->filled('manual_notes') ? $request->manual_notes : 'إدخال يدوي';
+                $deliveryMethod = $request->input('delivery_method') ?: ($project->default_delivery_method ?: 'cash');
+                $cashAmount = $request->filled('cash_amount') ? (float)$request->input('cash_amount') : ($project->cash_amount_type === 'fixed' ? $project->cash_amount : null);
+                $cashCurrency = $request->input('cash_currency') ?: ($project->cash_currency ?: 'ILS');
+                $deliveryDetails = $request->input('delivery_details');
 
                 $idNums = preg_split('/[\s,]+/', $request->id_nums, -1, PREG_SPLIT_NO_EMPTY);
                 $imported = 0;
@@ -495,50 +559,77 @@ class ProjectController extends Controller
                 $batchData = [];
                 $mergedCount = 0;
 
+                $batchDataEmployee = [];
+
                 foreach ($idNums as $idNumber) {
                     $idNumber = trim($idNumber);
                     if (empty($idNumber)) continue;
 
                     $paddedId = str_pad($idNumber, 9, '0', STR_PAD_LEFT);
                     $person = Person::where('id_num', $paddedId)->first();
+                    $employee = \App\Models\Employee::where('id_num', $idNumber)->orWhere('id_num', $paddedId)->first();
 
-                    if (!$person) {
-                        $errors[] = "الرقم {$idNumber}: لم يتم العثور على الشخص";
+                    if (!$person && !$employee) {
+                        $errors[] = "الرقم {$idNumber}: لم يتم العثور على الشخص أو الموظف";
                         continue;
                     }
 
-                    $head = $person->findUltimateHead();
-                    if (!$head) $head = $person;
+                    if ($employee) {
+                        if (!$ignoreConflicts && !empty($conflictingProjectIds)) {
+                            $hasConflict = DB::table('project_beneficiaries')
+                                ->where('employee_id', $employee->id)
+                                ->whereIn('project_id', $conflictingProjectIds)
+                                ->exists();
 
-                    if (isset($batchData[$head->id])) {
-                        $batchData[$head->id]['quantity'] += 1;
-                        $mergedCount++;
-                        continue;
-                    }
+                            if ($hasConflict) {
+                                $errors[] = "الموظف {$idNumber}: موجود مسبقاً في مشروع متعارض";
+                                continue;
+                            }
+                        }
 
-                    if (!$ignoreConflicts && !empty($conflictingProjectIds)) {
-                        $hasConflict = DB::table('project_beneficiaries')
-                            ->where('person_id', $head->id)
-                            ->whereIn('project_id', $conflictingProjectIds)
-                            ->exists();
+                        $batchDataEmployee[$employee->id] = [
+                            'employee' => $employee,
+                            'quantity' => 1,
+                            'status' => $status,
+                            'notes' => $notes,
+                            'delivery_date' => $deliveryDate,
+                            'sub_warehouse_id' => $subWarehouseId,
+                        ];
+                    } else {
+                        $head = $person->findUltimateHead();
+                        if (!$head) $head = $person;
 
-                        if ($hasConflict) {
-                            $headIdNum = $head->id_num;
-                            $errorMsg = "الرقم {$idNumber}: موجود مسبقاً في مشروع متعارض";
-                            if ($headIdNum != $idNumber) $errorMsg .= " (رب الأسرة: {$headIdNum})";
-                            $errors[] = $errorMsg;
+                        if (isset($batchData[$head->id])) {
+                            $batchData[$head->id]['quantity'] += 1;
+                            $mergedCount++;
                             continue;
                         }
-                    }
 
-                    $batchData[$head->id] = [
-                        'person' => $head,
-                        'quantity' => 1,
-                        'status' => $status,
-                        'notes' => $notes,
-                        'delivery_date' => $deliveryDate,
-                        'sub_warehouse_id' => $subWarehouseId,
-                    ];
+                        if (!$ignoreConflicts && !empty($conflictingProjectIds)) {
+                            $hasConflict = DB::table('project_beneficiaries')
+                                ->where('person_id', $head->id)
+                                ->whereIn('project_id', $conflictingProjectIds)
+                                ->exists();
+
+                            if ($hasConflict) {
+                                $headIdNum = $head->id_num;
+                                $errorMsg = "الرقم {$idNumber}: موجود مسبقاً في مشروع متعارض";
+                                if ($headIdNum != $idNumber) $errorMsg .= " (رب الأسرة: {$headIdNum})";
+                                $errors[] = $errorMsg;
+                                continue;
+                            }
+                        }
+
+                        $wivesCount = $head->wives()->count();
+                        $batchData[$head->id] = [
+                            'person' => $head,
+                            'quantity' => max(1, $wivesCount),
+                            'status' => $status,
+                            'notes' => $notes,
+                            'delivery_date' => $deliveryDate,
+                            'sub_warehouse_id' => $subWarehouseId,
+                        ];
+                    }
                 }
 
                 foreach ($batchData as $data) {
@@ -549,11 +640,61 @@ class ProjectController extends Controller
                         'delivery_date' => $data['delivery_date'],
                         'sub_warehouse_id' => $data['sub_warehouse_id'],
                     ];
+                    if ($project->is_cash) {
+                        $pivotData['delivery_method'] = $deliveryMethod;
+                        if ($cashAmount !== null) {
+                            $pivotData['cash_amount'] = $cashAmount;
+                        }
+                        $pivotData['cash_currency'] = $cashCurrency;
+                        if ($deliveryDetails) {
+                            $pivotData['delivery_details'] = $deliveryDetails;
+                        }
+                    }
 
                     if ($project->beneficiaries()->where('person_id', $data['person']->id)->exists()) {
                         $project->beneficiaries()->updateExistingPivot($data['person']->id, $pivotData);
                     } else {
                         $project->beneficiaries()->attach($data['person']->id, $pivotData);
+                    }
+                    $imported++;
+                }
+
+                foreach ($batchDataEmployee as $data) {
+                    $pivotData = [
+                        'quantity' => $data['quantity'],
+                        'status' => $data['status'],
+                        'notes' => $data['notes'],
+                        'delivery_date' => $data['delivery_date'],
+                        'sub_warehouse_id' => $data['sub_warehouse_id'],
+                    ];
+                    if ($project->is_cash) {
+                        $pivotData['delivery_method'] = $deliveryMethod;
+                        if ($cashAmount !== null) {
+                            $pivotData['cash_amount'] = $cashAmount;
+                        }
+                        $pivotData['cash_currency'] = $cashCurrency;
+                        if ($deliveryDetails) {
+                            $pivotData['delivery_details'] = $deliveryDetails;
+                        }
+                    }
+
+                    $exists = DB::table('project_beneficiaries')
+                        ->where('project_id', $project->id)
+                        ->where('employee_id', $data['employee']->id)
+                        ->exists();
+
+                    if ($exists) {
+                        DB::table('project_beneficiaries')
+                            ->where('project_id', $project->id)
+                            ->where('employee_id', $data['employee']->id)
+                            ->update(array_merge($pivotData, ['updated_at' => now()]));
+                    } else {
+                        DB::table('project_beneficiaries')->insert(array_merge([
+                            'project_id' => $project->id,
+                            'employee_id' => $data['employee']->id,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ], $pivotData));
                     }
                     $imported++;
                 }
@@ -581,7 +722,7 @@ class ProjectController extends Controller
                 ImportBeneficiariesJob::dispatch(
                     Storage::path($path),
                     $project->id,
-                    $request->only(['sub_warehouse_id', 'ignore_conflicts', 'delivery_date'])
+                    $request->only(['sub_warehouse_id', 'ignore_conflicts', 'delivery_date', 'delivery_method', 'cash_amount', 'cash_currency', 'delivery_details'])
                 );
 
                 flash()->info('تم رفع الملف بنجاح، جاري المعالجة في الخلفية.');
@@ -659,11 +800,17 @@ class ProjectController extends Controller
      * @param \App\Models\Person $person
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function removeBeneficiary(Project $project, Person $person)
+    public function removeBeneficiary(Project $project, $beneficiaryId)
     {
-        $project->beneficiaries()->detach($person->id);
+        DB::table('project_beneficiaries')
+            ->where('project_id', $project->id)
+            ->where('id', $beneficiaryId)
+            ->delete();
 
         flash()->success('تم حذف المستفيد بنجاح');
+        
+        \App\Support\ExternalApiSync::syncProject($project);
+
         return redirect()->route('dashboard.projects.beneficiaries', $project);
     }
 
@@ -675,10 +822,15 @@ class ProjectController extends Controller
      * @param \App\Models\Person $person
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function updateBeneficiaryStatus(Request $request, Project $project, Person $person)
+    public function updateBeneficiaryStatus(Request $request, Project $project, $beneficiaryId)
     {
-        if (!$project->beneficiaries()->where('person_id', $person->id)->exists()) {
-            flash()->error('هذا الشخص غير مضاف للمشروع');
+        $beneficiaryRecord = DB::table('project_beneficiaries')
+            ->where('project_id', $project->id)
+            ->where('id', $beneficiaryId)
+            ->first();
+
+        if (!$beneficiaryRecord) {
+            flash()->error('هذه العملية غير صحيحة أو السجل غير موجود');
             return redirect()->route('dashboard.projects.beneficiaries', $project);
         }
 
@@ -687,17 +839,99 @@ class ProjectController extends Controller
             'quantity' => 'required|integer|min:1',
             'notes' => 'nullable|string',
             'delivery_date' => 'nullable|date',
+            'delivery_method' => 'nullable|string|max:50',
+            'cash_amount' => 'nullable|numeric|min:0',
+            'cash_currency' => 'nullable|string|max:10',
+            'delivery_details' => 'nullable|string|max:255',
         ]);
 
         try {
-            $project->beneficiaries()->updateExistingPivot($person->id, [
-                'status' => $validated['status'],
-                'quantity' => $validated['quantity'],
-                'notes' => $validated['notes'] ?? null,
-                'delivery_date' => $validated['delivery_date'] ?? null,
-            ]);
+            Project::ensureCashColumnsExist();
 
-            flash()->success('تم تحديث الحالة بنجاح');
+            $status = $validated['status'];
+            $quantity = $validated['quantity'];
+            $notes = $validated['notes'];
+            $delivery_date = $validated['delivery_date'];
+            $delivery_method = $validated['delivery_method'] ?? null;
+            $cash_amount = isset($validated['cash_amount']) && $validated['cash_amount'] !== '' ? $validated['cash_amount'] : null;
+            $cash_currency = $validated['cash_currency'] ?? null;
+            $delivery_details = $validated['delivery_details'] ?? null;
+
+            // إذا تم تغيير الحالة إلى "مستلم"
+            if ($status == 'مستلم') {
+                // فحص وجود سجل استلام سابق (مستلم) لنفس الشخص في نفس المشروع بخلاف السجل الحالي
+                $existing = DB::table('project_beneficiaries')
+                    ->where('project_id', $project->id)
+                    ->where('id', '!=', $beneficiaryId)
+                    ->where(function($q) use ($beneficiaryRecord) {
+                        if ($beneficiaryRecord->person_id) $q->where('person_id', $beneficiaryRecord->person_id);
+                        elseif ($beneficiaryRecord->employee_id) $q->where('employee_id', $beneficiaryRecord->employee_id);
+                        else $q->where('incomplete_person_id', $beneficiaryRecord->incomplete_person_id);
+                    })
+                    ->where('status', 'مستلم')
+                    ->orderBy('id', 'asc') // نختار السجل الأول المضاف قديماً
+                    ->first();
+
+                if ($existing) {
+                    // دمج البيانات في السجل الأول
+                    $finalQty = (int)$existing->quantity + (int)$quantity;
+                    $newNotes = trim(($existing->notes ?? '') . ' | ' . ($notes ?? ''));
+                    if (!str_contains($newNotes, 'إعادة تكليف')) {
+                        $newNotes .= ' (إعادة تكليف)';
+                    }
+
+                    $mergeUpdateData = [
+                        'quantity' => $finalQty,
+                        'notes' => $newNotes,
+                        'sub_warehouse_id' => $beneficiaryRecord->sub_warehouse_id, // الحفاظ على المخزن
+                        'delivery_date' => $delivery_date ?: $existing->delivery_date,
+                        'updated_at' => now()
+                    ];
+                    if ($delivery_method) $mergeUpdateData['delivery_method'] = $delivery_method;
+                    if ($cash_amount !== null) $mergeUpdateData['cash_amount'] = $cash_amount;
+                    if ($cash_currency) $mergeUpdateData['cash_currency'] = $cash_currency;
+                    if ($delivery_details) $mergeUpdateData['delivery_details'] = $delivery_details;
+
+                    DB::table('project_beneficiaries')
+                        ->where('id', $existing->id)
+                        ->update($mergeUpdateData);
+                    
+                    // حذف السجل الحالي لأنه تم دمجه
+                    DB::table('project_beneficiaries')->where('id', $beneficiaryId)->delete();
+                    
+                    flash()->success('تم اكتشاف سجل سابق لهذا المستفيد، وتم دمج الاستلام الجديد وزيادة الكمية بنجاح.');
+                    return redirect()->route('dashboard.projects.beneficiaries', $project);
+                }
+            }
+
+            // تحديث طبيعي إذا لم يوجد دمج أو الحالة ليست "مستلم"
+            $singleUpdateData = [
+                'status' => $status,
+                'quantity' => $quantity,
+                'notes' => $notes,
+                'delivery_date' => $delivery_date,
+                'updated_at' => now()
+            ];
+            if ($request->has('delivery_method')) {
+                $singleUpdateData['delivery_method'] = $delivery_method;
+            }
+            if ($request->has('cash_amount')) {
+                $singleUpdateData['cash_amount'] = $cash_amount;
+            }
+            if ($request->has('cash_currency')) {
+                $singleUpdateData['cash_currency'] = $cash_currency;
+            }
+            if ($request->has('delivery_details')) {
+                $singleUpdateData['delivery_details'] = $delivery_details;
+            }
+
+            DB::table('project_beneficiaries')
+                ->where('id', $beneficiaryId)
+                ->update($singleUpdateData);
+
+            flash()->success('تم تحديث حالة المستفيد بنجاح');
+
+            \App\Support\ExternalApiSync::syncProject($project);
         } catch (\Exception $e) {
             flash()->error('حدث خطأ: ' . $e->getMessage());
         }
@@ -728,12 +962,18 @@ class ProjectController extends Controller
      */
     public function addBeneficiariesByAreas(Request $request, Project $project)
     {
+        Project::ensureCashColumnsExist();
+
         $request->validate([
             'id_nums' => 'nullable|string',
             'area_responsible_id' => 'required_without:id_nums|nullable|exists:area_responsibles,id',
             'block_id' => 'required_without:id_nums|nullable|exists:blocks,id',
-            'sub_warehouse_id' => 'required|exists:sub_warehouses,id',
-            'quantity' => 'required|integer|min:1',
+            'sub_warehouse_id' => $project->is_cash ? 'nullable|exists:sub_warehouses,id' : 'required|exists:sub_warehouses,id',
+            'quantity' => $project->is_cash ? 'nullable|integer|min:1' : 'required|integer|min:1',
+            'delivery_method' => 'nullable|string|max:50',
+            'cash_amount' => 'nullable|numeric|min:0',
+            'cash_currency' => 'nullable|string|max:10',
+            'delivery_details' => 'nullable|string|max:255',
             'ignore_conflicts' => 'nullable|boolean',
         ]);
 
@@ -765,6 +1005,15 @@ class ProjectController extends Controller
             $beneficiariesData = [];
             $addedCount = 0;
 
+            $cashAmt = null;
+            if ($project->is_cash) {
+                if ($request->filled('cash_amount')) {
+                    $cashAmt = (float)$request->cash_amount;
+                } elseif ($project->cash_amount_type === 'fixed') {
+                    $cashAmt = $project->cash_amount;
+                }
+            }
+
             foreach ($people as $person) {
                 if (!in_array($person->id, $existingBeneficiaryIds)) {
                     if (!$ignoreConflicts && !empty($conflictingProjectIds)) {
@@ -778,13 +1027,25 @@ class ProjectController extends Controller
                         }
                     }
 
-                    $beneficiariesData[$person->id] = [
+                    $pivotRecord = [
                         'status' => 'غير مستلم',
-                        'quantity' => $request->quantity,
-                        'notes' => null,
+                        'quantity' => $request->quantity ?: 1,
+                        'notes' => 'إضافة عبر ترشيح المناطق',
                         'delivery_date' => null,
                         'sub_warehouse_id' => $request->sub_warehouse_id,
                     ];
+                    if ($project->is_cash) {
+                        $pivotRecord['delivery_method'] = $request->delivery_method ?: ($project->default_delivery_method ?: 'cash');
+                        if ($cashAmt !== null) {
+                            $pivotRecord['cash_amount'] = $cashAmt;
+                        }
+                        $pivotRecord['cash_currency'] = $request->cash_currency ?: ($project->cash_currency ?: 'ILS');
+                        if ($request->delivery_details) {
+                            $pivotRecord['delivery_details'] = $request->delivery_details;
+                        }
+                    }
+
+                    $beneficiariesData[$person->id] = $pivotRecord;
                     $addedCount++;
                 }
             }
@@ -818,23 +1079,31 @@ class ProjectController extends Controller
     {
         $request->validate([
             'items' => 'required|array',
-            'items.*' => 'exists:persons,id',
+            'items.*' => 'exists:project_beneficiaries,id',
             'action' => 'required|in:update_status,delete',
             'status' => 'required_if:action,update_status|nullable|in:مستلم,غير مستلم',
             'delivery_date' => 'nullable|date',
             'notes' => 'nullable|string',
             'quantity' => 'nullable|integer|min:1',
+            'delivery_method' => 'nullable|string|max:50',
+            'cash_amount' => 'nullable|numeric|min:0',
+            'cash_currency' => 'nullable|string|max:10',
         ]);
 
-        $personIds = $request->items;
+        $pivotIds = $request->items;
 
         try {
             DB::beginTransaction();
 
             if ($request->action === 'delete') {
-                $project->beneficiaries()->detach($personIds);
+                DB::table('project_beneficiaries')
+                    ->where('project_id', $project->id)
+                    ->whereIn('id', $pivotIds)
+                    ->delete();
                 flash()->success('تم حذف المستفيدين المحددين بنجاح');
             } elseif ($request->action === 'update_status') {
+                Project::ensureCashColumnsExist();
+
                 $updateData = [];
                 if ($request->filled('status')) {
                     $updateData['status'] = $request->status;
@@ -848,13 +1117,24 @@ class ProjectController extends Controller
                 if ($request->has('notes')) {
                     $updateData['notes'] = $request->notes;
                 }
+                if ($request->has('delivery_method') && $request->filled('delivery_method')) {
+                    $updateData['delivery_method'] = $request->delivery_method;
+                }
+                if ($request->has('cash_amount') && $request->filled('cash_amount')) {
+                    $updateData['cash_amount'] = $request->cash_amount;
+                }
+                if ($request->has('cash_currency') && $request->filled('cash_currency')) {
+                    $updateData['cash_currency'] = $request->cash_currency;
+                }
+                $updateData['updated_at'] = now();
 
                 if (!empty($updateData)) {
-                    foreach ($personIds as $personId) {
-                        $project->beneficiaries()->updateExistingPivot($personId, $updateData);
-                    }
+                    DB::table('project_beneficiaries')
+                        ->where('project_id', $project->id)
+                        ->whereIn('id', $pivotIds)
+                        ->update($updateData);
+                    flash()->success('تم تحديث بيانات ' . count($pivotIds) . ' مستفيد بنجاح');
                 }
-                flash()->success('تم تحديث بيانات المستفيدين المحددين بنجاح');
             }
 
             DB::commit();

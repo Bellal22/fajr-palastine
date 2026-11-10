@@ -18,15 +18,17 @@ use Illuminate\Support\Facades\DB;
 class BlockPersonsSheet implements FromQuery, WithHeadings, WithTitle, WithStyles, WithMapping
 {
     protected $block;
+    protected $unserved;
     
-    public function __construct(Block $block)
+    public function __construct(Block $block, bool $unserved = false)
     {
         $this->block = $block;
+        $this->unserved = $unserved;
     }
 
     public function query()
     {
-        return $this->block->people()
+        $q = $this->block->people()
             ->familyHead() // Filter: Family Head only
             ->approved()   // Filter: Approved only
             ->where('area_responsible_id', $this->block->area_responsible_id) // Strict Check: Must match Block's Area Responsible
@@ -35,6 +37,17 @@ class BlockPersonsSheet implements FromQuery, WithHeadings, WithTitle, WithStyle
                 $query->where('relationship', 'زوجة');
             }])
             ->latest();
+
+        if ($this->unserved) {
+            $q->whereNotExists(function($sub) {
+                $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                  ->from('project_beneficiaries')
+                  ->whereColumn('project_beneficiaries.person_id', 'persons.id')
+                  ->where('project_beneficiaries.status', 'مستلم');
+            });
+        }
+
+        return $q;
     }
 
     public function map($person): array

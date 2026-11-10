@@ -39,6 +39,18 @@ class ProjectRequest extends FormRequest
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'status' => ['nullable', 'in:active,completed,suspended'],
 
+            // الدعم النقدي (اختياري أو عند تحديد نوع الكوبون نقدي)
+            'is_cash' => ['nullable', 'boolean'],
+            'cash_amount_type' => ['nullable', 'string', 'in:fixed,custom'],
+            'cash_amount' => [
+                'nullable',
+                Rule::requiredIf(fn () => $this->boolean('is_cash') && $this->input('cash_amount_type', 'fixed') === 'fixed'),
+                'numeric',
+                'min:0.01',
+            ],
+            'cash_currency' => ['nullable', 'required_if:is_cash,1', 'string', 'in:ILS,USD,JOD,EUR'],
+            'default_delivery_method' => ['nullable', 'string', 'max:50'],
+
             // الشركاء (متعدد)
             'granting_entities' => ['required', 'array', 'min:1'],
             'granting_entities.*' => ['exists:suppliers,id'],
@@ -47,8 +59,8 @@ class ProjectRequest extends FormRequest
 
             // أنواع الكوبونات (قائمة بالنوع والكمية)
             'coupon_types' => ['nullable', 'array'],
-            'coupon_types.*.coupon_type_id' => ['required', 'exists:coupon_types,id'],
-            'coupon_types.*.quantity' => ['required', 'integer', 'min:1'],
+            'coupon_types.*.coupon_type_id' => ['nullable', 'exists:coupon_types,id'],
+            'coupon_types.*.quantity' => ['nullable', 'integer', 'min:1'],
 
             // الطرود (متعدد - جاهز وداخلي)
             'ready_packages' => ['nullable', 'array'],
@@ -88,6 +100,11 @@ class ProjectRequest extends FormRequest
             'granting_entities.min' => 'يجب اختيار جهة مانحة واحدة على الأقل',
             'executing_entities.required' => 'يجب اختيار جهة منفذة واحدة على الأقل',
             'executing_entities.min' => 'يجب اختيار جهة منفذة واحدة على الأقل',
+            'cash_amount.required_if' => 'يرجى إدخال قيمة الكوبون النقدي',
+            'cash_amount.numeric' => 'قيمة الكوبون النقدي يجب أن تكون رقماً',
+            'cash_amount.min' => 'قيمة الكوبون النقدي يجب أن تكون أكبر من صفر',
+            'cash_currency.required_if' => 'يرجى اختيار عملة الكوبون النقدي',
+            'cash_currency.in' => 'العملة المختارة غير صالحة',
         ];
     }
 }

@@ -99,6 +99,7 @@ class StoreFamilyRequest extends FormRequest
             'persons.*.id_num.required'            => 'الرجاء ادخال رقم الهوية',
             'persons.*.id_num.numeric'             => 'رقم الهوية يجب ان يكون ارقام فقط',
             'persons.*.id_num.digits'              => 'رقم الهوية يجب ان يكون 9 أرقام',
+            'persons.*.id_num.unique'              => 'هذا الفرد مسجل مسبقاً لحاله أو ضمن عائلة.',
             'persons.*.first_name.required'        => 'الرجاء ادخال الاسم الاول',
             'persons.*.first_name.regex'           => 'الاسم الاول يجب ان يحتوي فقط على حروف عربية',
             'persons.*.father_name.required'       => 'الرجاء ادخال اسم الاب',

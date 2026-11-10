@@ -17,6 +17,7 @@ class CouponTypeController extends Controller
      */
     public function __construct()
     {
+        CouponType::ensureCashColumnsExist();
         $this->authorizeResource(CouponType::class, 'coupon_type');
     }
 
@@ -50,7 +51,18 @@ class CouponTypeController extends Controller
      */
     public function store(CouponTypeRequest $request)
     {
-        $coupon_type = CouponType::create($request->all());
+        CouponType::ensureCashColumnsExist();
+
+        $isCash = $request->boolean('is_cash');
+        $cashAmountType = $isCash ? $request->input('cash_amount_type', 'fixed') : 'fixed';
+
+        $coupon_type = CouponType::create([
+            'name' => $request->name,
+            'is_cash' => $isCash,
+            'cash_amount_type' => $cashAmountType,
+            'cash_amount' => ($isCash && $cashAmountType === 'fixed') ? $request->cash_amount : null,
+            'cash_currency' => $isCash ? $request->cash_currency : null,
+        ]);
 
         flash()->success(trans('coupon_types.messages.created'));
 
@@ -88,7 +100,18 @@ class CouponTypeController extends Controller
      */
     public function update(CouponTypeRequest $request, CouponType $coupon_type)
     {
-        $coupon_type->update($request->all());
+        CouponType::ensureCashColumnsExist();
+
+        $isCash = $request->boolean('is_cash');
+        $cashAmountType = $isCash ? $request->input('cash_amount_type', 'fixed') : 'fixed';
+
+        $coupon_type->update([
+            'name' => $request->name,
+            'is_cash' => $isCash,
+            'cash_amount_type' => $cashAmountType,
+            'cash_amount' => ($isCash && $cashAmountType === 'fixed') ? $request->cash_amount : null,
+            'cash_currency' => $isCash ? $request->cash_currency : null,
+        ]);
 
         flash()->success(trans('coupon_types.messages.updated'));
 

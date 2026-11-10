@@ -41,23 +41,33 @@
                 @forelse($groupedNominations as $key => $batch)
                     @php
                         $first = $batch->first();
-                        $date = \Carbon\Carbon::parse($first->created_at);
+                        $nominationDate = \Carbon\Carbon::parse($first->created_at);
                         $receivedCount = $batch->where('status', 'مستلم')->count();
-                        $capturedQty = $batch->where('status', 'مستلم')->max('captured_qty');
-                        $externalNotes = $batch->where('status', 'مستلم')->whereNotNull('external_notes')->first()?->external_notes ?? '';
-                        $batchId = 'batch_' . str_replace([':', '-', ' '], '_', $first->created_at) . '_' . $first->user_id;
+                        $capturedQty = $batch->where('status', 'مستلم')->sum('captured_qty');
+                        $externalNotes = $batch->whereNotNull('external_notes')->pluck('external_notes')->first();
+                        $batchId = 'batch_' . $nominationDate->format('Y_m_d_Hi') . '_' . $first->user_id . '_' . $first->sub_warehouse_id;
                     @endphp
                     <tr class="align-middle">
                         <td>
-                            <span class="text-dark fw-bold">{{ $date->format('Y-m-d') }}</span><br>
-                            <small class="text-muted">{{ $date->format('H:i') }} | {{ $date->locale('ar')->dayName }}</small>
+                            <span class="text-dark fw-bold">{{ $nominationDate->format('Y-m-d') }}</span><br>
+                            <small class="text-muted">{{ $nominationDate->format('H:i') }} | {{ $nominationDate->locale('ar')->dayName }}</small>
                         </td>
                         <td><i class="fas fa-user-circle text-muted mr-1"></i> {{ $first->worker_name }}</td>
                         <td><span class="badge badge-light border">{{ $first->warehouse_name ?? 'عام' }}</span></td>
                         <td class="text-center">
-                            <span class="badge badge-primary badge-pill">{{ $batch->count() }}</span>
+                            <div class="mb-1">
+                                <span class="badge badge-info badge-pill" title="إجمالي العدد في هذه الرفعة">{{ $batch->count() }} مرسل</span>
+                            </div>
                             @if($receivedCount > 0)
-                                <br><small class="text-success fw-bold">{{ __('distributors.batches.received_status', ['count' => $receivedCount]) }}</small>
+                                <div>
+                                    <span class="badge badge-success badge-pill" title="العدد الذي تم تسليمه فعلياً">{{ $receivedCount }} مستلم</span>
+                                </div>
+                                @php $percent = round(($receivedCount / $batch->count()) * 100); @endphp
+                                <div class="progress mt-2" style="height: 5px;" title="نسبة الإنجاز: {{ $percent }}%">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ $percent }}%" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            @else
+                                <span class="text-muted small">بانتظار الرفع من الجوال</span>
                             @endif
                         </td>
                         <td class="text-center">
@@ -69,7 +79,7 @@
                         </td>
                         <td>
                             <div class="text-muted small" style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ $externalNotes }}">
-                                {{ $externalNotes ?: '---' }}
+                                {{ $externalNotes ?: 'لا يوجد' }}
                             </div>
                         </td>
                     <td class="text-center">
@@ -134,7 +144,7 @@
                                             <div class="alert alert-custom alert-light-primary fade show mb-5" role="alert">
                                                 <div class="alert-icon"><i class="fas fa-info-circle"></i></div>
                                                 <div class="alert-text">
-                                                    <span class="ml-4"><strong>{{ __('distributors.batches.date') }}:</strong> {{ $date->format('Y-m-d H:i') }}</span>
+                                                    <span class="ml-4"><strong>{{ __('distributors.batches.date') }}:</strong> {{ $nominationDate->format('Y-m-d H:i') }}</span>
                                                     <span><strong>{{ __('distributors.batches.warehouse') }}:</strong> {{ $first->warehouse_name ?? 'عام' }}</span>
                                                 </div>
                                             </div>

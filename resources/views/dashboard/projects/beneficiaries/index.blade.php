@@ -114,13 +114,51 @@
         }
 
         /* ========== تنسيق الجدول ========== */
+        .table {
+            width: 100% !important;
+            margin-bottom: 0 !important;
+            table-layout: fixed;
+            min-width: 1200px; /* زيادة بسيط لضمان الراحة في العرض */
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 0 0 10px 10px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
+        }
+
+        .table th, .table td {
+            vertical-align: middle !important;
+            text-align: right; /* اتجاه النصوص لليمين بما يتناسب مع العربية */
+            padding: 14px 10px !important;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #f1f3f9 !important;
+            word-wrap: break-word;
+        }
+
+        .table th {
+            background-color: #f8f9fc !important;
+            color: #4e73df !important;
+            font-weight: 700 !important;
+            text-transform: none;
+            font-size: 0.85rem;
+            border-top: none !important;
+            border-bottom: 2px solid #e3e6f0 !important;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
         .table tbody tr {
             transition: all 0.2s ease;
         }
 
         .table tbody tr:hover {
             background-color: #f8f9fc;
-            transform: scale(1.001);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
         /* ========== تنسيق الـ Badges ========== */
@@ -139,20 +177,29 @@
 
         /* ========== حالة فارغة ========== */
         .empty-state {
-            padding: 3rem 1rem;
+            padding: 5rem 2rem;
             text-align: center;
+            background: #fff;
         }
 
         .empty-state i {
-            font-size: 4rem;
-            color: #d1d3e2;
+            font-size: 5rem;
+            color: #eaecf4;
             margin-bottom: 1.5rem;
+            display: block;
         }
 
         .empty-state p {
-            font-size: 1.1rem;
-            color: #858796;
-            margin-bottom: 1rem;
+            font-size: 1.25rem;
+            color: #b7b9cc;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state .btn {
+            padding: 0.6rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
         }
 
         /* ========== تنسيق الـ Modals ========== */
@@ -201,29 +248,18 @@
         <div class="card-body">
             <form method="GET" action="{{ route('dashboard.projects.beneficiaries', $project) }}" id="filterForm">
 
-                {{-- الصف الأول: البحث الأساسي --}}
                 <div class="row align-items-end">
-
                     {{-- البحث بأرقام الهوية --}}
-                    <div class="col-lg-5 col-md-12 mb-3">
+                    <div class="col-lg-12 mb-3">
                         <label class="form-label-icon fw-bold" for="search">
-                            <i class="fas fa-search text-primary"></i> بحث بأرقام الهوية
+                            <i class="fas fa-search text-primary"></i> بحث بأرقام الهوية (أدخل الأرقام مفصولة بمسافة أو سطر)
                         </label>
-                        <textarea name="search"
-                                  id="search"
-                                  class="form-control search-textarea"
-                                  rows="2"
-                                  placeholder="أدخل أرقام الهوية مفصولة بمسافة أو سطر...">{{ request('search') }}</textarea>
-                        <small class="text-muted d-block mt-1">
-                            <i class="fas fa-info-circle"></i> مثال: 123456789 987654321
-                        </small>
+                        <textarea name="search" id="search" class="form-control search-textarea" rows="1" placeholder="مثال: 123456789 987654321..." style="min-height: 45px;">{{ request('search') }}</textarea>
                     </div>
 
-                    {{-- الحالة --}}
-                    <div class="col-lg-2 col-md-4 mb-3">
-                        <label class="form-label-icon fw-bold" for="status">
-                            <i class="fas fa-toggle-on text-info"></i> الحالة
-                        </label>
+                    {{-- الفلاتر السريعة --}}
+                    <div class="col-lg-3 col-md-4 mb-3">
+                        <label class="form-label-icon fw-bold small"><i class="fas fa-toggle-on text-info"></i> الحالة</label>
                         <select name="status" id="status" class="form-control custom-select-filter">
                             <option value="">الكل</option>
                             <option value="مستلم" {{ request('status') === 'مستلم' ? 'selected' : '' }}>✓ مستلم</option>
@@ -231,42 +267,30 @@
                         </select>
                     </div>
 
-                    {{-- عدد النتائج --}}
-                    <div class="col-lg-2 col-md-4 mb-3">
-                        <label class="form-label-icon fw-bold" for="per_page">
-                            <i class="fas fa-list-ol text-warning"></i> عدد النتائج
-                        </label>
-                        <input type="text"
-                               name="per_page"
-                               id="per_page"
-                               class="form-control text-center"
-                               placeholder="50"
-                               value="{{ request('per_page', 50) }}">
-                        <small class="text-muted d-block mt-1">
-                            <i class="fas fa-info-circle"></i> الافتراضي: 50
-                        </small>
+                    <div class="col-lg-3 col-md-4 mb-3">
+                        <label class="form-label-icon fw-bold small"><i class="fas fa-warehouse text-success"></i> نقطة التوزيع</label>
+                        <select name="sub_warehouse_id" id="sub_warehouse_id" class="form-control select2 custom-select-filter">
+                            <option value="">-- الكل --</option>
+                            @foreach($subWarehouses as $warehouse)
+                                <option value="{{ $warehouse->id }}" {{ request('sub_warehouse_id') == $warehouse->id ? 'selected' : '' }}>{{ $warehouse->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
 
-                    {{-- أزرار التحكم --}}
-                    <div class="col-lg-3 col-md-4 mb-3">
+                    <div class="col-lg-2 col-md-4 mb-3">
+                        <label class="form-label-icon fw-bold small"><i class="fas fa-list-ol text-warning"></i> النتائج</label>
+                        <input type="text" name="per_page" id="per_page" class="form-control text-center" value="{{ request('per_page', 50) }}">
+                    </div>
+
+                    <div class="col-lg-4 mb-3">
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary flex-fill">
-                                <i class="fas fa-search"></i> بحث
+                                <i class="fas fa-filter"></i> تفعيل الفلتر
                             </button>
-                            @if(request()->anyFilled(['search', 'status', 'date_from', 'date_to', 'exact_date', 'quantity_from', 'quantity_to', 'exact_quantity', 'per_page']))
-                                <a href="{{ route('dashboard.projects.beneficiaries', $project) }}"
-                                   class="btn btn-secondary"
-                                   title="إعادة تعيين الفلاتر">
-                                    <i class="fas fa-redo"></i>
-                                </a>
+                            @if(request()->anyFilled(['search', 'status', 'sub_warehouse_id', 'per_page', 'date_from', 'date_to', 'exact_date', 'quantity_from', 'quantity_to', 'exact_quantity']))
+                                <a href="{{ route('dashboard.projects.beneficiaries', $project) }}" class="btn btn-secondary" title="إعادة تعيين الفلتر"><i class="fas fa-redo"></i></a>
                             @endif
-                            <button type="button"
-                                    class="btn btn-outline-info"
-                                    data-toggle="collapse"
-                                    data-target="#advancedFilters"
-                                    title="فلاتر متقدمة">
-                                <i class="fas fa-sliders-h"></i>
-                            </button>
+                            <button type="button" class="btn btn-outline-info" data-toggle="collapse" data-target="#advancedFilters"><i class="fas fa-sliders-h"></i> متطور</button>
                         </div>
                     </div>
                 </div>
@@ -421,9 +445,20 @@
         @component('dashboard::components.table-box')
             @slot('title')
                 <i class="fas fa-users"></i> المستفيدين ({{ number_format($beneficiaries->total()) }})
-                <span class="badge badge-success ml-2" title="إجمالي الكميات المشحونة/الموزعة">
-                    <i class="fas fa-cubes"></i> إجمالي الكميات: {{ number_format($totalQuantity) }}
-                </span>
+                @if($project->is_cash)
+                    <span class="badge badge-success ml-2" title="مشروع كوبون نقدي">
+                        <i class="fas fa-money-bill-wave"></i> كوبون نقدي: {{ $project->formatted_cash_value }}
+                        @if($project->cash_amount_type === 'custom')
+                            (مبلغ منفصل عند التسليم)
+                        @else
+                            (مبلغ موحد)
+                        @endif
+                    </span>
+                @else
+                    <span class="badge badge-success ml-2" title="إجمالي الكميات المشحونة/الموزعة">
+                        <i class="fas fa-cubes"></i> إجمالي الكميات: {{ number_format($totalQuantity) }}
+                    </span>
+                @endif
                 @if(session('skipped_count'))
                     <span class="badge badge-warning ml-2" title="أسطر تم استبعادها لعدم وجود بيانات أو تعارض">
                         <i class="fas fa-exclamation-circle"></i> مستبعد: {{ number_format(session('skipped_count')) }}
@@ -458,8 +493,13 @@
                     <th style="width: 17%;">الاسم الرباعي</th>
                     <th style="width: 8%;">رقم الجوال</th>
                     <th style="width: 10%;">المنطقة</th>
-                    <th style="width: 10%;">المخزن الفرعي</th>
-                    <th style="width: 5%;">الكمية</th>
+                    @if($project->is_cash)
+                        <th style="width: 11%;">طريقة التسليم</th>
+                        <th style="width: 8%;">المبلغ</th>
+                    @else
+                        <th style="width: 10%;">المخزن الفرعي</th>
+                        <th style="width: 5%;">الكمية</th>
+                    @endif
                     <th style="width: 8%;">الحالة</th>
                     <th style="width: 10%;">تاريخ التسليم</th>
                     <th style="width: 12%;">الملاحظات</th>
@@ -474,13 +514,33 @@
                                class="item-checkbox" data-check-all-item>
                     </td>
                     <td class="text-center"><strong>{{ $beneficiaries->firstItem() + $index }}</strong></td>
-                    <td><span class="badge badge-light">{{ $beneficiary->id_num }}</span></td>
                     <td>
-                        <a href="{{ route('dashboard.people.show', $beneficiary) }}"
-                           class="text-primary font-weight-bold text-decoration-none">
-                            {{ $beneficiary->first_name }} {{ $beneficiary->father_name }}
-                            {{ $beneficiary->grandfather_name }} {{ $beneficiary->family_name }}
-                        </a>
+                        <span class="badge badge-light">{{ $beneficiary->id_num }}</span>
+                        @if($beneficiary->entity_type === 'incomplete')
+                            <span class="badge badge-warning" style="font-size: 0.6rem; padding: 0.2rem 0.4rem;">سجل مؤقت</span>
+                        @elseif($beneficiary->entity_type === 'employee')
+                            <span class="badge badge-primary" style="font-size: 0.6rem; padding: 0.2rem 0.4rem;">موظف</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($beneficiary->entity_type === 'person')
+                            <a href="{{ route('dashboard.people.show', $beneficiary->person_id) }}"
+                               class="text-primary font-weight-bold text-decoration-none">
+                                {{ $beneficiary->first_name }} {{ $beneficiary->father_name }}
+                                {{ $beneficiary->grandfather_name }} {{ $beneficiary->family_name }}
+                            </a>
+                        @elseif($beneficiary->entity_type === 'employee')
+                            <a href="{{ route('dashboard.employees.show', $beneficiary->employee_id) }}"
+                               class="text-primary font-weight-bold text-decoration-none">
+                                {{ $beneficiary->first_name }} {{ $beneficiary->father_name }}
+                                {{ $beneficiary->grandfather_name }} {{ $beneficiary->family_name }}
+                            </a>
+                        @else
+                            <span class="text-dark font-weight-bold">
+                                {{ $beneficiary->first_name }} {{ $beneficiary->father_name }}
+                                {{ $beneficiary->grandfather_name }} {{ $beneficiary->family_name }}
+                            </span>
+                        @endif
                     </td>
                     <td dir="ltr" class="text-left">
                         @if($beneficiary->phone)
@@ -495,21 +555,59 @@
                             {{ $beneficiary->neighborhood ?? $beneficiary->current_city ?? '-' }}
                         </small>
                     </td>
-                    <td>
-                        @if($beneficiary->pivot->sub_warehouse_id && isset($subWarehouses[$beneficiary->pivot->sub_warehouse_id]))
-                            <span class="badge badge-info">
-                                <i class="fas fa-warehouse"></i>
-                                {{ $subWarehouses[$beneficiary->pivot->sub_warehouse_id]->name }}
+                    @if($project->is_cash)
+                        @php
+                            $deliveryMethod = $beneficiary->delivery_method ?? $project->default_delivery_method ?? 'cash';
+                            $methodMeta = match($deliveryMethod) {
+                                'wallet' => ['label' => 'محفظة إلكترونية', 'icon' => 'fas fa-wallet', 'badge' => 'badge-info'],
+                                'bank'   => ['label' => 'حساب بنكي', 'icon' => 'fas fa-university', 'badge' => 'badge-primary'],
+                                default  => ['label' => 'كاش (نقداً)', 'icon' => 'fas fa-money-bill-wave', 'badge' => 'badge-success'],
+                            };
+                            $beneficiaryCurrency = $beneficiary->cash_currency ?? $project->cash_currency ?? 'ILS';
+                            $beneficiaryCurrencySymbol = \App\Models\Project::CURRENCY_SYMBOLS[$beneficiaryCurrency] ?? '₪';
+                            $beneficiaryAmount = $beneficiary->cash_amount;
+                            if ($beneficiaryAmount === null && $project->cash_amount !== null && $project->cash_amount_type !== 'custom') {
+                                $beneficiaryAmount = $project->cash_amount;
+                            }
+                        @endphp
+                        <td>
+                            <span class="badge {{ $methodMeta['badge'] }}">
+                                <i class="{{ $methodMeta['icon'] }} mr-1"></i> {{ $methodMeta['label'] }}
                             </span>
-                        @else
-                            <span class="text-muted">{{ $beneficiary->pivot->sub_warehouse_id ? 'محذوف' : 'غير محدد' }}</span>
-                        @endif
-                    </td>
-                    <td class="text-center">
-                        <span class="badge badge-dark">{{ $beneficiary->pivot->quantity ?? 1 }}</span>
-                    </td>
+                            @if(!empty($beneficiary->delivery_details))
+                                <br><small class="text-muted" title="{{ $beneficiary->delivery_details }}">
+                                    <i class="fas fa-info-circle"></i> {{ Str::limit($beneficiary->delivery_details, 18) }}
+                                </small>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            @if($beneficiaryAmount !== null)
+                                <span class="badge badge-dark font-weight-bold" style="font-size: 0.9rem;">
+                                    {{ number_format((float)$beneficiaryAmount, ((float)$beneficiaryAmount == (int)$beneficiaryAmount ? 0 : 2)) }} {{ $beneficiaryCurrencySymbol }}
+                                </span>
+                            @else
+                                <span class="badge badge-warning" style="font-size: 0.75rem;" title="يتم تحديده عند التسليم">
+                                    <i class="fas fa-clock"></i> عند التسليم
+                                </span>
+                            @endif
+                        </td>
+                    @else
+                        <td>
+                            @if($beneficiary->sub_warehouse_id && isset($subWarehouses[$beneficiary->sub_warehouse_id]))
+                                <span class="badge badge-info">
+                                    <i class="fas fa-warehouse"></i>
+                                    {{ $subWarehouses[$beneficiary->sub_warehouse_id]->name }}
+                                </span>
+                            @else
+                                <span class="text-muted">{{ $beneficiary->sub_warehouse_id ? 'محذوف' : 'غير محدد' }}</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-dark">{{ $beneficiary->quantity ?? 1 }}</span>
+                        </td>
+                    @endif
                     <td>
-                        @if($beneficiary->pivot->status === 'مستلم')
+                        @if($beneficiary->status === 'مستلم')
                             <span class="badge badge-success">
                                 <i class="fas fa-check-circle"></i> مستلم
                             </span>
@@ -520,25 +618,33 @@
                         @endif
                     </td>
                     <td>
-                        @if($beneficiary->pivot->delivery_date)
+                        @if($beneficiary->delivery_date)
                             <small>
                                 <i class="fas fa-calendar-check text-success"></i>
-                                {{ \Carbon\Carbon::parse($beneficiary->pivot->delivery_date)->format('Y-m-d') }}
+                                {{ \Carbon\Carbon::parse($beneficiary->delivery_date)->format('Y-m-d') }}
                             </small>
                         @else
                             <small class="text-muted">-</small>
                         @endif
                     </td>
                     <td>
-                        <small class="text-muted">{{ Str::limit($beneficiary->pivot->notes ?? '-', 30) }}</small>
+                        <small class="text-muted">{{ Str::limit($beneficiary->notes ?? '-', 30) }}</small>
                     </td>
                     <td class="text-center">
                         <div class="btn-group" role="group">
-                            <a href="{{ route('dashboard.people.show', $beneficiary) }}"
+                            @if($beneficiary->entity_type === 'person')
+                            <a href="{{ route('dashboard.people.show', $beneficiary->person_id) }}"
                                class="btn btn-sm btn-outline-info"
                                title="عرض الملف">
                                 <i class="fas fa-eye"></i>
                             </a>
+                            @elseif($beneficiary->entity_type === 'employee')
+                            <a href="{{ route('dashboard.employees.show', $beneficiary->employee_id) }}"
+                               class="btn btn-sm btn-outline-info"
+                               title="عرض الملف">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            @endif
 
                             <button type="button"
                                     class="btn btn-sm btn-outline-primary"
@@ -551,7 +657,7 @@
                             <button type="button"
                                     class="btn btn-sm btn-outline-danger"
                                     onclick="if(confirm('هل أنت متأكد من الحذف؟')) {
-                                        $('#row-delete-form').attr('action', '{{ route('dashboard.projects.beneficiaries.destroy', [$project, $beneficiary]) }}').submit();
+                                        $('#row-delete-form').attr('action', '{{ route('dashboard.projects.beneficiaries.destroy', [$project, $beneficiary->id]) }}').submit();
                                     }"
                                     title="حذف">
                                 <i class="fas fa-trash"></i>
@@ -622,14 +728,50 @@
                             <option value="مستلم">مستلم</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label-icon">
-                            <i class="fas fa-cubes"></i> الكمية
-                            <span class="text-danger">*</span>
-                        </label>
-                        <input type="number" id="bulk_modal_quantity"
-                               class="form-control" value="1" min="1" required>
-                    </div>
+                    @if($project->is_cash)
+                        <div class="form-group">
+                            <label class="form-label-icon">
+                                <i class="fas fa-hand-holding-usd text-success"></i> طريقة التسليم
+                            </label>
+                            <select id="bulk_modal_delivery_method" class="form-control custom-select-filter">
+                                <option value="">-- بدون تغيير (الاحتفاظ بالحالي) --</option>
+                                <option value="cash">كاش (نقداً باليد)</option>
+                                <option value="wallet">محفظة إلكترونية</option>
+                                <option value="bank">حساب بنكي / تحويل</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-7 form-group">
+                                <label class="form-label-icon">
+                                    <i class="fas fa-money-bill-wave text-success"></i> المبلغ النقدي
+                                </label>
+                                <input type="number" step="0.01" id="bulk_modal_cash_amount"
+                                       class="form-control" placeholder="اتركه فارغاً لعدم التعديل">
+                            </div>
+                            <div class="col-md-5 form-group">
+                                <label class="form-label-icon">
+                                    <i class="fas fa-coins text-warning"></i> العملة
+                                </label>
+                                <select id="bulk_modal_cash_currency" class="form-control custom-select-filter">
+                                    <option value="">الافتراضية للمشروع</option>
+                                    @foreach(\App\Models\Project::CURRENCY_SYMBOLS as $cKey => $cSym)
+                                        <option value="{{ $cKey }}" {{ ($project->cash_currency ?? 'ILS') === $cKey ? 'selected' : '' }}>
+                                            {{ $cKey }} ({{ $cSym }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    @else
+                        <div class="form-group">
+                            <label class="form-label-icon">
+                                <i class="fas fa-cubes"></i> الكمية
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" id="bulk_modal_quantity"
+                                   class="form-control" value="1" min="1" required>
+                        </div>
+                    @endif
                     <div class="form-group">
                         <label class="form-label-icon">
                             <i class="fas fa-calendar-check"></i> تاريخ التسليم
@@ -662,7 +804,7 @@
         <div class="modal fade" id="statusModal{{ $beneficiary->id }}" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <form action="{{ route('dashboard.projects.beneficiaries.update-status', [$project, $beneficiary]) }}" method="POST">
+                    <form action="{{ route('dashboard.projects.beneficiaries.update-status', [$project, $beneficiary->id]) }}" method="POST">
                         @csrf
                         <div class="modal-header bg-info text-white">
                             <h5 class="modal-title">
@@ -680,31 +822,80 @@
                                     <span class="text-danger">*</span>
                                 </label>
                                 <select name="status" class="form-control custom-select-filter" required>
-                                    <option value="غير مستلم" {{ $beneficiary->pivot->status === 'غير مستلم' ? 'selected' : '' }}>غير مستلم</option>
-                                    <option value="مستلم" {{ $beneficiary->pivot->status === 'مستلم' ? 'selected' : '' }}>مستلم</option>
+                                    <option value="غير مستلم" {{ $beneficiary->status === 'غير مستلم' ? 'selected' : '' }}>غير مستلم</option>
+                                    <option value="مستلم" {{ $beneficiary->status === 'مستلم' ? 'selected' : '' }}>مستلم</option>
                                 </select>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label-icon">
-                                    <i class="fas fa-cubes"></i> الكمية
-                                    <span class="text-danger">*</span>
-                                </label>
-                                <input type="number" name="quantity" class="form-control"
-                                       value="{{ $beneficiary->pivot->quantity ?? 1 }}" min="1" required>
-                            </div>
+                            @if($project->is_cash)
+                                <div class="row">
+                                    <div class="col-md-6 form-group">
+                                        <label class="form-label-icon">
+                                            <i class="fas fa-hand-holding-usd text-success"></i> طريقة التسليم
+                                            <span class="text-danger">*</span>
+                                        </label>
+                                        <select name="delivery_method" class="form-control custom-select-filter" required>
+                                            @php $curMethod = $beneficiary->delivery_method ?? $project->default_delivery_method ?? 'cash'; @endphp
+                                            <option value="cash" {{ $curMethod === 'cash' ? 'selected' : '' }}>كاش (نقداً باليد)</option>
+                                            <option value="wallet" {{ $curMethod === 'wallet' ? 'selected' : '' }}>محفظة إلكترونية</option>
+                                            <option value="bank" {{ $curMethod === 'bank' ? 'selected' : '' }}>حساب بنكي / تحويل</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 form-group">
+                                        <label class="form-label-icon">
+                                            <i class="fas fa-coins text-warning"></i> العملة
+                                        </label>
+                                        <select name="cash_currency" class="form-control custom-select-filter">
+                                            @php $curCurrency = $beneficiary->cash_currency ?? $project->cash_currency ?? 'ILS'; @endphp
+                                            @foreach(\App\Models\Project::CURRENCY_SYMBOLS as $cKey => $cSym)
+                                                <option value="{{ $cKey }}" {{ $curCurrency === $cKey ? 'selected' : '' }}>
+                                                    {{ $cKey }} ({{ $cSym }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 form-group">
+                                        <label class="form-label-icon">
+                                            <i class="fas fa-money-bill-wave text-success"></i> المبلغ النقدي
+                                            <small class="text-muted">({{ $project->cash_amount_type === 'custom' ? 'محدد للمستفيد' : 'موحد للمشروع' }})</small>
+                                        </label>
+                                        <input type="number" step="0.01" name="cash_amount" class="form-control"
+                                               value="{{ $beneficiary->cash_amount ?? ($project->cash_amount_type === 'fixed' ? $project->cash_amount : '') }}"
+                                               placeholder="{{ $project->cash_amount ? $project->cash_amount : 'أدخل المبلغ' }}">
+                                    </div>
+                                    <div class="col-md-6 form-group">
+                                        <label class="form-label-icon">
+                                            <i class="fas fa-info-circle text-info"></i> بيانات التسليم (محفظة/بنك)
+                                        </label>
+                                        <input type="text" name="delivery_details" class="form-control"
+                                               value="{{ $beneficiary->delivery_details }}"
+                                               placeholder="رقم المحفظة أو الحساب البنكي...">
+                                    </div>
+                                </div>
+                            @else
+                                <div class="form-group">
+                                    <label class="form-label-icon">
+                                        <i class="fas fa-cubes"></i> الكمية
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" name="quantity" class="form-control"
+                                           value="{{ $beneficiary->quantity ?? 1 }}" min="1" required>
+                                </div>
+                            @endif
                             <div class="form-group">
                                 <label class="form-label-icon">
                                     <i class="fas fa-calendar-check"></i> تاريخ التسليم
                                 </label>
                                 <input type="date" name="delivery_date"
                                        class="form-control date-picker-custom"
-                                       value="{{ $beneficiary->pivot->delivery_date ?? date('Y-m-d') }}">
+                                       value="{{ $beneficiary->delivery_date ?? date('Y-m-d') }}">
                             </div>
                             <div class="form-group">
                                 <label class="form-label-icon">
                                     <i class="fas fa-sticky-note"></i> الملاحظات
                                 </label>
-                                <textarea name="notes" class="form-control" rows="3">{{ $beneficiary->pivot->notes }}</textarea>
+                                <textarea name="notes" class="form-control" rows="3">{{ $beneficiary->notes }}</textarea>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -776,13 +967,24 @@
                         return;
                     }
 
+                    const isCashProject = {{ $project->is_cash ? 'true' : 'false' }};
                     const data = {
                         action: 'update_status',
                         status: $('#bulk_modal_status').val(),
-                        quantity: $('#bulk_modal_quantity').val(),
                         delivery_date: $('#bulk_modal_delivery_date').val(),
                         notes: $('#bulk_modal_notes').val()
                     };
+
+                    if (isCashProject) {
+                        const bulkMethod = $('#bulk_modal_delivery_method').val();
+                        const bulkCashAmt = $('#bulk_modal_cash_amount').val();
+                        const bulkCashCurr = $('#bulk_modal_cash_currency').val();
+                        if (bulkMethod) data.delivery_method = bulkMethod;
+                        if (bulkCashAmt !== '') data.cash_amount = bulkCashAmt;
+                        if (bulkCashCurr) data.cash_currency = bulkCashCurr;
+                    } else {
+                        data.quantity = $('#bulk_modal_quantity').val();
+                    }
 
                     if (!confirm(`هل أنت متأكد من تحديث ${count} مستفيدين؟`)) return;
 

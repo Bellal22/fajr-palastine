@@ -18,7 +18,36 @@ class Person extends Model
     use HasFactory, Filterable, Selectable;
 
     protected $table = 'persons';
-    protected $guarded = [];
+    protected $fillable = [
+        'id_num',
+        'first_name',
+        'father_name',
+        'grandfather_name',
+        'family_name',
+        'gender',
+        'dob',
+        'social_status',
+        'employment_status',
+        'city',
+        'current_city',
+        'housing_type',
+        'housing_damage_status',
+        'neighborhood',
+        'area_responsible_id',
+        'block_id',
+        'landmark',
+        'case_description',
+        'has_condition',
+        'condition_description',
+        'phone',
+        'relative_id',
+        'relationship',
+        'relatives_count',
+        'is_frozen',
+        'api_synced_at',
+        'api_sync_status',
+        'passkey',
+    ];
     protected $casts = ['dob' => 'date', 'is_frozen' => 'boolean'];
     protected $filter = PersonFilter::class;
 
@@ -30,6 +59,11 @@ class Person extends Model
     }
 
     public function head(): BelongsTo
+    {
+        return $this->belongsTo(Person::class, 'relative_id', 'id_num');
+    }
+
+    public function familyHeadRelation(): BelongsTo
     {
         return $this->belongsTo(Person::class, 'relative_id', 'id_num');
     }
@@ -60,6 +94,12 @@ class Person extends Model
             ->where('relationship', 'زوجة');
     }
 
+    public function wives(): HasMany
+    {
+        return $this->hasMany(Person::class, 'relative_id', 'id_num')
+            ->whereIn('relationship', ['زوجة', 'wife']);
+    }
+
     public function spouse(): HasOne
     {
         return $this->hasOne(Person::class, 'relative_id', 'id_num')
@@ -69,8 +109,21 @@ class Person extends Model
     public function projects()
     {
         return $this->belongsToMany(Project::class, 'project_beneficiaries')
-            ->withPivot('status', 'notes', 'delivery_date', 'quantity', 'sub_warehouse_id')
+            ->withPivot('status', 'notes', 'delivery_date', 'quantity', 'sub_warehouse_id', 'created_at')
             ->withTimestamps();
+    }
+
+
+    /**
+     * Check if a person has received aid from any project in the last 30 days.
+     */
+    public function hasReceivedAidInLast30Days(): bool
+    {
+        return DB::table('project_beneficiaries')
+            ->where('person_id', $this->id)
+            ->where('status', 'مستلم')
+            ->where('delivery_date', '>=', now()->subDays(30))
+            ->exists();
     }
 
     // --- Accessors & Helpers ---
@@ -154,21 +207,27 @@ class Person extends Model
      *
      * @return Person
      */
-    public function findUltimateHead(): Person
+    public function findUltimateHead(array $visited = []): Person
     {
-        if (is_null($this->relative_id)) {
+        if (is_null($this->relative_id) || in_array($this->id, $visited)) {
             return $this;
         }
+
+        $visited[] = $this->id;
 
         // Ensure 9 digits for matching
         $paddedId = str_pad($this->relative_id, 9, '0', STR_PAD_LEFT);
-        $head = Person::where('id_num', $paddedId)->first();
-
-        if (!$head) {
+        if ($paddedId === str_pad($this->id_num, 9, '0', STR_PAD_LEFT)) {
             return $this;
         }
 
-        return $head->findUltimateHead();
+        $head = Person::where('id_num', $paddedId)->first();
+
+        if (!$head || in_array($head->id, $visited)) {
+            return $this;
+        }
+
+        return $head->findUltimateHead($visited);
     }
 
     // --- Scopes ---
@@ -500,14 +559,143 @@ class Person extends Model
         });
     }
 
+    public static function getComprehensiveDashboardStats()
+    {
+        return Cache::remember('comprehensive_dashboard_stats', 7200, function () {
+            $today = now()->toDateString();
+            $result = DB::selectOne("
+                SELECT
+                    SUM(CASE WHEN p.relative_id IS NULL THEN 1 ELSE 0 END) as registered_families,
+                    SUM(CASE WHEN p.relative_id IS NULL AND p.area_responsible_id IS NOT NULL AND p.block_id IS NOT NULL THEN 1 ELSE 0 END) as approved_families,
+                    COUNT(*) as registered_individuals,
+                    SUM(CASE WHEN (p.relative_id IS NULL AND p.area_responsible_id IS NOT NULL AND p.block_id IS NOT NULL)
+                             OR (p.relative_id IS NOT NULL AND parent.id_num IS NOT NULL AND parent.area_responsible_id IS NOT NULL AND parent.block_id IS NOT NULL)
+                        THEN 1 ELSE 0 END) as approved_individuals,
+                    SUM(CASE WHEN p.gender IN ('ذكر', 'male') THEN 1 ELSE 0 END) as registered_males,
+                    SUM(CASE WHEN p.gender IN ('ذكر', 'male') AND (
+                        (p.relative_id IS NULL AND p.area_responsible_id IS NOT NULL AND p.block_id IS NOT NULL)
+                        OR (p.relative_id IS NOT NULL AND parent.id_num IS NOT NULL AND parent.area_responsible_id IS NOT NULL AND parent.block_id IS NOT NULL)
+                    ) THEN 1 ELSE 0 END) as approved_males,
+                    SUM(CASE WHEN p.gender IN ('أنثى', 'female') THEN 1 ELSE 0 END) as registered_females,
+                    SUM(CASE WHEN p.gender IN ('أنثى', 'female') AND (
+                        (p.relative_id IS NULL AND p.area_responsible_id IS NOT NULL AND p.block_id IS NOT NULL)
+                        OR (p.relative_id IS NOT NULL AND parent.id_num IS NOT NULL AND parent.area_responsible_id IS NOT NULL AND parent.block_id IS NOT NULL)
+                    ) THEN 1 ELSE 0 END) as approved_females,
+                    SUM(CASE WHEN p.dob IS NOT NULL AND TIMESTAMPDIFF(YEAR, p.dob, ?) < 18 THEN 1 ELSE 0 END) as registered_children,
+                    SUM(CASE WHEN p.dob IS NOT NULL AND TIMESTAMPDIFF(YEAR, p.dob, ?) < 18 AND (
+                        (p.relative_id IS NULL AND p.area_responsible_id IS NOT NULL AND p.block_id IS NOT NULL)
+                        OR (p.relative_id IS NOT NULL AND parent.id_num IS NOT NULL AND parent.area_responsible_id IS NOT NULL AND parent.block_id IS NOT NULL)
+                    ) THEN 1 ELSE 0 END) as approved_children
+                FROM persons p
+                LEFT JOIN persons parent ON p.relative_id = parent.id_num AND parent.relative_id IS NULL
+            ", [$today, $today]);
+
+            return (object) [
+                'registered_families'   => (int) ($result->registered_families ?? 0),
+                'approved_families'     => (int) ($result->approved_families ?? 0),
+                'registered_individuals'=> (int) ($result->registered_individuals ?? 0),
+                'approved_individuals'  => (int) ($result->approved_individuals ?? 0),
+                'registered_males'      => (int) ($result->registered_males ?? 0),
+                'approved_males'        => (int) ($result->approved_males ?? 0),
+                'registered_females'    => (int) ($result->registered_females ?? 0),
+                'approved_females'      => (int) ($result->approved_females ?? 0),
+                'registered_children'   => (int) ($result->registered_children ?? 0),
+                'approved_children'     => (int) ($result->approved_children ?? 0),
+            ];
+        });
+    }
+
+    public static function getFamilyBreakdownStats($type = 'families')
+    {
+        $typeMap = [
+            'registered_families' => 'families',
+            'approved_families' => 'families',
+            'registered_individuals' => 'individuals',
+            'approved_individuals' => 'individuals',
+            'registered_males' => 'males',
+            'approved_males' => 'males',
+            'registered_females' => 'females',
+            'approved_females' => 'females',
+            'registered_children' => 'children',
+            'approved_children' => 'children',
+        ];
+
+        $normalizedType = $typeMap[$type] ?? $type;
+        $cacheKey = "family_breakdown_stats_{$normalizedType}";
+
+        return Cache::remember($cacheKey, 7200, function () use ($normalizedType) {
+            $today = now()->toDateString();
+            
+            $normExpr = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALESCE(p.family_name, '')), 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ء', 'ا'), 'ئ', 'ا'), 'ؤ', 'ا'), 'ة', 'ه'), 'ى', 'ي')";
+            $cleanExpr = "REPLACE({$normExpr}, ' ', '')";
+            
+            $whereClause = "WHERE p.family_name IS NOT NULL AND TRIM(p.family_name) != ''";
+            
+            switch ($normalizedType) {
+                case 'families':
+                    $whereClause .= " AND p.relative_id IS NULL";
+                    break;
+                    
+                case 'males':
+                    $whereClause .= " AND p.gender IN ('ذكر', 'male')";
+                    break;
+                    
+                case 'females':
+                    $whereClause .= " AND p.gender IN ('أنثى', 'female')";
+                    break;
+                    
+                case 'children':
+                    $whereClause .= " AND p.dob IS NOT NULL AND TIMESTAMPDIFF(YEAR, p.dob, '{$today}') < 18";
+                    break;
+                    
+                case 'individuals':
+                default:
+                    // All individuals
+                    break;
+            }
+
+            $results = DB::select("
+                SELECT 
+                    {$cleanExpr} AS norm_name,
+                    MAX(TRIM(p.family_name)) AS display_name,
+                    COUNT(*) AS total_count,
+                    SUM(CASE WHEN (p.relative_id IS NULL AND p.area_responsible_id IS NOT NULL AND p.block_id IS NOT NULL) 
+                             OR (p.relative_id IS NOT NULL AND parent.id_num IS NOT NULL AND parent.area_responsible_id IS NOT NULL AND parent.block_id IS NOT NULL) 
+                        THEN 1 ELSE 0 END) AS approved_count
+                FROM persons p
+                LEFT JOIN persons parent ON p.relative_id = parent.id_num AND parent.relative_id IS NULL
+                {$whereClause}
+                GROUP BY norm_name
+                ORDER BY total_count DESC
+            ");
+
+            return array_map(function ($row) {
+                $total = (int) $row->total_count;
+                $approved = (int) $row->approved_count;
+                return [
+                    'norm_name' => $row->norm_name,
+                    'display_name' => $row->display_name,
+                    'total_count' => $total,
+                    'approved_count' => $approved,
+                    'unapproved_count' => max(0, $total - $approved),
+                ];
+            }, $results);
+        });
+    }
+
     public static function clearAllCache()
     {
+        Cache::forget('comprehensive_dashboard_stats');
         Cache::forget('family_head_stats');
         Cache::forget('social_status_stats');
         Cache::forget('gender_stats');
         Cache::forget('area_stats');
         Cache::forget('children_stats');
         Cache::forget('all_medical_stats');
+
+        foreach (['families', 'individuals', 'males', 'females', 'children'] as $t) {
+            Cache::forget("family_breakdown_stats_{$t}");
+        }
 
         for ($year = now()->year - 1; $year <= now()->year + 1; $year++) {
             Cache::forget("monthly_stats_{$year}");

@@ -33,3 +33,26 @@ Breadcrumbs::for('people.export', function ($breadcrumb) {
     $breadcrumb->push(trans('people.actions.export'), route('people.export'));
 });
 
+Breadcrumbs::for('dashboard.people.general_search', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.home');
+    $breadcrumb->push('بحث عام', route('dashboard.people.general_search'));
+});
+
+Breadcrumbs::for('dashboard.people.verify_ids', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.home');
+    $breadcrumb->push('فحص أرقام الهوية', route('dashboard.people.verify_ids'));
+});
+
+Breadcrumbs::for('dashboard.people.bulk_history', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.home');
+    $breadcrumb->push('إصدار إفادة كوبونات', route('dashboard.people.bulk_history'));
+});
+Breadcrumbs::for('dashboard.people.search', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.home');
+    $breadcrumb->push('البحث عن ملف فرد', route('dashboard.people.search'));
+});
+
+Breadcrumbs::for('dashboard.people.view', function ($breadcrumb) {
+    $breadcrumb->parent('dashboard.people.index');
+    $breadcrumb->push(trans('people.actions.view'), route('dashboard.people.view'));
+});

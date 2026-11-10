@@ -41,4 +41,9 @@ return [
         'token' => env('AID_API_TOKEN', 'aaa@aaa@aaa@rrr'),
     ],
 
+    'external_api' => [
+        'url' => env('EXTERNAL_API_URL'),
+        'token' => env('EXTERNAL_API_TOKEN'),
+    ],
+
 ];

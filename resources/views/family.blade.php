@@ -1347,12 +1347,33 @@
 
         function showAlert(message, type) {
             let icon = type === 'success' ? 'success' : type === 'error' ? 'error' : 'warning';
+            let isHtml = typeof message === 'string' && (message.includes('<br>') || message.includes('\n'));
             Swal.fire({
                 icon: icon,
-                title: message,
+                title: isHtml ? (type === 'error' ? 'تنبيه!' : '') : message,
+                html: isHtml ? message.replace(/\n/g, '<br>') : undefined,
                 confirmButtonColor: '#FF6F00',
                 confirmButtonText: 'حسناً'
             });
+        }
+
+        function extractAjaxErrorMessage(xhr, fallbackMsg) {
+            if (xhr && xhr.responseJSON) {
+                const res = xhr.responseJSON;
+                if (res.message) {
+                    return res.message;
+                }
+                if (res.error) {
+                    return res.error;
+                }
+                if (res.errors && typeof res.errors === 'object') {
+                    return Object.values(res.errors).flat().join('<br>');
+                }
+                if (res.duplicate_ids && Array.isArray(res.duplicate_ids)) {
+                    return 'الفرد صاحب رقم الهوية (' + res.duplicate_ids.join(', ') + ') مسجل مسبقاً لحاله أو ضمن عائلة.';
+                }
+            }
+            return fallbackMsg || 'حدث خطأ في الخادم!';
         }
 
         function renderTable() {
@@ -1538,8 +1559,14 @@
                     return;
                 }
 
+                const headPersonData = {!! json_encode(session('first_person_data')) !!};
+                if (headPersonData && String(headPersonData.id_num) === String(idnum)) {
+                    showAlert('لا يمكن إضافة رقم هوية رب الأسرة كفرد من أفراد العائلة (مسجل مسبقاً كرب أسرة)!', 'error');
+                    return;
+                }
+
                 if (peopleList.some(person => person.id_num === idnum)) {
-                    showAlert('رقم هوية مكرر!', 'error');
+                    showAlert('رقم هوية مكرر ضمن أفراد العائلة!', 'error');
                     return;
                 }
 
@@ -1706,16 +1733,16 @@
                                 });
                             }
                         },
-                        error: function() {
+                        error: function(xhr) {
                             Swal.close();
-                            showAlert('حدث خطأ في الخادم!', 'error');
+                            showAlert(extractAjaxErrorMessage(xhr, 'حدث خطأ أثناء حفظ بيانات العائلة!'), 'error');
                             submitBtn.disabled = false;
                         }
                     });
                 },
-                error: function() {
+                error: function(xhr) {
                     Swal.close();
-                    showAlert('حدث خطأ في الخادم!', 'error');
+                    showAlert(extractAjaxErrorMessage(xhr, 'حدث خطأ أثناء التحقق من بيانات العائلة!'), 'error');
                     submitBtn.disabled = false;
                 }
             });

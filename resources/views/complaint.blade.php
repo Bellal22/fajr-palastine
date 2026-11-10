@@ -236,6 +236,7 @@
             display: grid;
             grid-template-columns: 1fr 400px;
             gap: 25px;
+            align-items: start;
         }
 
         /* القسم الجانبي */
@@ -298,6 +299,7 @@
             padding: 40px;
             border-radius: 15px;
             box-shadow: 0 8px 32px rgba(255, 111, 0, 0.12);
+            transition: all 0.3s ease;
         }
 
         .welcome-box {
@@ -401,6 +403,53 @@
             border-color: #FF6F00;
             box-shadow: 0 0 0 5px rgba(255, 111, 0, 0.15);
             transform: translateY(-2px);
+        }
+
+        /* صندوق حالة الفحص المباشر */
+        .status-alert-box {
+            display: none;
+            margin-top: 15px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.6;
+            text-align: right;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            animation: fadeInStatus 0.3s ease-in-out;
+        }
+
+        .status-alert-box.status-checking {
+            background: #e3f2fd;
+            color: #0d47a1;
+            border-right: 5px solid #1976d2;
+        }
+
+        .status-alert-box.status-success {
+            background: #e8f5e9;
+            color: #1b5e20;
+            border-right: 5px solid #2e7d32;
+        }
+
+        .status-alert-box.status-error {
+            background: #ffebee;
+            color: #b71c1c;
+            border-right: 5px solid #c62828;
+        }
+
+        .status-alert-box i {
+            margin-left: 8px;
+            font-size: 16px;
+        }
+
+        #complaint_fields_step {
+            animation: fadeInStatus 0.4s ease-in-out;
+        }
+
+        @keyframes fadeInStatus {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* الزر */
@@ -628,8 +677,9 @@
                 <form action="{{ route('complaints.store') }}" method="POST" id="complaintForm">
                     @csrf
 
+                    <!-- الخطوة 1: رقم الهوية -->
                     <div class="form-group">
-                        <label>رقم الهوية الفلسطيني</label>
+                        <label><i class="fas fa-id-card" style="color: #FF6F00; margin-left: 6px;"></i> رقم الهوية الفلسطيني</label>
                         <div class="input-wrapper">
                             <i class="fas fa-id-card input-icon"></i>
                             <input
@@ -640,46 +690,65 @@
                                 value="{{ old('id_num') }}"
                                 maxlength="9"
                                 pattern="\d{9}"
-                                oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, ''); handleIdInput(this.value);"
+                                onblur="handleIdInput(this.value);"
                                 title="يجب إدخال 9 أرقام فقط"
                                 required>
                         </div>
+                        <div id="id_status_box" class="status-alert-box"></div>
                     </div>
 
-                    <div class="form-group">
-                        <label>عنوان الشكوى</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-heading input-icon"></i>
-                            <input
-                                type="text"
-                                id="complaint_title"
-                                name="complaint_title"
-                                maxlength="150"
-                                placeholder="عنوان مختصر للشكوى"
-                                value="{{ old('complaint_title') }}"
-                                required>
+                    <!-- الخطوة 2: تحديد نوع الشكوى (يظهر عند مطابقة رقم الهوية للشروط) -->
+                    <div id="complaint_type_step" style="display: none; margin-top: 20px;">
+                        <div class="form-group">
+                            <label><i class="fas fa-layer-group" style="color: #FF6F00; margin-left: 6px;"></i> نوع الشكوى / الاستفسار</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-list-alt input-icon"></i>
+                                <select id="complaint_type_id" name="complaint_type_id" class="custom-select-field" onchange="handleTypeChange(this.value)" required style="width: 100%; padding: 16px 55px 16px 18px; font-size: 16px; border: 2px solid #e0e0e0; border-radius: 12px; font-family: 'Cairo', sans-serif; background: white; cursor: pointer;">
+                                    <option value="">-- اختر نوع الشكوى --</option>
+                                </select>
+                            </div>
                         </div>
+                        <div id="type_status_box" class="status-alert-box"></div>
                     </div>
 
-                    <div class="form-group">
-                        <label>نص الشكوى</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-comment-alt input-icon"></i>
-                            <textarea
-                                id="complaint_text"
-                                name="complaint_text"
-                                maxlength="3000"
-                                placeholder="اكتب تفاصيل الشكوى هنا (حد أقصى 3000 حرف)..."
-                                required>{{ old('complaint_text') }}</textarea>
+                    <!-- الخطوة 3: عنوان ونص الشكوى وزر الإرسال (تظهر فقط إذا كان نوع الشكوى فعّال وغير متجاوز للفترة الفاصلة) -->
+                    <div id="complaint_fields_step" style="display: none; margin-top: 20px;">
+                        <div class="form-group">
+                            <label><i class="fas fa-heading" style="color: #FF6F00; margin-left: 6px;"></i> عنوان الشكوى</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-heading input-icon"></i>
+                                <input
+                                    type="text"
+                                    id="complaint_title"
+                                    name="complaint_title"
+                                    maxlength="150"
+                                    placeholder="عنوان مختصر للشكوى"
+                                    value="{{ old('complaint_title') }}"
+                                    required>
+                            </div>
                         </div>
-                    </div>
 
-                    <button type="submit" class="submit-btn">
-                        <span>
-                            <i class="fas fa-paper-plane"></i>
-                            إرسال الشكوى
-                        </span>
-                    </button>
+                        <div class="form-group">
+                            <label><i class="fas fa-comment-alt" style="color: #FF6F00; margin-left: 6px;"></i> نص الشكوى</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-comment-alt input-icon"></i>
+                                <textarea
+                                    id="complaint_text"
+                                    name="complaint_text"
+                                    maxlength="3000"
+                                    placeholder="اكتب تفاصيل الشكوى هنا (حد أقصى 3000 حرف)..."
+                                    required>{{ old('complaint_text') }}</textarea>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="submitBtn">
+                            <span>
+                                <i class="fas fa-paper-plane"></i>
+                                إرسال الشكوى
+                            </span>
+                        </button>
+                    </div>
                 </form>
             </div>
 
@@ -688,8 +757,8 @@
                 <h2>إرشادات الشكاوى</h2>
 
                 <div class="info-item">
-                    <h3><i class="fas fa-pen"></i> وضوح الشكوى</h3>
-                    <p>يرجى كتابة الشكوى بشكل واضح ومفصل لنتمكن من مساعدتك بشكل أفضل.</p>
+                    <h3><i class="fas fa-user-check"></i> شروط التقديم</h3>
+                    <p>استقبال الشكاوى متاح فقط للأشخاص المسجلين مسبقاً في النظام والذين مدينتهم الحالية هي خانيونس أو رفح.</p>
                 </div>
 
                 <div class="info-item">
@@ -698,8 +767,8 @@
                 </div>
 
                 <div class="info-item">
-                    <h3><i class="fas fa-shield-alt"></i> السرية</h3>
-                    <p>جميع الشكاوى سرية تماماً ويتم التعامل معها بمهنية عالية.</p>
+                    <h3><i class="fas fa-shield-alt"></i> السرية والحد اليومي</h3>
+                    <p>جميع الشكاوى سرية تماماً، مع العلم أنه يتم استقبال 200 شكوى يومياً كحد أقصى بالنظام.</p>
                 </div>
             </div>
         </div>
@@ -707,6 +776,146 @@
     </div>
 
     <script>
+        let fetchedTypes = [];
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const idVal = document.getElementById('id_num').value;
+            if (idVal && idVal.length === 9) {
+                checkIdRealtime(idVal);
+            }
+        });
+
+        function handleIdInput(val) {
+            const statusBox = document.getElementById('id_status_box');
+            const typeStep = document.getElementById('complaint_type_step');
+            const fieldsStep = document.getElementById('complaint_fields_step');
+
+            if (val.length < 9) {
+                statusBox.style.display = 'none';
+                typeStep.style.display = 'none';
+                fieldsStep.style.display = 'none';
+                document.getElementById('complaint_type_id').value = '';
+                return;
+            }
+
+            if (val.length === 9) {
+                checkIdRealtime(val);
+            }
+        }
+
+        function checkIdRealtime(idNum) {
+            const statusBox = document.getElementById('id_status_box');
+            const typeStep = document.getElementById('complaint_type_step');
+            const fieldsStep = document.getElementById('complaint_fields_step');
+            const typeSelect = document.getElementById('complaint_type_id');
+            const typeStatusBox = document.getElementById('type_status_box');
+
+            statusBox.style.display = 'block';
+            statusBox.className = 'status-alert-box status-checking';
+            statusBox.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري فحص رقم الهوية والنطاق الجغرافي...';
+
+            typeStep.style.display = 'none';
+            fieldsStep.style.display = 'none';
+            typeStatusBox.style.display = 'none';
+            typeSelect.innerHTML = '<option value="">-- اختر نوع الشكوى --</option>';
+
+            fetch("{{ route('complaints.verifyId') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ id_num: idNum })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.eligible) {
+                    statusBox.className = 'status-alert-box status-success';
+                    statusBox.innerHTML = `<i class="fas fa-check-circle"></i> <strong>مسجل ومطابق للشروط:</strong> ${data.name} (المدينة الحالية: ${data.city})`;
+
+                    // تعبئة أنواع الشكاوى
+                    fetchedTypes = data.complaint_types || [];
+                    typeStep.style.display = 'block';
+
+                    if (fetchedTypes.length > 0) {
+                        fetchedTypes.forEach(type => {
+                            const opt = document.createElement('option');
+                            opt.value = type.id;
+                            opt.textContent = type.name + (!type.is_active ? ' (غير متاح حالياً)' : '');
+                            typeSelect.appendChild(opt);
+                        });
+
+                        // إذا كان هناك نوع واحد فقط فعال، اختياره تلقائياً
+                        if (fetchedTypes.length === 1 && fetchedTypes[0].is_active) {
+                            typeSelect.value = fetchedTypes[0].id;
+                            handleTypeChange(fetchedTypes[0].id);
+                        }
+                    } else {
+                        typeStatusBox.style.display = 'block';
+                        typeStatusBox.className = 'status-alert-box status-error';
+                        typeStatusBox.innerHTML = '<i class="fas fa-exclamation-circle"></i> لا توجد أنواع شكاوى معرّفة حالياً بجدول النظام.';
+                    }
+                } else {
+                    statusBox.className = 'status-alert-box status-error';
+                    statusBox.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${data.message}`;
+                    typeStep.style.display = 'none';
+                    fieldsStep.style.display = 'none';
+                }
+            })
+            .catch(err => {
+                statusBox.style.display = 'none';
+                typeStep.style.display = 'none';
+                fieldsStep.style.display = 'none';
+            });
+        }
+
+        function handleTypeChange(typeId) {
+            const fieldsStep = document.getElementById('complaint_fields_step');
+            const typeStatusBox = document.getElementById('type_status_box');
+            const idNum = document.getElementById('id_num').value;
+
+            if (!typeId) {
+                typeStatusBox.style.display = 'none';
+                fieldsStep.style.display = 'none';
+                return;
+            }
+
+            typeStatusBox.style.display = 'block';
+            typeStatusBox.className = 'status-alert-box status-checking';
+            typeStatusBox.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الفحص...';
+            fieldsStep.style.display = 'none';
+
+            fetch("{{ route('complaints.checkType') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    id_num: idNum,
+                    complaint_type_id: typeId
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.eligible) {
+                    typeStatusBox.className = 'status-alert-box status-success';
+                    typeStatusBox.innerHTML = `<i class="fas fa-check-circle"></i> ${data.message}`;
+                    fieldsStep.style.display = 'block';
+                } else {
+                    typeStatusBox.className = 'status-alert-box status-error';
+                    typeStatusBox.innerHTML = `<i class="fas fa-info-circle"></i> ${data.message}`;
+                    fieldsStep.style.display = 'none';
+                }
+            })
+            .catch(err => {
+                typeStatusBox.style.display = 'none';
+                fieldsStep.style.display = 'none';
+            });
+        }
+
         document.getElementById('complaintForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
@@ -755,7 +964,6 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    // إذا فشل الـ Validation في Laravel سيرسل كود 422
                     return response.json().then(err => { throw err; });
                 }
                 return response.json();
@@ -769,21 +977,23 @@
                     confirmButtonText: 'حسنًا'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // التحويل للمسار المباشر كما طلبت
-                        window.location.href = "/successcomplaint";
+                        window.location.href = "{{ route('complaints.successcomplaint') }}";
                     }
                 });
             })
             .catch(error => {
-                // عرض تفاصيل الخطأ في حال وجود خطأ Validation من السيرفر
                 let errorMessage = 'حدثت مشكلة أثناء الإرسال، يرجى المحاولة مرة أخرى.';
-                if (error.errors) {
-                    errorMessage = Object.values(error.errors).flat().join('\n');
+                if (error.errors && error.errors.id_num) {
+                    errorMessage = error.errors.id_num.join('\n');
+                } else if (error.message) {
+                    errorMessage = error.message;
+                } else if (typeof error === 'object') {
+                    errorMessage = Object.values(error).flat().join('\n');
                 }
 
                 Swal.fire({
                     icon: 'error',
-                    title: 'خطأ',
+                    title: 'خطأ في التحقق',
                     text: errorMessage,
                     confirmButtonColor: '#FF6F00'
                 });

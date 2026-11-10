@@ -171,8 +171,8 @@
                         @lang('locations.attributes.area_responsible')
                         <span class="text-danger">*</span>
                     </label>
-                    <select name="area_responsible_id" id="area_responsible_id" class="form-control" required
-                        {{ !isset($location) ? 'disabled' : '' }}>
+                    <select name="area_responsible_id" id="area_responsible_id" class="form-control"
+                        {{ (!isset($location) || !$location->areaResponsible) ? 'disabled' : '' }}>
                         <option value="">@lang('locations.placeholders.area_responsible')</option>
                         @if(isset($location) && $location->areaResponsible)
                             <option value="{{ $location->areaResponsible->id }}" selected>
@@ -208,14 +208,93 @@
     </div>
 </div>
 
-{{-- الخريطة --}}
+{{-- الخريطة وتحديد الإحداثيات --}}
 <div class="card mb-4">
-    <div class="card-header bg-success text-white">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
             <i class="fas fa-map"></i> @lang('locations.sections.map')
         </h5>
+        <span class="badge badge-light text-dark font-weight-normal">
+            <i class="fas fa-crosshairs text-danger"></i> إدخال الإحداثيات وتحديد الموقع
+        </span>
     </div>
     <div class="card-body">
+        {{-- صندوق إدخال الإحداثيات المباشر واللصق من خرائط جوجل --}}
+        <div class="card mb-3 border-primary" style="background: #f8fafc; border-width: 1px;">
+            <div class="card-body py-3 px-3">
+                <div class="row">
+                    {{-- لصق سريع من Google Maps --}}
+                    <div class="col-lg-5 col-md-12 mb-2 mb-lg-0">
+                        <label class="font-weight-bold text-dark mb-1 d-block text-truncate" for="quick_coords" style="height: 24px; line-height: 24px;">
+                            <i class="fas fa-paste text-primary"></i> لصق إحداثيات من Google Maps (سريع):
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="quick_coords" class="form-control"
+                                   style="height: 38px;"
+                                   placeholder="مثال: 31.338683, 34.245407 أو رابط خرائط جوجل">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary font-weight-bold" type="button" id="apply_quick_coords"
+                                        style="height: 38px; padding: 0 16px;" title="تطبيق الإحداثيات على الخريطة">
+                                    <i class="fas fa-check"></i> تطبيق
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- خط العرض Latitude --}}
+                    <div class="col-lg-3 col-md-5 mb-2 mb-lg-0">
+                        <label class="font-weight-bold text-dark mb-1 d-block text-truncate" for="latitude" style="height: 24px; line-height: 24px;">
+                            <i class="fas fa-arrows-alt-v text-info"></i> خط العرض (Latitude) <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="latitude" id="latitude" class="form-control font-weight-bold"
+                               style="height: 38px;"
+                               value="{{ old('latitude', $location->latitude ?? '') }}"
+                               placeholder="مثال: 31.338683" required>
+                    </div>
+
+                    {{-- خط الطول Longitude --}}
+                    <div class="col-lg-3 col-md-5 mb-2 mb-lg-0">
+                        <label class="font-weight-bold text-dark mb-1 d-block text-truncate" for="longitude" style="height: 24px; line-height: 24px;">
+                            <i class="fas fa-arrows-alt-h text-info"></i> خط الطول (Longitude) <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="longitude" id="longitude" class="form-control font-weight-bold"
+                               style="height: 38px;"
+                               value="{{ old('longitude', $location->longitude ?? '') }}"
+                               placeholder="مثال: 34.245407" required>
+                    </div>
+
+                    {{-- زر إسقاط وتحديد على الخريطة --}}
+                    <div class="col-lg-1 col-md-2 mb-2 mb-lg-0">
+                        <label class="font-weight-bold text-dark mb-1 d-block text-center" style="height: 24px; line-height: 24px;">
+                            إسقاط
+                        </label>
+                        <button type="button" id="btn_locate_coords" class="btn btn-success btn-block"
+                                style="height: 38px; display: flex; align-items: center; justify-content: center;"
+                                title="إسقاط وتحديد الإحداثيات المدخلة على الخريطة">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- نص توضيحي أسفل الصف --}}
+                <div class="mt-2 text-muted" style="font-size: 12.5px;">
+                    <i class="fas fa-info-circle text-primary"></i> يمكنك نسخ الإحداثيات أو الرابط من Google Maps ولصقها في خانة اللصق السريع، أو تعديل خط العرض والطول يدوياً والضغط على زر الإسقاط.
+                </div>
+
+                {{-- تنبيه الموقع المحدد يقع خارج حدود المنطقة --}}
+                <div id="outsideBoundaryAlert" class="alert alert-warning mt-3 mb-0" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>تنبيه جغرافي:</strong> <span id="outsideBoundaryText">الموقع المحدد حالياً يقع خارج نطاق حدود المنطقة!</span>
+                </div>
+            </div>
+        </div>
+
+        {{-- تنبيه المناديب خارج نطاق حدود المنطقة --}}
+        <div id="outsideDelegatesAlert" class="alert alert-warning mb-3" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>تنبيه المناديب:</strong> <span id="outsideDelegatesText"></span>
+        </div>
+
         {{-- التعليمات فوق الخريطة --}}
         <div class="row mb-3">
             <div class="col-md-8">
@@ -248,12 +327,12 @@
         </div>
 
         {{-- الخريطة بعرض كامل --}}
+        <div class="mb-2">
+            <span class="text-muted" style="font-size: 13px;">
+                <i class="fas fa-hand-pointer text-primary"></i> انقر في أي مكان على الخريطة أو اسحب الدبوس لتعديل موقع المندوب والمخيم بدقة
+            </span>
+        </div>
         <div id="map"></div>
-
-        <input type="hidden" name="latitude" id="latitude"
-               value="{{ old('latitude', $location->latitude ?? '') }}" required>
-        <input type="hidden" name="longitude" id="longitude"
-               value="{{ old('longitude', $location->longitude ?? '') }}" required>
 
         <div id="coordinatesError" class="text-danger mt-2" style="display: none;">
             <i class="fas fa-exclamation-triangle"></i>
@@ -297,30 +376,237 @@
             }).addTo(map);
 
             let currentMarker = null;
-            let blockMarker = null;
             let regionPolygon = null;
+            let currentRegionBoundaries = null;
+            let currentLoadedBlocks = [];
+
+            const locationMarkerIcon = L.icon({
+                iconUrl: "{{ asset('icons/person-marker.png') }}",
+                iconSize: [42, 42],
+                iconAnchor: [21, 42],
+                popupAnchor: [0, -42],
+                shadowSize: [41, 41]
+            });
+
+            // التحقق مما إذا كانت النقطة داخل مضلع المنطقة (Ray-Casting Algorithm)
+            function isPointInPolygon(lat, lng, polygonCoords) {
+                if (!polygonCoords || polygonCoords.length < 3) return true;
+                const x = parseFloat(lat);
+                const y = parseFloat(lng);
+                if (isNaN(x) || isNaN(y) || (x === 0 && y === 0)) return true;
+
+                let inside = false;
+                const count = polygonCoords.length;
+                let j = count - 1;
+
+                for (let i = 0; i < count; i++) {
+                    const pi = polygonCoords[i];
+                    const pj = polygonCoords[j];
+                    const xi = parseFloat(pi.lat !== undefined ? pi.lat : pi[0]);
+                    const yi = parseFloat(pi.lng !== undefined ? pi.lng : pi[1]);
+                    const xj = parseFloat(pj.lat !== undefined ? pj.lat : pj[0]);
+                    const yj = parseFloat(pj.lng !== undefined ? pj.lng : pj[1]);
+
+                    const intersect = ((yi > y) !== (yj > y)) &&
+                        (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+
+                    if (intersect) inside = !inside;
+                    j = i;
+                }
+                return inside;
+            }
+
+            // فحص إحداثيات اللوكيشن الحالي مقابل حدود المنطقة وإظهار تنبيه إذا كان خارجها
+            function checkBoundary(lat, lng) {
+                const alertBox = document.getElementById('outsideBoundaryAlert');
+                const alertText = document.getElementById('outsideBoundaryText');
+                if (!alertBox) return;
+
+                if (currentRegionBoundaries && currentRegionBoundaries.length >= 3) {
+                    const isInside = isPointInPolygon(lat, lng, currentRegionBoundaries);
+                    if (!isInside) {
+                        if (alertText) {
+                            alertText.textContent = `الموقع المحدد (${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)}) يقع خارج نطاق حدود المنطقة!`;
+                        }
+                        alertBox.style.display = 'block';
+                    } else {
+                        alertBox.style.display = 'none';
+                    }
+                } else {
+                    alertBox.style.display = 'none';
+                }
+            }
+
+            // تقييم مناديب المنطقة المحملين وإبراز من هم خارج حدود المنطقة
+            function evaluateLoadedBlocks() {
+                const blockSelect = document.getElementById('block_id');
+                const outsideAlert = document.getElementById('outsideDelegatesAlert');
+                const outsideText = document.getElementById('outsideDelegatesText');
+                const outsideList = [];
+
+                if (!currentRegionBoundaries || currentRegionBoundaries.length < 3) {
+                    if (outsideAlert) outsideAlert.style.display = 'none';
+                    return;
+                }
+
+                if (blockSelect) {
+                    Array.from(blockSelect.options).forEach(opt => {
+                        if (!opt.value) return;
+                        const optLat = parseFloat(opt.dataset.lat);
+                        const optLng = parseFloat(opt.dataset.lng);
+                        const baseTitle = opt.dataset.baseTitle || opt.textContent.replace(' ⚠️ (خارج نطاق المنطقة)', '');
+                        opt.dataset.baseTitle = baseTitle;
+
+                        if (optLat && optLng && (optLat !== 0 || optLng !== 0)) {
+                            const inside = isPointInPolygon(optLat, optLng, currentRegionBoundaries);
+                            if (!inside) {
+                                opt.textContent = baseTitle + ' ⚠️ (خارج نطاق المنطقة)';
+                                opt.style.color = '#dc3545';
+                                opt.dataset.outside = '1';
+                                outsideList.push(baseTitle);
+                            } else {
+                                opt.textContent = baseTitle;
+                                opt.style.color = '';
+                                opt.dataset.outside = '0';
+                            }
+                        }
+                    });
+                }
+
+                if (outsideAlert && outsideText) {
+                    if (outsideList.length > 0) {
+                        outsideText.innerHTML = 'المناديب التاليين في هذه المنطقة تقع إحداثياتهم خارج نطاق حدود المنطقة المرسومة: <b>' + outsideList.join('، ') + '</b>';
+                        outsideAlert.style.display = 'block';
+                    } else {
+                        outsideAlert.style.display = 'none';
+                    }
+                }
+            }
+
+            // استخراج الإحداثيات من النصوص وروابط Google Maps
+            function parseGoogleCoords(str) {
+                if (!str) return null;
+                str = str.trim();
+                const match = str.match(/([-+]?\d{1,2}\.\d+)[,\s]+([-+]?\d{1,3}\.\d+)/);
+                if (match) {
+                    return {
+                        lat: parseFloat(match[1]),
+                        lng: parseFloat(match[2])
+                    };
+                }
+                return null;
+            }
+
+            // تطبيق الإحداثيات الملصوقة من خرائط جوجل
+            function applyQuickCoords() {
+                const input = document.getElementById('quick_coords');
+                if (!input) return;
+                const coords = parseGoogleCoords(input.value);
+                if (coords) {
+                    setLocationMarker(coords.lat, coords.lng, true);
+                    map.setView([coords.lat, coords.lng], 16);
+                } else if (input.value.trim() !== '') {
+                    alert('لم نتمكن من استخراج الإحداثيات. يرجى إدخال إحداثيات صحيحة، مثل: 31.338683, 34.245407');
+                }
+            }
+
+            const applyQuickBtn = document.getElementById('apply_quick_coords');
+            if (applyQuickBtn) {
+                applyQuickBtn.addEventListener('click', applyQuickCoords);
+            }
+            const quickCoordsInput = document.getElementById('quick_coords');
+            if (quickCoordsInput) {
+                quickCoordsInput.addEventListener('paste', function() {
+                    setTimeout(applyQuickCoords, 100);
+                });
+                quickCoordsInput.addEventListener('keyup', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        applyQuickCoords();
+                    }
+                });
+            }
+
+            // تطبيق الإحداثيات عند الكتابة اليدوية في حقلي Latitude و Longitude
+            function applyManualCoords() {
+                const lat = parseFloat(document.getElementById('latitude').value);
+                const lng = parseFloat(document.getElementById('longitude').value);
+                if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+                    setLocationMarker(lat, lng, true);
+                    map.setView([lat, lng], 15);
+                }
+            }
+
+            const latInput = document.getElementById('latitude');
+            const lngInput = document.getElementById('longitude');
+            const locateBtn = document.getElementById('btn_locate_coords');
+            if (latInput) latInput.addEventListener('change', applyManualCoords);
+            if (lngInput) lngInput.addEventListener('change', applyManualCoords);
+            if (locateBtn) locateBtn.addEventListener('click', applyManualCoords);
+
+            function setLocationMarker(lat, lng, openPopup = false) {
+                const numLat = parseFloat(lat);
+                const numLng = parseFloat(lng);
+                if (isNaN(numLat) || isNaN(numLng)) return;
+
+                if (currentMarker) {
+                    currentMarker.setLatLng([numLat, numLng]);
+                } else {
+                    currentMarker = L.marker([numLat, numLng], {
+                        draggable: true,
+                        icon: locationMarkerIcon
+                    }).addTo(map);
+
+                    currentMarker.on('dragend', function(e) {
+                        const position = e.target.getLatLng();
+                        saveCoordinates(position.lat, position.lng);
+                    });
+                }
+
+                currentMarker.bindPopup('📍 <b>موقع المندوب / المخيم</b><br><small>اسحب الدبوس أو انقر على الخريطة لتغيير الموقع</small>');
+
+                if (openPopup) {
+                    currentMarker.openPopup();
+                }
+
+                saveCoordinates(numLat, numLng);
+            }
+
+            function drawRegionPolygon(boundaries, name, color) {
+                if (regionPolygon) {
+                    map.removeLayer(regionPolygon);
+                    regionPolygon = null;
+                }
+                currentRegionBoundaries = boundaries;
+                if (!boundaries || boundaries.length === 0) return;
+
+                regionPolygon = L.polygon(boundaries, {
+                    color: color || '#3388ff',
+                    weight: 3,
+                    fillOpacity: 0.18
+                }).addTo(map).bindPopup(name || '');
+
+                // النقر على مضلع المنطقة يحدد اللوكيشن فوراً
+                regionPolygon.on('click', function(e) {
+                    setLocationMarker(e.latlng.lat, e.latlng.lng, true);
+                });
+
+                evaluateLoadedBlocks();
+                if (currentMarker) {
+                    const pos = currentMarker.getLatLng();
+                    checkBoundary(pos.lat, pos.lng);
+                }
+            }
 
             // إذا كان Edit وفيه إحداثيات موجودة
             if (isEdit && existingLat && existingLng) {
-                currentMarker = L.marker([existingLat, existingLng], {
-                    draggable: true,
-                    icon: L.icon({
-                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                        shadowSize: [41, 41]
-                    })
-                }).addTo(map).bindPopup('🔴 موقع اللوكيشن').openPopup();
-
-                saveCoordinates(existingLat, existingLng);
-
-                currentMarker.on('dragend', function(e) {
-                    const position = e.target.getLatLng();
-                    saveCoordinates(position.lat, position.lng);
-                });
+                setLocationMarker(existingLat, existingLng, true);
             }
+
+            // السماح بالنقر على الخريطة لتحديد أو تعديل موقع اللوكيشن
+            map.on('click', function(e) {
+                setLocationMarker(e.latlng.lat, e.latlng.lng, true);
+            });
 
             // اختيار نوع اللوكيشن
             document.querySelectorAll('.location-type-card').forEach(card => {
@@ -349,7 +635,7 @@
                     .then(res => res.json())
                     .then(data => {
                         if (data.success && data.area_responsible) {
-                            areaSelect.innerHTML = `<option value="${data.area_responsible.id}">${data.area_responsible.name}</option>`;
+                            areaSelect.innerHTML = `<option value="${data.area_responsible.id}" selected>${data.area_responsible.name}</option>`;
                             areaSelect.value = data.area_responsible.id;
                             areaSelect.disabled = false;
                             loadBlocksByAreaResponsible(data.area_responsible.id);
@@ -365,29 +651,30 @@
                             const lng = parseFloat(data.region.center_lng);
                             map.setView([lat, lng], 14);
 
-                            if (regionPolygon) map.removeLayer(regionPolygon);
-
                             if (data.region.boundaries && data.region.boundaries.length > 0) {
-                                regionPolygon = L.polygon(data.region.boundaries, {
-                                    color: data.region.color || '#3388ff',
-                                    weight: 3,
-                                    fillOpacity: 0.2
-                                }).addTo(map).bindPopup(data.region.name);
+                                drawRegionPolygon(data.region.boundaries, data.region.name, data.region.color);
                             }
                         }
                     });
             });
 
             // تحميل البلوكات
-            function loadBlocksByAreaResponsible(areaResponsibleId) {
+            function loadBlocksByAreaResponsible(areaResponsibleId, selectedBlockId = null) {
                 const blockSelect = document.getElementById('block_id');
-                blockSelect.innerHTML = '<option value="">جاري التحميل...</option>';
+                const existingSelectedOption = selectedBlockId ? blockSelect.querySelector(`option[value="${selectedBlockId}"]`) : null;
+                const existingOptionClone = existingSelectedOption ? existingSelectedOption.cloneNode(true) : null;
+
+                if (!selectedBlockId) {
+                    blockSelect.innerHTML = '<option value="">جاري التحميل...</option>';
+                }
 
                 fetch(`${blocksUrl}?area_responsible_id=${areaResponsibleId}`)
                     .then(res => res.json())
                     .then(data => {
                         if (data.success && data.blocks && data.blocks.length > 0) {
+                            currentLoadedBlocks = data.blocks;
                             blockSelect.innerHTML = '<option value="">-- اختر المندوب --</option>';
+                            let foundSelected = false;
                             data.blocks.forEach(block => {
                                 const option = document.createElement('option');
                                 option.value = block.id;
@@ -396,14 +683,26 @@
                                 option.dataset.lng = block.lng || block.lan || 0;
                                 option.dataset.phone = block.phone || '';
                                 option.dataset.address = block.title || '';
+                                if (selectedBlockId && String(block.id) === String(selectedBlockId)) {
+                                    option.selected = true;
+                                    foundSelected = true;
+                                }
                                 blockSelect.appendChild(option);
                             });
+                            if (selectedBlockId && !foundSelected && existingOptionClone) {
+                                existingOptionClone.selected = true;
+                                blockSelect.appendChild(existingOptionClone);
+                            }
                             blockSelect.disabled = false;
+                            evaluateLoadedBlocks();
+                        } else if (selectedBlockId && existingOptionClone) {
+                            blockSelect.disabled = false;
+                            evaluateLoadedBlocks();
                         }
                     });
             }
 
-            // اختيار البلوك
+            // اختيار البلوك (المندوب هو نفسه لوكيشن المخيم)
             document.getElementById('block_id').addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
                 if (!this.value) return;
@@ -411,63 +710,73 @@
                 const lat = parseFloat(selectedOption.dataset.lat);
                 const lng = parseFloat(selectedOption.dataset.lng);
 
-                if (blockMarker) map.removeLayer(blockMarker);
+                // اقتراح اسم المخيم/المندوب تلقائياً إذا كان حقل الاسم فارغاً
+                const nameInput = document.getElementById('name');
+                if (nameInput && (!nameInput.value || nameInput.value.trim() === '')) {
+                    nameInput.value = selectedOption.textContent.trim();
+                }
 
-                blockMarker = L.marker([lat, lng], {
-                    icon: L.icon({
-                        iconUrl: "{{ asset('icons/person-marker.png') }}",
-                        iconSize: [40, 40],
-                        iconAnchor: [20, 40]
-                    })
-                }).addTo(map).bindPopup('📍 موقع المندوب').openPopup();
+                // اقتراح العنوان ورقم الهاتف إذا كانا فارغين
+                const addressInput = document.getElementById('address');
+                if (addressInput && (!addressInput.value || addressInput.value.trim() === '') && selectedOption.dataset.address) {
+                    addressInput.value = selectedOption.dataset.address;
+                }
+                const phoneInput = document.getElementById('phone');
+                if (phoneInput && (!phoneInput.value || phoneInput.value.trim() === '') && selectedOption.dataset.phone) {
+                    phoneInput.value = selectedOption.dataset.phone;
+                }
 
-                map.setView([lat, lng], 15);
-
-                if (!isEdit || !existingLat) {
-                    if (currentMarker) map.removeLayer(currentMarker);
-
-                    currentMarker = L.marker([lat, lng], {
-                        draggable: true,
-                        icon: L.icon({
-                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                            iconSize: [25, 41],
-                            iconAnchor: [12, 41],
-                            shadowSize: [41, 41]
-                        })
-                    }).addTo(map).bindPopup('🔴 موقع اللوكيشن');
-
-                    saveCoordinates(lat, lng);
-
-                    currentMarker.on('dragend', function(e) {
-                        const pos = e.target.getLatLng();
-                        saveCoordinates(pos.lat, pos.lng);
-                    });
+                if (!isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0)) {
+                    map.setView([lat, lng], 15);
+                    // دبوس واحد فقط يمثل موقع المندوب / المخيم
+                    setLocationMarker(lat, lng, true);
                 }
             });
 
             // حفظ الإحداثيات
             function saveCoordinates(lat, lng) {
-                document.getElementById('latitude').value = lat.toFixed(8);
-                document.getElementById('longitude').value = lng.toFixed(8);
-                document.getElementById('latDisplay').textContent = lat.toFixed(6);
-                document.getElementById('lngDisplay').textContent = lng.toFixed(6);
-                document.getElementById('coordinatesDisplay').style.display = 'block';
-                document.getElementById('coordinatesError').style.display = 'none';
+                const numLat = parseFloat(lat);
+                const numLng = parseFloat(lng);
+                if (isNaN(numLat) || isNaN(numLng)) return;
+                const latInput = document.getElementById('latitude');
+                const lngInput = document.getElementById('longitude');
+                if (latInput) latInput.value = numLat.toFixed(8);
+                if (lngInput) lngInput.value = numLng.toFixed(8);
+
+                const latDisplay = document.getElementById('latDisplay');
+                const lngDisplay = document.getElementById('lngDisplay');
+                if (latDisplay) latDisplay.textContent = numLat.toFixed(6);
+                if (lngDisplay) lngDisplay.textContent = numLng.toFixed(6);
+
+                const coordDisplay = document.getElementById('coordinatesDisplay');
+                const coordError = document.getElementById('coordinatesError');
+                if (coordDisplay) coordDisplay.style.display = 'block';
+                if (coordError) coordError.style.display = 'none';
+
+                checkBoundary(numLat, numLng);
             }
 
             // معاينة اللون
             const iconColor = document.getElementById('icon_color');
             const iconPreview = document.getElementById('iconPreview');
-            iconPreview.style.backgroundColor = iconColor.value;
-            iconColor.addEventListener('input', function() {
-                iconPreview.style.backgroundColor = this.value;
-            });
+            if (iconColor && iconPreview) {
+                iconPreview.style.backgroundColor = iconColor.value;
+                iconColor.addEventListener('input', function() {
+                    iconPreview.style.backgroundColor = this.value;
+                });
+            }
 
-            // Validation قبل الإرسال
-            const form = document.querySelector('form');
-            if (form) {
-                form.addEventListener('submit', function(e) {
+            // Validation وحفظ الإحداثيات المؤكدة قبل الإرسال
+            const latInputElem = document.getElementById('latitude');
+            const targetForm = latInputElem ? latInputElem.closest('form') : document.querySelector('form');
+            if (targetForm) {
+                targetForm.addEventListener('submit', function(e) {
+                    // التأكد من أخذ إحداثيات الدبوس الحالية على الخريطة
+                    if (currentMarker) {
+                        const markerPos = currentMarker.getLatLng();
+                        saveCoordinates(markerPos.lat, markerPos.lng);
+                    }
+
                     const lat = document.getElementById('latitude').value;
                     const lng = document.getElementById('longitude').value;
                     if (!lat || !lng) {
@@ -478,9 +787,18 @@
                 });
             }
 
-            // تحميل البلوكات في حالة Edit
+            // تحميل البلوكات وحدود المنطقة في حالة Edit
             @if(isset($location) && $location->area_responsible_id)
-                loadBlocksByAreaResponsible({{ $location->area_responsible_id }});
+                loadBlocksByAreaResponsible({{ $location->area_responsible_id }}, {{ old('block_id', $location->block_id ?? 'null') }});
+            @endif
+            @if(isset($location) && $location->region_id)
+                fetch(`${regionBoundariesUrl}?region_id={{ $location->region_id }}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.region && data.region.boundaries && data.region.boundaries.length > 0) {
+                            drawRegionPolygon(data.region.boundaries, data.region.name, data.region.color);
+                        }
+                    });
             @endif
         });
     </script>

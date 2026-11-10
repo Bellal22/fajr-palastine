@@ -1,3 +1,3 @@
 <?php
 
-Route::post('/editor/upload', 'MediaController@editorUpload')->name('editor.upload');
+Route::middleware('auth:sanctum')->post('/editor/upload', 'MediaController@editorUpload')->name('editor.upload');

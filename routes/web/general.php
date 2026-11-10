@@ -12,6 +12,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\PersonController;
 use App\Http\Controllers\ProfileController;
+use App\Models\Block;
 use App\Models\Location;
 use App\Models\Person;
 use App\Models\Region;
@@ -30,7 +31,7 @@ use Illuminate\Support\Facades\Validator;
 |
 */
 
-Route::view('/', 'intro')->name('persons.intro');
+Route::view('/', 'intro')->name('persons.intro')->middleware('check.referer');
 
 Route::post('/set-session', function (Request $request) {
     // التحقق من الرقم المدخل
@@ -53,8 +54,64 @@ Route::post('/set-session', function (Request $request) {
 });
 
 Route::get('/complaint', function () {
-    return view('complaint');  // هذا يشير إلى resources/views/complaint.blade.php
+    return view('complaints.choice');
 })->name('complaint');
+
+Route::get('/complaint/relief', function () {
+    return view('complaint');
+})->name('complaint.relief');
+
+Route::get('/complaint/kitchen', function () {
+    return view('complaints.kitchen');
+})->name('complaint.kitchen');
+
+Route::post('/complaint/kitchen/verify', function (Request $request) {
+    $card = \App\Models\KitchenCard::where('barcode', $request->barcode)->first();
+    if ($card) {
+        return response()->json([
+            'success' => true,
+            'camp_name' => $card->camp_name,
+            'card_number' => $card->card_number,
+        ]);
+    }
+    return response()->json([
+        'success' => false,
+        'message' => 'عذراً، لم يتم العثور على بطاقة مطابقة للرمز الممسوح.',
+    ]);
+});
+
+Route::post('/complaint/kitchen/store', function (Request $request) {
+    $request->validate([
+        'camp_name' => 'required|string',
+        'card_number' => 'required|string',
+        'complainant_name' => 'required|string|max:255',
+        'mobile_number' => 'required|string|max:20',
+        'complaint_title' => 'required|string|max:255',
+        'complaint_text' => 'required|string|max:5000',
+    ]);
+
+    $complaint = \App\Models\KitchenComplaint::create([
+        'camp_name' => $request->camp_name,
+        'card_number' => $request->card_number,
+        'complainant_name' => $request->complainant_name,
+        'mobile_number' => $request->mobile_number,
+        'complaint_title' => $request->complaint_title,
+        'complaint_text' => $request->complaint_text,
+        'status' => 'pending',
+    ]);
+
+    // Send notification to all Kitchen Monitors
+    $monitors = \App\Models\User::where('type', \App\Models\User::KITCHEN_MONITOR_TYPE)->get();
+    foreach ($monitors as $monitor) {
+        $monitor->notify(new \App\Notifications\NewKitchenComplaintNotification($complaint));
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'تم تسجيل شكواك بنجاح في نظام المطبخ.',
+    ]);
+});
+
 
 
 Route::get('/create', function (Request $request) {
@@ -86,27 +143,29 @@ Route::get('/create', function (Request $request) {
 });
 
 // دالة للتحقق باستخدام معادلة Luhn
-function isValidLuhn($number)
-{
-    $sum = 0;
-    $shouldDouble = false;
+if (!function_exists('isValidLuhn')) {
+    function isValidLuhn($number)
+    {
+        $sum = 0;
+        $shouldDouble = false;
 
-    // بدء التحقق من آخر رقم إلى أول رقم
-    for ($i = strlen($number) - 1; $i >= 0; $i--) {
-        $digit = $number[$i];
+        // بدء التحقق من آخر رقم إلى أول رقم
+        for ($i = strlen($number) - 1; $i >= 0; $i--) {
+            $digit = $number[$i];
 
-        if ($shouldDouble) {
-            $digit *= 2;
-            if ($digit > 9) {
-                $digit -= 9;
+            if ($shouldDouble) {
+                $digit *= 2;
+                if ($digit > 9) {
+                    $digit -= 9;
+                }
             }
+
+            $sum += $digit;
+            $shouldDouble = !$shouldDouble;
         }
 
-        $sum += $digit;
-        $shouldDouble = !$shouldDouble;
+        return ($sum % 10) === 0; // رقم الهوية صالح إذا كان المجموع يقبل القسمة على 10
     }
-
-    return ($sum % 10) === 0; // رقم الهوية صالح إذا كان المجموع يقبل القسمة على 10
 }
 
 Route::get('/check-id', [PersonController::class, 'checkId'])->name('check-id');
@@ -122,16 +181,47 @@ Route::get('/check-id', [PersonController::class, 'checkId'])->name('check-id');
 Route::post('/store-people-session', function (Request $request) {
     $peopleList = $request->input('peopleList', []);
 
-    // استخراج جميع أرقام الهوية من القائمة
-    $idNumbers = array_column($peopleList, 'id_num');
+    // تنظيف واستخراج جميع أرقام الهوية من القائمة
+    foreach ($peopleList as &$member) {
+        if (isset($member['id_num'])) {
+            $member['id_num'] = preg_replace('/\D/', '', $member['id_num']);
+        }
+    }
+    unset($member);
+
+    $idNumbers = array_values(array_filter(array_column($peopleList, 'id_num')));
+    $headIdNum = session('id_num');
+
+    if ($headIdNum && in_array($headIdNum, $idNumbers)) {
+        $msg = "رقم الهوية ({$headIdNum}) هو رقم هوية رب الأسرة نفسه ولا يمكن إضافته كفرد تابع في الأسرة.";
+        return response()->json([
+            'success' => false,
+            'message' => $msg,
+            'error' => $msg,
+            'duplicateIds' => [$headIdNum],
+            'peopleList' => $peopleList,
+            'redirect' => route('persons.createFamily')
+        ], 422);
+    }
 
     // البحث عن أرقام الهوية الموجودة مسبقًا في قاعدة البيانات
-    $existingIds = Person::whereIn('id_num', $idNumbers)->pluck('id_num')->toArray();
+    $existingPersons = !empty($idNumbers) ? Person::whereIn('id_num', $idNumbers)->get() : collect();
 
-    if (!empty($existingIds)) {
+    if ($existingPersons->isNotEmpty()) {
+        $messages = [];
+        foreach ($existingPersons as $existing) {
+            $fullName = trim("{$existing->first_name} {$existing->family_name}");
+            $namePart = $fullName ? " ({$fullName})" : "";
+            $regStatus = empty($existing->relative_id) ? 'مسجل لحاله كرب أسرة' : 'مسجل ضمن عائلة';
+            $messages[] = "الفرد صاحب رقم الهوية ({$existing->id_num}){$namePart} مسجل مسبقاً لحاله أو ضمن عائلة ({$regStatus}).";
+        }
+        $errorMessage = implode('<br>', $messages);
+
         return response()->json([
-            'error' => 'رقم الهوية التالي مسجل مسبقًا: ' . implode(', ', $existingIds),
-            'duplicateIds' => $existingIds,
+            'success' => false,
+            'message' => $errorMessage,
+            'error' => $errorMessage,
+            'duplicateIds' => $existingPersons->pluck('id_num')->toArray(),
             'peopleList' => $peopleList,
             'redirect' => route('persons.createFamily')
         ], 422);
@@ -170,6 +260,8 @@ Route::post('/checkId', [PersonController::class, 'checkId'])->name('persons.che
 
 Route::get('/success',  [PersonController::class, 'success'])->name('persons.success');
 
+Route::post('/complaints/verify-id', [ComplaintController::class, 'verifyId'])->name('complaints.verifyId');
+Route::post('/complaints/check-type', [ComplaintController::class, 'checkTypeEligibility'])->name('complaints.checkType');
 Route::resource('complaints', ComplaintController::class);
 
 // Route::post('/complaints/submit', [ComplaintController::class, 'submit'])->name('complaints.submit');
@@ -195,14 +287,17 @@ Route::post('complaints/{complaint}/respond', [ComplaintController::class, 'resp
 
 
 Route::get('/map', function () {
-    // المناطق النشطة مع الحقول التي تحتاجها للخريطة
-    $regions = Region::where('is_active', true)
-        ->get(['id', 'name', 'color', 'boundaries']);
-
-    // اللوكيشينات النشطة مع علاقتها بالمنطقة
-    $locations = Location::with('region')
+    // المناطق النشطة مع علاقتها بمسؤول المنطقة وإحصائياته
+    $regions = Region::with(['areaResponsible' => function ($q) {
+            $q->withCount(['blocks']);
+        }])
         ->where('is_active', true)
-        ->get(['id', 'name', 'latitude', 'longitude', 'icon_color', 'address', 'phone', 'region_id']);
+        ->get(['id', 'name', 'color', 'boundaries', 'area_responsible_id']);
+
+    // اللوكيشينات النشطة مع علاقتها بالمنطقة والمندوب
+    $locations = Location::with(['region.areaResponsible', 'block.areaResponsible'])
+        ->where('is_active', true)
+        ->get(['id', 'name', 'latitude', 'longitude', 'icon_color', 'address', 'phone', 'region_id', 'block_id']);
 
     return view('map', compact('regions', 'locations'));
 })->name('public.map');

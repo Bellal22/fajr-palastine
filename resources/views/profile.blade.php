@@ -1262,83 +1262,256 @@
                         </button>
                     </div>
 
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>رقم الهوية</th>
-                                <th>عنوان الشكوى</th>
-                                <th>نص الشكوى</th>
-                                <th>حالة الشكوى</th>
-                                <th>الرد</th>
-                                <th>الموظف المسؤول</th>
-                                <th>تاريخ الإنشاء</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($complaints as $complaint)
-                            <tr>
-                                <td>{{ $complaint->id_num }}</td>
-                                <td>{{ $complaint->complaint_title }}</td>
-                                <td>{{ Str::limit($complaint->complaint_text, 50) }}</td>
-                                <td>
-                                    @php
-                                        $statusColors = [
-                                            'pending' => '#ffc107',
-                                            'in_progress' => '#17a2b8',
-                                            'resolved' => '#28a745',
-                                            'rejected' => '#dc3545',
-                                        ];
-                                        $statusLabels = [
-                                            'pending' => 'قيد الانتظار',
-                                            'in_progress' => 'قيد المعالجة',
-                                            'resolved' => 'تم الحل',
-                                            'rejected' => 'مرفوضة',
-                                        ];
-                                        $status = $complaint->status ?? 'pending';
-                                    @endphp
-                                    <span style="
-                                        background-color: {{ $statusColors[$status] }};
-                                        color: white;
-                                        padding: 5px 10px;
-                                        border-radius: 4px;
-                                        font-size: 12px;
-                                        font-weight: bold;
-                                        display: inline-block;
-                                    ">
-                                        {{ $statusLabels[$status] }}
-                                    </span>
-                                </td>
-                                <td>
+                    <style>
+                        .complaints-cards-container {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 20px;
+                            margin-top: 20px;
+                        }
+                        .complaint-card-item {
+                            background: #ffffff;
+                            border-radius: 14px;
+                            border: 1px solid rgba(255, 111, 0, 0.2);
+                            border-right: 5px solid #FF6F00;
+                            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+                            overflow: hidden;
+                            transition: all 0.25s ease;
+                        }
+                        .complaint-card-item:hover {
+                            box-shadow: 0 6px 22px rgba(255, 111, 0, 0.14);
+                        }
+                        .complaint-card-header {
+                            background: linear-gradient(135deg, rgba(255, 111, 0, 0.08), rgba(230, 81, 0, 0.03));
+                            padding: 16px 20px;
+                            border-bottom: 1px solid rgba(255, 111, 0, 0.12);
+                            display: flex;
+                            flex-wrap: wrap;
+                            justify-content: space-between;
+                            align-items: flex-start;
+                            gap: 12px;
+                        }
+                        .complaint-subject-wrap {
+                            flex: 1;
+                            min-width: 240px;
+                        }
+                        .complaint-subject-label {
+                            font-size: 12px;
+                            color: #888;
+                            font-weight: 600;
+                            display: flex;
+                            align-items: center;
+                            gap: 6px;
+                            margin-bottom: 4px;
+                        }
+                        .complaint-subject-label i {
+                            color: #FF6F00;
+                        }
+                        .complaint-subject-title {
+                            font-size: 17px;
+                            font-weight: 700;
+                            color: #222;
+                            line-height: 1.5;
+                            word-break: break-word;
+                            overflow-wrap: anywhere;
+                        }
+                        .complaint-meta-badges {
+                            display: flex;
+                            flex-wrap: wrap;
+                            align-items: center;
+                            gap: 10px;
+                        }
+                        .complaint-meta-chip {
+                            background: #fff;
+                            border: 1px solid #eee;
+                            color: #555;
+                            padding: 5px 12px;
+                            border-radius: 20px;
+                            font-size: 12px;
+                            font-weight: 600;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 6px;
+                        }
+                        .complaint-meta-chip i {
+                            color: #FF6F00;
+                        }
+                        .complaint-status-badge {
+                            color: #fff;
+                            padding: 6px 14px;
+                            border-radius: 20px;
+                            font-size: 12px;
+                            font-weight: 700;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 6px;
+                        }
+                        .complaint-card-body {
+                            padding: 20px;
+                            display: flex;
+                            flex-direction: column;
+                            gap: 16px;
+                        }
+                        .complaint-full-box {
+                            background: #fafafa;
+                            border: 1px solid #efefef;
+                            border-right: 3px solid #FF6F00;
+                            border-radius: 10px;
+                            padding: 15px 18px;
+                        }
+                        .complaint-full-box.response-box {
+                            background: #f4fbf7;
+                            border-color: #d8f3e5;
+                            border-right: 3px solid #28a745;
+                        }
+                        .complaint-full-box.pending-response-box {
+                            background: #fffdf5;
+                            border-color: #faebcc;
+                            border-right: 3px solid #ffc107;
+                        }
+                        .complaint-box-title {
+                            font-size: 13px;
+                            font-weight: 700;
+                            color: #E65100;
+                            margin-bottom: 8px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            flex-wrap: wrap;
+                            gap: 8px;
+                        }
+                        .complaint-full-box.response-box .complaint-box-title {
+                            color: #1e7e34;
+                        }
+                        .complaint-full-box.pending-response-box .complaint-box-title {
+                            color: #b58500;
+                        }
+                        .complaint-box-content {
+                            font-size: 14.5px;
+                            color: #333;
+                            line-height: 1.75;
+                            white-space: pre-wrap;
+                            word-break: break-word;
+                            overflow-wrap: anywhere;
+                        }
+                        .complaint-responder-meta {
+                            font-size: 12px;
+                            color: #666;
+                            font-weight: 600;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 10px;
+                        }
+                        .empty-complaints-box {
+                            text-align: center;
+                            padding: 35px 20px;
+                            background: rgba(255, 111, 0, 0.04);
+                            border: 1px dashed rgba(255, 111, 0, 0.3);
+                            border-radius: 12px;
+                            color: #777;
+                            font-size: 15px;
+                        }
+                    </style>
+
+                    @php
+                        $statusColors = [
+                            'pending' => '#ffc107',
+                            'in_progress' => '#17a2b8',
+                            'resolved' => '#28a745',
+                            'rejected' => '#dc3545',
+                        ];
+                        $statusLabels = [
+                            'pending' => 'قيد الانتظار',
+                            'in_progress' => 'قيد المعالجة',
+                            'resolved' => 'تم الحل',
+                            'rejected' => 'مرفوضة',
+                        ];
+                    @endphp
+
+                    <div class="complaints-cards-container">
+                        @forelse($complaints as $complaint)
+                            @php
+                                $status = $complaint->status ?? 'pending';
+                            @endphp
+                            <div class="complaint-card-item">
+                                <!-- هيدر البطاقة: موضوع الشكوى + الحالة + التاريخ -->
+                                <div class="complaint-card-header">
+                                    <div class="complaint-subject-wrap">
+                                        <div class="complaint-subject-label">
+                                            <i class="fas fa-heading"></i>
+                                            <span>موضوع / عنوان الشكوى</span>
+                                            @if($complaint->complaintType)
+                                                <span style="color: #FF6F00;">({{ $complaint->complaintType->name }})</span>
+                                            @endif
+                                        </div>
+                                        <div class="complaint-subject-title">{{ $complaint->complaint_title }}</div>
+                                    </div>
+
+                                    <div class="complaint-meta-badges">
+                                        <span class="complaint-meta-chip">
+                                            <i class="fas fa-id-card"></i>
+                                            {{ $complaint->id_num }}
+                                        </span>
+                                        <span class="complaint-meta-chip">
+                                            <i class="fas fa-calendar-alt"></i>
+                                            {{ $complaint->created_at ? $complaint->created_at->format('d/m/Y') : '-' }}
+                                        </span>
+                                        <span class="complaint-status-badge" style="background-color: {{ $statusColors[$status] ?? '#ffc107' }};">
+                                            {{ $statusLabels[$status] ?? 'قيد الانتظار' }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- جسم البطاقة: نص الشكوى الكامل + الرد الكامل -->
+                                <div class="complaint-card-body">
+                                    <!-- نص الشكوى الكامل -->
+                                    <div class="complaint-full-box">
+                                        <div class="complaint-box-title">
+                                            <span><i class="fas fa-align-right"></i> نص الشكوى الكامل:</span>
+                                        </div>
+                                        <div class="complaint-box-content">{{ $complaint->complaint_text }}</div>
+                                    </div>
+
+                                    <!-- الرد الكامل -->
                                     @if($complaint->response)
-                                        {{ Str::limit($complaint->response, 40) }}
-                                        @if($complaint->responded_at)
-                                            <br>
-                                            <small style="color: #999;">
-                                                {{ $complaint->responded_at->format('d/m/Y') }}
-                                            </small>
-                                        @endif
+                                        <div class="complaint-full-box response-box">
+                                            <div class="complaint-box-title">
+                                                <span>
+                                                    <i class="fas fa-reply"></i>
+                                                    الرد على الشكوى{{ $complaint->response_title ? ' (' . $complaint->response_title . ')' : '' }}:
+                                                </span>
+                                                <span class="complaint-responder-meta">
+                                                    @if($complaint->responder)
+                                                        <span><i class="fas fa-user-check"></i> الموظف المسؤول: {{ $complaint->responder->name }}</span>
+                                                    @endif
+                                                    @if($complaint->responded_at)
+                                                        <span><i class="fas fa-clock"></i> {{ $complaint->responded_at->format('d/m/Y H:i') }}</span>
+                                                    @endif
+                                                </span>
+                                            </div>
+                                            <div class="complaint-box-content">{{ $complaint->response }}</div>
+                                        </div>
                                     @else
-                                        <span style="color: #999;">لم يتم الرد بعد</span>
+                                        <div class="complaint-full-box pending-response-box">
+                                            <div class="complaint-box-title" style="margin-bottom: 0;">
+                                                <span><i class="fas fa-hourglass-half"></i> الرد: لم يتم الرد بعد</span>
+                                                @if($complaint->responder)
+                                                    <span class="complaint-responder-meta">
+                                                        <span><i class="fas fa-user-tie"></i> الموظف المسؤول: {{ $complaint->responder->name }}</span>
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </div>
                                     @endif
-                                </td>
-                                <td>
-                                    @if($complaint->responder)
-                                        <strong>{{ $complaint->responder->name }}</strong>
-                                        @if($complaint->responded_at)
-                                            <br>
-                                            <small style="color: #999;">{{ $complaint->responded_at->format('d/m/Y H:i') }}</small>
-                                        @endif
-                                    @else
-                                        <span style="color: #999;">-</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    {{ $complaint->created_at ? $complaint->created_at->format('d/m/Y') : '-' }}
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="empty-complaints-box">
+                                <i class="fas fa-inbox" style="font-size: 28px; color: #FF6F00; display: block; margin-bottom: 8px;"></i>
+                                لا توجد شكاوى مسجلة حالياً.
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
         </div>
@@ -1549,7 +1722,7 @@
                             <label for="edit_city">المحافظة الأصلية</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-map-marker-alt input-icon"></i>
-                                <select id="edit_city" name="city" required oninput="validateCity()" onfocus="resetBorderAndError('edit_city')" @if($person->is_frozen) disabled @endif>
+                                <select id="edit_city" name="city" required oninput="validateCity()" onfocus="resetBorderAndError('edit_city')">
                                     <option value="">اختر المحافظة الأصلية</option>
                                     @foreach($cities_list as $name => $label)
                                         <option value="{{ $name }}" {{ ($person->city == $name) ? 'selected' : '' }}>{{ $label }}</option>
@@ -1576,7 +1749,7 @@
                             <label for="edit_current_city">المحافظة التي تسكن فيها حالياً</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-map-marked-alt input-icon"></i>
-                                <select id="edit_current_city" name="current_city" required oninput="validateCurrentCity()" onfocus="resetBorderAndError('edit_current_city')" onchange="updateNeighborhoods(this.value, '{{ $person->neighborhood }}')" @if($person->is_frozen) disabled @endif>
+                                <select id="edit_current_city" name="current_city" required oninput="validateCurrentCity()" onfocus="resetBorderAndError('edit_current_city')" onchange="updateNeighborhoods(this.value, '{{ $person->neighborhood }}')">
                                     <option value="">اختر المحافظة التي تسكن فيها حالياً</option>
                                     @foreach($cities_list as $name => $label)
                                         <option value="{{ $name }}" {{ ($person->current_city == $name) ? 'selected' : '' }}>{{ $label }}</option>
@@ -1604,7 +1777,7 @@
                             <label for="edit_neighborhood">الحي السكني الذي تتواجد فيه حالياً</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-map-signs input-icon"></i>
-                                <select id="edit_neighborhood" name="neighborhood" required oninput="validateNeighborhood()" onfocus="resetBorderAndError('edit_neighborhood')" onchange="updateResponsibles(this.value, '{{ $person->area_responsible_id }}')" @if($person->is_frozen) disabled @endif>
+                                <select id="edit_neighborhood" name="neighborhood" required oninput="validateNeighborhood()" onfocus="resetBorderAndError('edit_neighborhood')" onchange="updateResponsibles(this.value, '')">
                                     <option value="">اختر الحي</option>
                                     {{-- سيتم تعبئته بواسطة JS --}}
                                 </select>
@@ -1616,7 +1789,7 @@
                             <label for="edit_area_responsible_id">مسؤول المنطقة</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-user-shield input-icon"></i>
-                                <select id="edit_area_responsible_id" name="area_responsible_id" onchange="updateBlocks(this.value, '{{ $person->block_id }}')" @if($person->is_frozen) disabled @endif>
+                                <select id="edit_area_responsible_id" name="area_responsible_id" onchange="updateBlocks(this.value, '{{ $person->block_id }}')">
                                     <option value="">اختر المسؤول</option>
                                 </select>
                             </div>
@@ -1627,7 +1800,7 @@
                             <label for="edit_block_id">المندوب</label>
                             <div class="input-wrapper">
                                 <i class="fas fa-user-tag input-icon"></i>
-                                <select id="edit_block_id" name="block_id" @if($person->is_frozen) disabled @endif>
+                                <select id="edit_block_id" name="block_id">
                                     <option value="">اختر المندوب</option>
                                 </select>
                             </div>
@@ -1940,6 +2113,26 @@
 
                 <div class="popup-form-section">
                     <h3><i class="fas fa-comments"></i> تفاصيل الشكوى</h3>
+
+                    @if(isset($complaint_types) && $complaint_types->count() > 0)
+                    <div class="form-group">
+                        <label for="complaint_type_id">نوع الشكوى / الاستفسار <span style="color: red;">*</span></label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-layer-group input-icon"></i>
+                            <select id="complaint_type_id" name="complaint_type_id" required>
+                                @php
+                                    $firstActiveTypeId = optional($complaint_types->firstWhere('is_active', true))->id ?? optional($complaint_types->first())->id;
+                                @endphp
+                                @foreach($complaint_types as $type)
+                                    <option value="{{ $type->id }}" {{ $type->id == $firstActiveTypeId ? 'selected' : '' }}>
+                                        {{ $type->name }}{{ !$type->is_active ? ' (غير متاح حالياً)' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="error-message" id="complaint_type_id_error" style="display:none;"></div>
+                    </div>
+                    @endif
 
                     <div class="form-group">
                         <label for="complaint_title">عنوان الشكوى <span style="color: red;">*</span></label>
@@ -2299,11 +2492,21 @@
 
             // دالة إرسال الشكوى
             window.submitComplaint = function() {
+                const typeId = $('#complaint_type_id').length ? $('#complaint_type_id').val() : '';
                 const title = $('#complaint_title').val().trim();
                 const text = $('#complaint_text').val().trim();
                 let isValid = true;
 
                 // التحقق من صحة البيانات
+                if ($('#complaint_type_id').length && !typeId) {
+                    $('#complaint_type_id_error').text('يرجى اختيار نوع الشكوى').show();
+                    $('#complaint_type_id').css('borderColor', 'red');
+                    isValid = false;
+                } else if ($('#complaint_type_id').length) {
+                    $('#complaint_type_id_error').hide();
+                    $('#complaint_type_id').css('borderColor', '');
+                }
+
                 if (!title) {
                     $('#complaint_title_error').text('عنوان الشكوى مطلوب').show();
                     $('#complaint_title').css('borderColor', 'red');
@@ -2344,6 +2547,7 @@
                     },
                     data: {
                         id_num: '{{ $person->id_num }}',
+                        complaint_type_id: typeId,
                         complaint_title: title,
                         complaint_text: text
                     },
@@ -3524,17 +3728,28 @@
         }
 
         function validateAreaResponsible() {
+            const field = document.getElementById('edit_areaResponsibleField');
+            if (field && field.style.display === 'none') {
+                return true;
+            }
+
             const select = document.getElementById('edit_area_responsible_id');
             const errorDiv = document.getElementById('edit_area_responsible_id_error');
 
-            if (select.value.trim() === '') {
-                errorDiv.textContent = 'يرجى اختيار مسؤول المنطقة.';
-                errorDiv.style.display = 'block';
-                select.style.borderColor = 'red';
+            if (!select || select.value.trim() === '') {
+                if (errorDiv) {
+                    errorDiv.textContent = 'يرجى اختيار مسؤول المنطقة.';
+                    errorDiv.style.display = 'block';
+                }
+                if (select) select.style.borderColor = 'red';
+                return false;
             } else {
-                errorDiv.textContent = '';
-                errorDiv.style.display = 'none';
+                if (errorDiv) {
+                    errorDiv.textContent = '';
+                    errorDiv.style.display = 'none';
+                }
                 select.style.borderColor = '';
+                return true;
             }
         }
 
@@ -4022,11 +4237,18 @@
                 if (resArray.length > 0) {
                     console.log(`✅ Sync: Found ${resArray.length} responsibles`);
                     if (resField) resField.style.display = 'block';
+                    resSelect.removeAttribute('disabled');
+                    resSelect.disabled = false;
                     
                     resArray.forEach(([id, name]) => {
                         const selected = String(id) === String(selectedResponsibleId) ? 'selected' : '';
                         resSelect.innerHTML += `<option value="${id}" ${selected}>${name}</option>`;
                     });
+
+                    // إذا كان هناك مسؤول واحد فقط، نقوم باختياره تلقائياً إذا لم يكن محدد
+                    if (resArray.length === 1 && !selectedResponsibleId) {
+                        resSelect.value = resArray[0][0];
+                    }
 
                     // تحديث المربعات بناءً على المسئول المختار
                     const currentResId = resSelect.value;
@@ -4036,10 +4258,12 @@
                 } else {
                     if (resField) resField.style.display = 'none';
                     if (blockField) blockField.style.display = 'none';
+                    resSelect.value = '';
                 }
             } else {
                 if (resField) resField.style.display = 'none';
                 if (blockField) blockField.style.display = 'none';
+                resSelect.value = '';
             }
         }
 

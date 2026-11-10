@@ -48,6 +48,12 @@
                                 </x-check-all-assignBlock>
                             </div>
                         @endif
+                        
+                        <div class="mr-2">
+                            <button type="button" class="btn btn-warning btn-sm" id="btn-move-to-incomplete" disabled onclick="moveToIncomplete()">
+                                <i class="fas fa-reply mr-1"></i> نقل للبيانات غير المكتملة
+                            </button>
+                        </div>
                     </div>
 
                     {{-- View Button in Center --}}
@@ -66,7 +72,7 @@
 
                         @if (auth()->user()?->isAdmin())
                             <div>
-                                <a href="{{ route('dashboard.people.export.selected', request()->all()) }}"
+                                <a href="{{ route('dashboard.people.export.selected', array_merge(request()->all(), ['export_source' => 'index'])) }}"
                                 class="btn btn-outline-success btn-sm">
                                     <i class="fas fa-file-excel"></i>
                                     @lang('people.actions.export_all')
@@ -270,4 +276,47 @@
             @endslot
         @endif
     @endcomponent
+
+    {{-- Hidden form for moving back to scrap --}}
+    <form id="form-move-to-incomplete" action="{{ route('dashboard.incomplete_people.move-from-persons') }}" method="POST" style="display: none;">
+        @csrf
+        <div id="hidden-items-container"></div>
+    </form>
+
+    @push('scripts')
+    <script>
+        function moveToIncomplete() {
+            if (!confirm('هل أنت متأكد من نقل المحددين إلى البيانات غير المكتملة؟ سيؤدي ذلك لحذفهم من هنا.')) return;
+            
+            const container = document.getElementById('hidden-items-container');
+            container.innerHTML = '';
+            
+            document.querySelectorAll('.item-checkbox:checked').forEach(cb => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'items[]';
+                input.value = cb.value;
+                container.appendChild(input);
+            });
+            
+            document.getElementById('form-move-to-incomplete').submit();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const moveBtn = document.getElementById('btn-move-to-incomplete');
+            
+            function updateMoveBtn() {
+                const checked = document.querySelectorAll('.item-checkbox:checked').length;
+                moveBtn.disabled = checked === 0;
+            }
+
+            // Watch for changes in checkboxes
+            document.body.addEventListener('change', function(e) {
+                if (e.target.classList.contains('item-checkbox') || e.target.id === 'check-all') {
+                    setTimeout(updateMoveBtn, 100); // Small delay to let other scripts finish
+                }
+            });
+        });
+    </script>
+    @endpush
 </x-layout>

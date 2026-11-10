@@ -27,6 +27,9 @@ class InternalPackage extends Model
      * @var array
      */
     protected $fillable = [
+        'name',
+        'description',
+        'weight',
         'quantity',
         'remaining_quantity',
         'min_stock',

@@ -97,7 +97,22 @@ class AuthController extends Controller
         }
 
         // جلب الشكاوى المرتبطة بهذا الشخص
-        $complaints = Complaint::where('id_num', $id_num)->get();
+        $complaints = Complaint::with(['responder', 'complaintType'])
+            ->where('id_num', $id_num)
+            ->latest()
+            ->get();
+
+        // جلب أنواع الشكاوى الفعالة والمتاحة
+        $complaint_types = \App\Models\ComplaintType::select('id', 'name', 'is_active', 'inactive_response', 'cooldown_days')->get();
+        if ($complaint_types->isEmpty()) {
+            \App\Models\ComplaintType::create([
+                'name' => 'شكوى عامة / استفسار',
+                'is_active' => true,
+                'cooldown_days' => 0,
+                'inactive_response' => 'نعتذر، استقبال الشكاوى متوقف حالياً.'
+            ]);
+            $complaint_types = \App\Models\ComplaintType::select('id', 'name', 'is_active', 'inactive_response', 'cooldown_days')->get();
+        }
 
         // جلب القيم من قاعدة البيانات (كما في لوحة التحكم)
         $chooses = Choose::orderBy('order')->get()->groupBy('type');
@@ -127,6 +142,7 @@ class AuthController extends Controller
         return view('profile', compact(
             'person',
             'complaints',
+            'complaint_types',
             'social_statuses',
             'relationships',
             'cities_list',

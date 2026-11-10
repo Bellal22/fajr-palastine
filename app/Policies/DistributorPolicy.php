@@ -19,7 +19,7 @@ class DistributorPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->hasPermission('manage.distributors');
     }
 
     /**
@@ -31,7 +31,7 @@ class DistributorPolicy
      */
     public function view(User $user, Distributor $distributor)
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->hasPermission('manage.distributors');
     }
 
     /**
@@ -42,7 +42,7 @@ class DistributorPolicy
      */
     public function create(User $user)
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->hasPermission('manage.distributors');
     }
 
     /**
@@ -54,7 +54,7 @@ class DistributorPolicy
      */
     public function update(User $user, Distributor $distributor)
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->hasPermission('manage.distributors');
     }
 
     /**
@@ -66,7 +66,7 @@ class DistributorPolicy
      */
     public function delete(User $user, Distributor $distributor)
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->hasPermission('manage.distributors');
     }
 
     /**
@@ -77,7 +77,7 @@ class DistributorPolicy
      */
     public function viewAnyTrash(User $user)
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->hasPermission('manage.distributors');
     }
 
     /**
@@ -89,7 +89,7 @@ class DistributorPolicy
      */
     public function viewTrash(User $user, Distributor $distributor)
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->hasPermission('manage.distributors');
     }
 
     /**
@@ -101,7 +101,7 @@ class DistributorPolicy
      */
     public function restore(User $user, Distributor $distributor)
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->hasPermission('manage.distributors');
     }
 
     /**
@@ -113,7 +113,7 @@ class DistributorPolicy
      */
     public function forceDelete(User $user, Distributor $distributor)
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->hasPermission('manage.distributors');
     }
 
     /**

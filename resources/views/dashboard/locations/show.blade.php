@@ -280,26 +280,19 @@
                 </div>
                 <div class="card-footer text-muted">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <small>
-                                <i class="fas fa-info-circle"></i>
-                                @lang('locations.map.legend_location'):
-                                <span style="color: {{ $location->icon_color }};">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <strong>{{ $location->name }}</strong>
-                                </span>
+                                <i class="fas fa-info-circle text-primary"></i>
+                                موقع المندوب / المخيم:
+                                <strong class="text-dark">{{ $location->name }}</strong>
+                                @if($location->block && $location->block->name !== $location->name)
+                                    - {{ $location->block->name }}
+                                @endif
+                                @if($location->block && $location->block->title)
+                                    ({{ $location->block->title }})
+                                @endif
                             </small>
                         </div>
-                        @if($location->block)
-                        <div class="col-md-6 text-md-right">
-                            <small>
-                                <i class="fas fa-info-circle"></i>
-                                @lang('locations.map.legend_block'):
-                                <i class="fas fa-walking text-warning"></i>
-                                <strong>{{ $location->block->name ?? $location->block->title }}</strong>
-                            </small>
-                        </div>
-                        @endif
                     </div>
                 </div>
             </div>
@@ -426,37 +419,13 @@
                     bounds.push(...latlngs);
                 }
 
-                // دبوس البلوك (المندوب)
-                if (locationData.block_lat && locationData.block_lng) {
-                    const blockMarker = L.marker([locationData.block_lat, locationData.block_lng], {
-                        icon: L.icon({
-                            iconUrl: "{{ asset('icons/person-marker.png') }}",
-                            iconSize: [40, 40],
-                            iconAnchor: [20, 40],
-                            popupAnchor: [0, -40],
-                            shadowSize: [41, 41]
-                            })
-                    }).addTo(map);
-
-                    blockMarker.bindPopup(`
-                        <div style="min-width: 150px;">
-                            <h6 style="color: #856404;">
-                                <i class="fas fa-walking"></i> ${locationData.block_name}
-                            </h6>
-                            <small class="text-muted">@lang('locations.attributes.block')</small>
-                        </div>
-                    `);
-
-                    bounds.push([locationData.block_lat, locationData.block_lng]);
-                }
-
-                // دبوس اللوكيشن الرئيسي
+                // دبوس المندوب واللوكيشن (دبوس واحد فقط بدون تكرار)
                 const locationMarker = L.marker([locationData.lat, locationData.lng], {
                     icon: L.icon({
                         iconUrl: "{{ asset('icons/person-marker.png') }}",
-                        iconSize: [40, 40],
-                        iconAnchor: [20, 40],
-                        popupAnchor: [0, -40],
+                        iconSize: [42, 42],
+                        iconAnchor: [21, 42],
+                        popupAnchor: [0, -42],
                         shadowSize: [41, 41]
                     })
                 }).addTo(map);

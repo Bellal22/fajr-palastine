@@ -301,8 +301,17 @@
                                     <i class="fas fa-city"></i> @lang('people.attributes.current_city')
                                 </label>
                                 {{ BsForm::select('current_city', [
+                                    'northGaza' => 'شمال غزة',
+                                    'gaza' => 'غزة',
+                                    'alwsta' => 'الوسطى',
                                     'khanYounis' => 'خانيونس',
                                     'rafah' => 'رفح',
+                                    'شمال غزة' => 'شمال غزة',
+                                    'غزة' => 'غزة',
+                                    'الوسطى' => 'الوسطى',
+                                    'خان يونس' => 'خان يونس',
+                                    'خانيونس' => 'خانيونس',
+                                    'رفح' => 'رفح',
                                 ])
                                 ->value(request('current_city'))
                                 ->placeholder(trans('people.placeholders.select_current_city'))

@@ -100,6 +100,17 @@
                             </tr>
                             <tr>
                                 <th>
+                                    <i class="fas fa-ruler-combined text-info"></i>
+                                    @lang('regions.attributes.area')
+                                </th>
+                                <td>
+                                    <span class="badge badge-info fs-6 px-2 py-1">
+                                        {{ $region->area_formatted }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>
                                     <i class="fas fa-power-off text-warning"></i>
                                     @lang('regions.attributes.status')
                                 </th>
@@ -149,6 +160,17 @@
 
     {{-- Map Card - Full Width --}}
     @if($region->boundaries && count($region->boundaries) > 0)
+        {{-- تنبيه المواقع والمناديب خارج حدود المنطقة --}}
+        <div id="outsideLocationsBanner" class="alert alert-warning shadow-sm mb-4" style="display: none;">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-2x mr-3 text-warning" style="margin-left: 15px;"></i>
+                <div>
+                    <h6 class="font-weight-bold mb-1">تنبيه: مناديب تقع إحداثياتهم خارج حدود هذه المنطقة</h6>
+                    <span id="outsideLocationsListText"></span>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-12">
                 <div class="card mb-4 shadow-sm">
@@ -218,6 +240,8 @@
                     name: @json($region->name),
                     color: @json($region->color ?? '#FF0000'),
                     boundaries: @json($region->boundaries ?? []),
+                    area_km2: @json($region->area_km2),
+                    area_formatted: @json($region->area_formatted),
                     responsible: @json(optional($region->areaResponsible)->name),
                     is_active: {{ $region->is_active ? 'true' : 'false' }},
                     locations: @json($region->locations ?? [])
@@ -272,6 +296,18 @@
                     </h6>
                 `;
 
+                if (regionData.area_formatted) {
+                    popupHtml += `
+                        <div class="popup-info-row">
+                            <div class="popup-label">
+                                <i class="fas fa-ruler-combined text-info"></i>
+                                @lang('regions.attributes.area')
+                            </div>
+                            <div class="popup-value">${regionData.area_formatted}</div>
+                        </div>
+                    `;
+                }
+
                 if (regionData.responsible) {
                     popupHtml += `
                         <div class="popup-info-row">
@@ -306,10 +342,48 @@
                     padding: [30, 30]
                 });
 
+                // دالة فحص النقطة داخل مضلع المنطقة
+                function isPointInPolygon(lat, lng, polygonCoords) {
+                    if (!polygonCoords || polygonCoords.length < 3) return true;
+                    const x = parseFloat(lat);
+                    const y = parseFloat(lng);
+                    if (isNaN(x) || isNaN(y) || (x === 0 && y === 0)) return true;
+
+                    let inside = false;
+                    const count = polygonCoords.length;
+                    let j = count - 1;
+
+                    for (let i = 0; i < count; i++) {
+                        const pi = polygonCoords[i];
+                        const pj = polygonCoords[j];
+                        const xi = parseFloat(pi.lat !== undefined ? pi.lat : pi[0]);
+                        const yi = parseFloat(pi.lng !== undefined ? pi.lng : pi[1]);
+                        const xj = parseFloat(pj.lat !== undefined ? pj.lat : pj[0]);
+                        const yj = parseFloat(pj.lng !== undefined ? pj.lng : pj[1]);
+
+                        const intersect = ((yi > y) !== (yj > y)) &&
+                            (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+
+                        if (intersect) inside = !inside;
+                        j = i;
+                    }
+                    return inside;
+                }
+
+                const outsideLocationsList = [];
+
                 // Add Markers for Locations
                 regionData.locations.forEach(location => {
                     if (location.latitude && location.longitude) {
-                        const marker = L.marker([parseFloat(location.latitude), parseFloat(location.longitude)], {
+                        const locLat = parseFloat(location.latitude);
+                        const locLng = parseFloat(location.longitude);
+                        const isInside = isPointInPolygon(locLat, locLng, regionData.boundaries);
+
+                        if (!isInside) {
+                            outsideLocationsList.push(location.name || '@lang("locations.singular")');
+                        }
+
+                        const marker = L.marker([locLat, locLng], {
                             icon: L.icon({
                                 iconUrl: "{{ asset('icons/person-marker.png') }}",
                                 iconSize: [40, 40],
@@ -329,6 +403,16 @@
                                 <i class="fas fa-map-marker-alt"></i> ${locName}
                             </h6>
                         `;
+
+                        if (!isInside) {
+                            popupHtml += `
+                                <div class="mb-2">
+                                    <span class="badge badge-danger px-2 py-1" style="font-size: 11px;">
+                                        <i class="fas fa-exclamation-triangle"></i> تقع خارج حدود المنطقة
+                                    </span>
+                                </div>
+                            `;
+                        }
 
                         if (location.address) {
                             popupHtml += `
@@ -390,6 +474,16 @@
                         });
                     }
                 });
+
+                // عرض شريط التنبيه إذا وجد مناديب خارج الحدود
+                if (outsideLocationsList.length > 0) {
+                    const banner = document.getElementById('outsideLocationsBanner');
+                    const bannerText = document.getElementById('outsideLocationsListText');
+                    if (banner && bannerText) {
+                        bannerText.innerHTML = 'المناديب/المواقع التالية تقع إحداثياتها <b>خارج نطاق حدود هذه المنطقة</b>: ' + outsideLocationsList.join('، ');
+                        banner.style.display = 'block';
+                    }
+                }
             });
         </script>
     @endpush

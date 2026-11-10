@@ -29,6 +29,12 @@
                             @include('dashboard.blocks.partials.actions.trashed')
                         </div>
 
+                        <div class="mr-2">
+                            <button type="button" class="btn btn-outline-success btn-sm" data-toggle="modal" data-target="#importBlocksModal">
+                                <i class="fas fa-file-excel"></i> استيراد إكسل
+                            </button>
+                        </div>
+
                         <div>
                             @include('dashboard.blocks.partials.actions.create')
                         </div>
@@ -91,8 +97,12 @@
 
                 {{-- Area Responsible --}}
                 <td class="d-none d-md-table-cell">
-                    <i class="fas fa-user-shield text-info"></i>
-                    {{ $block->areaResponsible->name }}
+                    @if($block->areaResponsible)
+                        <i class="fas fa-user-shield text-info"></i>
+                        {{ $block->areaResponsible->name }}
+                    @else
+                        <span class="text-muted font-italic">-</span>
+                    @endif
                 </td>
 
                 {{-- Actions Dropdown --}}
@@ -171,4 +181,79 @@
             @endslot
         @endif
     @endcomponent
+
+    <!-- Modal استيراد المندوبين -->
+    <div class="modal fade" id="importBlocksModal" tabindex="-1" role="dialog" aria-labelledby="importBlocksModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form action="{{ route('dashboard.blocks.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="importBlocksModalLabel">
+                            <i class="fas fa-file-excel ml-1"></i> استيراد مندوبين من ملف إكسل
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        
+                        {{-- 1. اختيار مسؤول المنطقة --}}
+                        <div class="form-group mb-3">
+                            <label for="area_responsible_id">
+                                مسؤول المنطقة <span class="text-danger">*</span>
+                            </label>
+                            <select name="area_responsible_id" id="area_responsible_id" class="form-control" required>
+                                <option value="">-- اختر مسؤول المنطقة --</option>
+                                @foreach($areaResponsibles as $id => $name)
+                                    <option value="{{ $id }}">{{ $name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- 2. اختيار ملف الإكسل --}}
+                        <div class="form-group mb-4">
+                            <label for="import_file">
+                                اختر ملف الإكسل (.xlsx, .xls, .csv) <span class="text-danger">*</span>
+                            </label>
+                            <div class="custom-file">
+                                <input type="file" name="file" class="custom-file-input" id="import_file" accept=".xlsx, .xls, .csv" required>
+                                <label class="custom-file-label" for="import_file">اختر ملف الإكسل...</label>
+                            </div>
+                        </div>
+
+                        {{-- 3. كارد تحميل نموذج الإكسل --}}
+                        <div class="border rounded p-3 text-center bg-light">
+                            <i class="fas fa-file-excel text-success fa-2x mb-2"></i>
+                            <div class="font-weight-bold text-dark mb-1" style="font-size: 14px;">
+                                نموذج ملف الإكسل الجاهز (Excel Template)
+                            </div>
+                            <p class="small text-muted mb-3" style="font-size: 12px;">
+                                يمكنك تحميل هذا النموذج وتعبئة بيانات المندوبين بنفس الترتيب الجاهز.
+                            </p>
+                            <a href="{{ route('dashboard.blocks.import.template') }}" class="btn btn-sm btn-outline-success font-weight-bold">
+                                <i class="fas fa-download ml-1"></i> تنزيل نموذج الإكسل
+                            </a>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-upload ml-1"></i> استيراد الآن
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+        <script>
+            $(document).on('change', '#import_file', function() {
+                var fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').addClass("selected").html(fileName || 'اختر ملف الإكسل...');
+            });
+        </script>
+    @endpush
 </x-layout>

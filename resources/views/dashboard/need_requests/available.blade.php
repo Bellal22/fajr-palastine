@@ -180,75 +180,73 @@
                 $limit = $setting->allowed_id_count;
                 
                 // Find pending request for this supervisor
-                $pendingRequest = $project->needRequests->first();
-                $currentCount = $pendingRequest ? $pendingRequest->items()->count() : 0;
+                $currentCount = $project->current_round_nominations ?? 0;
                 $percent = $limit > 0 ? min(100, ($currentCount / $limit) * 100) : 0;
                 
                 $isExpired = $deadline && $deadline->isPast();
             @endphp
 
             <div class="col-md-6 col-xl-4 mb-4">
-                <div class="card card-metronic">
-                    <div class="card-header border-0 pt-5">
+                <div class="card card-metronic shadow-sm">
+                    <div class="card-header border-0 pt-5 bg-light-soft">
                         <div class="card-title">
-                            <div class="d-flex flex-column">
-                                <h3 class="text-dark fw-bolder fs-3">{{ $project->name }}</h3>
-                                <span class="text-muted fw-bold fs-7 mt-1">{{ $project->project_type ?? 'كوبون احتياج' }}</span>
+                            <i class="fas fa-box-open text-primary mr-3 fa-lg"></i>
+                            <div class="d-flex flex-column ml-2">
+                                <h3 class="text-dark fw-bolder fs-4 mb-0">{{ $project->name }}</h3>
+                                <span class="text-muted small">{{ $project->project_type ?? 'كوبون احتياج' }}</span>
                             </div>
-                        </div>
-                        <div class="card-toolbar">
-                            @if($deadline)
-                                <span class="badge {{ $isExpired ? 'badge-light-danger' : 'badge-light-primary' }} fw-bolder px-4 py-3">
-                                    <i class="far fa-clock mr-1"></i>
-                                    @if($isExpired) منتهي @else {{ $deadline->diffForHumans() }} @endif
-                                </span>
-                            @endif
                         </div>
                     </div>
                     
-                    <div class="card-body">
-                        <ul class="stat-list">
-                            <li>
-                                <i class="fas fa-users"></i>
-                                <span class="stat-label">العدد الأقصى المسموح</span>
-                                <span class="stat-value">{{ $limit ?: 'غير محدد' }}</span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-double"></i>
-                                <span class="stat-label">العدد الذي تم ترشيحه</span>
-                                <span class="stat-value text-primary">{{ $currentCount }}</span>
-                            </li>
-                        </ul>
-
-                        <div class="d-flex justify-content-between fw-bolder fs-6 text-gray-800 mb-2">
-                            <span>نسبة الإنجاز</span>
-                            <span>{{ round($percent) }}%</span>
+                    <div class="card-body py-4">
+                        <div class="p-3 mb-4 rounded bg-light border-dashed">
+                            <div class="row text-center">
+                                <div class="col-6 border-right">
+                                    <span class="d-block text-muted small">المطلوب</span>
+                                    <span class="font-weight-bold fs-5">{{ $limit ?: '∞' }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <span class="d-block text-muted small">المرشح</span>
+                                    <span class="font-weight-bold fs-5 text-primary">{{ $currentCount }}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="progress-metronic w-100 mb-2">
+
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">نسبة الإنجاز</span>
+                            <span class="text-dark font-weight-bold small">{{ round($percent) }}%</span>
+                        </div>
+                        <div class="progress-metronic w-100 mb-4" style="height: 6px;">
                             <div class="progress-bar" role="progressbar" style="width: {{ $percent }}%" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-center p-2 mb-2 rounded bg-light-primary border-primary border-dashed">
+                            @if($deadline)
+                                <div class="text-center">
+                                    <span class="badge {{ $isExpired ? 'badge-danger' : 'badge-primary' }} px-3 py-2">
+                                        <i class="far fa-clock mr-1"></i>
+                                        @if($isExpired) منتهي ({{ $deadline->format('d/m') }}) @else ينتهي {{ $deadline->diffForHumans() }} @endif
+                                    </span>
+                                    @if(!$isExpired)
+                                        <div class="small text-muted mt-1" style="font-size: 0.65rem">{{ $deadline->format('Y-m-d H:i') }}</div>
+                                    @endif
+                                </div>
+                            @else
+                                <span class="text-muted small">بدون موعد نهائي</span>
+                            @endif
                         </div>
                     </div>
 
-                    <div class="card-footer pt-0">
-                        @if(auth()->user()->isAdmin())
+                    <div class="card-footer border-0 pt-0 pb-5">
+                        @if(auth()->check() && auth()->user()->isAdmin())
                             <a href="{{ route('dashboard.need_requests.bulk_create', ['project_id' => $project->id]) }}" class="btn btn-kt-light">
                                 <i class="fas fa-edit mr-2"></i> تعديل تفعيل الطلب
                             </a>
                         @else
-                            @if($isExpired)
-                                <button class="btn btn-kt-light disabled" disabled>
-                                    <i class="fas fa-lock mr-2"></i> انتهى الوقت
-                                </button>
-                            @elseif($limit > 0 && $currentCount >= $limit)
-                                <button class="btn btn-kt-light disabled" disabled>
-                                    <i class="fas fa-check-circle mr-2"></i> تم اكتمال العدد
-                                </button>
-                            @else
-                                <a href="{{ route('dashboard.need_requests.create', ['project_id' => $project->id]) }}" class="btn btn-kt-primary">
-                                    <i class="fas fa-plus-circle mr-2"></i> 
-                                    {{ $currentCount > 0 ? 'إضافة هويات إضافية' : 'بدء الترشيح الآن' }}
-                                </a>
-                            @endif
+                            <a href="{{ route('dashboard.need_requests.create', ['project_id' => $project->id]) }}" class="btn btn-kt-primary btn-sm {{ ($isExpired || ($limit > 0 && $currentCount >= $limit)) ? 'disabled' : '' }}">
+                                <i class="fas fa-plus-circle mr-1"></i> 
+                                {{ $currentCount > 0 ? 'إضافة هويات إضافية' : 'بدء الترشيح الآن' }}
+                            </a>
                         @endif
                     </div>
                 </div>

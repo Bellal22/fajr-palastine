@@ -38,6 +38,26 @@ trait UserHelpers
     }
 
     /**
+     * Determine whether the user type is general search only.
+     *
+     * @return bool
+     */
+    public function isGeneralSearchOnly()
+    {
+        return $this->type == User::GENERAL_SEARCH_TYPE;
+    }
+
+    /**
+     * Determine whether the user type is kitchen monitor.
+     *
+     * @return bool
+     */
+    public function isKitchenMonitor()
+    {
+        return $this->type == User::KITCHEN_MONITOR_TYPE;
+    }
+
+    /**
      * Set the user type.
      *
      * @return $this
@@ -61,7 +81,7 @@ trait UserHelpers
      */
     public function canAccessDashboard()
     {
-        return $this->isAdmin() || $this->isSupervisor();
+        return $this->isAdmin() || $this->isSupervisor() || $this->isKitchenMonitor();
     }
 
     /**
@@ -72,7 +92,29 @@ trait UserHelpers
      */
     public function hasPermission(string $permission)
     {
-        return $this->hasPermissionTo($permission);
+        try {
+            return $this->hasPermissionTo($permission);
+        } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist $e) {
+            \Spatie\Permission\Models\Permission::findOrCreate($permission, 'web');
+            return $this->hasPermissionTo($permission);
+        }
+    }
+
+    /**
+     * Ensure all given permissions exist in DB before syncing them.
+     *
+     * @param array $permissions
+     * @return $this
+     */
+    public function syncUserPermissions(array $permissions = [])
+    {
+        foreach ($permissions as $permission) {
+            if (is_string($permission) && $permission !== '') {
+                \Spatie\Permission\Models\Permission::findOrCreate($permission, 'web');
+            }
+        }
+
+        return $this->syncPermissions($permissions);
     }
 
     /**

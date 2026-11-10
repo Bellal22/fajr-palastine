@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 class PersonFilter extends BaseFilters
 {
     protected $tableAlias = ''; // خاصية جديدة لتخزين اسم الجدول أو الاسم المستعار
+    public $skipHeadMapping = false; // خاصية جديدة لتخطي تحويل الرقم للهيكل الأبوي
 
     public function __construct(Builder $builder, string $tableAlias = '')
     {
@@ -70,21 +71,34 @@ class PersonFilter extends BaseFilters
         $notFoundIds = [];
         $familyHeadIds = [];
 
+        $cleanedIds = [];
         foreach ($ids as $id) {
             $trimmedId = trim($id);
-            if (empty($trimmedId)) continue;
-            
-            $person = Person::where('id_num', $trimmedId)->first();
+            if (!empty($trimmedId)) {
+                $cleanedIds[] = $trimmedId;
+            }
+        }
+        $cleanedIds = array_unique($cleanedIds);
 
-            if ($person) {
+        if (empty($cleanedIds)) {
+            return $this->builder;
+        }
+
+        if ($this->skipHeadMapping) {
+            $familyHeadIds = $cleanedIds;
+        } else {
+            // Fetch all matching persons in one query to avoid N+1 queries loop
+            $persons = Person::whereIn('id_num', $cleanedIds)->get(['id_num', 'relative_id']);
+            $foundIds = $persons->pluck('id_num')->toArray();
+
+            foreach ($persons as $person) {
                 if (is_null($person->relative_id)) {
-                    $familyHeadIds[] = $trimmedId;
+                    $familyHeadIds[] = $person->id_num;
                 } else {
                     $familyHeadIds[] = $person->relative_id;
                 }
-            } else {
-                $notFoundIds[] = $trimmedId;
             }
+            $notFoundIds = array_values(array_diff($cleanedIds, $foundIds));
         }
 
         $familyHeadIds = array_unique($familyHeadIds);
@@ -100,7 +114,9 @@ class PersonFilter extends BaseFilters
             return $this->builder->whereIn($this->getColumnName('id_num'), $familyHeadIds);
         }
         
-        return $this->builder;
+        // If IDs were provided but none were found in Person table, 
+        // return an empty query (so results from incomplete_people can show up cleanly below)
+        return $this->builder->whereRaw('0 = 1');
     }
 
     protected function idNum($value)

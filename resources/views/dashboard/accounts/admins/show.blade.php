@@ -79,6 +79,7 @@
 
         @slot('footer')
             <div class="d-flex gap-2 flex-wrap">
+                @include('dashboard.accounts.admins.partials.actions.impersonate')
                 @include('dashboard.accounts.admins.partials.actions.edit')
                 @include('dashboard.accounts.admins.partials.actions.delete')
                 @include('dashboard.accounts.admins.partials.actions.restore')

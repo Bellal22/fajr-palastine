@@ -3,19 +3,137 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\KitchenCard;
+use App\Models\KitchenComplaint;
 use App\Models\Person;
 use App\Models\Item;
 use App\Models\ReadyPackage;
 use App\Models\InternalPackage;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    public function statistics()
+    {
+        if (!auth()->user()->hasPermission('manage.statistics')) {
+            abort(403, 'غير مصرح لك بعرض لوحة الإحصائيات.');
+        }
+        $comprehensiveStats = Person::getComprehensiveDashboardStats();
+        return view('dashboard.statistics.index', compact('comprehensiveStats'));
+    }
+
+    public function familyBreakdown(\Illuminate\Http\Request $request)
+    {
+        $type = $request->input('type', 'families');
+        $search = trim($request->input('search', ''));
+        $status = $request->input('status', 'all');
+        $page = max(1, (int) $request->input('page', 1));
+        $perPage = max(5, min(100, (int) $request->input('per_page', 20)));
+
+        $allFamilies = Person::getFamilyBreakdownStats($type);
+
+        if (!empty($search)) {
+            $normalizedSearch = self::normalizeArabicText($search);
+            $allFamilies = array_filter($allFamilies, function ($item) use ($search, $normalizedSearch) {
+                return (mb_strpos($item['display_name'], $search) !== false) 
+                    || (mb_strpos($item['norm_name'], $normalizedSearch) !== false);
+            });
+        }
+
+        if ($status === 'approved') {
+            $allFamilies = array_filter($allFamilies, function ($item) {
+                return $item['approved_count'] > 0;
+            });
+        } elseif ($status === 'unapproved') {
+            $allFamilies = array_filter($allFamilies, function ($item) {
+                return $item['unapproved_count'] > 0;
+            });
+        }
+
+        $allFamilies = array_values($allFamilies);
+        $totalItems = count($allFamilies);
+
+        // Sum overall totals for current filtered category
+        $sumTotal = array_sum(array_column($allFamilies, 'total_count'));
+        $sumApproved = array_sum(array_column($allFamilies, 'approved_count'));
+        $sumUnapproved = array_sum(array_column($allFamilies, 'unapproved_count'));
+
+        $offset = ($page - 1) * $perPage;
+        $pagedData = array_slice($allFamilies, $offset, $perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => $pagedData,
+            'summary' => [
+                'total_count' => $sumTotal,
+                'approved_count' => $sumApproved,
+                'unapproved_count' => $sumUnapproved,
+                'families_count' => $totalItems,
+            ],
+            'pagination' => [
+                'total' => $totalItems,
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'last_page' => max(1, (int) ceil($totalItems / $perPage)),
+            ]
+        ]);
+    }
+
+    public static function normalizeArabicText($text)
+    {
+        $text = trim($text);
+        $text = str_replace(['أ', 'إ', 'آ', 'ء', 'ئ', 'ؤ'], 'ا', $text);
+        $text = str_replace('ة', 'ه', $text);
+        $text = str_replace('ى', 'ي', $text);
+        $text = str_replace(['ـ', ' '], '', $text);
+        return $text;
+    }
+
+    public function exportFamilyBreakdown(\Illuminate\Http\Request $request)
+    {
+        $type = $request->input('type', 'families');
+        $search = trim($request->input('search', ''));
+        $status = $request->input('status', 'all');
+
+        $titles = [
+            'families' => 'توزيع_الأسر_حسب_العائلة',
+            'individuals' => 'توزيع_الأفراد_حسب_العائلة',
+            'males' => 'توزيع_الذكور_حسب_العائلة',
+            'females' => 'توزيع_الإناث_حسب_العائلة',
+            'children' => 'توزيع_الأطفال_حسب_العائلة',
+        ];
+
+        $title = $titles[$type] ?? 'توزيع_العائلات';
+        $filename = $title . '_' . date('Y-m-d') . '.xlsx';
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\FamilyBreakdownExport($type, $search, $status),
+            $filename
+        );
+    }
+
     public function index()
     {
-        $isRegionalManager = auth()->user()->isSupervisor();
+        if (auth()->user()->isGeneralSearchOnly()) {
+            return redirect()->route('dashboard.people.general_search');
+        }
 
-        if ($isRegionalManager) {
-            return view('dashboard.home', compact('isRegionalManager'));
+        if (auth()->user()->isKitchenMonitor()) {
+            $campsCount = DB::table('kitchen_cards')->distinct('camp_name')->count();
+            $complaintsCount = KitchenComplaint::count();
+            $isKitchenMonitor = true;
+
+            return view('dashboard.home', compact('campsCount', 'complaintsCount', 'isKitchenMonitor'));
+        }
+
+        $isRegionalManager = auth()->user()->isSupervisor();
+        $hasStatisticsPermission = auth()->user()->hasPermission('manage.statistics');
+
+        if ($isRegionalManager || !$hasStatisticsPermission) {
+            return view('dashboard.home', [
+                'isRegionalManager' => $isRegionalManager,
+                'hasStatisticsPermission' => $hasStatisticsPermission,
+            ]);
         }
 
         // إحصائيات رب الأسرة

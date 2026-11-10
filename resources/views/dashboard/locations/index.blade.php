@@ -347,7 +347,8 @@
     </div>
 
     @php
-        $locationsForMap = $locations->map(function ($l) {
+        $mapSource = $allLocationsForMap ?? $locations;
+        $locationsForMap = $mapSource->map(function ($l) {
             $blockName = $l->block->name ?? $l->block->title ?? '';
             if (is_array($blockName)) {
                 $blockName = implode(', ', $blockName);
@@ -441,9 +442,9 @@
 
                     // دبوس اللوكيشن
                     const pinIcon = L.icon({
-                        iconUrl: "{{ asset('icons/person-marker.png') }}",
-                        iconSize: [40, 40],
-                        iconAnchor: [20, 40],
+                        iconUrl: "{{ asset('icons/marker-p.png') }}",
+                        iconSize: [36, 42],
+                        iconAnchor: [18, 42],
                         popupAnchor: [0, -40],
                         shadowSize: [41, 41]
                     });

@@ -16,11 +16,18 @@ Breadcrumbs::for('dashboard.customers.create', function ($breadcrumb) {
 });
 
 Breadcrumbs::for('dashboard.customers.show', function ($breadcrumb, $customer) {
+    if (is_string($customer) || is_numeric($customer)) {
+        $customer = \App\Models\User::find($customer) ?: $customer;
+    }
     $breadcrumb->parent('dashboard.customers.index');
-    $breadcrumb->push($customer->name, route('dashboard.customers.show', $customer));
+    $name = is_object($customer) ? $customer->name : $customer;
+    $breadcrumb->push($name, route('dashboard.customers.show', $customer));
 });
 
 Breadcrumbs::for('dashboard.customers.edit', function ($breadcrumb, $customer) {
+    if (is_string($customer) || is_numeric($customer)) {
+        $customer = \App\Models\User::find($customer) ?: $customer;
+    }
     $breadcrumb->parent('dashboard.customers.show', $customer);
     $breadcrumb->push(trans('customers.actions.edit'), route('dashboard.customers.edit', $customer));
 });

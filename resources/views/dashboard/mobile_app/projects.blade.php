@@ -36,9 +36,17 @@
                     <span class="badge badge-success">نشط للمزامنة</span>
                 </td>
                 <td class="text-center">
-                    <a href="{{ route('dashboard.mobile_app.nominate', ['project_id' => $project->id]) }}" class="btn btn-sm btn-info" title="بدء التكليف">
-                        <i class="fas fa-hand-pointer"></i> تكليف الموزعين
-                    </a>
+                    <div class="btn-group">
+                        <a href="{{ route('dashboard.mobile_app.nominate', ['project_id' => $project->id]) }}" class="btn btn-sm btn-info" title="بدء التكليف">
+                            <i class="fas fa-hand-pointer"></i> تكليف الموزعين
+                        </a>
+                        <form action="{{ route('dashboard.mobile_app.projects.refresh', $project->id) }}" method="POST" onsubmit="return confirm('هل تريد إرسال إشارة تحديث لتطبيق الجوال لهذا المشروع؟')" style="display:inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-primary" title="تحديث للمشروع (APP)">
+                                <i class="fas fa-sync"></i>
+                            </button>
+                        </form>
+                    </div>
                 </td>
             </tr>
         @endforeach

@@ -23,7 +23,7 @@ class ProjectPolicy
         if (!$user) {
             return false;
         }
-        return $user->isAdmin() || $user->hasPermission('manage.projects');
+        return $user->isAdmin() || $user->isSupervisor();
     }
 
     /**

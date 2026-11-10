@@ -9,7 +9,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
 
-    <title>{{ $title ? $title .' | '. app_name() : app_name() }}</title>
+    <title>{{ ($title ?? '') ? $title .' | '. app_name() : app_name() }}</title>
 
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -62,12 +62,11 @@ scratch. This page gets rid of all links and provides the needed markup only.
         <!-- Right navbar links -->
         <ul class="navbar-nav ml-auto">
             @impersonating
-            <li class="nav-item dropdown">
-                <a class="nav-link d-flex align-items-center"
-                   href="{{ route('impersonate.leave') }}" aria-expanded="true">
-                    <span class="d-none d-md-inline">
-                       @lang('users.impersonate.leave')
-                    </span>
+            <li class="nav-item d-flex align-items-center mr-2">
+                <a class="btn btn-warning text-dark font-weight-bold btn-sm shadow-sm"
+                   href="{{ route('impersonate.leave') }}">
+                    <i class="fas fa-sign-out-alt mr-1"></i>
+                    <span>@lang('users.impersonate.leave')</span>
                 </a>
             </li>
             @endImpersonating
@@ -90,26 +89,26 @@ scratch. This page gets rid of all links and provides the needed markup only.
             @include('dashboard.layouts.adminlte3.partials.notifications')
             <li class="nav-item dropdown user-menu">
                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
-                    <img src="{{ auth()->user()->getAvatar() }}"
+                    <img src="{{ auth()->user()?->getAvatar() }}"
                          class="user-image img-circle elevation-2"
-                         alt="{{ auth()->user()->name }}">
-                    <span class="d-none d-md-inline">{{ auth()->user()->name }}</span>
+                         alt="{{ auth()->user()?->name }}">
+                    <span class="d-none d-md-inline">{{ auth()->user()?->name }}</span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                     <!-- User image -->
                     <li class="user-header bg-primary">
-                        <img src="{{ auth()->user()->getAvatar() }}"
+                        <img src="{{ auth()->user()?->getAvatar() }}"
                              class="img-circle elevation-2"
-                             alt="{{ auth()->user()->name }}">
+                             alt="{{ auth()->user()?->name }}">
 
                         <p>
-                            {{ auth()->user()->name }} - {{ auth()->user()->present()->type }}
-                            <small>@lang('users.since', ['date' => auth()->user()->created_at->diffForHumans()])</small>
+                            {{ auth()->user()?->name }} - {{ auth()->user()?->present()->type }}
+                            <small>@lang('users.since', ['date' => auth()->user()?->created_at?->diffForHumans()])</small>
                         </p>
                     </li>
                     <!-- Menu Footer-->
                     <li class="user-footer">
-                        <a href="{{ auth()->user()->dashboardProfile() }}" class="btn btn-default btn-flat">@lang('users.profile')</a>
+                        <a href="{{ auth()->user()?->dashboardProfile() }}" class="btn btn-default btn-flat">@lang('users.profile')</a>
                         <a href="#"
                            onclick="event.preventDefault();document.getElementById('logoutForm').submit()"
                            class="btn btn-default btn-flat float-right">@lang('dashboard.auth.logout')</a>
@@ -137,13 +136,13 @@ scratch. This page gets rid of all links and provides the needed markup only.
             <!-- Sidebar user panel (optional) -->
             <div class="user-panel mt-3 pb-3 mb-3 d-flex">
                 <div class="image">
-                    <img src="{{ auth()->user()->getAvatar() }}"
+                    <img src="{{ auth()->user()?->getAvatar() }}"
                          class="img-circle elevation-2"
-                         alt="{{ auth()->user()->name }}">
+                         alt="{{ auth()->user()?->name }}">
                 </div>
                 <div class="info">
-                    <a href="{{ auth()->user()->dashboardProfile() }}" class="d-block">
-                        {{ auth()->user()->name }}
+                    <a href="{{ auth()->user()?->dashboardProfile() }}" class="d-block">
+                        {{ auth()->user()?->name }}
                     </a>
                 </div>
             </div>
@@ -169,7 +168,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
             <div class="container-fluid">
                 <div class="row mb-2">
                     <div class="col-sm-6">
-                        <h1 class="m-0 text-dark">{{ $title }}</h1>
+                        <h1 class="m-0 text-dark">{{ $title ?? '' }}</h1>
                     </div>
                     <div class="col-sm-6">
                         <div class="d-flex float-sm-right">
@@ -189,7 +188,8 @@ scratch. This page gets rid of all links and provides the needed markup only.
                 <div class="row">
                     <div class="col-12">
                         @include('flash::message')
-                        {{ $slot }}
+                        @yield('content')
+                        {{ $slot ?? '' }}
                     </div>
                 </div>
             </div><!-- /.container-fluid -->

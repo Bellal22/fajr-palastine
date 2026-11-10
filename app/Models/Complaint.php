@@ -28,8 +28,12 @@ class Complaint extends Model
      */
     protected $fillable = [
         'id_num',
+        'complaint_type_id',
         'complaint_title',
         'complaint_text',
+        'admin_complaint_title',
+        'admin_complaint_text',
+        'response_title',
         'response',
         'responded_at',
         'responded_by',
@@ -40,6 +44,10 @@ class Complaint extends Model
         'responded_at' => 'datetime',
     ];
 
+    public function complaintType()
+    {
+        return $this->belongsTo(ComplaintType::class, 'complaint_type_id');
+    }
 
     public function person()
     {

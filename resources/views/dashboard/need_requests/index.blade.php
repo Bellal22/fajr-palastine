@@ -27,7 +27,7 @@
                     <div class="d-flex align-items-center">
                         @include('dashboard.need_requests.partials.actions.create')
                         
-                        @if(auth()->user()->isAdmin())
+                        @if(auth()->user()?->isAdmin())
                             <a href="{{ route('dashboard.need_requests.bulk_create') }}" class="btn btn-info btn-sm ml-2">
                                 <i class="fas fa-layer-group"></i> تفعيل الترشيح
                             </a>
@@ -36,6 +36,12 @@
                         <a href="{{ route('dashboard.need_requests.available') }}" class="btn btn-primary btn-sm ml-2">
                             <i class="fas fa-bullhorn"></i> الفرص المتاحة
                         </a>
+
+                        @if(auth()->user()?->isAdmin())
+                            <a href="{{ route('dashboard.need_requests.available') }}" class="btn btn-dark btn-sm ml-2">
+                                <i class="fas fa-history"></i> سجل التفعيلات
+                            </a>
+                        @endif
                     </div>
                 </div>
 

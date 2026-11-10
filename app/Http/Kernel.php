@@ -77,6 +77,7 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'mobile.api' => \App\Http\Middleware\RestrictMobileApi::class,
+        'check.referer' => \App\Http\Middleware\CheckRefererMiddleware::class,
     ];
 
     /**

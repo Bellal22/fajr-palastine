@@ -35,12 +35,20 @@
                                 <i class="fas fa-chart-line"></i> لوحة التقارير
                             </a>
                         </div>
-                        <div class="mr-2">
-                            <a href="{{ route('dashboard.area_responsibles.export_all') }}" 
-                               class="btn btn-outline-success">
-                                <i class="fas fa-file-export"></i> تصدير الكل (ZIP)
-                            </a>
-                        </div>
+                        @if (auth()->user()?->isAdmin())
+                            <div class="mr-2">
+                                <a href="{{ route('dashboard.area_responsibles.export_all') }}" 
+                                   class="btn btn-outline-success">
+                                    <i class="fas fa-file-export"></i> تصدير الكل (ZIP)
+                                </a>
+                            </div>
+                            <div class="mr-2">
+                                <a href="{{ route('dashboard.area_responsibles.export_all', ['unserved' => 1]) }}" 
+                                   class="btn btn-outline-warning">
+                                    <i class="fas fa-user-times"></i> تصدير الغير مستلمين (ZIP)
+                                </a>
+                            </div>
+                        @endif
                         <div>
                             @include('dashboard.area_responsibles.partials.actions.trashed')
                         </div>

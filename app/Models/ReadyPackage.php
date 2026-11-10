@@ -27,6 +27,9 @@ class ReadyPackage extends Model
      * @var array
      */
     protected $fillable = [
+        'inbound_shipment_id',
+        'name',
+        'description',
         'weight',
         'quantity',
         'remaining_quantity',

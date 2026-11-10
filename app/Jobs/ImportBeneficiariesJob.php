@@ -46,9 +46,15 @@ class ImportBeneficiariesJob implements ShouldQueue
         $project->update(['import_error_file' => null]);
         Log::info("Cleared old error file path for project {$project->id}");
 
-        $subWarehouseId = $this->requestData['sub_warehouse_id'];
+        $subWarehouseId = $this->requestData['sub_warehouse_id'] ?? null;
         $ignoreConflicts = $this->requestData['ignore_conflicts'] ?? false;
         $overrideDeliveryDate = $this->requestData['delivery_date'] ?? null;
+        $defaultDeliveryMethod = $this->requestData['delivery_method'] ?? ($project->default_delivery_method ?: 'cash');
+        $defaultCashAmount = isset($this->requestData['cash_amount']) && $this->requestData['cash_amount'] !== '' 
+            ? (float)$this->requestData['cash_amount'] 
+            : ($project->cash_amount_type === 'fixed' ? $project->cash_amount : null);
+        $defaultCashCurrency = $this->requestData['cash_currency'] ?? ($project->cash_currency ?: 'ILS');
+        $defaultDeliveryDetails = $this->requestData['delivery_details'] ?? null;
         $conflictingProjectIds = $project->conflicts()->pluck('conflict_id')->toArray();
 
         $imported = 0;
@@ -97,12 +103,18 @@ class ImportBeneficiariesJob implements ShouldQueue
             $dateIdx = 7;
             $generalDateIdx = 4;
             $notesIdx = 6;
+            $cashAmountIdx = null;
+            $deliveryMethodIdx = null;
+            $deliveryDetailsIdx = null;
 
             if ($header) {
                 foreach ($header as $i => $col) {
                     $col = trim($col);
                     if (empty($col)) continue;
                     if (mb_strpos($col, 'هوية') !== false) $idIdx = $i;
+                    elseif (mb_strpos($col, 'مبلغ') !== false || mb_strpos($col, 'قيمة') !== false) $cashAmountIdx = $i;
+                    elseif (mb_strpos($col, 'طريقة') !== false) $deliveryMethodIdx = $i;
+                    elseif (mb_strpos($col, 'محفظة') !== false || mb_strpos($col, 'حساب') !== false) $deliveryDetailsIdx = $i;
                     elseif (mb_strpos($col, 'كمية') !== false) $qtyIdx = $i;
                     elseif (mb_strpos($col, 'حالة') !== false || mb_strpos($col, 'استلام') !== false) $statusIdx = $i;
                     elseif (mb_strpos($col, 'ملاحظات') !== false) $notesIdx = $i;
@@ -155,13 +167,23 @@ class ImportBeneficiariesJob implements ShouldQueue
                 }
 
                 $qty = is_numeric($row[$qtyIdx] ?? null) ? (int)$row[$qtyIdx] : 1;
+                
+                // If quantity is 1 (default), check if they have multiple wives (if they are headless or family head)
+                if ($qty == 1) {
+                    $wivesCount = DB::table('persons')
+                        ->where('relative_id', $paddedId)
+                        ->whereIn('relationship', ['زوجة', 'wife'])
+                        ->count();
+                    $qty = max(1, $wivesCount);
+                }
+
                 $statVal = trim($row[$statusIdx] ?? '');
                 $notesVal = ($row[$notesIdx] ?? '') == '-' ? '' : trim($row[$notesIdx] ?? '');
                 $dateVal = $this->resolveDate($row, $dateIdx, $generalDateIdx, $overrideDeliveryDate);
 
                 $status = (mb_strpos($statVal, 'مستلم') !== false && mb_strpos($statVal, 'غير') === false) ? 'مستلم' : 'غير مستلم';
 
-                $batchData[] = [
+                $recordData = [
                     'project_id' => $project->id,
                     'person_id' => $headId,
                     'quantity' => $qty,
@@ -170,6 +192,37 @@ class ImportBeneficiariesJob implements ShouldQueue
                     'delivery_date' => $dateVal,
                     'sub_warehouse_id' => $subWarehouseId
                 ];
+
+                if ($project->is_cash) {
+                    $rowMethod = $defaultDeliveryMethod;
+                    if ($deliveryMethodIdx !== null && !empty($row[$deliveryMethodIdx])) {
+                        $mVal = trim($row[$deliveryMethodIdx]);
+                        if (mb_strpos($mVal, 'محفظة') !== false) $rowMethod = 'wallet';
+                        elseif (mb_strpos($mVal, 'بنك') !== false) $rowMethod = 'bank';
+                        elseif (mb_strpos($mVal, 'كاش') !== false || mb_strpos($mVal, 'نقد') !== false) $rowMethod = 'cash';
+                    }
+
+                    $rowAmount = $defaultCashAmount;
+                    if ($cashAmountIdx !== null && isset($row[$cashAmountIdx]) && is_numeric(trim($row[$cashAmountIdx]))) {
+                        $rowAmount = (float)trim($row[$cashAmountIdx]);
+                    }
+
+                    $rowDetails = $defaultDeliveryDetails;
+                    if ($deliveryDetailsIdx !== null && !empty($row[$deliveryDetailsIdx])) {
+                        $rowDetails = trim($row[$deliveryDetailsIdx]);
+                    }
+
+                    $recordData['delivery_method'] = $rowMethod ?: 'cash';
+                    if ($rowAmount !== null) {
+                        $recordData['cash_amount'] = $rowAmount;
+                    }
+                    $recordData['cash_currency'] = $defaultCashCurrency;
+                    if ($rowDetails) {
+                        $recordData['delivery_details'] = $rowDetails;
+                    }
+                }
+
+                $batchData[] = $recordData;
 
                 if (count($batchData) >= 500) {
                     $this->insertBatch($batchData);

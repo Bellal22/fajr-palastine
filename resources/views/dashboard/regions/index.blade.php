@@ -326,6 +326,8 @@
                 'name'         => $r->name,
                 'color'        => $r->color ?? '#FF0000',
                 'boundaries'   => $r->boundaries ?? [],
+                'area_km2'     => $r->area_km2,
+                'area_formatted' => $r->area_formatted,
                 'is_active'    => $r->is_active,
                 'responsible'  => optional($r->areaResponsible)->name,
             ];
@@ -393,6 +395,18 @@
                             <i class="fas fa-map-marked-alt" style="${iconMargin}: 5px;"></i> ${region.name}
                         </h6>
                     `;
+
+                    if (region.area_formatted) {
+                        popupHtml += `
+                            <div class="popup-info-row" style="direction: ${isRTL ? 'rtl' : 'ltr'};">
+                                <span class="popup-label">
+                                    <i class="fas fa-ruler-combined text-info" style="${iconMargin}: 5px;"></i>
+                                    @lang('regions.attributes.area')
+                                </span>
+                                <span class="popup-value">${region.area_formatted}</span>
+                            </div>
+                        `;
+                    }
 
                     if (region.responsible) {
                         popupHtml += `

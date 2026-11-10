@@ -1,10 +1,13 @@
-@if(Gate::allows('viewAny', \App\Models\User::class)
-    || Gate::allows('viewAny', \App\Models\Supervisor::class)
-    || Gate::allows('viewAny', \App\Models\Customer::class))
+@if(auth()->user()->hasPermission('manage.admins')
+    || auth()->user()->hasPermission('manage.supervisors')
+    || auth()->user()->hasPermission('manage.distributors')
+    || auth()->user()->hasPermission('manage.customers')
+    || auth()->user()->hasPermission('manage.researchers')
+    || auth()->user()->hasPermission('manage.kitchen_monitors'))
     @component('dashboard::components.sidebarItem')
         @slot('url', '#')
         @slot('name', trans('users.plural'))
-        @slot('active', request()->routeIs('*admins*') || request()->routeIs('*customers*'))
+        @slot('active', request()->routeIs('*admins*') || request()->routeIs('*customers*') || request()->routeIs('*supervisors*') || request()->routeIs('*distributors*') || request()->routeIs('*researchers*') || request()->routeIs('*kitchen_monitors*'))
         @slot('icon', 'fas fa-users')
         @slot('tree', [
             [
@@ -22,15 +25,21 @@
             [
                 'name' => 'الموزعين',
                 'url' => route('dashboard.distributors.index'),
+                'can' => ['ability' => 'viewAny', 'model' => \App\Models\Distributor::class],
                 'active' => request()->routeIs('*distributors.index*'),
             ],
-        //  ,
-        // [
-        //     'name' => trans('customers.plural'),
-        //     'url' => route('dashboard.customers.index'),
-        //     'can' => ['ability' => 'viewAny', 'model' => \App\Models\Customer::class],
-        //     'active' => request()->routeIs('*customers*'),
-        // ],
+            [
+                'name' => trans('researchers.plural'),
+                'url' => route('dashboard.researchers.index'),
+                'can' => ['ability' => 'viewAny', 'model' => \App\Models\Researcher::class],
+                'active' => request()->routeIs('*researchers*'),
+            ],
+            [
+                'name' => 'متابعي المطبخ',
+                'url' => route('dashboard.kitchen_monitors.index'),
+                'can' => ['ability' => 'viewAny', 'model' => \App\Models\KitchenMonitor::class],
+                'active' => request()->routeIs('*kitchen_monitors*'),
+            ],
         ])
     @endcomponent
 @endif

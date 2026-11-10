@@ -18,6 +18,12 @@ class RestrictMobileApi
     public function handle(Request $request, Closure $next)
     {
         $auth = $request->header('auth');
+        \Log::info('Mobile API Auth Attempt', [
+            'url' => $request->fullUrl(),
+            'method' => $request->method(),
+            'auth_header' => $auth ? 'Present (length: '.strlen($auth).')' : 'Missing',
+            'user_agent' => $request->header('User-Agent')
+        ]);
         if (!$auth) {
             return response()->json([
                 'status' => false,

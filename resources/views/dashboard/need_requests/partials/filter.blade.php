@@ -50,7 +50,7 @@
                 <div class="card-body">
                     <div class="row">
                         {{-- المشرف (للمسؤولين فقط) --}}
-                        @if(auth()->user()->isAdmin())
+                        @if(auth()->user()?->isAdmin())
                             <div class="col-md-6 mb-2">
                                 <label class="font-weight-bold small">
                                     <i class="fas fa-user-tie"></i> @lang('need_requests.attributes.supervisor_id')

@@ -72,8 +72,16 @@
                             {{-- قسم الأزرار --}}
                             @if (auth()->user()?->isAdmin())
                                 <div class="btn-group" role="group">
+                                    {{-- زر تصدير الغير مستلمين --}}
+                                    <a href="{{ route('dashboard.people.export.view', array_merge(request()->all(), ['unserved' => 1, 'export_source' => 'view'])) }}"
+                                       class="btn btn-outline-warning btn-sm"
+                                       title="تصدير الغير مستلمين">
+                                        <i class="fa-fw fas fa-user-times"></i>
+                                        تصدير الغير مستلمين
+                                    </a>
+
                                     {{-- زر تصدير الكل --}}
-                                    <a href="{{ route('dashboard.people.export.view', request()->all()) }}"
+                                    <a href="{{ route('dashboard.people.export.view', array_merge(request()->all(), ['export_source' => 'view'])) }}"
                                        class="btn btn-outline-success btn-sm"
                                        title="@lang('people.actions.export_all_hint')">
                                         <i class="fa-fw fas fa-file-excel"></i>
@@ -81,7 +89,7 @@
                                     </a>
 
                                     {{-- زر تصدير الأطفال --}}
-                                    <a href="{{ route('dashboard.people.export.exportChildren', request()->all()) }}"
+                                    <a href="{{ route('dashboard.people.export.exportChildren', array_merge(request()->all(), ['export_source' => 'view'])) }}"
                                        class="btn btn-outline-success btn-sm"
                                        title="@lang('people.actions.export_children_hint')">
                                         <i class="fa-fw fas fa-child"></i>

@@ -1,0 +1,33 @@
+{
+  "name": "fajr-smart-auditor",
+  "version": "1.0.0",
+  "description": "Smart Audit and Analytics tool for Fajr Palestine",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win portable"
+  },
+  "dependencies": {
+    "mysql2": "^3.9.7",
+    "ssh2": "^1.17.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^25.3.0",
+    "electron-builder": "^24.4.0"
+  },
+  "build": {
+    "appId": "com.fajr.auditor",
+    "productName": "FajrSmartAuditor",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "logo.ico",
+      "target": [
+        "portable"
+      ]
+    }
+  }
+}

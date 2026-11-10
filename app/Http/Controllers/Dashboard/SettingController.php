@@ -96,4 +96,75 @@ class SettingController extends Controller
             )
             ->deleteFileAfterSend();
     }
+
+    /**
+     * Test the connection to the external API.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function testConnection()
+    {
+        $apiUrl = config('services.external_api.url');
+        $token = config('services.external_api.token');
+
+        if (!$apiUrl) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'رابط الـ API غير مهيأ في ملف .env'
+            ]);
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'X-API-TOKEN' => $token,
+                'Accept' => 'application/json',
+            ])->timeout(10)->post($apiUrl, [
+                'type' => 'test',
+                'message' => 'Test connection from ' . config('app.name'),
+                'timestamp' => now()->toDateTimeString(),
+            ]);
+
+            if ($response->successful()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'تم الاتصال بالسيرفر بنجاح!',
+                    'response' => $response->json()
+                ]);
+            }
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'فشل الاتصال: ' . $response->status(),
+                'details' => $response->body()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'حدث خطأ أثناء الاتصال: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Run a bulk sync for all data to the external API.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function bulkSync()
+    {
+        try {
+            $results = \App\Support\ExternalApiSync::bulkSync();
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => "تمت عملية المزامنة بنجاح. (ناجح: {$results['success']}, فشل: {$results['errors']})",
+                'results' => $results
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'حدث خطأ أثناء المزامنة الشاملة: ' . $e->getMessage()
+            ]);
+        }
+    }
 }

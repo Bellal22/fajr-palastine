@@ -26,120 +26,6 @@
             background: linear-gradient(135deg, #ffffff 0%, #fff8f0 100%);
         }
 
-        /* ========== زينة رمضان ========== */
-
-        /* الفوانيس المعلقة المرتبة */
-        .lanterns-top {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 180px;
-            z-index: 5;
-            pointer-events: none;
-        }
-
-        /* السلك الحامل للفوانيس */
-        .lantern-wire {
-            position: absolute;
-            top: 8px;
-            left: 0;
-            width: 100%;
-            height: 30px;
-        }
-
-        .lantern {
-            position: absolute;
-            top: 20px;
-            animation: lanternSwing 5s ease-in-out infinite;
-            transform-origin: top center;
-        }
-
-        .lantern svg {
-            filter: drop-shadow(0 8px 15px rgba(255, 111, 0, 0.2));
-        }
-
-        @keyframes lanternSwing {
-            0%, 100% { transform: rotate(-4deg); }
-            50% { transform: rotate(4deg); }
-        }
-
-        /* توزيع الفوانيس بشكل مرتب ومتناظر */
-        .lantern-1 { left: 5%; animation-delay: 0s; }
-        .lantern-2 { left: 20%; animation-delay: 0.7s; }
-        .lantern-3 { left: 35%; animation-delay: 1.4s; }
-        .lantern-4 { left: 50%; transform: translateX(-50%); animation-delay: 2.1s; }
-        .lantern-5 { left: 65%; animation-delay: 1.4s; animation-direction: reverse; }
-        .lantern-6 { left: 80%; animation-delay: 0.7s; animation-direction: reverse; }
-        .lantern-7 { left: 95%; animation-delay: 0s; animation-direction: reverse; }
-
-        /* الهلال الكبير في الأسفل */
-        .big-moon-container {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 220px;
-            z-index: 2;
-            pointer-events: none;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-        }
-
-        .big-moon {
-            position: relative;
-            bottom: 30px;
-            animation: moonFloat 6s ease-in-out infinite;
-        }
-
-        @keyframes moonFloat {
-            0%, 100% { transform: translateY(0) rotate(-2deg); }
-            50% { transform: translateY(-15px) rotate(2deg); }
-        }
-
-        /* زينة الأضواء المعلقة على الهلال */
-        .hanging-lights {
-            position: absolute;
-            bottom: 180px;
-            left: 0;
-            width: 100%;
-            height: 120px;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        .light-chain {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-        }
-
-        .light-bulb-item {
-            position: absolute;
-            width: 14px;
-            height: 20px;
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            animation: bulbGlow 2s ease-in-out infinite;
-        }
-
-        .light-bulb-item::after {
-            content: '';
-            position: absolute;
-            top: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 6px;
-            height: 10px;
-            background: #8D6E63;
-            border-radius: 2px 2px 0 0;
-        }
-
-        @keyframes bulbGlow {
-            0%, 100% { opacity: 0.6; filter: brightness(0.9); }
-            50% { opacity: 1; filter: brightness(1.2); }
-        }
-
         /* الخلفية المتحركة - فقاعات */
         .bubbles {
             position: fixed;
@@ -227,7 +113,7 @@
             margin: 0 auto;
             position: relative;
             z-index: 10;
-            margin-top: 150px;
+            margin-top: 50px;
         }
 
         /* الهيدر العلوي */
@@ -596,9 +482,7 @@
             .main-row { grid-template-columns: 1fr; }
             .sidebar { order: 2; }
             .main-content { order: 1; }
-            .page-container { margin-top: 130px; }
-            .big-moon-container { display: none; }
-            .hanging-lights { display: none; }
+            .page-container { margin-top: 40px; }
         }
 
         @media (max-width: 768px) {
@@ -609,8 +493,7 @@
             .main-content { padding: 30px 25px; }
             .welcome-box { padding: 28px; }
             .welcome-box h2 { font-size: 22px; }
-            .page-container { margin-top: 110px; }
-            .lanterns-top { height: 140px; }
+            .page-container { margin-top: 30px; }
         }
 
         @media (max-width: 480px) {
@@ -625,158 +508,11 @@
             input[type="number"] { padding: 14px 50px 14px 16px; font-size: 15px; }
             .action-btn { padding: 15px; font-size: 16px; }
         }
+
     </style>
 </head>
 <body>
-    <!-- فوانيس معلقة مرتبة -->
-    <div class="lanterns-top">
-        <!-- السلك -->
-        <svg class="lantern-wire" viewBox="0 0 1440 30" fill="none" preserveAspectRatio="none">
-            <path d="M0 15 Q180 5 360 15 T720 15 T1080 15 T1440 15" stroke="#D4A574" stroke-width="3" fill="none"/>
-        </svg>
 
-        <!-- الفانوس 1 -->
-        <div class="lantern lantern-1">
-            <svg width="40" height="60" viewBox="0 0 100 150" fill="none">
-                <line x1="50" y1="0" x2="50" y2="15" stroke="#D4A574" stroke-width="2"/>
-                <ellipse cx="50" cy="18" rx="8" ry="3" fill="#D4A574"/>
-                <path d="M36 24 Q40 32 40 40 L60 40 Q60 32 64 24 Z" fill="#00897B"/>
-                <path d="M40 40 Q32 75 40 110 L60 110 Q68 75 60 40 Z" fill="url(#g1)"/>
-                <ellipse cx="50" cy="75" rx="8" ry="14" fill="#FFF8E1" opacity="0.9"/>
-                <path d="M40 110 Q36 118 40 125 L60 125 Q64 118 60 110 Z" fill="#00897B"/>
-                <defs><linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#26A69A"/><stop offset="100%" style="stop-color:#00897B"/></linearGradient></defs>
-            </svg>
-        </div>
-
-        <!-- الفانوس 2 -->
-        <div class="lantern lantern-2">
-            <svg width="50" height="75" viewBox="0 0 100 150" fill="none">
-                <line x1="50" y1="0" x2="50" y2="12" stroke="#D4A574" stroke-width="2"/>
-                <ellipse cx="50" cy="15" rx="9" ry="3.5" fill="#D4A574"/>
-                <path d="M34 21 Q38 30 38 38 L62 38 Q62 30 66 21 Z" fill="#F9A825"/>
-                <path d="M38 38 Q28 75 38 112 L62 112 Q72 75 62 38 Z" fill="url(#g2)"/>
-                <ellipse cx="50" cy="75" rx="9" ry="15" fill="#FFF8E1" opacity="0.9"/>
-                <path d="M38 112 Q34 120 38 127 L62 127 Q66 120 62 112 Z" fill="#F9A825"/>
-                <defs><linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#FBC02D"/><stop offset="100%" style="stop-color:#F9A825"/></linearGradient></defs>
-            </svg>
-        </div>
-
-        <!-- الفانوس 3 -->
-        <div class="lantern lantern-3">
-            <svg width="60" height="90" viewBox="0 0 100 150" fill="none">
-                <line x1="50" y1="0" x2="50" y2="10" stroke="#D4A574" stroke-width="2"/>
-                <ellipse cx="50" cy="13" rx="10" ry="4" fill="#D4A574"/>
-                <path d="M32 19 Q36 28 36 36 L64 36 Q64 28 68 19 Z" fill="#E65100"/>
-                <path d="M36 36 Q26 75 36 114 L64 114 Q74 75 64 36 Z" fill="url(#g3)"/>
-                <ellipse cx="50" cy="75" rx="10" ry="16" fill="#FFF8E1" opacity="0.9"/>
-                <ellipse cx="50" cy="75" rx="6" ry="11" fill="#FFECB3"/>
-                <circle cx="50" cy="75" r="4" fill="#FFE082" opacity="0.7">
-                    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite"/>
-                </circle>
-                <path d="M36 114 Q32 122 36 130 L64 130 Q68 122 64 114 Z" fill="#E65100"/>
-                <defs><linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#FF6F00"/><stop offset="100%" style="stop-color:#E65100"/></linearGradient></defs>
-            </svg>
-        </div>
-
-        <!-- الفانوس 4 - الوسط الكبير -->
-        <div class="lantern lantern-4">
-            <svg width="75" height="110" viewBox="0 0 100 150" fill="none">
-                <line x1="50" y1="0" x2="50" y2="8" stroke="#D4A574" stroke-width="2"/>
-                <ellipse cx="50" cy="11" rx="12" ry="5" fill="#D4A574"/>
-                <path d="M28 18 Q34 28 34 38 L66 38 Q66 28 72 18 Z" fill="#E65100"/>
-                <path d="M34 38 Q22 75 34 112 L66 112 Q78 75 66 38 Z" fill="url(#g4)"/>
-                <ellipse cx="50" cy="75" rx="12" ry="20" fill="#FFF8E1" opacity="0.95"/>
-                <ellipse cx="50" cy="75" rx="8" ry="15" fill="#FFECB3"/>
-                <ellipse cx="50" cy="75" rx="4" ry="8" fill="#FFE082">
-                    <animate attributeName="opacity" values="0.5;1;0.5" dur="2.5s" repeatCount="indefinite"/>
-                </ellipse>
-                <path d="M34 112 Q28 122 34 132 L66 132 Q72 122 66 112 Z" fill="#E65100"/>
-                <ellipse cx="50" cy="135" rx="7" ry="3" fill="#D4A574"/>
-                <circle cx="50" cy="143" r="4" fill="#FF6F00">
-                    <animate attributeName="r" values="3;5;3" dur="2s" repeatCount="indefinite"/>
-                </circle>
-                <circle cx="40" cy="50" r="2.5" fill="#FFD54F"/>
-                <circle cx="60" cy="50" r="2.5" fill="#FFD54F"/>
-                <circle cx="38" cy="100" r="2.5" fill="#FFD54F"/>
-                <circle cx="62" cy="100" r="2.5" fill="#FFD54F"/>
-                <defs><linearGradient id="g4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#FF6F00"/><stop offset="50%" style="stop-color:#FF8F00"/><stop offset="100%" style="stop-color:#E65100"/></linearGradient></defs>
-            </svg>
-        </div>
-
-        <!-- الفانوس 5 -->
-        <div class="lantern lantern-5">
-            <svg width="60" height="90" viewBox="0 0 100 150" fill="none">
-                <line x1="50" y1="0" x2="50" y2="10" stroke="#D4A574" stroke-width="2"/>
-                <ellipse cx="50" cy="13" rx="10" ry="4" fill="#D4A574"/>
-                <path d="M32 19 Q36 28 36 36 L64 36 Q64 28 68 19 Z" fill="#00897B"/>
-                <path d="M36 36 Q26 75 36 114 L64 114 Q74 75 64 36 Z" fill="url(#g5)"/>
-                <ellipse cx="50" cy="75" rx="10" ry="16" fill="#FFF8E1" opacity="0.9"/>
-                <path d="M36 114 Q32 122 36 130 L64 130 Q68 122 64 114 Z" fill="#00897B"/>
-                <defs><linearGradient id="g5" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#26A69A"/><stop offset="100%" style="stop-color:#00897B"/></linearGradient></defs>
-            </svg>
-        </div>
-
-        <!-- الفانوس 6 -->
-        <div class="lantern lantern-6">
-            <svg width="50" height="75" viewBox="0 0 100 150" fill="none">
-                <line x1="50" y1="0" x2="50" y2="12" stroke="#D4A574" stroke-width="2"/>
-                <ellipse cx="50" cy="15" rx="9" ry="3.5" fill="#D4A574"/>
-                <path d="M34 21 Q38 30 38 38 L62 38 Q62 30 66 21 Z" fill="#E65100"/>
-                <path d="M38 38 Q28 75 38 112 L62 112 Q72 75 62 38 Z" fill="url(#g6)"/>
-                <ellipse cx="50" cy="75" rx="9" ry="15" fill="#FFF8E1" opacity="0.9"/>
-                <path d="M38 112 Q34 120 38 127 L62 127 Q66 120 62 112 Z" fill="#E65100"/>
-                <defs><linearGradient id="g6" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#FF6F00"/><stop offset="100%" style="stop-color:#E65100"/></linearGradient></defs>
-            </svg>
-        </div>
-
-        <!-- الفانوس 7 -->
-        <div class="lantern lantern-7">
-            <svg width="40" height="60" viewBox="0 0 100 150" fill="none">
-                <line x1="50" y1="0" x2="50" y2="15" stroke="#D4A574" stroke-width="2"/>
-                <ellipse cx="50" cy="18" rx="8" ry="3" fill="#D4A574"/>
-                <path d="M36 24 Q40 32 40 40 L60 40 Q60 32 64 24 Z" fill="#F9A825"/>
-                <path d="M40 40 Q32 75 40 110 L60 110 Q68 75 60 40 Z" fill="url(#g7)"/>
-                <ellipse cx="50" cy="75" rx="8" ry="14" fill="#FFF8E1" opacity="0.9"/>
-                <path d="M40 110 Q36 118 40 125 L60 125 Q64 118 60 110 Z" fill="#F9A825"/>
-                <defs><linearGradient id="g7" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#FBC02D"/><stop offset="100%" style="stop-color:#F9A825"/></linearGradient></defs>
-            </svg>
-        </div>
-    </div>
-
-    <!-- زينة الأضواء المعلقة -->
-    <div class="hanging-lights" id="hangingLights"></div>
-
-    <!-- الهلال الكبير -->
-    <div class="big-moon-container">
-        <div class="big-moon">
-            <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- الهلال -->
-                <circle cx="100" cy="100" r="80" fill="url(#moonGradient)"/>
-                <circle cx="130" cy="80" r="65" fill="#fff8f0"/>
-                <!-- توهج -->
-                <circle cx="100" cy="100" r="90" fill="url(#moonGlow)" opacity="0.4"/>
-                <!-- نجمة على الهلال -->
-                <path d="M60 90 L63 98 L72 98 L65 103 L68 112 L60 107 L52 112 L55 103 L48 98 L57 98 Z" fill="#FFD54F">
-                    <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
-                </path>
-                <!-- نجمة صغيرة -->
-                <path d="M75 70 L77 75 L82 75 L78 78 L80 83 L75 80 L70 83 L72 78 L68 75 L73 75 Z" fill="#FFD54F">
-                    <animate attributeName="opacity" values="1;0.6;1" dur="1.5s" repeatCount="indefinite"/>
-                </path>
-                <defs>
-                    <linearGradient id="moonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" style="stop-color:#FFE082"/>
-                        <stop offset="50%" style="stop-color:#FFD54F"/>
-                        <stop offset="100%" style="stop-color:#FFC107"/>
-                    </linearGradient>
-                    <radialGradient id="moonGlow">
-                        <stop offset="0%" stop-color="#FFD54F"/>
-                        <stop offset="100%" stop-color="transparent"/>
-                    </radialGradient>
-                </defs>
-            </svg>
-        </div>
-    </div>
 
     <!-- الفقاعات -->
     <div class="bubbles">
@@ -893,31 +629,6 @@
     </div>
 
     <script>
-        // إنشاء زينة الأضواء المعلقة
-        function createHangingLights() {
-            const container = document.getElementById('hangingLights');
-            const colors = ['#FF6B6B', '#FFE66D', '#4ECDC4', '#FF8A65', '#B388FF', '#FFD54F', '#81C784'];
-            const numLights = 20;
-
-            for (let i = 0; i < numLights; i++) {
-                const bulb = document.createElement('div');
-                bulb.className = 'light-bulb-item';
-                bulb.style.left = (i * 5 + 2.5) + '%';
-                bulb.style.background = colors[i % colors.length];
-                bulb.style.boxShadow = `0 0 10px ${colors[i % colors.length]}, 0 0 20px ${colors[i % colors.length]}`;
-                bulb.style.animationDelay = (i * 0.15) + 's';
-
-                // ارتفاع متفاوت للسلك
-                const baseTop = 10;
-                const variation = Math.sin(i * 0.6) * 20;
-                bulb.style.top = (baseTop + variation + 50) + 'px';
-
-                container.appendChild(bulb);
-            }
-        }
-
-        createHangingLights();
-
         function luhnCheck(num) {
             const digits = num.toString().split('').map(Number);
             let checksum = 0;

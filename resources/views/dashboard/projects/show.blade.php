@@ -29,6 +29,40 @@
                         </td>
                     </tr>
                     <tr>
+                        <th>طبيعة الكوبون</th>
+                        <td>
+                            @if($project->is_cash)
+                                <span class="badge badge-success px-2 py-1 font-weight-bold">
+                                    <i class="fas fa-money-bill-wave mr-1"></i> كوبون نقدي
+                                </span>
+                                <span class="ml-2 font-weight-bold text-success" style="font-size: 1.05rem;">
+                                    القيمة: {{ $project->formatted_cash_value }}
+                                </span>
+                            @else
+                                <span class="badge badge-info px-2 py-1">
+                                    <i class="fas fa-box-open mr-1"></i> كوبون عيني (طرود)
+                                </span>
+                            @endif
+                        </td>
+                    </tr>
+                    @if($project->is_cash && $project->cash_amount)
+                        <tr>
+                            <th>إجمالي المبلغ المصروف للمستلمين</th>
+                            <td>
+                                @php
+                                    $deliveredUnits = ($project->total_quantity ?? 0) > 0 ? $project->total_quantity : ($project->received_count ?? 0);
+                                    $totalCashDelivered = $deliveredUnits * (float) $project->cash_amount;
+                                @endphp
+                                <strong class="text-success" style="font-size: 1.1rem;">
+                                    {{ number_format($totalCashDelivered, 2) }} {{ $project->currency_name }}
+                                </strong>
+                                <small class="text-muted mr-2">
+                                    ({{ number_format($deliveredUnits) }} مستلم × {{ $project->formatted_cash_value }})
+                                </small>
+                            </td>
+                        </tr>
+                    @endif
+                    <tr>
                         <th>@lang('projects.attributes.start_date')</th>
                         <td>
                             @if($project->start_date)

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AreaResponsible;
 use App\Models\Block;
 use App\Models\Person;
+use App\Models\IncompletePerson;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -588,10 +589,10 @@ class ApiController extends Controller
         $user = $this->authUser($request);
         if (!$user) return $this->authError();
 
-        $query = Project::select('projects.id as aid_manage_id', 'projects.name as aid_manage_title', 'projects.start_date as aid_manage_date', 'projects.description as aid_manage_note')
+        $query = Project::select('projects.id as aid_manage_id', 'projects.name as aid_manage_title', 'projects.start_date as aid_manage_date', 'projects.description as aid_manage_note', 'projects.updated_at as updated_at')
             ->join('project_beneficiaries', 'project_beneficiaries.project_id', '=', 'projects.id')
             ->where('project_beneficiaries.status', '!=', 'مستلم')
-            ->groupBy('projects.id', 'projects.name', 'projects.start_date', 'projects.description')
+            ->groupBy('projects.id', 'projects.name', 'projects.start_date', 'projects.description', 'projects.updated_at')
             ->orderBy('projects.id', 'desc');
 
         if ($user->type == 'mobile_worker' || $user->type == 'supervisor') {
@@ -620,22 +621,33 @@ class ApiController extends Controller
             return response()->json(['status' => false, 'message' => 'المشروع غير موجود', 'data' => []], 203);
         }
 
-        $query = DB::table('project_beneficiaries')
-            ->join('persons', 'persons.id', '=', 'project_beneficiaries.person_id')
+        $beneficiaries = DB::table('project_beneficiaries')
+            ->leftJoin('persons', 'persons.id', '=', 'project_beneficiaries.person_id')
+            ->leftJoin('incomplete_people', 'incomplete_people.id', '=', 'project_beneficiaries.incomplete_person_id')
             ->select(
-                'project_beneficiaries.id as aid_person_id', 'project_beneficiaries.quantity as aid_person_quantity',
-                'project_beneficiaries.status as aid_person_status_rec', 'persons.first_name as person_fname',
-                'persons.father_name as person_sname', 'persons.grandfather_name as person_tname',
-                'persons.family_name as person_lname', 'persons.phone as person_mob_1', 'persons.id_num as person_pid'
+                'project_beneficiaries.id as aid_person_id', 
+                'project_beneficiaries.quantity as aid_person_quantity',
+                'project_beneficiaries.status as aid_person_status_rec', 
+                DB::raw('COALESCE(persons.first_name, incomplete_people.first_name) as person_fname'),
+                DB::raw('COALESCE(persons.father_name, incomplete_people.father_name) as person_sname'),
+                DB::raw('COALESCE(persons.grandfather_name, incomplete_people.grandfather_name) as person_tname'),
+                DB::raw('COALESCE(persons.family_name, incomplete_people.family_name) as person_lname'),
+                DB::raw('COALESCE(persons.phone, incomplete_people.phone) as person_mob_1'), 
+                DB::raw('COALESCE(persons.id_num, incomplete_people.id_num) as person_pid'),
+                DB::raw("CASE WHEN persons.id IS NOT NULL THEN 'regular' ELSE 'incomplete' END as person_type")
             )
             ->where('project_beneficiaries.project_id', $id)
             ->where('project_beneficiaries.status', '!=', 'مستلم');
 
         if ($user->type == 'mobile_worker' || $user->type == 'supervisor') {
-            $query->where('project_beneficiaries.user_id', $user->id);
+            $beneficiaries->where('project_beneficiaries.user_id', $user->id);
         }
 
-        $beneficiaries = $query->orderBy('persons.first_name')->get();
+        if ($request->filled('last_id')) {
+            $beneficiaries->where('project_beneficiaries.id', '>', $request->last_id);
+        }
+
+        $beneficiaries = $beneficiaries->orderBy('person_fname')->get();
 
         return response()->json([
             'status' => $user->id,
@@ -658,9 +670,16 @@ class ApiController extends Controller
         $user = $this->authUser($request);
         if (!$user) return $this->authError();
 
-        $data = json_decode($request->input('data'));
+        $dataRaw = $request->input('data');
+        $data = is_string($dataRaw) ? json_decode($dataRaw) : $dataRaw;
+
         if (empty($data)) {
             return response()->json(['status' => false, 'message' => 'البيانات المرسلة خطأ', 'data' => []], 203);
+        }
+
+        // Normalize each item to be an object to maintain compatibility with the code below (e.g. $item->id)
+        if (is_array($data)) {
+            $data = json_decode(json_encode($data));
         }
 
         $batchTime = now();
@@ -669,19 +688,70 @@ class ApiController extends Controller
         $externalNotes = $request->input('external_notes') ?? $request->input('notes_external');
 
         foreach ($data as $item) {
-            // Priority: Root batch-level value if provided, else fall back to item-level
-            // Use (int) casting to prevent boolean conversion issues
-            $itemQty = ($rootCapturedQty !== null) ? (int)$rootCapturedQty : ($item->captured_qty ?? null);
+            $beneficiaryId = $item->id;
+            $beneficiary = DB::table('project_beneficiaries')->where('id', $beneficiaryId)->first();
+            if (!$beneficiary) continue;
+
+            // الأولوية للكمية المحرزة لكل فرد، وإذا لم توجد نستخدم الكمية العامة للدفعة
+            $itemCapturedQty = isset($item->captured_qty) ? (int)$item->captured_qty : null;
+            $itemQty = ($itemCapturedQty && $itemCapturedQty > 0) ? $itemCapturedQty : ($rootCapturedQty ?: null);
             
-            DB::table('project_beneficiaries')
-                ->where('id', $item->id)
-                ->update([
+            // فحص وجود سجل استلام سابق (مستلم) لنفس الشخص في نفس المشروع
+            $existing = DB::table('project_beneficiaries')
+                ->where('project_id', $beneficiary->project_id)
+                ->where('id', '!=', $beneficiaryId)
+                ->where(function($q) use ($beneficiary) {
+                    if ($beneficiary->person_id) $q->where('person_id', $beneficiary->person_id);
+                    else $q->where('incomplete_person_id', $beneficiary->incomplete_person_id);
+                })
+                ->where('status', 'مستلم')
+                ->orderBy('id', 'asc') // نختار السجل الأول المضاف قديماً
+                ->first();
+
+            if ($existing) {
+                // حالة دمج الاستلام الثاني في السجل الأول
+                $finalQty = (int)$existing->quantity + (int)($itemQty ?: $beneficiary->quantity);
+                $newNotes = trim($existing->notes . ' | ' . ($item->title ?? ''));
+                if (!str_contains($newNotes, 'إعادة تكليف')) {
+                    $newNotes .= ' (إعادة تكليف)';
+                }
+
+                DB::table('project_beneficiaries')
+                    ->where('id', $existing->id)
+                    ->update([
+                        'quantity' => $finalQty,
+                        'notes' => $newNotes,
+                        'captured_qty' => $finalQty,
+                        'sub_warehouse_id' => $beneficiary->sub_warehouse_id, // الحفاظ على المخزن الذي تم فيه الاستلام الفعلي
+                        'delivery_date' => $batchTime, // تحديث تاريخ الاستلام ليكون الأحدث
+                        'updated_at' => $batchTime
+                    ]);
+                
+                // حذف السجل الحالي لأنه تم دمجه
+                DB::table('project_beneficiaries')->where('id', $beneficiaryId)->delete();
+            } else {
+                // استلام طبيعي لأول مرة
+                $updateData = [
                     'status' => 'مستلم',
                     'delivery_date' => $batchTime,
                     'notes' => $item->title ?? '',
                     'captured_qty' => $itemQty,
                     'external_notes' => $externalNotes,
-                ]);
+                    'updated_at' => $batchTime
+                ];
+
+                if ($itemQty && $itemQty > 0) {
+                    $updateData['quantity'] = (int) $itemQty;
+                } elseif (isset($item->aid_person_quantity)) {
+                    $updateData['quantity'] = (int) $item->aid_person_quantity;
+                } elseif (isset($item->quantity)) {
+                    $updateData['quantity'] = (int) $item->quantity;
+                }
+
+                DB::table('project_beneficiaries')
+                    ->where('id', $beneficiaryId)
+                    ->update($updateData);
+            }
         }
 
         return response()->json([

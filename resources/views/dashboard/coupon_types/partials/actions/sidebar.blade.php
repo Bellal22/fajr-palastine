@@ -1,3 +1,4 @@
+@if(!auth()->user()?->isKitchenMonitor())
 @component('dashboard::components.sidebarItem')
     @slot('can', ['ability' => 'viewAny', 'model' => \App\Models\CouponType::class])
     @slot('url', route('dashboard.coupon_types.index'))
@@ -20,3 +21,4 @@
         ],
     ])
 @endcomponent
+@endif

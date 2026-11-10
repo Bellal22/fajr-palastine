@@ -157,6 +157,24 @@
                 <form action="{{ route('dashboard.complaints.respond', $complaint) }}" method="POST">
                     @csrf
 
+                    @if(isset($responseTemplates) && $responseTemplates->count() > 0)
+                        <div class="mb-3 p-2 border rounded bg-light">
+                            <label class="text-primary small d-block mb-1 font-weight-bold">
+                                <i class="fas fa-magic"></i> اختر من الردود الجاهزة
+                            </label>
+                            <select id="response_template_select" class="form-control form-control-sm">
+                                <option value="">-- اختر رداً جاهزاً لتعبئة الإجابة تلقائياً --</option>
+                                @foreach($responseTemplates as $template)
+                                    <option value="{{ $template->id }}"
+                                            data-content="{{ e($template->content) }}"
+                                            data-status="{{ $template->status }}">
+                                        {{ $template->title }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+
                     <div class="mb-3">
                         <label class="text-muted small d-block mb-2">
                             <i class="fas fa-flag"></i> @lang('complaints.attributes.status')
@@ -182,11 +200,66 @@
 
                     <div class="mb-3">
                         <label class="text-muted small d-block mb-2">
-                            <i class="fas fa-comment"></i> @lang('complaints.attributes.response_text')
+                            <i class="fas fa-calendar-alt text-primary"></i> تاريخ ووقت الحل / الرد
+                        </label>
+                        <input type="datetime-local"
+                               name="responded_at"
+                               class="form-control @error('responded_at') is-invalid @enderror"
+                               value="{{ old('responded_at', $complaint->responded_at ? $complaint->responded_at->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i')) }}">
+                        <small class="form-text text-muted">يمكنك تحديد تاريخ وتوقيت الحل يدوياً ليظهر في التقرير.</small>
+                        @error('responded_at')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-muted small d-block mb-2">
+                            <i class="fas fa-edit text-primary"></i> عنوان الشكوى المعين بواسطة الموظف
+                        </label>
+                        <input type="text"
+                               name="admin_complaint_title"
+                               class="form-control @error('admin_complaint_title') is-invalid @enderror"
+                               value="{{ old('admin_complaint_title', $complaint->admin_complaint_title ?? $complaint->complaint_title) }}"
+                               placeholder="عنوان الشكوى المعتمد لدى الجمعية...">
+                        <small class="form-text text-muted">يمكنك كتابة عنوان مخصص للشكوى يختلف عن العنوان الذي أدخله المواطن.</small>
+                        @error('admin_complaint_title')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-muted small d-block mb-2">
+                            <i class="fas fa-align-left text-primary"></i> تفاصيل الشكوى المعينة بواسطة الموظف
+                        </label>
+                        <textarea name="admin_complaint_text" rows="3" class="form-control @error('admin_complaint_text') is-invalid @enderror" placeholder="تفاصيل الشكوى المعتمدة لدى الجمعية...">{{ old('admin_complaint_text', $complaint->admin_complaint_text ?? $complaint->complaint_text) }}</textarea>
+                        <small class="form-text text-muted">يمكنك كتابة تفاصيل مخصصة للشكوى تختلف عن التفاصيل التي أدخلها المواطن.</small>
+                        @error('admin_complaint_text')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-muted small d-block mb-2">
+                            <i class="fas fa-heading text-primary"></i> عنوان الحل / إجراء الجمعية (خاص بالموظف)
+                        </label>
+                        <input type="text"
+                               name="response_title"
+                               class="form-control @error('response_title') is-invalid @enderror"
+                               value="{{ old('response_title', $complaint->response_title) }}"
+                               placeholder="عنوان أو ملخص إجراء الحل المتبع من الجمعية...">
+                        <small class="form-text text-muted">عنوان الحل الخاص بموظفي الجمعية بشكل منفصل عن عنوان المواطن.</small>
+                        @error('response_title')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-muted small d-block mb-2">
+                            <i class="fas fa-comment text-primary"></i> نص الرد / تفاصيل الحل <span class="text-danger">*</span>
                         </label>
                         <textarea
                             name="response"
-                            rows="10"
+                            rows="6"
                             class="form-control @error('response') is-invalid @enderror"
                             placeholder="@lang('complaints.placeholders.response')"
                             required
@@ -198,7 +271,7 @@
 
                     <button type="submit" class="btn btn-primary btn-block">
                         <i class="fas fa-paper-plane"></i>
-                        @lang('complaints.actions.send_response')
+                        حفظ الحل والرد
                     </button>
                 </form>
             @endcomponent
@@ -220,4 +293,28 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const templateSelect = document.getElementById('response_template_select');
+            const responseTextarea = document.querySelector('textarea[name="response"]');
+            const statusSelect = document.querySelector('select[name="status"]');
+
+            if (templateSelect && responseTextarea) {
+                templateSelect.addEventListener('change', function () {
+                    const selectedOption = this.options[this.selectedIndex];
+                    if (selectedOption && selectedOption.value) {
+                        const content = selectedOption.getAttribute('data-content');
+                        const status = selectedOption.getAttribute('data-status');
+
+                        if (content) {
+                            responseTextarea.value = content;
+                        }
+                        if (status && statusSelect) {
+                            statusSelect.value = status;
+                        }
+                    }
+                });
+            }
+        });
+    </script>
 </x-layout>

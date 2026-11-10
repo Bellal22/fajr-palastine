@@ -33,7 +33,11 @@ class LocationController extends Controller
             ->latest()
             ->paginate();
 
-        return view('dashboard.locations.index', compact('locations'));
+        $allLocationsForMap = Location::with(['region', 'block'])
+            ->where('is_active', true)
+            ->get();
+
+        return view('dashboard.locations.index', compact('locations', 'allLocationsForMap'));
     }
 
     /**
@@ -227,6 +231,14 @@ class LocationController extends Controller
             'is_active' => $validated['is_active'] ?? true
         ]);
 
+        // المندوب هو نفسه لوكيشن المخيم: مزامنة إحداثيات المندوب تلقائياً
+        if (!empty($validated['block_id'])) {
+            Block::where('id', $validated['block_id'])->update([
+                'lat' => $validated['latitude'],
+                'lan' => $validated['longitude'],
+            ]);
+        }
+
         flash()->success('تم إضافة اللوكيشن بنجاح');
         return redirect()->route('dashboard.locations.show', $location);
     }
@@ -245,7 +257,10 @@ class LocationController extends Controller
      */
     public function edit(Location $location)
     {
-        $regions = Region::where('is_active', true)->get();
+        $location->load(['region.areaResponsible', 'block.areaResponsible']);
+        $regions = Region::where('is_active', true)
+            ->orWhere('id', $location->region_id)
+            ->get();
         $blocks = Block::all();
         return view('dashboard.locations.edit', compact('location', 'regions', 'blocks'));
     }
@@ -255,10 +270,16 @@ class LocationController extends Controller
      */
     public function update(Request $request, Location $location)
     {
+        $request->merge([
+            'latitude' => Location::cleanCoordinate($request->input('latitude')),
+            'longitude' => Location::cleanCoordinate($request->input('longitude')),
+        ]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'region_id' => 'required|exists:regions,id',
+            'area_responsible_id' => 'nullable|exists:area_responsibles,id',
+            'region_id' => 'nullable|exists:regions,id',
             'block_id' => 'required|exists:blocks,id',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
@@ -267,12 +288,18 @@ class LocationController extends Controller
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'is_active' => 'nullable|boolean'
+        ], [
+            'name.required' => 'اسم اللوكيشن مطلوب',
+            'block_id.required' => 'يجب اختيار المندوب/البلوك',
+            'latitude.required' => 'يجب تحديد الموقع على الخريطة',
+            'longitude.required' => 'يجب تحديد الموقع على الخريطة',
+            'type.required' => 'يجب اختيار نوع اللوكيشن'
         ]);
 
         $location->update([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
-            'region_id' => $validated['region_id'],
+            'region_id' => $validated['region_id'] ?? $location->region_id,
             'block_id' => $validated['block_id'],
             'latitude' => $validated['latitude'],
             'longitude' => $validated['longitude'],
@@ -282,6 +309,14 @@ class LocationController extends Controller
             'phone' => $validated['phone'] ?? null,
             'is_active' => $validated['is_active'] ?? $location->is_active
         ]);
+
+        // المندوب هو نفسه لوكيشن المخيم: مزامنة إحداثيات المندوب تلقائياً
+        if (!empty($validated['block_id'])) {
+            Block::where('id', $validated['block_id'])->update([
+                'lat' => $validated['latitude'],
+                'lan' => $validated['longitude'],
+            ]);
+        }
 
         flash()->success('تم تحديث اللوكيشن بنجاح');
         return redirect()->route('dashboard.locations.show', $location);

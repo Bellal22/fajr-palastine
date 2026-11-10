@@ -32,10 +32,20 @@ class MobileWorkerNominationsExport implements FromCollection, WithHeadings, Wit
     public function collection()
     {
         return DB::table('project_beneficiaries')
-            ->join('persons', 'persons.id', '=', 'project_beneficiaries.person_id')
+            ->leftJoin('persons', 'persons.id', '=', 'project_beneficiaries.person_id')
+            ->leftJoin('incomplete_people', 'incomplete_people.id', '=', 'project_beneficiaries.incomplete_person_id')
             ->where('project_beneficiaries.project_id', $this->projectId)
             ->where('project_beneficiaries.user_id', $this->userId)
-            ->select('persons.first_name', 'persons.father_name', 'persons.family_name', 'persons.id_num', 'persons.phone', 'project_beneficiaries.created_at')
+            ->select(
+                DB::raw('COALESCE(persons.first_name, incomplete_people.first_name) as first_name'),
+                DB::raw('COALESCE(persons.father_name, incomplete_people.father_name) as father_name'),
+                DB::raw('COALESCE(persons.grandfather_name, incomplete_people.grandfather_name) as grandfather_name'),
+                DB::raw('COALESCE(persons.family_name, incomplete_people.family_name) as family_name'),
+                DB::raw('COALESCE(persons.id_num, incomplete_people.id_num) as id_num'),
+                DB::raw('COALESCE(persons.phone, incomplete_people.phone) as phone'),
+                'project_beneficiaries.status',
+                'project_beneficiaries.created_at'
+            )
             ->get();
     }
 
@@ -45,6 +55,7 @@ class MobileWorkerNominationsExport implements FromCollection, WithHeadings, Wit
             'الاسم الرباعي',
             'رقم الهوية',
             'رقم الجوال',
+            'الحالة',
             'تاريخ الترشيح'
         ];
     }
@@ -52,9 +63,10 @@ class MobileWorkerNominationsExport implements FromCollection, WithHeadings, Wit
     public function map($row): array
     {
         return [
-            $row->first_name . ' ' . $row->father_name . ' ' . $row->family_name,
+            trim($row->first_name . ' ' . $row->father_name . ' ' . $row->grandfather_name . ' ' . $row->family_name),
             $row->id_num,
             $row->phone,
+            $row->status,
             \Carbon\Carbon::parse($row->created_at)->format('Y-m-d')
         ];
     }
@@ -62,7 +74,7 @@ class MobileWorkerNominationsExport implements FromCollection, WithHeadings, Wit
     public function styles(Worksheet $sheet)
     {
         return [
-            5 => ['font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']], 'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '4F81BD']]],
+            5 => ['font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']], 'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => 'FFA500']]],
         ];
     }
 
@@ -74,16 +86,16 @@ class MobileWorkerNominationsExport implements FromCollection, WithHeadings, Wit
                 $user = \App\Models\User::find($this->userId);
                 
                 $sheet = $event->sheet->getDelegate();
-                $sheet->mergeCells('A1:D1');
+                $sheet->mergeCells('A1:E1');
                 $sheet->setCellValue('A1', 'كشف ترشيحات موظف الميدان: ' . $user->name);
                 $sheet->getStyle('A1')->getFont()->setSize(16)->setBold(true);
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
 
-                $sheet->mergeCells('A2:D2');
+                $sheet->mergeCells('A2:E2');
                 $sheet->setCellValue('A2', 'المشروع: ' . $project->name);
                 $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
 
-                $sheet->mergeCells('A3:D3');
+                $sheet->mergeCells('A3:E3');
                 $day = \Carbon\Carbon::now()->locale('ar')->dayName;
                 $date = \Carbon\Carbon::now()->format('Y-m-d');
                 

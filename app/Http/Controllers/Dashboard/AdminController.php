@@ -55,6 +55,10 @@ class AdminController extends Controller
 
         $admin->setType($request->type);
 
+        if ($request->user()->isAdmin()) {
+            $admin->syncUserPermissions($request->input('permissions', []));
+        }
+
         $admin->addAllMediaFromTokens();
 
         flash()->success(trans('admins.messages.created'));
@@ -96,6 +100,10 @@ class AdminController extends Controller
         $admin->update($request->allWithHashedPassword());
 
         $admin->setType($request->type);
+
+        if ($request->user()->isAdmin()) {
+            $admin->syncUserPermissions($request->input('permissions', []));
+        }
 
         $admin->addAllMediaFromTokens();
 

@@ -41,6 +41,11 @@
                        class="text-decoration-none text-ellipsis">
                         <strong>{{ $coupon_type->name }}</strong>
                     </a>
+                    @if($coupon_type->is_cash)
+                        <span class="badge badge-success ml-2">
+                            <i class="fas fa-money-bill-wave mr-1"></i> نقدي: {{ $coupon_type->formatted_cash_value }}
+                        </span>
+                    @endif
                 </td>
                 <td>
                     <span class="text-muted">

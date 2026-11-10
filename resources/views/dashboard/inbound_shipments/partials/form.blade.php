@@ -16,7 +16,7 @@
                     <span class="text-danger">*</span>
                 </label>
                 {{ BsForm::select('supplier_id')
-                    ->options(App\Models\Supplier::where('type', 'donor')->pluck('name', 'id'))
+                    ->options(App\Models\Supplier::whereIn('type', ['donor', 'operator'])->pluck('name', 'id'))
                     ->placeholder(trans('inbound_shipments.placeholders.supplier'))
                     ->required()
                     ->label(false)

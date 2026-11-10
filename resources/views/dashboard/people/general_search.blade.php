@@ -1,6 +1,24 @@
 <x-layout title="بحث عام عن الأفراد" :breadcrumbs="['dashboard.people.index']">
     <div class="row justify-content-center">
         <div class="col-md-8">
+            {{-- Welcome Card --}}
+            @if(auth()->user()?->isGeneralSearchOnly())
+            <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; background: #fff;">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 60px; height: 60px;">
+                            <i class="fas fa-user-check fa-2x"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-1 text-primary">أهلاً بك مجدداً</h4>
+                            <h3 class="font-weight-bold mb-1">{{ auth()->user()->name }}</h3>
+                            <p class="text-muted mb-0">نتمنى لك يوماً سعيداً في خدمة أبناء شعبنا</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             {{-- Search Bar --}}
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
@@ -33,8 +51,9 @@
                 <div class="card shadow-sm">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="fas fa-user"></i> نتيجة البحث</h5>
-                        <a href="{{ route('dashboard.people.show', $person) }}" class="btn btn-primary btn-sm text-light">
-                            <i class="fas fa-external-link-alt"></i> عرض الملف الكامل
+                        <a href="{{ $person->is_incomplete ? route('dashboard.incomplete_people.show', $person->id) : route('dashboard.people.show', $person) }}" 
+                           class="btn {{ $person->is_incomplete ? 'btn-warning' : 'btn-primary' }} btn-sm text-light font-weight-bold">
+                            <i class="fas fa-external-link-alt"></i> {{ $person->is_incomplete ? 'عرض السجل المؤقت' : 'عرض الملف الكامل' }}
                         </a>
                     </div>
                     <div class="card-body">
@@ -69,8 +88,8 @@
                                             $spouseName = $person->getWifeName();
                                         } 
                                         // إذا كانت هي الزوجة أو هو الزوج، نظهر اسم رب الأسرة
-                                        elseif ($person->familyHead && in_array($person->relationship, ['زوجة', 'زوج', 'wife', 'husband'])) {
-                                            $spouseName = $person->familyHead->first_name . ' ' . $person->familyHead->family_name;
+                                        elseif ($person->familyHeadRelation && in_array($person->relationship, ['زوجة', 'زوج', 'wife', 'husband'])) {
+                                            $spouseName = $person->familyHeadRelation->first_name . ' ' . $person->familyHeadRelation->family_name;
                                         }
                                     @endphp
                                     @if($spouseName)
@@ -115,7 +134,68 @@
                         <div class="mt-3">
                             <h6 class="font-weight-bold mb-3"><i class="fas fa-ticket-alt text-danger"></i> سجل الكوبونات (للعائلة)</h6>
                             @php
-                                $coupons = $person->familyCoupons ?? collect();
+                                $rawFamilyCoupons = $person->familyCoupons ?? collect();
+                                $coupons = collect();
+                                $groupedFamily = $rawFamilyCoupons->groupBy(function($c) {
+                                    if (preg_match('/\[مجموعة:([^\]]+)\]/u', $c->notes ?? '', $m)) {
+                                        $parts = explode('|', trim($m[1]), 2);
+                                        return trim($parts[0]);
+                                    }
+                                    return 'single_' . ($c->project_id ?? $c->name);
+                                });
+
+                                foreach ($groupedFamily as $key => $items) {
+                                    if (str_starts_with($key, 'single_') || $items->count() === 1) {
+                                        $first = $items->first();
+                                        $first->is_group = false;
+                                        $coupons->push($first);
+                                    } else {
+                                        $first = $items->first();
+                                        $clone = clone $first;
+                                        $clone->is_group = true;
+                                        $clone->group_code = $key;
+
+                                        // Extract custom group name if specified
+                                        $customGroupName = null;
+                                        foreach ($items as $item) {
+                                            $n = $item->notes ?? '';
+                                            if (preg_match('/\[اسم_المجموعة:([^\]]+)\]/u', $n, $mName)) {
+                                                $customGroupName = trim($mName[1]);
+                                                break;
+                                            }
+                                            if (preg_match('/\[مجموعة:[^\|\]]+\|([^\]]+)\]/u', $n, $mName)) {
+                                                $customGroupName = trim($mName[1]);
+                                                break;
+                                            }
+                                        }
+
+                                        $clone->custom_group_name = $customGroupName;
+                                        $clone->name = $customGroupName ?: ('تسليم مجموعة طرود (' . $items->count() . ' طرود)');
+                                        $clone->quantity = $items->sum('quantity');
+                                        $clone->group_coupons = $items;
+                                        $clone->project_description = 'تشمل: ' . $items->pluck('name')->implode(' + ');
+                                        
+                                        $mergedTypes = collect();
+                                        foreach ($items as $item) {
+                                            $itemTypes = $item->coupon_types ?? collect();
+                                            if ($itemTypes->isNotEmpty()) {
+                                                foreach ($itemTypes as $it) {
+                                                    $mergedTypes->push((object)[
+                                                        'name' => "{$item->name} - {$it->name}",
+                                                        'quantity' => $it->quantity
+                                                    ]);
+                                                }
+                                            } else {
+                                                $mergedTypes->push((object)[
+                                                    'name' => "{$item->name} (طرد كامل)",
+                                                    'quantity' => $item->quantity
+                                                ]);
+                                            }
+                                        }
+                                        $clone->coupon_types = $mergedTypes;
+                                        $coupons->push($clone);
+                                    }
+                                }
                             @endphp
 
                             @if($coupons->count() > 0)
@@ -127,14 +207,31 @@
                                                 <th class="text-center">الكمية</th>
                                                 <th class="text-center">الحالة</th>
                                                 <th class="text-center">المستلم</th>
-                                                <th>التاريخ</th>
+                                                <th style="white-space: nowrap">المخزن الفرعي</th>
+                                                <th style="white-space: nowrap">تاريخ الترشيح</th>
+                                                <th style="white-space: nowrap">تاريخ الاستلام</th>
                                                 <th class="text-center">تفاصيل</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach($coupons as $coupon)
                                                 <tr>
-                                                    <td>{{ $coupon->name }}</td>
+                                                    <td>
+                                                        @if(!empty($coupon->is_group))
+                                                            <span class="badge badge-info p-1 mr-1"><i class="fas fa-boxes"></i> تسليم مجموعة</span>
+                                                            <strong class="group-name-title-{{ $coupon->group_code }}">{{ $coupon->name }}</strong>
+                                                            <button type="button" 
+                                                                    class="btn btn-xs btn-outline-primary ml-1 btn-rename-group" 
+                                                                    data-group-code="{{ $coupon->group_code }}" 
+                                                                    data-current-name="{{ $coupon->custom_group_name ?? $coupon->name }}" 
+                                                                    title="تعديل اسم هذه المجموعة">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <div class="small text-muted mt-1"><i class="fas fa-layer-group text-info mr-1"></i> تشمل: {{ $coupon->group_coupons->pluck('name')->implode(' + ') }}</div>
+                                                        @else
+                                                            {{ $coupon->name }}
+                                                        @endif
+                                                    </td>
                                                     <td class="text-center"><span class="badge badge-primary">{{ $coupon->quantity }}</span></td>
                                                     <td class="text-center">
                                                         @if($coupon->status == 'مستلم')
@@ -150,7 +247,32 @@
                                                             {{ $coupon->recipient_name ?? '-' }}
                                                         @endif
                                                     </td>
-                                                    <td>{{ $coupon->delivery_date ? \Carbon\Carbon::parse($coupon->delivery_date)->format('Y-m-d') : '-' }}</td>
+                                                    <td style="white-space: nowrap">
+                                                        @if($coupon->warehouse_name)
+                                                            <small class="text-info">
+                                                                <i class="fas fa-warehouse"></i>
+                                                                {{ $coupon->warehouse_name }}
+                                                            </small>
+                                                        @else
+                                                            <small class="text-muted">-</small>
+                                                        @endif
+                                                    </td>
+                                                    <td style="white-space: nowrap">
+                                                        <small class="text-secondary">
+                                                            <i class="fas fa-calendar-plus text-muted"></i>
+                                                            {{ $coupon->nomination_date ? \Carbon\Carbon::parse($coupon->nomination_date)->format('Y-m-d') : '-' }}
+                                                        </small>
+                                                    </td>
+                                                    <td style="white-space: nowrap">
+                                                        @if($coupon->delivery_date)
+                                                            <small class="text-success font-weight-bold">
+                                                                <i class="fas fa-calendar-check"></i>
+                                                                {{ \Carbon\Carbon::parse($coupon->delivery_date)->format('Y-m-d') }}
+                                                            </small>
+                                                        @else
+                                                            <small class="text-muted">-</small>
+                                                        @endif
+                                                    </td>
                                                     <td class="text-center">
                                                         <button class="btn btn-sm btn-info view-coupon-details"
                                                                 data-name="{{ $coupon->name }}"
@@ -160,6 +282,7 @@
                                                                 data-warehouse="{{ $coupon->warehouse_name ?? '-' }}"
                                                                 data-notes="{{ $coupon->notes ?? '-' }}"
                                                                 data-date="{{ $coupon->delivery_date ? \Carbon\Carbon::parse($coupon->delivery_date)->format('Y-m-d') : '-' }}"
+                                                                data-nomination-date="{{ $coupon->nomination_date ? \Carbon\Carbon::parse($coupon->nomination_date)->format('Y-m-d') : '-' }}"
                                                                 data-types="{{ $coupon->coupon_types->toJson() }}"
                                                                 data-recipient="{{ $coupon->person_id == $person->id ? 'نفس الشخص' : ($coupon->recipient_name ?? '-') }}">
                                                             <i class="fas fa-eye"></i>
@@ -216,8 +339,12 @@
                             <div class="small text-muted mb-1"><i class="fas fa-user-check fa-fw mr-1 text-secondary"></i> المستلم:</div>
                             <div class="font-weight-bold text-dark ml-4" id="modal-coupon-recipient"></div>
                         </div>
+                        <div class="col-6 pr-2 mb-2">
+                            <div class="small text-muted mb-1"><i class="fas fa-calendar-plus fa-fw mr-1 text-secondary"></i> تاريخ الترشيح:</div>
+                            <div class="font-weight-bold text-secondary ml-4" id="modal-coupon-nomination-date"></div>
+                        </div>
                         <div class="col-6 mb-2">
-                            <div class="small text-muted mb-1"><i class="fas fa-calendar-day fa-fw mr-1 text-secondary"></i> التاريخ:</div>
+                            <div class="small text-muted mb-1"><i class="fas fa-calendar-check fa-fw mr-1 text-success"></i> تاريخ الاستلام:</div>
                             <div class="font-weight-bold text-dark ml-4" id="modal-coupon-date"></div>
                         </div>
                         <div class="col-12 mb-2">
@@ -229,7 +356,6 @@
                             <div class="text-secondary ml-4 small" id="modal-coupon-notes"></div>
                         </div>
                     </div>
- house
 
                     {{-- Coupon Types Table --}}
                     <div id="modal-types-container" style="display: none;">
@@ -283,6 +409,7 @@
                 $('#modal-coupon-name').text(btn.data('name'));
                 $('#modal-coupon-quantity').text(btn.data('quantity'));
                 $('#modal-coupon-recipient').text(btn.data('recipient'));
+                $('#modal-coupon-nomination-date').text(btn.data('nomination-date'));
                 $('#modal-coupon-date').text(btn.data('date'));
                 $('#modal-coupon-warehouse').text(btn.data('warehouse'));
                 $('#modal-coupon-notes').text(btn.data('notes'));
@@ -325,6 +452,52 @@
                 
                 // Show Modal
                 $('#couponDetailsModal').modal('show');
+            });
+
+            // Inline rename for group delivery
+            $(document).on('click', '.btn-rename-group', function(e) {
+                e.preventDefault();
+                var groupCode = $(this).data('group-code');
+                var currentName = $(this).data('current-name') || '';
+
+                var newName = prompt('أدخل الاسم المناسب لعملية التسليم لهذه المجموعة:', currentName);
+                if (newName === null) return;
+                newName = newName.trim();
+                if (!newName) {
+                    alert('يرجى كتابة اسم مناسب للمجموعة');
+                    return;
+                }
+
+                var $btn = $(this);
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
+                $.ajax({
+                    url: "{{ route('dashboard.projects.deliveries.rename-group') }}",
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        group_code: groupCode,
+                        group_name: newName
+                    },
+                    success: function(res) {
+                        $btn.prop('disabled', false).html('<i class="fas fa-edit"></i>');
+                        if (res.success) {
+                            $('.group-name-title-' + groupCode).text(newName);
+                            $btn.data('current-name', newName);
+                            alert('✅ ' + res.message);
+                        } else {
+                            alert('حدث خطأ: ' + res.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        $btn.prop('disabled', false).html('<i class="fas fa-edit"></i>');
+                        var msg = 'حدث خطأ أثناء تعديل اسم المجموعة.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        alert('❌ ' + msg);
+                    }
+                });
             });
         });
     </script>

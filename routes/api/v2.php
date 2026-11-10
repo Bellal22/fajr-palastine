@@ -19,7 +19,7 @@ Route::prefix('v2')->group(function () {
         Route::post('create', [ApiController::class, 'create']);
         Route::post('update/{id}', [ApiController::class, 'update']);
         Route::post('get_aid_manage', [ApiController::class, 'get_aid_manage']);
-        Route::get('get_aid_manage_by_id/{id}', [ApiController::class, 'get_aid_manage_by_id']);
+        Route::match(['get', 'post'], 'get_aid_manage_by_id/{id}', [ApiController::class, 'get_aid_manage_by_id']);
         Route::post('set_aid_manage_receive', [ApiController::class, 'set_aid_manage_receive']);
     });
 });

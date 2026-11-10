@@ -44,6 +44,7 @@ return [
         'is_active' => 'حالة المنطقة',
         'description' => 'الوصف',
         'boundaries' => 'حدود المنطقة',
+        'area' => 'المساحة الإجمالية',
         'created_at' => 'تاريخ الإنشاء',
         'updated_at' => 'تاريخ آخر تحديث',
     ],

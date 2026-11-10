@@ -38,7 +38,65 @@
         </div>
 
         @slot('footer')
-            {{ BsForm::submit()->label(trans('settings.actions.save')) }}
+            <div class="d-flex justify-content-between align-items-center">
+                {{ BsForm::submit()->label(trans('settings.actions.save')) }}
+                
+                <button type="button" id="test-connection-btn" class="btn btn-outline-info">
+                    <i class="fas fa-network-wired"></i> اختبار الربط
+                </button>
+                
+                <button type="button" id="bulk-sync-btn" class="btn btn-outline-success">
+                    <i class="fas fa-sync-alt"></i> مزامنة كافة البيانات الآن
+                </button>
+            </div>
+
+            @push('scripts')
+                <script>
+                    $(document).ready(function() {
+                        // اختبار الربط
+                        $('#test-connection-btn').on('click', function() {
+                            var btn = $(this);
+                            var originalHtml = btn.html();
+                            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الاختبار...');
+                            $.ajax({
+                                url: "{{ route('dashboard.settings.test_connection') }}",
+                                method: "POST",
+                                data: { _token: "{{ csrf_token() }}" },
+                                success: function(response) {
+                                    if (response.status === 'success') { toastr.success(response.message); }
+                                    else { toastr.error(response.message); }
+                                },
+                                error: function() { toastr.error('حدث خطأ أثناء محاولة الاتصال'); },
+                                complete: function() { btn.prop('disabled', false).html(originalHtml); }
+                            });
+                        });
+
+                        // المزامنة الشاملة
+                        $('#bulk-sync-btn').on('click', function() {
+                            if (!confirm('هل أنت متأكد من رغبتك في مزامنة جميع المشاريع والموردين الآن؟ قد تستغرق العملية بعض الوقت.')) return;
+                            
+                            var btn = $(this);
+                            var originalHtml = btn.html();
+                            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري المزامنة...');
+                            
+                            $.ajax({
+                                url: "{{ route('dashboard.settings.bulk_sync') }}",
+                                method: "POST",
+                                data: { _token: "{{ csrf_token() }}" },
+                                success: function(response) {
+                                    if (response.status === 'success') {
+                                        toastr.success(response.message);
+                                    } else {
+                                        toastr.error(response.message);
+                                    }
+                                },
+                                error: function() { toastr.error('حدث خطأ أثناء المزامنة الشاملة'); },
+                                complete: function() { btn.prop('disabled', false).html(originalHtml); }
+                            });
+                        });
+                    });
+                </script>
+            @endpush
         @endslot
     @endcomponent
     {{ BsForm::close() }}

@@ -16,11 +16,18 @@ Breadcrumbs::for('dashboard.distributors.create', function ($breadcrumb) {
 });
 
 Breadcrumbs::for('dashboard.distributors.show', function ($breadcrumb, $distributor) {
+    if (is_string($distributor) || is_numeric($distributor)) {
+        $distributor = \App\Models\User::find($distributor) ?: $distributor;
+    }
     $breadcrumb->parent('dashboard.distributors.index');
-    $breadcrumb->push($distributor->name, route('dashboard.distributors.show', $distributor));
+    $name = is_object($distributor) ? $distributor->name : $distributor;
+    $breadcrumb->push($name, route('dashboard.distributors.show', $distributor));
 });
 
 Breadcrumbs::for('dashboard.distributors.edit', function ($breadcrumb, $distributor) {
+    if (is_string($distributor) || is_numeric($distributor)) {
+        $distributor = \App\Models\User::find($distributor) ?: $distributor;
+    }
     $breadcrumb->parent('dashboard.distributors.show', $distributor);
     $breadcrumb->push(trans('distributors.actions.edit'), route('dashboard.distributors.edit', $distributor));
 });

@@ -65,6 +65,16 @@ class User extends Authenticatable implements HasMedia, NotificationTarget
     const MOBILE_WORKER_TYPE = 'mobile_worker';
 
     /**
+     * The code for general search only.
+     */
+    const GENERAL_SEARCH_TYPE = 'general_search';
+
+    /**
+     * The code of kitchen monitor type.
+     */
+    const KITCHEN_MONITOR_TYPE = 'kitchen_monitor';
+
+    /**
      * The guard name of the user permissions.
      *
      * @var string
@@ -125,6 +135,8 @@ class User extends Authenticatable implements HasMedia, NotificationTarget
         self::SUPERVISOR_TYPE => Supervisor::class,
         self::CUSTOMER_TYPE => Customer::class,
         self::MOBILE_WORKER_TYPE => Distributor::class,
+        self::GENERAL_SEARCH_TYPE => Researcher::class,
+        self::KITCHEN_MONITOR_TYPE => KitchenMonitor::class,
     ];
 
     /**
@@ -260,7 +272,7 @@ class User extends Authenticatable implements HasMedia, NotificationTarget
      */
     public function canBeImpersonated()
     {
-        return $this->isSupervisor();
+        return $this->id !== auth()->id();
     }
 
     /**
@@ -353,16 +365,11 @@ class User extends Authenticatable implements HasMedia, NotificationTarget
      */
     public function canAccessDashboard(): bool
     {
-        if ($this->isAdmin() || $this->isSupervisor()) {
+        if ($this->isAdmin() || $this->isSupervisor() || $this->isGeneralSearchOnly() || $this->isKitchenMonitor()) {
             return true;
         }
 
-        return $this->hasAnyPermission([
-            'manage.people',
-            'manage.families',
-            'manage.supervisors',
-            'manage.need_requests',
-        ]);
+        return $this->permissions()->exists() || $this->hasAnyPermission(config('permission.supported', []));
     }
 
     public function needRequestSetting()

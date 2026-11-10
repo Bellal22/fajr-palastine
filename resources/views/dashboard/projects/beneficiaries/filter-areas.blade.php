@@ -5,6 +5,22 @@
     @component('dashboard::components.box')
         @slot('title', 'ترشيح المستفيدين حسب المناطق')
 
+        @if($project->is_cash)
+            <div class="alert alert-success d-flex align-items-center justify-content-between mb-3 border">
+                <div>
+                    <h6 class="mb-1 font-weight-bold"><i class="fas fa-money-bill-wave ml-1"></i> إضافة مستفيدين لكوبون نقدي: {{ $project->name }}</h6>
+                    <span class="text-dark">
+                        <strong>طبيعة الكوبون:</strong> كوبون نقدي 
+                        | <strong>قيمة الكوبون:</strong> {{ $project->cash_amount_type == 'custom' ? 'مبالغ متغيرة لكل مستفيد' : $project->formatted_cash_value }} 
+                        | <strong>العملة:</strong> {{ $project->currency_label }}
+                    </span>
+                </div>
+                <span class="badge badge-light border text-success font-weight-bold p-2" style="font-size: 16px;">
+                    {{ $project->currency_symbol }}
+                </span>
+            </div>
+        @endif
+
         <div class="alert alert-info">
             <i class="fas fa-info-circle"></i>
             <strong>ملاحظة:</strong> سيتم إضافة جميع الأشخاص الموجودين في المربع المحدد كمستفيدين في المشروع
@@ -57,12 +73,19 @@
             </div>
 
             <div class="col-md-4 form-group">
-                <label for="sub_warehouse_id">المخزن الفرعي <span class="text-danger">*</span></label>
+                <label for="sub_warehouse_id">
+                    المخزن الفرعي
+                    @if(!$project->is_cash)
+                        <span class="text-danger">*</span>
+                    @else
+                        <span class="text-muted text-sm">(اختياري للنقدي)</span>
+                    @endif
+                </label>
                 <select name="sub_warehouse_id"
                         id="sub_warehouse_id"
                         class="form-control @error('sub_warehouse_id') is-invalid @enderror"
-                        required>
-                    <option value="">-- اختر المخزن الفرعي --</option>
+                        {{ $project->is_cash ? '' : 'required' }}>
+                    <option value="">{{ $project->is_cash ? '-- بدون مخزن (تسليم نقدي) --' : '-- اختر المخزن الفرعي --' }}</option>
                     @foreach(\App\Models\SubWarehouse::all() as $warehouse)
                         <option value="{{ $warehouse->id }}" {{ old('sub_warehouse_id') == $warehouse->id ? 'selected' : '' }}>
                             {{ $warehouse->name }}
@@ -72,27 +95,63 @@
                 @error('sub_warehouse_id')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
-                <small class="form-text text-muted">المخزن الذي سيستلم منه المستفيدون</small>
+                <small class="form-text text-muted">
+                    {{ $project->is_cash ? 'المخزن اختياري نظراً لأن التسليم نقدي' : 'المخزن الذي سيستلم منه المستفيدون' }}
+                </small>
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-md-4">
-                {{ BsForm::number('quantity')
-                    ->label('الكمية لكل مستفيد')
-                    ->value(1)
-                    ->min(1)
-                    ->required() }}
+        @if($project->is_cash)
+            <div class="row">
+                <div class="col-md-4 form-group">
+                    <label for="delivery_method">طريقة التسليم <span class="text-danger">*</span></label>
+                    <select name="delivery_method" id="delivery_method" class="form-control @error('delivery_method') is-invalid @enderror" required>
+                        <option value="كاش" {{ old('delivery_method', $project->default_delivery_method ?? 'كاش') == 'كاش' ? 'selected' : '' }}>كاش (نقداً باليد)</option>
+                        <option value="محفظة" {{ old('delivery_method', $project->default_delivery_method) == 'محفظة' ? 'selected' : '' }}>محفظة إلكترونية</option>
+                        <option value="بنك" {{ old('delivery_method', $project->default_delivery_method) == 'بنك' ? 'selected' : '' }}>حساب بنكي / تحويل</option>
+                    </select>
+                </div>
+                <div class="col-md-4 form-group">
+                    <label for="cash_amount">المبلغ لكل مستفيد ({{ $project->currency_symbol }})</label>
+                    <div class="input-group">
+                        <input type="number" step="0.01" min="0" name="cash_amount" id="cash_amount"
+                               class="form-control @error('cash_amount') is-invalid @enderror"
+                               value="{{ old('cash_amount', $project->cash_amount) }}"
+                               placeholder="{{ $project->cash_amount ? $project->cash_amount : 'المبلغ' }}">
+                        <div class="input-group-append">
+                            <span class="input-group-text font-weight-bold">{{ $project->currency_symbol }}</span>
+                        </div>
+                    </div>
+                    <small class="text-muted">العملة: {{ $project->currency_label }}</small>
+                </div>
+                <div class="col-md-4 form-group">
+                    <label for="ignore_conflicts">تجاوز تعارض المشروع <span class="text-danger">*</span></label>
+                    <select name="ignore_conflicts" id="ignore_conflicts" class="form-control">
+                        <option value="0">لا (منع إضافة المستفيدين في حال وجود تعارض)</option>
+                        <option value="1">نعم (إسقاط التعارض وإضافة المستفيدين)</option>
+                    </select>
+                    <small class="text-muted">إذا اخترت "نعم"، سيتم إضافة المستفيدين حتى لو كانوا في مشاريع متعارضة.</small>
+                </div>
             </div>
-            <div class="col-md-4 form-group">
-                <label for="ignore_conflicts">تجاوز التعارض المشروع <span class="text-danger">*</span></label>
-                <select name="ignore_conflicts" id="ignore_conflicts" class="form-control">
-                    <option value="0">لا (منع إضافة المستفيدين في حال وجود تعارض)</option>
-                    <option value="1">نعم (إسقاط التعارض وإضافة المستفيدين)</option>
-                </select>
-                <small class="text-muted">إذا اخترت "نعم"، سيتم إضافة المستفيدين حتى لو كانوا مضافين في مشاريع متعارضة.</small>
+        @else
+            <div class="row">
+                <div class="col-md-4">
+                    {{ BsForm::number('quantity')
+                        ->label('الكمية لكل مستفيد')
+                        ->value(1)
+                        ->min(1)
+                        ->required() }}
+                </div>
+                <div class="col-md-4 form-group">
+                    <label for="ignore_conflicts">تجاوز التعارض المشروع <span class="text-danger">*</span></label>
+                    <select name="ignore_conflicts" id="ignore_conflicts" class="form-control">
+                        <option value="0">لا (منع إضافة المستفيدين في حال وجود تعارض)</option>
+                        <option value="1">نعم (إسقاط التعارض وإضافة المستفيدين)</option>
+                    </select>
+                    <small class="text-muted">إذا اخترت "نعم"، سيتم إضافة المستفيدين حتى لو كانوا مضافين في مشاريع متعارضة.</small>
+                </div>
             </div>
-        </div>
+        @endif
 
         @slot('footer')
             <button type="submit" class="btn btn-primary btn-sm">

@@ -1,3 +1,4 @@
+@php $slot = $slot ?? ''; @endphp
 @if(isset($can['ability'], $can['model'])
     && Gate::allows($can['ability'], $can['model'])
     || ! isset($can))

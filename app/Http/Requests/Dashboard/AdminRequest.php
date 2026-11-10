@@ -47,6 +47,7 @@ class AdminRequest extends FormRequest
             'phone' => ['required', 'unique:users,phone'],
             'password' => ['required', 'min:8', 'confirmed'],
             'type' => ['sometimes', 'nullable', Rule::in(array_keys(trans('users.types')))],
+            'permissions' => ['nullable', 'array'],
         ];
     }
 
@@ -63,6 +64,7 @@ class AdminRequest extends FormRequest
             'phone' => ['required', 'unique:users,phone,' . $this->route('admin')->id],
             'password' => ['nullable', 'min:8', 'confirmed'],
             'type' => ['sometimes', 'nullable', Rule::in(array_keys(trans('users.types')))],
+            'permissions' => ['nullable', 'array'],
         ];
     }
 

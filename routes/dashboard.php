@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+
 foreach (glob(__DIR__.'/dashboard/*.php') as $routes) {
     include $routes;
 }
@@ -269,6 +270,11 @@ Route::post('people/assign-supervisor-block', 'PersonController@assignToUsers')-
 Route::get('ajax/blocks-by-responsible', 'PersonController@getBlocksByResponsible')->name('ajax.getBlocksByResponsible');
 Route::get('ajax/responsibles-by-neighborhood', 'PersonController@getResponsiblesByNeighborhood')->name('ajax.getResponsiblesByNeighborhood');
 Route::get('people/view', 'PersonController@view')->name('people.view');
+Route::get('people/bulk-history', 'PersonController@bulkHistoryForm')->name('people.bulk_history');
+Route::post('people/export-bulk-history', 'PersonController@exportBulkHistory')->name('people.export_bulk_history');
+Route::get('people/verify-ids', 'PersonController@verifyIdsForm')->name('people.verify_ids');
+Route::post('people/export-verify-ids', 'PersonController@exportVerifyIds')->name('people.export_verify_ids');
+
 Route::get('people/updated', 'PersonController@updatedIndex')->name('people.updated');
 Route::get('people/unsynced', 'PersonController@unsyncedIndex')->name('people.unsynced');
 Route::get('people/general-search', 'PersonController@generalSearch')->name('people.general_search');
@@ -277,7 +283,9 @@ Route::post('people/upload-filter-file', 'PersonController@uploadFilterFile')->n
 Route::post('people/clear', 'PersonController@clearSession')->name('people.clear');
 Route::put('people/bulk-toggle-freeze', 'PersonController@bulkToggleFreeze')->name('people.bulkToggleFreeze');
 Route::put('people/toggle-freeze/{person}', 'PersonController@toggleFreeze')->name('people.toggleFreeze');
+Route::post('people/{person}/swap-role', 'PersonController@swapRoleToWife')->name('people.swapRole');
 Route::resource('people', 'PersonController');
+
 
 Route::post('people/sync-notify', 'PersonController@syncNotify')->name('people.sync.notify');
 Route::get('people/aid/api/{person}', 'PersonController@api')->name('people.aid.api');
@@ -286,11 +294,25 @@ Route::get('people/aid/sync-status', 'PersonController@syncStatus')->name('peopl
 Route::post('people/aid/retry-failed', 'PersonController@retryFailedSync')->name('people.aid.retry-failed');
 
 // Complaints Routes.
+Route::get('export-resolved/complaints', 'ComplaintController@exportResolved')->name('complaints.export_resolved');
 Route::get('trashed/complaints', 'ComplaintController@trashed')->name('complaints.trashed');
 Route::get('trashed/complaints/{trashed_complaint}', 'ComplaintController@showTrashed')->name('complaints.trashed.show');
 Route::post('complaints/{trashed_complaint}/restore', 'ComplaintController@restore')->name('complaints.restore');
 Route::delete('complaints/{trashed_complaint}/forceDelete', 'ComplaintController@forceDelete')->name('complaints.forceDelete');
+Route::post('complaints/bulk-respond', 'ComplaintController@bulkRespond')->name('complaints.bulk_respond');
+Route::post('complaints/{complaint}/respond', 'ComplaintController@respond')->name('complaints.respond');
 Route::resource('complaints', 'ComplaintController');
+Route::resource('complaint_response_templates', 'ComplaintResponseTemplateController');
+Route::resource('complaint_types', 'ComplaintTypeController');
+
+// Kitchen Cards & Complaints Routes
+Route::get('kitchen_cards/template', 'KitchenCardController@downloadTemplate')->name('kitchen_cards.template');
+Route::post('kitchen_cards/import', 'KitchenCardController@import')->name('kitchen_cards.import');
+Route::get('kitchen_cards/export-zip', 'KitchenCardController@exportZip')->name('kitchen_cards.export_zip');
+Route::resource('kitchen_cards', 'KitchenCardController');
+Route::post('kitchen_complaints/{kitchen_complaint}/respond', 'KitchenComplaintController@respond')->name('kitchen_complaints.respond');
+Route::resource('kitchen_complaints', 'KitchenComplaintController');
+
 
 // Suppliers Routes.
 Route::get('trashed/suppliers', 'SupplierController@trashed')->name('suppliers.trashed');
@@ -312,6 +334,8 @@ Route::resource('area_responsibles', 'AreaResponsibleController');
 Route::post('area_responsibles/{areaResponsible}/refresh-count','AreaResponsibleController@refreshCount')->name('area-responsibles.refresh-count');
 
 // Blocks Routes.
+Route::get('blocks/import/template', 'BlockController@downloadTemplate')->name('blocks.import.template');
+Route::post('blocks/import', 'BlockController@import')->name('blocks.import');
 Route::get('trashed/blocks', 'BlockController@trashed')->name('blocks.trashed');
 Route::get('trashed/blocks/{trashed_block}', 'BlockController@showTrashed')->name('blocks.trashed.show');
 Route::post('blocks/{trashed_block}/restore', 'BlockController@restore')->name('blocks.restore');
@@ -353,6 +377,7 @@ Route::resource('regions', 'RegionController');
 Route::get('trashed/locations', 'LocationController@trashed')->name('locations.trashed');
 Route::get('trashed/locations/{trashed_location}', 'LocationController@showTrashed')->name('locations.trashed.show');
 Route::post('locations/{trashed_location}/restore', 'LocationController@restore')->name('locations.restore');
+Route::delete('locations/{trashed_location}/forceDelete', 'LocationController@forceDelete')->name('locations.forceDelete');
 Route::get('locations/area-responsible-by-region', 'LocationController@getAreaResponsibleByRegion')->name('locations.area-responsible-by-region');
 Route::get('locations/blocks-by-area-responsible', 'LocationController@getBlocksByAreaResponsible')->name('locations.blocks-by-area-responsible');
 Route::get('locations/region-boundaries', 'LocationController@getRegionWithBoundaries')->name('locations.region-boundaries');
@@ -413,11 +438,37 @@ Route::get('projects/{project}/beneficiaries', 'ProjectController@beneficiaries'
 Route::get('projects/{project}/beneficiaries/export', 'ProjectController@exportBeneficiaries')->name('projects.beneficiaries.export');
 Route::get('projects/{project}/beneficiaries/import', 'ProjectController@importForm')->name('projects.beneficiaries.import');
 Route::post('projects/{project}/beneficiaries/import', 'ProjectController@importBeneficiaries')->name('projects.beneficiaries.import.store');
-Route::delete('projects/{project}/beneficiaries/{person}', 'ProjectController@removeBeneficiary')->name('projects.beneficiaries.destroy');
-Route::post('projects/{project}/beneficiaries/{person}/status', 'ProjectController@updateBeneficiaryStatus')->name('projects.beneficiaries.update-status');
+Route::delete('projects/{project}/beneficiaries/{beneficiary}', 'ProjectController@removeBeneficiary')->name('projects.beneficiaries.destroy');
+Route::post('projects/{project}/beneficiaries/{beneficiary}/status', 'ProjectController@updateBeneficiaryStatus')->name('projects.beneficiaries.update-status');
 Route::get('projects/{project}/beneficiaries/filter-areas', 'ProjectController@filterByAreasForm')->name('projects.beneficiaries.filter-areas');
 Route::post('projects/{project}/beneficiaries/add-by-areas', 'ProjectController@addBeneficiariesByAreas')->name('projects.beneficiaries.add-by-areas');
 Route::post('projects/{project}/beneficiaries/bulk-actions', 'ProjectController@bulkBeneficiariesActions')->name('projects.beneficiaries.bulk-actions');
+
+// Project Deliveries (تسليم الطرود والكوبونات)
+Route::get('projects/deliveries', 'ProjectDeliveryController@index')->name('projects.deliveries');
+Route::post('projects/deliveries/check-id', 'ProjectDeliveryController@checkId')->name('projects.deliveries.check-id');
+Route::post('projects/deliveries/check-batch', 'ProjectDeliveryController@checkBatch')->name('projects.deliveries.check-batch');
+Route::post('projects/deliveries/deliver', 'ProjectDeliveryController@deliver')->name('projects.deliveries.deliver');
+Route::post('projects/deliveries/rename-group', 'ProjectDeliveryController@renameGroup')->name('projects.deliveries.rename-group');
+
+// Custom Projects Routes (المشاريع المخصصة مثل مشروع الـ RRM وغيرها)
+Route::post('custom-projects/{custom_project}/toggle-status', 'CustomProjectController@toggleStatus')->name('custom_projects.toggle_status');
+Route::resource('custom-projects', 'CustomProjectController')->names('custom_projects')->except(['show']);
+
+// RRM & Custom Project Batches Routes (كشوفات وتوزيعات المشاريع المخصصة / RRM)
+Route::get('rrm', 'RrmController@index')->name('rrm.index');
+Route::get('rrm/deliver', function(\Illuminate\Http\Request $request) {
+    $params = ['type' => 'rrm'];
+    if ($request->filled('custom_project_id')) {
+        $params['custom_project_id'] = $request->query('custom_project_id');
+    }
+    return redirect()->route('dashboard.projects.deliveries', $params);
+})->name('rrm.deliver');
+Route::get('rrm/{id}', 'RrmController@show')->name('rrm.show');
+Route::get('rrm/{id}/export', 'RrmController@export')->name('rrm.export');
+Route::get('rrm/{id}/print', 'RrmController@print')->name('rrm.print');
+Route::match(['post', 'put', 'patch'], 'rrm/{id}', 'RrmController@update')->name('rrm.update');
+Route::delete('rrm/{id}', 'RrmController@destroy')->name('rrm.destroy');
 
 // ========== روابط الأخطاء (يجب أن تكون هنا قبل الـ Resource) ==========
 Route::get('projects/{project}/check-import-errors', 'ProjectController@checkImportErrors')->name('projects.check_import_errors');
@@ -508,6 +559,7 @@ Route::post('need_requests/{need_request}/nominate', 'NeedRequestController@nomi
 Route::post('need_requests/{need_request}/items/{item}/nominate', 'NeedRequestController@nominateItem')->name('need_requests.items.nominate');
 
 Route::post('need_requests/clear', 'NeedRequestController@clearSession')->name('need_requests.clear');
+Route::delete('need_requests/activations/{activation}', 'NeedRequestController@destroyActivation')->name('need_requests.activations.destroy');
 Route::resource('need_requests', 'NeedRequestController');
 
 // Notifications

@@ -27,7 +27,7 @@ class NeedRequestUpdatedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         $verb = $this->action == 'store' ? 'بإضافة' : 'بتحديث';
-        $supervisor = $this->needRequest->areaResponsible->name ?? 'مسؤول المنطقة';
+        $supervisor = $this->needRequest->supervisor->name ?? 'مسؤول المنطقة';
         
         return [
             'type' => 'need_request_updated',

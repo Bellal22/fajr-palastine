@@ -39,6 +39,9 @@ class SubWarehouseDistributionExport implements WithMultipleSheets, ShouldQueue
         $consolidatedTitle = $warehouse ? "تقرير مجمع - " . $warehouse->name : "تقرير مجمع لكافة النقاط";
         $sheets[] = new \App\Exports\Sheets\SubWarehouseDataSheet($this->filters, $warehouse, $consolidatedTitle);
 
+        // 3. Detailed Report Sheet
+        $sheets[] = new \App\Exports\Sheets\SubWarehouseDetailedReportSheet($this->filters, $warehouse, "تقرير تفصيلي");
+
         // 3. Monthly Data Sheets
         $dateFrom = Carbon::parse($this->filters['date_from'])->startOfMonth();
         $dateTo = Carbon::parse($this->filters['date_to'])->endOfMonth();

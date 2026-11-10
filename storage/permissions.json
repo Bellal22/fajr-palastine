@@ -1,5 +1,10 @@
 [
+    "manage.admins",
+    "manage.statistics",
     "manage.supervisors",
+    "manage.distributors",
+    "manage.researchers",
+    "manage.kitchen_monitors",
     "manage.customers",
     "manage.feedback",
     "manage.settings",
@@ -8,7 +13,8 @@
     "manage.neighborhoods",
     "manage.cities",
     "manage.people",
-    "manage.people",
+    "manage.incomplete_people",
+    "manage.employees",
     "manage.complaints",
     "manage.suppliers",
     "manage.area_responsibles",
@@ -26,6 +32,14 @@
     "manage.outbound_shipment_items",
     "manage.coupon_types",
     "manage.projects",
+    "manage.project_deliveries",
+    "manage.project_reports",
+    "manage.custom_projects",
+    "manage.rrm",
     "manage.game_winnings",
-    "manage.need_requests"
+    "manage.need_requests",
+    "manage.kitchen_cards",
+    "manage.kitchen_complaints",
+    "manage.audit",
+    "manage.mobile_app"
 ]

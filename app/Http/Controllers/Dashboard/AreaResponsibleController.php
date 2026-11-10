@@ -7,6 +7,7 @@ use Illuminate\Routing\Controller;
 use App\Http\Requests\Dashboard\AreaResponsibleRequest;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
 
 class AreaResponsibleController extends Controller
 {
@@ -312,11 +313,17 @@ class AreaResponsibleController extends Controller
     /**
      * تصدير بيانات جميع مسؤولي المناطق في ملف ZIP
      */
-    public function exportAll()
+    public function exportAll(Request $request)
     {
+        if (!auth()->user()?->isAdmin()) {
+            abort(403, 'غير مصرح لك بالتصدير');
+        }
+
         // زيادة وقت التنفيذ والذاكرة لتجنب مشاكل Time Out
         set_time_limit(0);
         ini_set('memory_limit', '-1');
+
+        $unserved = $request->has('unserved');
 
         try {
             $areaResponsibles = AreaResponsible::with('blocks')->get();
@@ -327,7 +334,7 @@ class AreaResponsibleController extends Controller
             }
 
             // إنشاء مجلد مؤقت
-            $zipFileName = 'area_responsibles_stats_' . date('Y-m-d_H-i-s') . '.zip';
+            $zipFileName = ($unserved ? 'unserved_' : '') . 'area_responsibles_stats_' . date('Y-m-d_H-i-s') . '.zip';
             $zipFilePath = storage_path('app/public/' . $zipFileName);
             $zip = new \ZipArchive;
 
@@ -345,7 +352,7 @@ class AreaResponsibleController extends Controller
 
                     // استخدام التخزين على القرص العام
                     $stored = \Maatwebsite\Excel\Facades\Excel::store(
-                        new \App\Exports\AreaResponsibleExport($areaResponsible),
+                        new \App\Exports\AreaResponsibleExport($areaResponsible, $unserved),
                         'temp/' . $excelFileName,
                         'public'
                     );

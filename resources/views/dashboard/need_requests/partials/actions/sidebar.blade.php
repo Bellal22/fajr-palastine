@@ -1,3 +1,4 @@
+@if(!auth()->user()?->isKitchenMonitor() && auth()->user()->hasPermission('manage.need_requests'))
 @component('dashboard::components.sidebarItem')
     @slot('name', trans('need_requests.plural'))
     @slot('icon', 'fas fa-hand-holding-heart')
@@ -41,3 +42,4 @@
         ],
     ])
 @endcomponent
+@endif

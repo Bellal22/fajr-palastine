@@ -55,7 +55,7 @@ class DistributorController extends Controller
         $distributor->setType(Distributor::MOBILE_WORKER_TYPE);
 
         if ($request->user()->isAdmin()) {
-            $distributor->syncPermissions($request->input('permissions', []));
+            $distributor->syncUserPermissions($request->input('permissions', []));
         }
 
         $distributor->addAllMediaFromTokens();
@@ -99,7 +99,7 @@ class DistributorController extends Controller
         $distributor->update($request->allWithHashedPassword());
 
         if ($request->user()->isAdmin()) {
-            $distributor->syncPermissions($request->input('permissions', []));
+            $distributor->syncUserPermissions($request->input('permissions', []));
         }
 
         $distributor->addAllMediaFromTokens();

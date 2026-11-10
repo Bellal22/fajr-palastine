@@ -17,6 +17,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\NeedRequestItemsExport;
+use Carbon\Carbon;
 
 class NeedRequestController extends Controller
 {
@@ -68,7 +69,16 @@ class NeedRequestController extends Controller
      */
     public function available()
     {
+        $user = auth()->user();
         $this->authorize('viewAnyOwn', NeedRequest::class);
+
+        // For Admins/Super Admins: Show full activation history
+        if ($user->isAdmin()) {
+            $activations = NeedRequestProject::with(['project', 'supervisors'])
+                ->latest()
+                ->get();
+            return view('dashboard.need_requests.activations', compact('activations'));
+        }
 
         NeedRequestProject::checkAndExpire();
 
@@ -76,15 +86,39 @@ class NeedRequestController extends Controller
         $projects = Project::active()
             ->whereHas('needRequestProject', function ($query) {
                 $query->where('is_enabled', true)
-                    ->where(function ($q) {
-                        $q->whereNull('deadline')
+                      ->where(function ($q) {
+                          $q->whereNull('deadline')
                             ->orWhere('deadline', '>', now());
-                    });
+                      })
+                      ->whereHas('supervisors', function ($q) {
+                          $q->where('user_id', auth()->id());
+                      });
             })
             ->with(['needRequestProject', 'needRequests' => function ($query) {
-                $query->where('supervisor_id', auth()->id());
+                $query->where('supervisor_id', auth()->id())
+                      ->withCount('items');
             }])
             ->get();
+
+        // Extra client-side filter to ensure ONLY projects where the LATEST activation is valid are shown
+        // And filter the needRequests to only those belonging to the latest activation
+        $projects = $projects->filter(function($project) {
+            $latest = $project->needRequestProject;
+            if (!$latest || !$latest->is_enabled || ($latest->deadline && $latest->deadline->isPast())) {
+                return false;
+            }
+            
+            // Only keep requests created AFTER this activation started
+            $relevantRequests = $project->needRequests->filter(function($req) use ($latest) {
+                return $req->created_at >= $latest->created_at;
+            });
+
+            $project->setRelation('needRequests', $relevantRequests);
+            // Calculate total items count just for these relevant requests
+            $project->current_round_nominations = $relevantRequests->sum('items_count');
+
+            return true;
+        });
 
         return view('dashboard.need_requests.available', compact('projects'));
     }
@@ -163,14 +197,14 @@ class NeedRequestController extends Controller
         // Get enabled projects for need requests
         $projects = Project::active()
             ->with('needRequestProject')
-            ->where(function ($query) {
-                $query->whereDoesntHave('needRequestProject')
-                    ->orWhereHas('needRequestProject', function ($q) {
-                        $q->where('is_enabled', true)
-                            ->where(function ($sq) {
-                                $sq->whereNull('deadline')
-                                    ->orWhere('deadline', '>', now());
-                            });
+            ->whereHas('needRequestProject', function ($query) {
+                $query->where('is_enabled', true)
+                    ->where(function ($q) {
+                        $q->whereNull('deadline')
+                            ->orWhere('deadline', '>', now());
+                    })
+                    ->whereHas('supervisors', function ($q) {
+                        $q->where('user_id', auth()->id());
                     });
             })
             ->get();
@@ -241,12 +275,17 @@ class NeedRequestController extends Controller
         // Get supervisor's area responsible ID
         $user = auth()->user();
 
+        $project = Project::with('needRequestProject')->find($request->project_id);
+
         // Check for existing pending request for this supervisor to merge into
         $need_request = null;
         if ($user->isSupervisor()) {
-            $need_request = NeedRequest::where('supervisor_id', $user->id)
-                ->where('project_id', $request->project_id)
+            $latestActivation = $project->needRequestProject;
+            $need_request = NeedRequest::where('project_id', $request->project_id)
+                ->where('supervisor_id', $user->id)
                 ->where('status', 'pending')
+                ->where('created_at', '>=', $latestActivation->created_at)
+                ->latest()
                 ->first();
         }
 
@@ -265,7 +304,6 @@ class NeedRequestController extends Controller
             'unavailable' => [],
             'processed' => [],
         ];
-        $project = Project::with('needRequestProject')->find($request->project_id);
 
         // Check deadline
         if ($project && $project->needRequestProject && $project->needRequestProject->deadline && $project->needRequestProject->deadline->isPast()) {
@@ -282,14 +320,27 @@ class NeedRequestController extends Controller
             }
 
             // 1. Check if already added to this project (as beneficiary)
-            if ($project->beneficiaries()->where('person_id', $person->id)->exists()) {
-                $errors['processed'][] = "الهوية {$idNum}: هذا الشخص مضاف مسبقاً كمستفيد في هذا المشروع.";
+            $existsInThisProjectRecent = $project->beneficiaries()
+                ->where('person_id', $person->id)
+                ->where(function($q) {
+                    $q->where('status', '!=', 'مستلم')
+                      ->orWhere('delivery_date', '>=', now()->subDays(30));
+                })
+                ->exists();
+
+            if ($existsInThisProjectRecent) {
+                $errors['processed'][] = "الهوية {$idNum}: هذا الشخص مضاف مسبقاً في هذا المشروع واستلم (أو بانتظار الاستلام) خلال الـ 30 يوماً الماضية.";
                 continue;
             }
-
             // 2. Check if already requested in the last 30 days
             if (NeedRequestItem::isRequestedInLast30Days($person->id)) {
                 $errors['processed'][] = "الهوية {$idNum}: هذا الشخص موجود حالياً في طلب احتياج سابق في اخر 30 يوم";
+                continue;
+            }
+
+            // 2b. Check if already received aid from any project in the last 30 days
+            if ($person->hasReceivedAidInLast30Days()) {
+                $errors['processed'][] = "الهوية {$idNum}: هذا الشخص استلم مساعدة بالفعل من مشروع آخر خلال الـ 30 يوماً الماضية.";
                 continue;
             }
 
@@ -527,8 +578,16 @@ class NeedRequestController extends Controller
             }
 
             // 1. Check if already added to this project (as beneficiary)
-            if ($project->beneficiaries()->where('person_id', $person->id)->exists()) {
-                $errors['processed'][] = "الهوية {$idNum}: هذا الشخص مضاف مسبقاً كمستفيد في هذا المشروع.";
+            $existsInThisProjectRecent = $project->beneficiaries()
+                ->where('person_id', $person->id)
+                ->where(function($q) {
+                    $q->where('status', '!=', 'مستلم')
+                      ->orWhere('delivery_date', '>=', now()->subDays(30));
+                })
+                ->exists();
+
+            if ($existsInThisProjectRecent) {
+                $errors['processed'][] = "الهوية {$idNum}: هذا الشخص مضاف مسبقاً في هذا المشروع واستلم (أو بانتظار الاستلام) خلال الـ 30 يوماً الماضية.";
                 continue;
             }
 
@@ -617,7 +676,7 @@ class NeedRequestController extends Controller
         $selected_supervisor_ids = [];
 
         if ($selected_project_id) {
-            $activatedProject = \App\Models\NeedRequestProject::where('project_id', $selected_project_id)->first();
+            $activatedProject = \App\Models\NeedRequestProject::where('project_id', $selected_project_id)->latest()->first();
             // Since it's global for now, we'll just pull all enabled supervisors
             // In a better design, this would be per project.
             $selected_supervisor_ids = \App\Models\NeedRequestSetting::where('is_enabled', true)->pluck('supervisor_id')->toArray();
@@ -647,6 +706,7 @@ class NeedRequestController extends Controller
             'supervisor_ids.*' => 'exists:users,id',
             'allowed_id_count' => 'required|integer|min:1',
             'min_family_members' => 'nullable|integer|min:0',
+            'max_family_members' => 'nullable|integer|gte:min_family_members',
             'social_status' => 'nullable|array',
             'has_condition' => 'nullable|boolean',
             'min_age' => 'nullable|integer|min:0',
@@ -661,24 +721,43 @@ class NeedRequestController extends Controller
         ]);
 
         // Automatically enable the project and supervisors for need requests
-        $data = $request->only([
-            'project_id', 'allowed_id_count', 'deadline', 'min_family_members', 'max_family_members',
-            'social_status', 'has_condition',
-            'min_age', 'max_age', 'child_min_age', 'child_max_age', 'child_count',
-            'has_disability', 'has_chronic_disease', 'target_neighborhoods', 'criteria_notes'
-        ]);
+        $data = [
+            'project_id' => $request->project_id,
+            'allowed_id_count' => $request->allowed_id_count,
+            'deadline' => $request->deadline,
+            'min_family_members' => $request->min_family_members,
+            'max_family_members' => $request->max_family_members,
+            'social_status' => $request->social_status, // Will be null if missing from request
+            'has_condition' => $request->has_condition,
+            'min_age' => $request->min_age,
+            'max_age' => $request->max_age,
+            'child_min_age' => $request->child_min_age,
+            'child_max_age' => $request->child_max_age,
+            'child_count' => $request->child_count,
+            'has_disability' => $request->has_disability,
+            'has_chronic_disease' => $request->has_chronic_disease,
+            'target_neighborhoods' => $request->target_neighborhoods, // Will be null if missing from request
+            'criteria_notes' => $request->criteria_notes,
+        ];
 
         // Clean empty values to null for numeric/boolean fields
         foreach ($data as $key => $value) {
-            if ($value === '') {
+            if ($value === '' || (is_array($value) && empty($value))) {
                 $data[$key] = null;
             }
         }
 
-        NeedRequestProject::updateOrCreate(
-            ['project_id' => $data['project_id']],
+        // Deactivate any currently active settings for this project before creating a new one
+        NeedRequestProject::where('project_id', $data['project_id'])
+            ->where('is_enabled', true)
+            ->update(['is_enabled' => false]);
+
+        $activation = NeedRequestProject::create(
             array_merge($data, ['is_enabled' => true])
         );
+
+        // Sync authorsied supervisors for this specific activation
+        $activation->supervisors()->sync($request->supervisor_ids);
 
         $count = 0;
         foreach ($request->supervisor_ids as $supervisorId) {
@@ -780,13 +859,30 @@ class NeedRequestController extends Controller
         }
 
         foreach ($itemsQuery->get() as $item) {
-            // Check if person is not already a beneficiary
-            if (!$project->beneficiaries()->where('person_id', $item->person_id)->exists()) {
+            $existing = $project->beneficiaries()->where('person_id', $item->person_id)->first();
+            
+            // Calculate quantity based on number of wives
+            $wivesCount = $item->person->wives()->count();
+            $quantity = max(1, $wivesCount);
+            
+            if (!$existing) {
                 $project->beneficiaries()->attach($item->person_id, [
                     'status' => 'غير مستلم',
+                    'quantity' => $quantity,
                     'notes' => 'تم الإضافة من طلب احتياج #' . $need_request->id,
                 ]);
                 $addedCount++;
+            } else {
+                // If they received more than 30 days ago, we allow re-nominating them
+                if ($existing->pivot->status === 'مستلم' && (!$existing->pivot->delivery_date || Carbon::parse($existing->pivot->delivery_date)->isBefore(now()->subDays(30)))) {
+                    $project->beneficiaries()->updateExistingPivot($item->person_id, [
+                        'status' => 'غير مستلم',
+                        'quantity' => $quantity,
+                        'delivery_date' => null,
+                        'notes' => ($existing->pivot->notes ? $existing->pivot->notes . " | " : "") . 'تم إعادة الترشيح من طلب احتياج #' . $need_request->id,
+                    ]);
+                    $addedCount++;
+                }
             }
         }
 
@@ -813,15 +909,32 @@ class NeedRequestController extends Controller
 
         $project = $need_request->project;
 
-        if ($project->beneficiaries()->where('person_id', $item->person_id)->exists()) {
-            flash()->warning('هذا الشخص مضاف مسبقاً في المستفيدين.');
-            return redirect()->back();
-        }
+        $existing = $project->beneficiaries()->where('person_id', $item->person_id)->first();
 
-        $project->beneficiaries()->attach($item->person_id, [
-            'status' => 'غير مستلم',
-            'notes' => 'تم الإضافة من طلب احتياج #' . $need_request->id,
-        ]);
+        // Calculate quantity based on number of wives
+        $wivesCount = $item->person->wives()->count();
+        $quantity = max(1, $wivesCount);
+
+        if (!$existing) {
+            $project->beneficiaries()->attach($item->person_id, [
+                'status' => 'غير مستلم',
+                'quantity' => $quantity,
+                'notes' => 'تم الإضافة من طلب احتياج #' . $need_request->id,
+            ]);
+        } else {
+            // If they received more than 30 days ago, we allow re-nominating them
+            if ($existing->pivot->status === 'مستلم' && (!$existing->pivot->delivery_date || Carbon::parse($existing->pivot->delivery_date)->isBefore(now()->subDays(30)))) {
+                $project->beneficiaries()->updateExistingPivot($item->person_id, [
+                    'status' => 'غير مستلم',
+                    'quantity' => $quantity,
+                    'delivery_date' => null,
+                    'notes' => ($existing->pivot->notes ? $existing->pivot->notes . " | " : "") . 'تم إعادة الترشيح من طلب احتياج #' . $need_request->id,
+                ]);
+            } else {
+                flash()->warning('هذا الشخص مضاف مسبقاً في المستفيدين ولم يمر 30 يوماً على استلامه.');
+                return redirect()->back();
+            }
+        }
 
         $item->update(['status' => 'approved']);
 
@@ -1003,5 +1116,20 @@ class NeedRequestController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Delete a project activation record.
+     */
+    public function destroyActivation(NeedRequestProject $activation)
+    {
+        if (!auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $activation->delete();
+
+        flash()->success('تم حذف تفعيل المشروع بنجاح من السجل.');
+        return back();
     }
 }

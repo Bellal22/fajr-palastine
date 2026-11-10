@@ -238,6 +238,14 @@
                                 <td>{{ $member->relationship }}</td>
                                 <td>{{ $member->dob }}</td>
                                 <td>
+                                    @if(isset($person) && in_array($member->relationship, ['زوجة', 'wife', 'الزوجة', 'spouse']))
+                                        <button type="button"
+                                                class="btn btn-sm btn-warning text-dark font-weight-bold ml-1"
+                                                onclick="confirmSwapRoleToWife('{{ route('dashboard.people.swapRole', $person) }}', '{{ $member->id }}', '{{ $member->first_name }} {{ $member->father_name }} {{ $member->family_name }}')"
+                                                title="تبديل الدور: جعل الزوجة هي ربة الأسرة (في حالة وفاة الزوج)">
+                                            <i class="fas fa-exchange-alt"></i> تبديل الدور (ربة أسرة)
+                                        </button>
+                                    @endif
                                     <button type="button" class="btn btn-sm btn-danger remove-member-btn">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -585,5 +593,29 @@
             $(this).closest('tr').remove();
         });
     });
+
+    function confirmSwapRoleToWife(actionUrl, wifeId, wifeName) {
+        const confirmMsg = `هل أنت متأكد من تبديل الدور وجعل الزوجة (${wifeName}) هي ربة الأسرة؟\n\nسيتم:\n- تحويل الزوجة إلى ربة الأسرة بحالة "أرمل/ة"\n- نقل جميع الأبناء وأفراد الأسرة تحت رقم هويتها\n- نقل بيانات السكن والمنطقة والكوبونات والشكاوى إليها\n- حذف سجل الزوج الحالي نهائياً`;
+        if (confirm(confirmMsg)) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = actionUrl;
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            form.appendChild(csrfInput);
+
+            const wifeInput = document.createElement('input');
+            wifeInput.type = 'hidden';
+            wifeInput.name = 'wife_id';
+            wifeInput.value = wifeId;
+            form.appendChild(wifeInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
 </script>
 @endpush

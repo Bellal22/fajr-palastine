@@ -43,7 +43,7 @@
                         <div class="d-flex align-items-center">
                             @if (auth()->user()?->isAdmin())
                                 <div class="btn-group" role="group">
-                                    <a href="{{ route('dashboard.people.export.view', array_merge(request()->all(), ['unsynced_only' => 1])) }}"
+                                    <a href="{{ route('dashboard.people.export.view', array_merge(request()->all(), ['unsynced_only' => 1, 'export_source' => 'view'])) }}"
                                        class="btn btn-outline-success btn-sm">
                                         <i class="fa-fw fas fa-file-excel"></i>
                                         تصدير غير المزامنين

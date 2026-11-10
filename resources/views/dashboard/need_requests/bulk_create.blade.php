@@ -39,6 +39,24 @@
             color: #bd3939 !important;
         }
 
+        /* تنسيق زر مسح الكل (allowClear) */
+        .select2-container--default .select2-selection--multiple .select2-selection__clear {
+            position: absolute !important;
+            left: 10px !important;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            cursor: pointer;
+            color: #ea5455;
+            font-size: 1.2rem;
+            margin-top: 0 !important;
+        }
+
+        .select2-container--default .select2-selection--multiple {
+            padding-left: 30px !important; /* مساحة لزر مسح الكل */
+            position: relative;
+        }
+
         .select2-container--default .select2-search--inline .select2-search__field {
             margin-top: 7px !important;
             margin-right: 8px !important;
@@ -140,6 +158,7 @@
                                 {{ BsForm::select('social_status[]')
                                     ->options(isset($chooses['social_status']) ? $chooses['social_status']->pluck('name', 'name') : [])
                                     ->multiple()->attribute('class', 'form-control select2-multiple')
+                                    ->attribute('data-placeholder', 'اختر الحالة الاجتماعية...')
                                 }}
                             </div>
                         </div>
@@ -233,28 +252,39 @@
             });
 
             // تفعيل الـ Select2 العادي للمشروع
-            $('.select2').select2({
-                dir: "rtl",
-                width: '100%'
+            $('.select2').each(function() {
+                var $el = $(this);
+                $el.select2({
+                    dir: "rtl",
+                    width: '100%',
+                    placeholder: $el.data('placeholder'),
+                    allowClear: true
+                });
             });
 
             // تفعيل الـ Select2 المتعدد للمشرفين بستايل الكبونات
-            $('.select2-multiple').select2({
-                dir: "rtl",
-                width: '100%',
-                placeholder: $(this).data('placeholder'),
-                allowClear: true,
-                closeOnSelect: false
+            $('.select2-multiple').each(function() {
+                var $el = $(this);
+                $el.select2({
+                    dir: "rtl",
+                    width: '100%',
+                    placeholder: $el.data('placeholder'),
+                    allowClear: true,
+                    closeOnSelect: false
+                });
             });
 
             // تفعيل الـ Select2 للتاجات (الأحياء)
-            $('.select2-tags').select2({
-                dir: "rtl",
-                width: '100%',
-                tags: true,
-                placeholder: $(this).data('placeholder'),
-                allowClear: true,
-                closeOnSelect: false
+            $('.select2-tags').each(function() {
+                var $el = $(this);
+                $el.select2({
+                    dir: "rtl",
+                    width: '100%',
+                    tags: true,
+                    placeholder: $el.data('placeholder'),
+                    allowClear: true,
+                    closeOnSelect: false
+                });
             });
         });
     </script>

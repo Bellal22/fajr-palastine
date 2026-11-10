@@ -7,6 +7,11 @@ return [
     'select' => 'Select Admin',
     'trashed' => 'Trashed Admins',
     'perPage' => 'Count Results Per Page',
+    'sections' => [
+        'basic_info' => 'Basic Information',
+        'security' => 'Security',
+        'search_settings' => 'Search Settings',
+    ],
     'actions' => [
         'list' => 'List Admins',
         'show' => 'Show Admin',

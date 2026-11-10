@@ -31,6 +31,7 @@ return [
     ],
     'attributes' => [
         'name' => 'Region name',
+        'area' => 'Total Area',
     ],
     'dialogs' => [
         'delete' => [
