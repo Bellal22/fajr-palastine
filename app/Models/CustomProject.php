@@ -57,6 +57,11 @@ class CustomProject extends Model
         'is_active' => 'boolean',
     ];
 
+    public function setDefaultSubWarehouseIdAttribute($value)
+    {
+        $this->attributes['default_sub_warehouse_id'] = !empty($value) ? (int) $value : null;
+    }
+
     public function getCurrencyNameAttribute(): string
     {
         return self::CURRENCY_NAMES[$this->cash_currency] ?? ($this->cash_currency ?: 'شيكل');
